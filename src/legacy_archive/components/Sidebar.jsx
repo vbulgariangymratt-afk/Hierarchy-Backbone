@@ -142,10 +142,7 @@ const Sidebar = () => {
                         <span>Journal</span>
                     </NavLink>
 
-                    <NavLink to="/backbone-tester" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`} style={{ color: 'var(--color-primary, #00d2ff)', fontWeight: 'bold' }}>
-                        <Brain size={16} />
-                        <span>Backbone V2</span>
-                    </NavLink>
+
                 </div>
 
                 <div className="section">

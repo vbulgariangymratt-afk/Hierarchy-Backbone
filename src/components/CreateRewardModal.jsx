@@ -8,6 +8,7 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
     const [sensoryDescription, setSensoryDescription] = useState('');
     const [category, setCategory] = useState('MARKETPLACE'); // 'MARKETPLACE' or 'TASK'
     const [hryvniaCost, setHryvniaCost] = useState(10);
+    const [iconUrl, setIconUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
@@ -27,7 +28,8 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                     sensoryDescription: sensoryDescription.trim(),
                     rewardCategory: category,
                     hryvniaCost: Number(hryvniaCost),
-                    rewardTier: 1 // Default to tier 1 for now
+                    rewardTier: 1, // Default to tier 1 for now
+                    iconUrl: iconUrl.trim() || null
                 }
             });
 
@@ -36,6 +38,7 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
             setSensoryDescription('');
             setCategory('MARKETPLACE');
             setHryvniaCost(10);
+            setIconUrl('');
 
             if (onSuccess) onSuccess();
             onClose();
@@ -118,6 +121,24 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                                 value={hryvniaCost}
                                 onChange={e => setHryvniaCost(e.target.value)}
                             />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Icon URL (notionicons.so)</label>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <input
+                                type="text"
+                                value={iconUrl}
+                                onChange={e => setIconUrl(e.target.value)}
+                                placeholder="https://notionicons.so/icon/..."
+                                style={{ flex: 1 }}
+                            />
+                            {iconUrl && (
+                                <div className="icon-preview" style={{ width: '36px', height: '36px', background: 'var(--alpha-low)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                                    <img src={iconUrl} alt="preview" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                                </div>
+                            )}
                         </div>
                     </div>
 

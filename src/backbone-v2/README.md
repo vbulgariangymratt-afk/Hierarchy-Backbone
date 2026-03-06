@@ -20,13 +20,6 @@ This is a clean architecture environment for rebuilding the core hierarchy struc
 3. **Validation**: The `HierarchyService` enforces these relations upon creation or movement.
 4. **Atomic Operations**: Hierarchy mutations should be atomic to prevent orphan nodes.
 
-## Structural Testing UI
-A minimal UI for testing this backbone is available at `/backbone-tester`. 
-It allows for:
-- Creating nodes at every level (Life Area → Session).
-- Toggling completion for Tasks and Sessions.
-- Viewing roll-up progress calculation for parent nodes.
-- Validating relational rules (errors will pop up if rules are violated).
 
 
 

@@ -5,7 +5,7 @@ import Launchpad from './pages/Launchpad';
 import AreaPage from './pages/AreaPage';
 import SkillPage from './pages/SkillPage';
 import MarketplacePage from './pages/MarketplacePage';
-import StructuralTester from './backbone-v2/StructuralTester';
+
 
 /**
  * ARCHIVED LEGACY SYSTEM STUBS
@@ -16,11 +16,7 @@ const ArchivedPage = ({ name }) => (
   <div style={{ padding: '40px', textAlign: 'center', color: '#666', fontFamily: 'sans-serif' }}>
     <h2 style={{ marginBottom: '10px' }}>{name} (Archived)</h2>
     <p>This component was moved to <code>src/legacy_archive</code> during the V2 refactor.</p>
-    <div style={{ marginTop: '20px' }}>
-      <a href="/backbone-tester" style={{ color: '#007AFF', textDecoration: 'none', fontWeight: 'bold' }}>
-        Go to Backbone V2 Tester &rarr;
-      </a>
-    </div>
+
   </div>
 );
 
@@ -67,7 +63,7 @@ const LegacyApp = () => (
         <Route path="trackers/wealth" element={<Wealth />} />
         <Route path="wealth/:id" element={<WealthItemDetail />} />
         <Route path="trackers/:trackerId" element={<GenericTracker />} />
-        <Route path="backbone-tester" element={<StructuralTester />} />
+
       </Route>
     </Routes>
     <DailyRituals />

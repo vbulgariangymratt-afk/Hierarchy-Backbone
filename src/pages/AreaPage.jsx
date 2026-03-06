@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { backbone, repository, NodeTypes, IdentityTiers } from '../backbone-v2/index';
+import CreateSkillModal from '../components/CreateSkillModal';
+import NodeIcon from '../components/NodeIcon';
 import './AreaPage.css';
+
+const SVG_ICONS = {
+    CHEVRON_DOWN: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E",
+    CHEVRON_RIGHT: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E",
+    ROCKET: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3Cpolyline points='9 22 9 12 15 12 15 22'/%3E%3C/svg%3E"
+};
 
 const AreaPage = () => {
     const { id } = useParams();
@@ -14,10 +22,13 @@ const AreaPage = () => {
     const [newSkillName, setNewSkillName] = useState('');
     const [newSkillTier, setNewSkillTier] = useState(IdentityTiers?.OPTIONAL || 'OPTIONAL');
     const [newSkillPinch, setNewSkillPinch] = useState('');
+    const [newSkillIconUrl, setNewSkillIconUrl] = useState('');
 
     const [allNodes, setAllNodes] = useState([]);
     const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
     const [isSleepingSkillsCollapsed, setIsSleepingSkillsCollapsed] = useState(true);
+    const [isEditingArea, setIsEditingArea] = useState(false);
+    const [areaEditForm, setAreaEditForm] = useState({ name: '', identityAnchor: '', iconUrl: '' });
 
     const fetchData = async () => {
         try {
@@ -69,11 +80,13 @@ const AreaPage = () => {
                     pinchState: newSkillPinch.trim() || null,
                     status: 'SLEEPING',
                     auraLevel: 1,
-                    auraTotal: 0
+                    auraTotal: 0,
+                    iconUrl: newSkillIconUrl.trim() || null
                 }
             });
             setNewSkillName('');
             setNewSkillPinch('');
+            setNewSkillIconUrl('');
             setNewSkillTier(IdentityTiers?.OPTIONAL || 'OPTIONAL');
             setIsCreatingSkill(false);
             fetchData();
@@ -141,6 +154,32 @@ const AreaPage = () => {
         }
     };
 
+    const handleStartEditArea = () => {
+        setAreaEditForm({
+            name: area.name,
+            identityAnchor: area.metadata?.identityAnchor || '',
+            iconUrl: area.metadata?.iconUrl || ''
+        });
+        setIsEditingArea(true);
+    };
+
+    const handleSaveAreaEdit = async () => {
+        try {
+            await backbone.updateNode(id, {
+                name: areaEditForm.name,
+                metadata: {
+                    ...area.metadata,
+                    identityAnchor: areaEditForm.identityAnchor,
+                    iconUrl: areaEditForm.iconUrl
+                }
+            });
+            setIsEditingArea(false);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to save area edit:", error);
+        }
+    };
+
     if (loading) return <div className="area-page-loading">Loading Area...</div>;
     if (!area) return <div className="area-page-error">Area not found.</div>;
 
@@ -150,8 +189,69 @@ const AreaPage = () => {
     return (
         <div className="area-page">
             <header className="area-page-header">
-                <h1 className="area-title">{area.name}</h1>
-                <p className="area-identity-anchor">{area.metadata?.identityAnchor}</p>
+                {isEditingArea ? (
+                    <div className="area-edit-block" style={{ background: 'var(--alpha-low)', padding: '24px', borderRadius: '12px', border: '1px solid var(--color-border)', marginBottom: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '16px' }}>
+                            <div className="edit-field">
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Area Name</label>
+                                <input
+                                    className="edit-input"
+                                    value={areaEditForm.name}
+                                    onChange={e => setAreaEditForm({ ...areaEditForm, name: e.target.value })}
+                                    style={{ width: '100%', padding: '10px', background: 'var(--bg-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                                />
+                            </div>
+                            <div className="edit-field">
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Identity Anchor</label>
+                                <input
+                                    className="edit-input"
+                                    value={areaEditForm.identityAnchor}
+                                    onChange={e => setAreaEditForm({ ...areaEditForm, identityAnchor: e.target.value })}
+                                    style={{ width: '100%', padding: '10px', background: 'var(--bg-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                                />
+                            </div>
+                        </div>
+                        <div className="edit-field" style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Icon URL (notionicons.so)</label>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <input
+                                    className="edit-input"
+                                    value={areaEditForm.iconUrl}
+                                    placeholder="https://notionicons.so/icon/..."
+                                    onChange={e => setAreaEditForm({ ...areaEditForm, iconUrl: e.target.value })}
+                                    style={{ flex: 1, padding: '10px', background: 'var(--bg-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
+                                />
+                                {areaEditForm.iconUrl && (
+                                    <div className="icon-preview" style={{ width: '38px', height: '38px', background: 'var(--bg-surface)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                                        <NodeIcon iconUrl={areaEditForm.iconUrl} size={24} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="edit-actions" style={{ display: 'flex', gap: '12px' }}>
+                            <button onClick={handleSaveAreaEdit} style={{ padding: '8px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
+                            <button onClick={() => setIsEditingArea(false)} style={{ padding: '8px 20px', background: 'var(--alpha-medium)', color: 'var(--color-text)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                                    <NodeIcon iconUrl={area.metadata?.iconUrl} emoji={area.icon} size={32} />
+                                    <h1 className="area-title" style={{ margin: 0 }}>{area.name}</h1>
+                                </div>
+                                <p className="area-identity-anchor" style={{ opacity: 0.7, margin: 0 }}>{area.metadata?.identityAnchor}</p>
+                            </div>
+                            <button
+                                onClick={handleStartEditArea}
+                                style={{ padding: '6px 12px', background: 'var(--alpha-low)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                            >
+                                Edit Area
+                            </button>
+                        </div>
+                    </>
+                )}
             </header>
 
             <section className="skills-section">
@@ -170,6 +270,11 @@ const AreaPage = () => {
                                 <Link to={`/skill/${skill.id}`} className="skill-card-link">
                                     <header className="skill-card-header">
                                         <div className="skill-title-group">
+                                            {skill.metadata?.iconUrl && (
+                                                <div className="skill-icon-container" style={{ marginRight: '12px', display: 'flex', alignItems: 'center' }}>
+                                                    <NodeIcon iconUrl={skill.metadata.iconUrl} size={28} />
+                                                </div>
+                                            )}
                                             <h3 className="skill-name">{skill.name}</h3>
                                             <span className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}>
                                                 {getTierLabel(skill.metadata?.identityTier)}
@@ -224,7 +329,13 @@ const AreaPage = () => {
                                             <ul className="mini-objective-list">
                                                 {skillObjectives.slice(0, 3).map(obj => (
                                                     <li key={obj.id} className="mini-objective-item">
-                                                        <span className="dot"></span>
+                                                        {obj.metadata?.iconUrl ? (
+                                                            <div className="mini-icon" style={{ marginRight: '6px', display: 'inline-flex' }}>
+                                                                <NodeIcon iconUrl={obj.metadata.iconUrl} size={14} />
+                                                            </div>
+                                                        ) : (
+                                                            <span className="dot"></span>
+                                                        )}
                                                         {obj.name}
                                                     </li>
                                                 ))}
@@ -279,9 +390,10 @@ const AreaPage = () => {
             </section>
 
             <section className="skills-section sleeping-section">
-                <div className="section-header collapsible" onClick={() => setIsSleepingSkillsCollapsed(!isSleepingSkillsCollapsed)}>
-                    <h2 className="section-title">Sleeping Skills ({sleepingSkills.length})</h2>
-                    <span className="collapse-arrow">{isSleepingSkillsCollapsed ? '▼' : '▲'}</span>
+                <div className="section-header" onClick={() => setIsSleepingSkillsCollapsed(!isSleepingSkillsCollapsed)}>
+                    <NodeIcon iconUrl={isSleepingSkillsCollapsed ? SVG_ICONS.CHEVRON_RIGHT : SVG_ICONS.CHEVRON_DOWN} size={14} />
+                    <h2>Sleeping Skills</h2>
+                    <span className="count-badge">{sleepingSkills.length}</span>
                 </div>
 
                 {!isSleepingSkillsCollapsed && (
@@ -347,7 +459,8 @@ const AreaPage = () => {
                                             className="skill-status-btn activate"
                                             onClick={(e) => handleToggleSkill(e, skill)}
                                         >
-                                            🚀 Activate
+                                            <NodeIcon iconUrl={SVG_ICONS.ROCKET} size={14} />
+                                            Activate
                                         </button>
                                     </div>
                                     {skill.metadata?.pinchState && (
@@ -388,7 +501,25 @@ const AreaPage = () => {
                                             onKeyDown={handleCreateSkill}
                                         />
                                     </div>
-                                    <div className="creation-actions">
+                                    <div className="creation-row">
+                                        <input
+                                            placeholder="Icon URL (e.g. notionicons.so)"
+                                            value={newSkillIconUrl}
+                                            onChange={e => setNewSkillIconUrl(e.target.value)}
+                                            className="skill-form-input"
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 14px',
+                                                background: 'var(--alpha-low)',
+                                                border: '1px solid var(--color-border)',
+                                                borderRadius: '8px',
+                                                color: 'var(--color-text)',
+                                                fontSize: '14px',
+                                                outline: 'none'
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="skill-creation-actions">
                                         <button className="confirm-btn" onClick={handleCreateSkill}>Save Skill</button>
                                         <button className="cancel-btn" onClick={() => setIsCreatingSkill(false)}>Cancel</button>
                                     </div>

@@ -23,6 +23,58 @@ body {
     /* Prevents mac rubber-banding which looks like a swipe */
 }
 
+/* --- THEMED SVG ICONS (NodeIcon) --- */
+.node-icon svg,
+.app-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.icon-container {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 8px;
+    padding: 4px;
+    transition: background-color 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-icon {
+    display: block;
+    transition: filter 0.3s ease;
+}
+
+.light .app-icon {
+    filter: brightness(0);
+    /* Force black for light mode */
+    opacity: 0.8;
+}
+
+.dark .app-icon {
+    filter: brightness(0) invert(1);
+    /* Force white for dark mode */
+}
+
+/* Liquid glass compatibility */
+.liquid-glass .icon-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .node-icon {
+    color: #444444;
+    /* Dark gray for light mode */
+}
+
+.dark .node-icon {
+    color: #ffffff;
+    /* Pure white for dark mode */
+}
+
+
 a {
     color: var(--color-primary);
     text-decoration: none;

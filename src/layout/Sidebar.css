@@ -410,3 +410,110 @@
     padding: 0 16px;
     opacity: 0.7;
 }
+
+
+/* Icon Editing Interface */
+.editable-icon-trigger {
+    position: relative;
+    cursor: pointer !important;
+    transition: transform 0.2s ease;
+}
+
+.editable-icon-trigger:hover {
+    transform: scale(1.1);
+}
+
+.icon-edit-popover {
+    position: absolute;
+    left: 40px;
+    top: -10px;
+    background: var(--color-bg-sidebar-translucent);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--sidebar-border);
+    padding: 16px;
+    border-radius: 16px;
+    z-index: 10000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: popoverFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.popover-header {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.popover-input {
+    background: var(--alpha-high);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.popover-input:focus {
+    border-color: var(--accent-focus);
+}
+
+.popover-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    background: var(--alpha-low);
+    border-radius: 8px;
+    border: 1px dashed var(--sidebar-border);
+}
+
+.popover-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.popover-actions button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s ease;
+}
+
+.popover-actions .confirm-btn {
+    background: var(--accent-focus);
+    color: white;
+}
+
+.popover-actions .cancel-btn {
+    background: var(--alpha-high);
+    color: var(--text-primary);
+}
+
+.popover-actions button:hover {
+    opacity: 0.9;
+}

@@ -27,6 +27,7 @@ import {
     TaskStatuses
 } from '../backbone-v2/index';
 import './SkillPage.css';
+import NodeIcon from '../components/NodeIcon';
 
 const SkillPage = () => {
     const { id } = useParams();
@@ -53,6 +54,7 @@ const SkillPage = () => {
     const [newObjectiveMVE, setNewObjectiveMVE] = useState('');
     const [newObjectiveWish, setNewObjectiveWish] = useState('');
     const [newObjectiveOutcome, setNewObjectiveOutcome] = useState('');
+    const [newObjectiveIconUrl, setNewObjectiveIconUrl] = useState('');
     const [inlineEditingWishId, setInlineEditingWishId] = useState(null);
     const [inlineEditingOutcomeId, setInlineEditingOutcomeId] = useState(null);
     const [tempWish, setTempWish] = useState('');
@@ -185,6 +187,7 @@ const SkillPage = () => {
                     mve,
                     wish: newObjectiveWish.trim(),
                     outcome: newObjectiveOutcome.trim(),
+                    iconUrl: newObjectiveIconUrl.trim(),
                     masterAccumulatedMetric: 0
                 }
             });
@@ -193,6 +196,7 @@ const SkillPage = () => {
             setNewObjectiveMVE('');
             setNewObjectiveWish('');
             setNewObjectiveOutcome('');
+            setNewObjectiveIconUrl('');
             setIsCreatingObjective(false);
             fetchData();
         } catch (error) {
@@ -207,7 +211,8 @@ const SkillPage = () => {
             accumulationType: obj.metadata?.accumulationType || 'minutes',
             mve: obj.metadata?.mve || '',
             wish: obj.metadata?.wish || '',
-            outcome: obj.metadata?.outcome || ''
+            outcome: obj.metadata?.outcome || '',
+            iconUrl: obj.metadata?.iconUrl || ''
         });
     };
 
@@ -1199,6 +1204,23 @@ const SkillPage = () => {
                                 onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, outcome: e.target.value })}
                             />
                         </div>
+                        <div className="edit-field full-width">
+                            <label>Icon URL (notionicons.so)</label>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <input
+                                    className="edit-input"
+                                    placeholder="https://notionicons.so/icon/..."
+                                    value={objectiveEditForm?.iconUrl}
+                                    style={{ flex: 1 }}
+                                    onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, iconUrl: e.target.value })}
+                                />
+                                {objectiveEditForm?.iconUrl && (
+                                    <div className="icon-preview" style={{ width: '32px', height: '32px', background: 'var(--alpha-low)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                                        <img src={objectiveEditForm.iconUrl} alt="preview" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <div className="edit-actions">
                         <div className="edit-left">
@@ -1223,7 +1245,7 @@ const SkillPage = () => {
                     <div className="objective-header" onClick={() => !isSleeping && toggleObjective(obj.id)}>
                         <div className="objective-header-left">
                             <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`}>
-                                {isSleeping ? '💤' : '‣'}
+                                {isSleeping ? '💤' : (obj.metadata?.iconUrl ? <NodeIcon iconUrl={obj.metadata.iconUrl} size={18} /> : '‣')}
                             </span>
                             <span className="objective-title-static">{obj.name}</span>
                             {!isSleeping && <span className="focus-pill">Active Experiment</span>}
@@ -1901,6 +1923,20 @@ const SkillPage = () => {
                                 onChange={e => setNewObjectiveOutcome(e.target.value)}
                                 className="form-input"
                             />
+                        </div>
+                        <div className="creation-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                            <input
+                                placeholder="Icon URL (e.g. notionicons.so)"
+                                value={newObjectiveIconUrl}
+                                onChange={e => setNewObjectiveIconUrl(e.target.value)}
+                                className="form-input"
+                                style={{ flex: 1 }}
+                            />
+                            {newObjectiveIconUrl && (
+                                <div className="icon-preview" style={{ width: '36px', height: '36px', background: 'var(--alpha-low)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                                    <img src={newObjectiveIconUrl} alt="preview" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                                </div>
+                            )}
                         </div>
                         <div className="creation-actions">
                             <button className="confirm-btn" onClick={() => handleCreateObjective(null)}>Launch Experiment</button>

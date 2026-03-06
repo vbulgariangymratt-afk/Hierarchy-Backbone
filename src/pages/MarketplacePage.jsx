@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { backbone, repository, NodeTypes } from '../backbone-v2/index';
 import CreateRewardModal from '../components/CreateRewardModal';
+import NodeIcon from '../components/NodeIcon';
 import './MarketplacePage.css';
+
+const SVG_ICONS = {
+    COIN: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8'/%3E%3Cpath d='M12 18V6'/%3E%3C/svg%3E",
+    REFILL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3Cpath d='M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16'/%3E%3Cpath d='M3 21v-5h5'/%3E%3C/svg%3E",
+    PLUS: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E"
+};
 
 const MarketplacePage = () => {
     const [balance, setBalance] = useState(0);
@@ -94,13 +101,13 @@ const MarketplacePage = () => {
                             className="create-reward-btn"
                             onClick={() => setIsCreateModalOpen(true)}
                         >
-                            <span className="plus-icon">+</span>
+                            <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
                             Create Reward
                         </button>
                     </div>
 
                     <div className="hryvnia-card">
-                        <span className="hryvnia-icon">🪙</span>
+                        <NodeIcon iconUrl={SVG_ICONS.COIN} size={24} />
                         <div className="hryvnia-details">
                             <span className="balance-label">Hryvnia Balance</span>
                             <span className="balance-value">{balance}</span>
@@ -127,7 +134,7 @@ const MarketplacePage = () => {
                                 </div>
                                 <div className="reward-footer">
                                     <div className="reward-cost">
-                                        <span className="cost-icon">🪙</span>
+                                        <NodeIcon iconUrl={SVG_ICONS.COIN} size={14} />
                                         <span className="cost-value">{reward.metadata?.hryvniaCost || 0}</span>
                                     </div>
                                     <button
@@ -145,7 +152,7 @@ const MarketplacePage = () => {
 
                 <div className="marketplace-footer">
                     <button className="refill-button" onClick={handleRefill}>
-                        <span className="refill-icon">♻️</span>
+                        <NodeIcon iconUrl={SVG_ICONS.REFILL} size={16} />
                         Refill Marketplace
                     </button>
                 </div>

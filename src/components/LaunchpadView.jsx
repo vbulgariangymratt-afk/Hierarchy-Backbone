@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LaunchpadView.css';
+import NodeIcon from './NodeIcon';
 
 /**
  * LaunchpadView - Presentational with Local Selection State
@@ -72,7 +73,12 @@ const LaunchpadView = ({
 
                             <div className="area-card-header">
                                 <div className="area-icon-container">
-                                    {area.icon}
+                                    <NodeIcon
+                                        iconUrl={area.metadata?.iconUrl}
+                                        emoji={area.icon}
+                                        defaultIcon="🌐"
+                                        size={24}
+                                    />
                                 </div>
                                 <div className="area-header-badges">
                                     {area.inMotion && (
