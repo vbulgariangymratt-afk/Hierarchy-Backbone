@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cloud Data Inspector</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #111;
+            color: #eee
+        }
+
+        pre {
+            background: #222;
+            padding: 10px;
+            overflow: auto
+        }
+    </style>
+</head>
+
+<body>
+    <h2>CLOUD DATA INSPECTION</h2>
+    <div id="status">Connecting...</div>
+    <pre id="output"></pre>
+    <script>
+        const supabase = window.supabase.createClient(
+            'https://eoaliivxbgcshnspfjic.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvYWxpaXZ4Ymdjc2huc3BmamljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5NzQxOTIsImV4cCI6MjA4MzU1MDE5Mn0.vRIYFq1iFyqUo98fKEwvajTjtNhoApEYlj6BG37ydww'
+        );
+
+        async function inspect() {
+            const out = document.getElementById('output');
+            const stat = document.getElementById('status');
+
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) {
+                    stat.innerHTML = "❌ Not logged in. Go to app settings and ensure you are logged in.";
+                    return;
+                }
+                stat.innerHTML = "✅ Logged in as " + session.user.email + ". Fetching data...";
+
+                // Fetch Row
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+
+                if (error) throw error;
+                if (!data) {
+                    out.innerText = "No data row found in 'user_data' table.";
+                    return;
+                }
+
+                const content = data.content;
+                const summary = {
+                    updated_at: data.updated_at,
+                    tasks_count: Object.keys(content.tasks || {}).length,
+                    habits_count: Object.keys(content.habits || {}).length,
+                    journal_count: Object.keys(content.journal || {}).length,
+                    wealth_count: Object.keys(content.wealthItems || {}).length,
+                    areas_count: Object.keys(content.areas || {}).length,
+                    task_sample: Object.values(content.tasks || {}).slice(0, 3).map(t => t.title)
+                };
+
+                out.innerText = JSON.stringify(summary, null, 2);
+                stat.innerHTML = "✅ Data Fetched. Check summary below.";
+
+                // Also check if there are other rows (backups?)
+                // Usually user_data is 1:1, but maybe there's a history table?
+                // Probably not accessible.
+
+            } catch (e) {
+                stat.innerHTML = "❌ Error: " + e.message;
+                console.error(e);
+            }
+        }
+        inspect();
+    </script>
+</body>
+
+</html>

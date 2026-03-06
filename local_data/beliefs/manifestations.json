@@ -1,0 +1,41 @@
+{
+  "15f31e6f-00c7-48a1-afdb-82e276be39f2": {
+    "id": "15f31e6f-00c7-48a1-afdb-82e276be39f2",
+    "method": "visualizing",
+    "status": "active",
+    "target": {
+      "rarity": 4,
+      "description": "Hearing the song 'Bohemian Rhapsody' in a public place"
+    },
+    "sessions": [
+      {
+        "notes": "",
+        "method": "visualizing",
+        "duration": 0,
+        "timestamp": "2026-01-26T01:37:33.032Z",
+        "vividness": 3,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "",
+        "method": "scripting",
+        "duration": 0,
+        "timestamp": "2026-01-26T02:01:22.468Z",
+        "vividness": 1,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 4
+      }
+    ],
+    "createdAt": "2026-01-26T01:36:44.816Z",
+    "frequency": 2,
+    "startDate": "2026-01-26T01:36:44.816Z",
+    "vividness": 2,
+    "importance": 5,
+    "resistance": 3,
+    "naturalness": 5,
+    "bridgeMarkers": []
+  }
+}

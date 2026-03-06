@@ -1,0 +1,1506 @@
+{
+  "02119c25-5af4-47fe-9026-986499d34017": {
+    "id": "02119c25-5af4-47fe-9026-986499d34017",
+    "name": "Screaming teacher asking me not to scream ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "duration": null,
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "startTime": null,
+    "scheduledDate": null,
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "06af79ef-a812-4991-8dff-27b7535ac113": {
+    "id": "06af79ef-a812-4991-8dff-27b7535ac113",
+    "name": "Fake mask, manipulating & lying ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "chatHistory": [
+      {
+        "id": 1,
+        "text": "I'm Warhead, your tactical language tutor. I'm here to help you master the \"Fake mask, manipulating & lying \" context. Tell me what you want to say in English, and I'll translate it into your target language.",
+        "sender": "ai"
+      }
+    ],
+    "stabilityScore": 0,
+    "chatLastUpdated": "2026-01-27",
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "08c0a6d4-4f71-41ea-86c2-215a1c4625f0": {
+    "id": "08c0a6d4-4f71-41ea-86c2-215a1c4625f0",
+    "name": "Brush your teeth twice",
+    "cover": "https://img.notionusercontent.com/ext/https%3A%2F%2Fi.pinimg.com%2F1200x%2F3e%2Fb3%2Fbe%2F3eb3be9a918220000c3eaff551773b88.jpg/size/w=2000?exp=1766851799&sig=hWeakLx0FwdE-a0Be6AJGzzb6XoPtCJx3zElGD2AZec&id=259c6318-b38c-8082-832f-ed5826f788ff&table=block&userId=1d3d872b-594c-8137-b9bc-0002239b61e1",
+    "order": 0,
+    "streak": 0,
+    "history": {
+      "2025-12-27": true,
+      "2026-01-06": true,
+      "2026-01-07": true,
+      "2026-01-13": true,
+      "2026-01-15": 1,
+      "2026-01-16": 1,
+      "2026-01-17": 1,
+      "2026-01-21": 2,
+      "2026-01-22": 2,
+      "2026-01-23": 1,
+      "2026-01-24": 2,
+      "2026-01-25": 1,
+      "2026-01-26": 2,
+      "2026-01-28": 1,
+      "2026-01-31": 1,
+      "2026-02-01": 2,
+      "2026-02-02": 2,
+      "2026-02-03": 2,
+      "2026-02-07": 1,
+      "2026-02-08": 1,
+      "2026-02-09": 1,
+      "2026-02-10": 1
+    },
+    "skillId": "48f9ef53-c02e-43e0-8335-0f15c23cf6dd",
+    "category": "baseline",
+    "duration": 30,
+    "skillIds": [
+      "999c0cc8-8ee0-4f87-b8b5-85558f8a91e2"
+    ],
+    "startTime": "06:15",
+    "coverLight": "https://i.pinimg.com/1200x/19/be/04/19be04515ed540d9c7cd5518597b52e0.jpg",
+    "scheduledDate": "2026-01-23",
+    "stabilityScore": 0,
+    "integrationLevel": 1,
+    "targetDailyCount": 2
+  },
+  "0ef31fae-1192-4349-8932-c3f0a05e33c2": {
+    "id": "0ef31fae-1192-4349-8932-c3f0a05e33c2",
+    "name": "Joseph Alai’s teachings ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "132d52b6-1e7c-4d91-8de5-8d1c216a90de": {
+    "id": "132d52b6-1e7c-4d91-8de5-8d1c216a90de",
+    "name": "Get enough sunlight for the day",
+    "cover": "https://i.pinimg.com/736x/0b/38/78/0b3878887370f9745365b760ef06b81b.jpg",
+    "order": 0,
+    "streak": 0,
+    "history": {
+      "2026-01-07": true,
+      "2026-01-08": true,
+      "2026-01-22": 1,
+      "2026-01-29": 1,
+      "2026-01-30": 1
+    },
+    "category": "sleeping",
+    "skillIds": [
+      "88b81987-7210-4114-8f1d-2547d4013136",
+      "48f9ef53-c02e-43e0-8335-0f15c23cf6dd"
+    ],
+    "coverLight": "https://i.pinimg.com/736x/91/17/09/91170978c9890de422bc0a43ad71d40d.jpg",
+    "stabilityScore": 3
+  },
+  "14c25e4c-158b-4e6c-b0d0-744495a3a23f": {
+    "id": "14c25e4c-158b-4e6c-b0d0-744495a3a23f",
+    "name": "Cris manifesting story",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "1838c69e-e7fd-42f1-8482-3433c76eaa88": {
+    "id": "1838c69e-e7fd-42f1-8482-3433c76eaa88",
+    "name": "Self development organization (Warhead’s hub)",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "1c60cee6-fefd-4500-a8da-0e5e0d326fe9": {
+    "id": "1c60cee6-fefd-4500-a8da-0e5e0d326fe9",
+    "name": "Always wanting to manifest but not succeeding ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "1ee6cb66-decb-4e27-9d9d-14122426f895": {
+    "id": "1ee6cb66-decb-4e27-9d9d-14122426f895",
+    "name": "Self development organization (Warhead’s hub)",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "1fb58902-71b9-4747-8fab-c5f82a470313": {
+    "id": "1fb58902-71b9-4747-8fab-c5f82a470313",
+    "name": "Always wanting to manifest but not succeeding ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "2d9b0b0e-e034-4e8e-a311-6e150a889618": {
+    "id": "2d9b0b0e-e034-4e8e-a311-6e150a889618",
+    "name": "Wash face twice a day",
+    "cover": "https://i.pinimg.com/736x/c1/8b/74/c18b74405d550c722f94fe7f4c440af8.jpg",
+    "order": 9,
+    "streak": 0,
+    "history": {
+      "2025-12-27": true,
+      "2026-01-08": true,
+      "2026-01-16": 1,
+      "2026-01-21": 2,
+      "2026-01-23": 1,
+      "2026-01-24": 1,
+      "2026-01-26": 1,
+      "2026-02-01": 2,
+      "2026-02-02": 2,
+      "2026-02-03": 2,
+      "2026-02-07": 1,
+      "2026-02-09": 1,
+      "2026-02-10": 1
+    },
+    "skillId": "48f9ef53-c02e-43e0-8335-0f15c23cf6dd",
+    "category": "integrating",
+    "duration": null,
+    "skillIds": [
+      "688c81af-1ef8-4a35-95bd-b0dc16954fe2"
+    ],
+    "startTime": null,
+    "coverLight": "https://i.pinimg.com/736x/2a/5d/d9/2a5dd910ddd28517d1fa960b5d0d3698.jpg",
+    "scheduledDate": null,
+    "stabilityScore": 5,
+    "targetDailyCount": 2
+  },
+  "32d38d14-1a16-4e3d-a135-00c0f661547d": {
+    "id": "32d38d14-1a16-4e3d-a135-00c0f661547d",
+    "name": "Joseph Alai’s teachings ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "36ddebc9-804e-4595-aa81-d1de7584d9a9": {
+    "id": "36ddebc9-804e-4595-aa81-d1de7584d9a9",
+    "name": "Dani's bath routine",
+    "cover": "https://img.notionusercontent.com/ext/https%3A%2F%2Fi.pinimg.com%2F736x%2Fdd%2F23%2Fce%2Fdd23ceb935bd9e7b7af8d6f7382da776.jpg/size/w=2000?exp=1766851818&sig=0dwS5UZUb61wRgEhZ5gTF0l7wvMSSjWNUN5oqW8dhjs&id=29dc6318-b38c-8054-b0f1-f9f47eef5274&table=block&userId=1d3d872b-594c-8137-b9bc-0002239b61e1",
+    "order": 5,
+    "streak": 0,
+    "history": {
+      "2025-12-27": true,
+      "2026-01-08": true,
+      "2026-01-21": 1,
+      "2026-01-25": 1,
+      "2026-01-26": 1,
+      "2026-02-03": 1,
+      "2026-02-10": 1
+    },
+    "skillId": "48f9ef53-c02e-43e0-8335-0f15c23cf6dd",
+    "category": "sleeping",
+    "skillIds": [
+      "688c81af-1ef8-4a35-95bd-b0dc16954fe2"
+    ],
+    "coverLight": "https://i.pinimg.com/736x/8d/2e/1c/8d2e1cf6b152bab37c7a69b43d8508b7.jpg",
+    "stabilityScore": 5
+  },
+  "390d42d9-8ce5-4877-85e2-2a640025540a": {
+    "id": "390d42d9-8ce5-4877-85e2-2a640025540a",
+    "name": "2-3 complete meals",
+    "cover": "https://img.notionusercontent.com/ext/https%3A%2F%2Fi.pinimg.com%2F736x%2F27%2F54%2F2f%2F27542f8a3ddb2d9cad6e63d81f93f223.jpg/size/w=2000?exp=1766851623&sig=GBh_I11DCMtkpIQPh1W_exhGe1GoC1cP1bw26JgpZxU&id=259c6318-b38c-80ff-b5f5-c7ff944ffb9b&table=block&userId=1d3d872b-594c-8137-b9bc-0002239b61e1",
+    "order": 7,
+    "streak": 0,
+    "history": {
+      "2026-01-07": true,
+      "2026-01-15": 2,
+      "2026-01-16": 1,
+      "2026-01-17": 2,
+      "2026-01-22": 1,
+      "2026-01-24": 2,
+      "2026-01-25": 1,
+      "2026-01-26": 2,
+      "2026-01-27": 2,
+      "2026-01-29": 3,
+      "2026-01-30": 2,
+      "2026-01-31": 3
+    },
+    "skillId": "6b31bb2e-6592-421e-95a0-093a67a4388f",
+    "category": "sleeping",
+    "skillIds": [
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ],
+    "coverLight": "https://i.pinimg.com/736x/78/36/12/783612c230f21bd52a2a459bde3ee822.jpg",
+    "stabilityScore": 2,
+    "targetDailyCount": 3
+  },
+  "3a91f232-f115-460c-a319-6232e0b1320c": {
+    "id": "3a91f232-f115-460c-a319-6232e0b1320c",
+    "name": "Compound workout to failure",
+    "cover": "https://i.pinimg.com/736x/2b/0b/1d/2b0b1d2e5cdd000ded2a833a48784bd0.jpg",
+    "order": 2,
+    "streak": 0,
+    "history": {
+      "2026-01-08": true,
+      "2026-01-16": 1,
+      "2026-01-17": 1,
+      "2026-01-22": 1,
+      "2026-01-23": 1,
+      "2026-01-24": 1,
+      "2026-01-25": 1,
+      "2026-01-31": 1,
+      "2026-02-01": 1,
+      "2026-02-03": 1,
+      "2026-02-07": 1,
+      "2026-02-09": 1,
+      "2026-02-10": 1
+    },
+    "skillId": "6b31bb2e-6592-421e-95a0-093a67a4388f",
+    "category": "integrating",
+    "duration": 30,
+    "skillIds": [
+      "6b31bb2e-6592-421e-95a0-093a67a4388f",
+      "0823efcc-2b5e-479f-a293-1af775f0aa63",
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ],
+    "startTime": "07:45",
+    "coverLight": "https://i.pinimg.com/736x/a3/22/05/a32205a45ad0d6c167aef37aadc1906a.jpg",
+    "scheduledDate": "2026-02-09",
+    "stabilityScore": 3,
+    "integrationLevel": 1
+  },
+  "3b89bdec-e199-48cd-9cd8-3b4496baba41": {
+    "id": "3b89bdec-e199-48cd-9cd8-3b4496baba41",
+    "name": "Frequent mistakes at work",
+    "cards": [
+      {
+        "id": "018f0712-0438-4b0a-a685-60e4b3823593",
+        "back": "mistakes",
+        "front": "ошибки",
+        "level": 2,
+        "example": "Каждый сотрудник может совершать **ошибки**, но главное – это учиться на них и не повторять в будущем.",
+        "interval": 14,
+        "createdAt": "2026-01-23T01:14:56.545Z",
+        "easeFactor": 2.8,
+        "nextReview": "2026-02-17T22:00:03.272Z",
+        "lastReviewed": "2026-02-03T22:00:03.272Z",
+        "exampleTranslation": "Every employee can make **mistakes**, but the main thing is to learn from them and not repeat them in the future."
+      }
+    ],
+    "notes": "",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ]
+  },
+  "3ec226ca-4035-4983-88cb-a0713b62246e": {
+    "id": "3ec226ca-4035-4983-88cb-a0713b62246e",
+    "name": "Margarito & Sebastián",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "3f0db765-4e6c-47ff-bc73-35955e2b6bef": {
+    "id": "3f0db765-4e6c-47ff-bc73-35955e2b6bef",
+    "name": "My daily routine & habits ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "3f1a923f-82a5-4838-9784-cf6dc05a2d29": {
+    "id": "3f1a923f-82a5-4838-9784-cf6dc05a2d29",
+    "name": "Symptoms and struggles in my personal life ",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "3f5e5e9a-ae48-4354-bb8e-f4549bf88e62": {
+    "id": "3f5e5e9a-ae48-4354-bb8e-f4549bf88e62",
+    "name": "SATS rewiring session",
+    "cover": "https://i.pinimg.com/736x/0e/cf/8a/0ecf8a4908b97e6c4ea7a12e9e9fad93.jpg",
+    "order": 4,
+    "streak": 0,
+    "history": {
+      "2026-01-08": true,
+      "2026-01-21": 1,
+      "2026-01-22": 1,
+      "2026-01-24": 1,
+      "2026-01-26": 1,
+      "2026-01-27": 1,
+      "2026-01-28": 1,
+      "2026-01-30": 1,
+      "2026-01-31": 1,
+      "2026-02-01": 1,
+      "2026-02-02": 1,
+      "2026-02-06": 1,
+      "2026-02-08": 1,
+      "2026-02-09": 1,
+      "2026-02-10": 1
+    },
+    "skillId": "c2927fd3-7c9c-42b6-ab7d-d2ad013cfa27",
+    "category": "integrating",
+    "duration": 30,
+    "startTime": "15:15",
+    "coverLight": "https://i.pinimg.com/736x/a8/62/0b/a8620bc385dffb2ad810948971b0e90d.jpg",
+    "scheduledDate": "2026-01-24",
+    "stabilityScore": 7,
+    "integrationLevel": 1
+  },
+  "44bbe532-c0c1-498e-9726-d58f4c06e9ca": {
+    "id": "44bbe532-c0c1-498e-9726-d58f4c06e9ca",
+    "name": "Superficial motivations ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "49a59664-bb86-49a3-a656-07f2a81f66c5": {
+    "id": "49a59664-bb86-49a3-a656-07f2a81f66c5",
+    "name": "Manifesting experiment",
+    "order": 8,
+    "streak": 0,
+    "history": {},
+    "category": "sleeping",
+    "skillIds": [
+      "35ccd67a-6d93-407b-8efe-c5adf699924c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "4bc4e2e8-32f4-413d-b958-57aad24ce1df": {
+    "id": "4bc4e2e8-32f4-413d-b958-57aad24ce1df",
+    "name": "Low self esteemed fat teacher ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "515cb22a-3747-4a31-8568-5cc03d51be37": {
+    "id": "515cb22a-3747-4a31-8568-5cc03d51be37",
+    "name": "Fake mask, manipulating & lying ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "54ec15fa-d454-4ce2-94ce-53dde2d06336": {
+    "id": "54ec15fa-d454-4ce2-94ce-53dde2d06336",
+    "name": "Avoid sugar, alcohol and processed foods",
+    "streak": 0,
+    "history": {
+      "2026-01-07": true,
+      "2026-01-13": true,
+      "2026-01-24": 1,
+      "2026-01-25": 1,
+      "2026-01-27": 1
+    },
+    "category": "sleeping",
+    "skillIds": [
+      "0823efcc-2b5e-479f-a293-1af775f0aa63",
+      "48f9ef53-c02e-43e0-8335-0f15c23cf6dd",
+      "6b31bb2e-6592-421e-95a0-093a67a4388f",
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ],
+    "stabilityScore": 3
+  },
+  "55378704-e38d-4aef-a4ef-22c75b9c9371": {
+    "id": "55378704-e38d-4aef-a4ef-22c75b9c9371",
+    "name": "Always wanting to manifest but not succeeding ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "5589710b-d905-40aa-b26f-71c933374671": {
+    "id": "5589710b-d905-40aa-b26f-71c933374671",
+    "name": "Dani & compatibility",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "5654b671-a36c-4fde-8c81-12b4714cd5d2": {
+    "id": "5654b671-a36c-4fde-8c81-12b4714cd5d2",
+    "name": "Margarito & Sebastián",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "59026013-af86-43d8-b0cf-3dfd2d8a966e": {
+    "id": "59026013-af86-43d8-b0cf-3dfd2d8a966e",
+    "name": "Always wanting to manifest but not succeeding ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "5d0ca133-68e8-405c-8c20-26b2066df968": {
+    "id": "5d0ca133-68e8-405c-8c20-26b2066df968",
+    "name": "Cris manifesting story",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "5e9fde1b-2201-43d4-b401-42efec4ed27e": {
+    "id": "5e9fde1b-2201-43d4-b401-42efec4ed27e",
+    "name": "Fake mask, manipulating & lying ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "5fe817a7-b227-4b83-8d0b-135c8b82f452": {
+    "id": "5fe817a7-b227-4b83-8d0b-135c8b82f452",
+    "name": "Dead hang spinal decompression",
+    "streak": 0,
+    "history": {},
+    "category": "sleeping",
+    "duration": 30,
+    "skillIds": [
+      "0823efcc-2b5e-479f-a293-1af775f0aa63"
+    ],
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-23"
+  },
+  "62cf50c0-2fd3-4efd-8d3b-d13f73f51c41": {
+    "id": "62cf50c0-2fd3-4efd-8d3b-d13f73f51c41",
+    "name": "Joseph Alai’s teachings ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "641fca9f-56d5-433b-8b06-d8fcef110af8": {
+    "id": "641fca9f-56d5-433b-8b06-d8fcef110af8",
+    "name": "Dani & compatibility",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "6887d3a0-dfce-449e-a588-2f170aaa39ed": {
+    "id": "6887d3a0-dfce-449e-a588-2f170aaa39ed",
+    "name": "Dani & compatibility",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "6aadb48b-ccf8-41c0-be36-bbc58f69115f": {
+    "id": "6aadb48b-ccf8-41c0-be36-bbc58f69115f",
+    "name": "Superficial motivations ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "6afd786e-379e-4cd7-a615-e88af2755b5f": {
+    "id": "6afd786e-379e-4cd7-a615-e88af2755b5f",
+    "name": "Take your meds",
+    "cover": "https://i.pinimg.com/736x/17/8e/54/178e5459ee1a73d73b115bfaca4712bb.jpg",
+    "order": 1,
+    "streak": 0,
+    "history": {
+      "2026-01-07": true,
+      "2026-01-08": true,
+      "2026-01-13": true,
+      "2026-01-15": 2,
+      "2026-01-16": 2,
+      "2026-01-17": 2,
+      "2026-01-21": 2,
+      "2026-01-22": 2,
+      "2026-01-23": 1,
+      "2026-01-24": 2,
+      "2026-01-25": 2,
+      "2026-01-26": 2,
+      "2026-01-27": 2,
+      "2026-01-29": 1,
+      "2026-01-30": 1,
+      "2026-01-31": 2,
+      "2026-02-01": 2,
+      "2026-02-02": 2,
+      "2026-02-03": 2,
+      "2026-02-06": 1,
+      "2026-02-07": 2,
+      "2026-02-08": 2,
+      "2026-02-09": 2,
+      "2026-02-10": 2
+    },
+    "skillId": "88b81987-7210-4114-8f1d-2547d4013136",
+    "category": "baseline",
+    "duration": 30,
+    "skillIds": [
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ],
+    "startTime": "06:15",
+    "coverLight": "https://i.pinimg.com/736x/e2/cd/37/e2cd37dd40e53fdfa4d17d271e70200b.jpg",
+    "scheduledDate": "2026-01-23",
+    "stabilityScore": 8,
+    "integrationLevel": 1,
+    "targetDailyCount": 2
+  },
+  "6d380b80-29cc-4534-bc14-47ced3928abb": {
+    "id": "6d380b80-29cc-4534-bc14-47ced3928abb",
+    "name": "Language learning routine ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "71454894-13fc-4810-a399-86f0a3399e3f": {
+    "id": "71454894-13fc-4810-a399-86f0a3399e3f",
+    "name": "Screaming teacher asking me not to scream ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "716d4c69-81e2-467c-a181-af57dec24336": {
+    "id": "716d4c69-81e2-467c-a181-af57dec24336",
+    "name": "Joseph Alai’s teachings ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "73472d0f-6bf6-4275-922a-9f20b4f12cd4": {
+    "id": "73472d0f-6bf6-4275-922a-9f20b4f12cd4",
+    "name": "Symptoms and struggles in my personal life ",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "74d0629b-af70-4dfe-aa1b-859e209db42b": {
+    "id": "74d0629b-af70-4dfe-aa1b-859e209db42b",
+    "name": "Low self esteemed fat teacher ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "76d74a08-589d-4e66-ba5a-de3178c88ff7": {
+    "id": "76d74a08-589d-4e66-ba5a-de3178c88ff7",
+    "name": "Avoid your phone until 10am",
+    "cover": "https://i.pinimg.com/736x/a9/13/f8/a913f8537067b6daac88ecf0c80e6ea3.jpg",
+    "order": 6,
+    "streak": 0,
+    "history": {
+      "2025-12-27": true,
+      "2025-12-28": true,
+      "2026-01-08": true,
+      "2026-01-15": 1,
+      "2026-01-16": 1,
+      "2026-01-22": 1,
+      "2026-01-23": 1,
+      "2026-01-24": 1,
+      "2026-01-25": 1,
+      "2026-01-26": 1,
+      "2026-01-27": 1
+    },
+    "skillId": "88b81987-7210-4114-8f1d-2547d4013136",
+    "category": "sleeping",
+    "duration": 30,
+    "skillIds": [
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ],
+    "startTime": "06:15",
+    "scheduledDate": "2026-01-23",
+    "stabilityScore": 6
+  },
+  "7cf4212a-7bc2-4370-8dff-732967035b47": {
+    "id": "7cf4212a-7bc2-4370-8dff-732967035b47",
+    "name": "Joseph Alai’s teachings ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "7f87952b-190b-4d9a-8c25-bf2b4e8fb848": {
+    "id": "7f87952b-190b-4d9a-8c25-bf2b4e8fb848",
+    "name": "Symptoms and struggles in my personal life ",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "7fb073d6-8277-4699-85fe-99f72513f13e": {
+    "id": "7fb073d6-8277-4699-85fe-99f72513f13e",
+    "name": "Superficial motivations ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "817ad481-13d3-4f29-b92b-e7aeae3caadc": {
+    "id": "817ad481-13d3-4f29-b92b-e7aeae3caadc",
+    "name": "My daily routine & habits ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "88949456-3ba6-478e-b6f6-42e37227da83": {
+    "id": "88949456-3ba6-478e-b6f6-42e37227da83",
+    "name": "Screaming teacher asking me not to scream ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "913b7ec2-fc26-48b1-8b7c-cacf23b56c4d": {
+    "id": "913b7ec2-fc26-48b1-8b7c-cacf23b56c4d",
+    "name": "ewr",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "87f05ff3-bfbe-4079-9dea-336e0aef1600"
+    ]
+  },
+  "9adefd09-2eb3-45b6-b3e4-57c3120217f4": {
+    "id": "9adefd09-2eb3-45b6-b3e4-57c3120217f4",
+    "name": "Cris manifesting story",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "9cdb7930-fa5a-4435-a04b-f8d725dc7824": {
+    "id": "9cdb7930-fa5a-4435-a04b-f8d725dc7824",
+    "name": "Symptoms and struggles in my personal life ",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "9d35d216-b057-48fb-b21f-7af92d2ac493": {
+    "id": "9d35d216-b057-48fb-b21f-7af92d2ac493",
+    "name": "Language learning routine ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "9d5efbcf-7997-4163-8095-3e4e51dd5091": {
+    "id": "9d5efbcf-7997-4163-8095-3e4e51dd5091",
+    "name": "Hip anterior tilt",
+    "streak": 0,
+    "history": {},
+    "category": "sleeping",
+    "skillIds": [
+      "0823efcc-2b5e-479f-a293-1af775f0aa63"
+    ]
+  },
+  "9e4a92b6-515a-4925-830c-67c646b41df2": {
+    "id": "9e4a92b6-515a-4925-830c-67c646b41df2",
+    "name": "Maximum intensity sprinting",
+    "streak": 0,
+    "history": {},
+    "category": "sleeping",
+    "skillIds": [
+      "0823efcc-2b5e-479f-a293-1af775f0aa63",
+      "6b31bb2e-6592-421e-95a0-093a67a4388f",
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ]
+  },
+  "a01377c4-f1ec-4baf-8190-dece5e568a49": {
+    "id": "a01377c4-f1ec-4baf-8190-dece5e568a49",
+    "name": "Drink 1 yeti of water",
+    "cover": "https://img.notionusercontent.com/ext/https%3A%2F%2Fi.pinimg.com%2F1200x%2Fbf%2Fc0%2F2c%2Fbfc02c7997ed36d691903e723d8bafb8.jpg/size/w=2000?exp=1766851682&sig=5eJVnWB04NXviCu9nhqv_U1uH6LYiLxSOXsJuP2WMqU&id=259c6318-b38c-80e7-bf72-cd5d86163384&table=block&userId=1d3d872b-594c-8137-b9bc-0002239b61e1",
+    "order": 1,
+    "streak": 0,
+    "history": {
+      "2025-12-27": true,
+      "2026-01-08": true,
+      "2026-01-13": true,
+      "2026-01-15": 1,
+      "2026-01-16": 1,
+      "2026-01-17": 1,
+      "2026-01-21": 1,
+      "2026-01-22": 1,
+      "2026-01-23": 1,
+      "2026-01-24": 1,
+      "2026-01-25": 1,
+      "2026-01-28": 1,
+      "2026-01-29": 1,
+      "2026-01-31": 1,
+      "2026-02-08": 1
+    },
+    "skillId": "48f9ef53-c02e-43e0-8335-0f15c23cf6dd",
+    "category": "sleeping",
+    "skillIds": [
+      "88b81987-7210-4114-8f1d-2547d4013136",
+      "a628e06f-a58c-461b-b6e3-a6ea7853a62e",
+      "668c81af-1ef8-4a35-95bd-b0dc16954fe2",
+      "6b31bb2e-6592-421e-95a0-093a67a4388f"
+    ],
+    "coverLight": "https://i.pinimg.com/736x/65/c8/37/65c8375fac7c54ab14732975fb553f74.jpg",
+    "stabilityScore": 3,
+    "integrationLevel": 1
+  },
+  "a0ee9297-4e4f-49e4-bb46-0a21c18acb3e": {
+    "id": "a0ee9297-4e4f-49e4-bb46-0a21c18acb3e",
+    "name": "Margarito & Sebastián",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "a16d8dff-9f81-49cd-88f2-db3be23d3503": {
+    "id": "a16d8dff-9f81-49cd-88f2-db3be23d3503",
+    "name": "My daily routine & habits ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "a24f6249-14a6-48c6-9c63-20597546cf8e": {
+    "id": "a24f6249-14a6-48c6-9c63-20597546cf8e",
+    "name": "Screaming teacher asking me not to scream ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "a30e2be1-0df2-4040-b395-ca49246ffafd": {
+    "id": "a30e2be1-0df2-4040-b395-ca49246ffafd",
+    "name": "Screaming teacher asking me not to scream ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "a3b5355b-840d-40bb-ac20-25f534cfefd0": {
+    "id": "a3b5355b-840d-40bb-ac20-25f534cfefd0",
+    "name": "Always wanting to manifest but not succeeding ",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "a4e51575-ef6d-4603-ac41-f15ceb233c5f": {
+    "id": "a4e51575-ef6d-4603-ac41-f15ceb233c5f",
+    "name": "Low self esteemed fat teacher ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "a88eb9d0-e06f-45ce-bc62-1dab51e03ae6": {
+    "id": "a88eb9d0-e06f-45ce-bc62-1dab51e03ae6",
+    "name": "Frequent mistakes at work",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "chatHistory": [
+      {
+        "id": 1,
+        "text": "I'm Warhead, your tactical language tutor. I'm here to help you master the \"Frequent mistakes at work\" context. Tell me what you want to say in English, and I'll translate it into your target language.",
+        "sender": "ai"
+      }
+    ],
+    "chatLastUpdated": "2026-01-23"
+  },
+  "a8aea746-48d4-4214-a933-249c2c204316": {
+    "id": "a8aea746-48d4-4214-a933-249c2c204316",
+    "name": "Dani & compatibility",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "a8cfa24c-9c60-4ff9-90cc-6ea406dc3329": {
+    "id": "a8cfa24c-9c60-4ff9-90cc-6ea406dc3329",
+    "name": "Frequent mistakes at work",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ]
+  },
+  "a98c25d4-3cca-494e-9da0-b7aabeae9ac7": {
+    "id": "a98c25d4-3cca-494e-9da0-b7aabeae9ac7",
+    "name": "Frequent mistakes at work",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "chatHistory": [
+      {
+        "id": 1,
+        "text": "¡Hola! I'm Warhead. I'm here to help you with the \"Frequent mistakes at work\" context. Tell me what you want to say in English, and I'll give you a natural way to say it in your target language.",
+        "sender": "ai"
+      },
+      {
+        "id": 1769133674926,
+        "text": "How do you say \"How are you?\" in Emirati Arabic?",
+        "sender": "user"
+      },
+      {
+        "id": 1769133677835,
+        "text": "This is a common, informal greeting used widely in the Emirates. It's suitable for most everyday interactions.",
+        "phrase": "شلونك؟",
+        "sender": "ai",
+        "example": "صباح الخير يا محمد، **شلونك** اليوم؟",
+        "translation": "How are you?",
+        "audioOverride": "Shlonak?",
+        "isFlashcardOption": true,
+        "exampleTranslation": "Good morning, Mohammed, **how are you** today?"
+      },
+      {
+        "id": 1769133772942,
+        "text": "How do you say 'How are you?' to a woman in Emirati Arabic?\"",
+        "sender": "user"
+      },
+      {
+        "id": 1769133777762,
+        "text": "This is a standard, informal greeting used specifically when addressing a woman in Emirati Arabic. The 'ج' (jīm) at the end replaces the standard Arabic 'ك' (kāf) for the feminine 'you', pronounced as a 'ch' sound.",
+        "phrase": "شحالج؟",
+        "sender": "ai",
+        "example": "يا سلمى، **شحالج؟** عساج بخير اليوم؟",
+        "translation": "How are you?",
+        "audioOverride": "Sh-haal-ich?",
+        "isFlashcardOption": true,
+        "exampleTranslation": "Salma, **how are you?** Hope you are well today?"
+      },
+      {
+        "id": 1769134645530,
+        "text": "How are you? (feminine)\".",
+        "sender": "user"
+      },
+      {
+        "id": 1769134656272,
+        "text": "This phrase is used to directly inquire about the well-being of a female in Emirati Arabic.",
+        "phrase": "كيف حالچ؟",
+        "sender": "ai",
+        "example": "فاطمة، لم أراچ منذ فترة، **كيف حالچ؟** أتمنى أن كل شيء يسير على ما يرام.",
+        "translation": "How are you? (feminine)",
+        "audioOverride": "كيف حالچ؟",
+        "isFlashcardOption": true,
+        "exampleTranslation": "Fatima, I haven't seen you in a while, **how are you?** I hope everything is going well."
+      }
+    ],
+    "chatLastUpdated": "2026-01-22"
+  },
+  "b3db8ead-7a16-481b-a9fa-1af0f9cd2f84": {
+    "id": "b3db8ead-7a16-481b-a9fa-1af0f9cd2f84",
+    "name": "Usana & supplements",
+    "cover": "https://i.pinimg.com/736x/2e/77/b7/2e77b73d4bea7f74e83190590b1dc1e8.jpg",
+    "order": 7,
+    "streak": 0,
+    "history": {
+      "2026-01-07": true,
+      "2026-01-08": true,
+      "2026-01-13": true,
+      "2026-01-15": 1,
+      "2026-01-16": 1,
+      "2026-01-21": 1,
+      "2026-01-22": 1,
+      "2026-01-23": 1,
+      "2026-01-24": 1,
+      "2026-01-25": 1,
+      "2026-01-26": 1,
+      "2026-01-27": 1,
+      "2026-01-28": 1,
+      "2026-01-29": 1,
+      "2026-01-30": 1,
+      "2026-01-31": 1,
+      "2026-02-01": 1
+    },
+    "category": "integrating",
+    "skillIds": [
+      "0823efcc-2b5e-479f-a293-1af775f0aa63",
+      "48f9ef53-c02e-43e0-8335-0f15c23cf6dd",
+      "6b31bb2e-6592-421e-95a0-093a67a4388f",
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ],
+    "coverLight": "https://i.pinimg.com/736x/eb/6a/86/eb6a860a795802cc78620555db0dacd6.jpg",
+    "stabilityScore": 3,
+    "integrationLevel": 1
+  },
+  "b66ead4c-8acf-48a4-9687-2c1e3d8134f0": {
+    "id": "b66ead4c-8acf-48a4-9687-2c1e3d8134f0",
+    "name": "Language learning routine ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "b82f2982-e2ed-46df-98b5-462aef648448": {
+    "id": "b82f2982-e2ed-46df-98b5-462aef648448",
+    "name": "Cris manifesting story",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "c088b792-3828-4a71-bd8f-450dd7df9835": {
+    "id": "c088b792-3828-4a71-bd8f-450dd7df9835",
+    "name": "Symptoms and struggles in my personal life ",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "c2577e47-06f9-4704-b495-b89d35cc0566": {
+    "id": "c2577e47-06f9-4704-b495-b89d35cc0566",
+    "name": "Low self esteemed fat teacher ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "c353763e-335a-49ae-b205-bf3bbcebf479": {
+    "id": "c353763e-335a-49ae-b205-bf3bbcebf479",
+    "name": "Superficial motivations ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "c4eaa33a-f9d2-473e-a00b-27d198774839": {
+    "id": "c4eaa33a-f9d2-473e-a00b-27d198774839",
+    "name": "ewr",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ]
+  },
+  "c67e1168-0a8d-482b-bb26-9f7c40024a8a": {
+    "id": "c67e1168-0a8d-482b-bb26-9f7c40024a8a",
+    "name": "Low self esteemed fat teacher ",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "e3430e22-ce18-45e1-a4f7-7bedf23f5b76"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "c6a50895-0564-4c2b-ac02-9f2c48bf1621": {
+    "id": "c6a50895-0564-4c2b-ac02-9f2c48bf1621",
+    "name": "Dani & compatibility",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "ce9e86e7-24ed-4217-995c-89aee612f10f": {
+    "id": "ce9e86e7-24ed-4217-995c-89aee612f10f",
+    "name": "Margarito & Sebastián",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "cfcae637-9a17-47f7-8840-abbf3383a6ef": {
+    "id": "cfcae637-9a17-47f7-8840-abbf3383a6ef",
+    "name": "Frequent mistakes at work",
+    "cards": [
+      {
+        "id": "93de2da6-a6bd-4d67-949f-88a1998aabf7",
+        "back": "major depressive disorder",
+        "front": "великий депресивний розлад",
+        "level": 0,
+        "example": "Діагноз великого депресивного розладу вимагає професійної допомоги.",
+        "interval": 0,
+        "createdAt": "2026-01-23T22:02:45.152Z",
+        "easeFactor": 2.5,
+        "nextReview": "2026-01-23T22:02:45.152Z",
+        "audioOverride": "",
+        "exampleTranslation": "Diagnosis of major depressive disorder requires professional help."
+      },
+      {
+        "id": "ddd92035-8d36-49e2-9e53-c46695aadd4c",
+        "back": "attention deficit & hyperactivity disorder",
+        "front": "синдром дефіциту уваги та гіперактивності",
+        "level": 0,
+        "example": "Сучасні дослідження показують, що синдром дефіциту уваги та гіперактивності може впливати на дорослих.",
+        "interval": 0,
+        "createdAt": "2026-01-23T22:02:14.675Z",
+        "easeFactor": 2.5,
+        "nextReview": "2026-01-23T22:02:14.675Z",
+        "audioOverride": "",
+        "exampleTranslation": "Modern research indicates that attention deficit & hyperactivity disorder can affect adults."
+      }
+    ],
+    "notes": "",
+    "streak": 0,
+    "history": {},
+    "category": "Adhd & depression",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "chatHistory": [
+      {
+        "id": 1,
+        "text": "I'm Warhead, your tactical language tutor. I'm here to help you master the \"Frequent mistakes at work\" context. Tell me what you want to say in English, and I'll translate it into your target language.",
+        "sender": "ai"
+      }
+    ],
+    "stabilityScore": 4,
+    "chatLastUpdated": "2026-01-23"
+  },
+  "d461a0d7-8c4d-45cd-83fb-b274b6d076b7": {
+    "id": "d461a0d7-8c4d-45cd-83fb-b274b6d076b7",
+    "name": "Self development organization (Warhead’s hub)",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "e5ea67d8-0403-4592-b17e-52d2f10b162d"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "df1b1618-bae0-47ed-9046-c715a1a9f132": {
+    "id": "df1b1618-bae0-47ed-9046-c715a1a9f132",
+    "name": "In bed at 10pm",
+    "cover": "https://img.notionusercontent.com/ext/https%3A%2F%2Fi.pinimg.com%2F736x%2Fb0%2Fce%2Fb3%2Fb0ceb3245259df5276902daae37d3c41.jpg/size/w=2000?exp=1766851702&sig=KgFp7dZYyCCFTxH7w-0QYu8v5fF0J34UtsSRJD-HVio&id=259c6318-b38c-80b4-a17a-c941b005ddfc&table=block&userId=1d3d872b-594c-8137-b9bc-0002239b61e1",
+    "order": 3,
+    "streak": 0,
+    "history": {
+      "2026-01-06": true,
+      "2026-01-07": true,
+      "2026-01-08": true,
+      "2026-01-15": 1,
+      "2026-01-16": 1,
+      "2026-01-17": 1,
+      "2026-01-24": 1,
+      "2026-02-02": 1,
+      "2026-02-06": 1,
+      "2026-02-08": 1,
+      "2026-02-09": 1
+    },
+    "skillId": "48f9ef53-c02e-43e0-8335-0f15c23cf6dd",
+    "category": "integrating",
+    "duration": 30,
+    "skillIds": [
+      "88b81987-7210-4114-8f1d-2547d4013136"
+    ],
+    "startTime": "22:00",
+    "coverLight": "https://i.pinimg.com/1200x/5b/72/36/5b723610c2194c73ea08ce6ba9b3acf8.jpg",
+    "scheduledDate": "2026-01-23",
+    "stabilityScore": 6
+  },
+  "ea2df197-9737-401b-aba9-9f60fb254b45": {
+    "id": "ea2df197-9737-401b-aba9-9f60fb254b45",
+    "name": "My daily routine & habits ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "ee027025-a581-49a2-8c99-3acd0c3a785b": {
+    "id": "ee027025-a581-49a2-8c99-3acd0c3a785b",
+    "name": "Fake mask, manipulating & lying ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "ee042508-1901-47b8-9c99-3df6b2fb3286": {
+    "id": "ee042508-1901-47b8-9c99-3df6b2fb3286",
+    "name": "Language learning routine ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "f0b49703-8e0d-4956-b049-67f007736a77": {
+    "id": "f0b49703-8e0d-4956-b049-67f007736a77",
+    "name": "Superficial motivations ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "f0ecb60e-b2f0-4513-b08c-4006ae68398b": {
+    "id": "f0ecb60e-b2f0-4513-b08c-4006ae68398b",
+    "name": "Margarito & Sebastián",
+    "streak": 0,
+    "history": {},
+    "category": "Stories from school",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "f576fd58-cbca-4ccf-9010-2069707d51cb": {
+    "id": "f576fd58-cbca-4ccf-9010-2069707d51cb",
+    "name": "My daily routine & habits ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "7d89d177-37ae-4f2e-84c9-b02283de13cc"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "f798da58-cfe7-45e3-979b-5462d5cc17fe": {
+    "id": "f798da58-cfe7-45e3-979b-5462d5cc17fe",
+    "name": "Self development organization (Warhead’s hub)",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "f8fcb3e1-12b3-4e1b-a1e6-76f85fd51a14": {
+    "id": "f8fcb3e1-12b3-4e1b-a1e6-76f85fd51a14",
+    "name": "Cris manifesting story",
+    "streak": 0,
+    "history": {},
+    "category": "Manifesting & spiritual",
+    "skillIds": [
+      "bf38b618-2d38-499a-8687-542c12a15340"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "f97c8e48-8a0c-4c3b-82be-760340e4b18d": {
+    "id": "f97c8e48-8a0c-4c3b-82be-760340e4b18d",
+    "name": "Fake mask, manipulating & lying ",
+    "streak": 0,
+    "history": {},
+    "category": "ASPD & Sociopathy",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "fa6b0599-3b49-4a62-b997-fd1d160610ef": {
+    "id": "fa6b0599-3b49-4a62-b997-fd1d160610ef",
+    "name": "Self development organization (Warhead’s hub)",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  },
+  "fa6da1fe-313a-423d-8060-b6f2019f4caa": {
+    "id": "fa6da1fe-313a-423d-8060-b6f2019f4caa",
+    "name": "Language learning routine ",
+    "streak": 0,
+    "history": {},
+    "category": "Regular life",
+    "skillIds": [
+      "61a2b8c8-0b92-4443-9cbf-4b90e5d37a5c"
+    ],
+    "stabilityScore": 0,
+    "integrationLevel": 0,
+    "targetDailyCount": 1
+  }
+}

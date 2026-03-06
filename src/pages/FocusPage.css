@@ -1,0 +1,641 @@
+.focus-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--color-bg-main);
+    color: var(--color-text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 60px 40px;
+    z-index: 9999;
+}
+
+.focus-header {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+.focus-skill-label {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-secondary);
+}
+
+.focus-exit-btn {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+    z-index: 100;
+}
+
+.focus-exit-btn:hover {
+    opacity: 1;
+}
+
+.focus-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 600px;
+}
+
+.focus-action-card {
+    margin-bottom: 24px;
+    text-align: center;
+    position: relative;
+    padding: 20px;
+    border-radius: 24px;
+    transition: box-shadow 0.4s ease-out;
+}
+
+.focus-action-card.glow {
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
+    /* Soft blue glow */
+}
+
+/* Optional emerald variation if preferred, using the same variable system */
+.focus-action-card.glow-emerald {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.15);
+}
+
+.focus-task-name {
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--color-text-main);
+}
+
+.focus-acknowledgment {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.05em;
+    pointer-events: none;
+}
+
+.focus-prompt {
+    text-align: center;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.prompt-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.05em;
+}
+
+.prompt-text {
+    font-size: 15px;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.focus-footer {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 40px;
+}
+
+.focus-toggle-container {
+    width: 120px;
+    height: 48px;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    padding: 3px;
+    background: var(--alpha-med);
+    border-radius: 100px;
+    border: 1px solid var(--color-border);
+    transition: opacity 0.3s ease;
+}
+
+.focus-toggle-container.disabled {
+    opacity: 0.1 !important;
+    pointer-events: none;
+}
+
+.focus-toggle-track {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border-radius: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.focus-toggle-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: rgba(16, 185, 129, 0.15);
+    width: 0%;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.focus-toggle-knob {
+    width: 42px;
+    height: 42px;
+    background: var(--color-text-main);
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+}
+
+.focus-toggle-label {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    z-index: 1;
+    text-transform: uppercase;
+    opacity: 1;
+}
+
+.focus-toggle-container.completed .focus-toggle-label {
+    color: #10b981;
+    opacity: 0.9;
+}
+
+/* Session Controls */
+.focus-session-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-top: 40px;
+}
+
+.focus-timer-display {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    opacity: 0.8;
+    letter-spacing: 0.1em;
+}
+
+.focus-timer-display.active {
+    opacity: 1;
+    color: var(--color-text-main);
+}
+
+.focus-play-pause-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--alpha-med);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.focus-play-pause-btn:hover {
+    background: var(--alpha-high);
+    transform: scale(1.05);
+}
+
+.focus-play-pause-btn.active {
+    background: var(--color-text-main);
+    color: var(--color-bg-main);
+}
+
+/* Modal / Bottom Sheet */
+.focus-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--alpha-high);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.focus-modal-content {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.focus-modal-content h3 {
+    margin-bottom: 32px;
+    font-size: 20px;
+    color: var(--color-text-main);
+}
+
+.focus-modal-group {
+    margin-bottom: 32px;
+}
+
+.focus-modal-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 16px;
+    letter-spacing: 0.1em;
+}
+
+.focus-scale-picker {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.scale-btn {
+    flex: 1;
+    height: 48px;
+    background: var(--alpha-med);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.scale-btn:hover {
+    background: var(--alpha-high);
+}
+
+.scale-btn.selected {
+    background: var(--color-text-main);
+    color: var(--color-bg-main);
+    border-color: var(--color-text-main);
+}
+
+.modal-submit-btn {
+    width: 100%;
+    height: 56px;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-submit-btn:hover {
+    background: var(--color-primary-hover);
+}
+
+.modal-submit-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Loading & Empty states */
+.focus-container.loading,
+.focus-container.empty {
+    justify-content: center;
+}
+
+.focus-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.focus-empty-state {
+    text-align: center;
+    flex-direction: column;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.focus-empty-state h2 {
+    font-size: 32px;
+    letter-spacing: -0.02em;
+}
+
+.focus-empty-state p {
+    color: var(--color-text-secondary);
+    font-size: 16px;
+}
+
+.focus-back-btn {
+    background: var(--alpha-med);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-main);
+    padding: 12px 32px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ── Burnout Safe Mode ─────────────────────────────────────── */
+.focus-safe-onramp {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    opacity: 0.7;
+    margin-bottom: 8px;
+    letter-spacing: 0.01em;
+    text-align: center;
+}
+
+/* Circular ring timer */
+.focus-ring-timer {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.focus-ring-svg {
+    width: 72px;
+    height: 72px;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.focus-ring-track {
+    fill: none;
+    stroke: var(--color-border);
+    stroke-width: 4;
+}
+
+.focus-ring-fill {
+    fill: none;
+    stroke: var(--color-text-secondary);
+    stroke-width: 4;
+    stroke-linecap: round;
+    opacity: 0.5;
+    transition: stroke-dashoffset 1s linear;
+}
+
+.focus-ring-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    position: relative;
+    z-index: 1;
+}
+
+/* Continue / Stop Cleanly choice */
+.focus-safe-exit-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.safe-continue-btn {
+    background: var(--color-primary);
+}
+
+.safe-stop-btn {
+    background: var(--alpha-med);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    font-weight: 600;
+}
+
+/* ── PASSION focus specific styles ───────────────────────── */
+.focus-modal-actions-passion {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.focus-modal-actions-passion .modal-submit-btn.secondary {
+    background: var(--alpha-low);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.identity-savoring-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 40px;
+}
+
+.identity-savoring-card {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.05));
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    padding: 60px;
+    border-radius: 32px;
+    max-width: 600px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.identity-savoring-text {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f59e0b;
+    line-height: 1.4;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+/* ── INTEREST Focus Mode Styles ──────── */
+.hyperfocus-warning-toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e1e1e;
+    color: #3b82f6;
+    padding: 12px 24px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 3000;
+}
+
+.focus-novelty-session-label {
+    position: absolute;
+    top: -24px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: rgba(139, 92, 246, 0.15);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+/* Challenge Layer 2: Substeps */
+.checkpoint-toast {
+    position: fixed;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e1e1e;
+    color: #fcd34d;
+    padding: 12px 24px;
+    border-radius: 99px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid rgba(252, 211, 77, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 3000;
+}
+
+.focus-momentum-bar-container {
+    width: 100%;
+    max-width: 200px;
+    height: 6px;
+    background: var(--alpha-med);
+    border-radius: 3px;
+    margin: 16px auto 0 auto;
+    overflow: hidden;
+}
+
+.focus-momentum-bar-fill {
+    height: 100%;
+    background: #fcd34d;
+    transition: width 0.5s ease-out;
+}
+
+.substeps-container {
+    margin-top: 24px;
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 400px;
+    text-align: left;
+}
+
+.substep-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.substep-checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: all 0.2s;
+    font-size: 12px;
+}
+
+.substep-checkbox.checked {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.substep-text {
+    font-size: 15px;
+    color: var(--color-text-main);
+    transition: color 0.2s;
+}
+
+.substep-row.checked .substep-text {
+    color: var(--color-text-secondary);
+    text-decoration: line-through;
+}
+
+.substep-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--alpha-med);
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    padding: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.substep-input:focus {
+    border-color: var(--color-primary);
+}

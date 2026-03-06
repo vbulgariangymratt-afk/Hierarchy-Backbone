@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Data Recovery Tool</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        pre {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 600px;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Data Recovery & Diagnostic Tool</h1>
+    <div id="status"></div>
+    <button onclick="checkLocalStorage()">1. Check Local Storage</button>
+    <button onclick="exportBackup()">2. Export Current Backup</button>
+    <button onclick="fixMissingSkillIds()">3. Fix Missing Skill IDs</button>
+    <button onclick="reloadFromCloud()">4. Reload from Cloud</button>
+    <pre id="output"></pre>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const color = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            output.innerHTML += `<div class="${color}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+        }
+
+        function checkLocalStorage() {
+            log('Checking localStorage...', 'info');
+            const data = localStorage.getItem('tomato-app-data');
+
+            if (!data) {
+                log('❌ No data found in localStorage!', 'error');
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(data);
+                log('✅ Data found!', 'success');
+                log(`\nData Summary:`, 'info');
+                log(`  - Areas: ${Object.keys(parsed.areas || {}).length}`, 'info');
+                log(`  - Skills: ${Object.keys(parsed.skills || {}).length}`, 'info');
+                log(`  - Objectives: ${Object.keys(parsed.objectives || {}).length}`, 'info');
+                log(`  - Tasks: ${Object.keys(parsed.tasks || {}).length}`, 'info');
+
+                // Check for Languages area
+                const languagesArea = Object.values(parsed.areas || {}).find(a => a.name === 'Languages');
+                if (languagesArea) {
+                    log(`\n✅ Languages area found: ${languagesArea.id}`, 'success');
+                    log(`  - Skills in Languages: ${languagesArea.skillIds?.length || 0}`, 'info');
+
+                    // Check for tasks without skillId
+                    const allTasks = Object.values(parsed.tasks || {});
+                    const tasksWithoutSkillId = allTasks.filter(t => !t.skillId);
+                    const tasksWithActivityTypes = allTasks.filter(t => t.activityTypes && t.activityTypes.length > 0);
+
+                    log(`\n⚠️  Tasks without skillId: ${tasksWithoutSkillId.length}`, 'warning');
+                    log(`📊 Tasks with activityTypes: ${tasksWithActivityTypes.length}`, 'info');
+
+                    if (tasksWithActivityTypes.length > 0) {
+                        log('\nSample tasks with activities:', 'info');
+                        tasksWithActivityTypes.slice(0, 3).forEach(t => {
+                            log(`  - "${t.title}" | Activities: ${t.activityTypes.join(', ')} | SkillID: ${t.skillId || 'MISSING'}`, t.skillId ? 'info' : 'warning');
+                        });
+                    }
+                } else {
+                    log('❌ Languages area NOT found!', 'error');
+                }
+
+                // Check task statuses
+                const taskStatuses = {};
+                Object.values(parsed.tasks || {}).forEach(t => {
+                    const status = t.status || 'not-started';
+                    taskStatuses[status] = (taskStatuses[status] || 0) + 1;
+                });
+                log('\nTask Status Breakdown:', 'info');
+                Object.entries(taskStatuses).forEach(([status, count]) => {
+                    log(`  - ${status}: ${count}`, 'info');
+                });
+
+            } catch (e) {
+                log(`❌ Error parsing data: ${e.message}`, 'error');
+            }
+        }
+
+        function exportBackup() {
+            const data = localStorage.getItem('tomato-app-data');
+            if (!data) {
+                log('❌ No data to export!', 'error');
+                return;
+            }
+
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recovery-backup-${Date.now()}.json`;
+            a.click();
+            log('✅ Backup downloaded!', 'success');
+        }
+
+        function fixMissingSkillIds() {
+            log('Attempting to fix missing skill IDs...', 'info');
+            const data = localStorage.getItem('tomato-app-data');
+            if (!data) {
+                log('❌ No data found!', 'error');
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(data);
+                const languagesArea = Object.values(parsed.areas || {}).find(a => a.name === 'Languages');
+
+                if (!languagesArea || !languagesArea.skillIds || languagesArea.skillIds.length === 0) {
+                    log('❌ No Languages area or skills found!', 'error');
+                    return;
+                }
+
+                // Get the first language skill as default
+                const defaultLanguageSkill = languagesArea.skillIds[0];
+                log(`Using default skill: ${parsed.skills[defaultLanguageSkill]?.name || defaultLanguageSkill}`, 'info');
+
+                let fixedCount = 0;
+                Object.values(parsed.tasks || {}).forEach(task => {
+                    // If task has activityTypes but no skillId, assign the default language skill
+                    if (task.activityTypes && task.activityTypes.length > 0 && !task.skillId) {
+                        task.skillId = defaultLanguageSkill;
+                        fixedCount++;
+                    }
+                });
+
+                if (fixedCount > 0) {
+                    localStorage.setItem('tomato-app-data', JSON.stringify(parsed));
+                    log(`✅ Fixed ${fixedCount} tasks! Refreshing page...`, 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    log('ℹ️  No tasks needed fixing.', 'info');
+                }
+
+            } catch (e) {
+                log(`❌ Error: ${e.message}`, 'error');
+            }
+        }
+
+        async function reloadFromCloud() {
+            log('Checking cloud sync status...', 'info');
+            log('⚠️  This feature requires Supabase connection. Please check if you are logged in.', 'warning');
+        }
+
+        // Auto-run check on load
+        setTimeout(checkLocalStorage, 500);
+    </script>
+</body>
+
+</html>

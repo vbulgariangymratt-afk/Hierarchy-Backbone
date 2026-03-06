@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Supabase Data Check</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        button.success {
+            background: #10b981;
+        }
+
+        button.success:hover {
+            background: #059669;
+        }
+
+        pre {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 600px;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        h1 {
+            color: #60a5fa;
+        }
+
+        #status {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <h1>☁️ Supabase Cloud Data Checker</h1>
+    <div id="status">Checking your cloud data...</div>
+    <button onclick="checkSupabase()" class="success">🔄 Reload from Cloud</button>
+    <button onclick="window.location.href='/'">← Back to App</button>
+    <pre id="output"></pre>
+
+    <script>
+        const supabaseUrl = 'https://eoaliivxbgcshnspfjic.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvYWxpaXZ4Ymdjc2huc3BmamljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5NzQxOTIsImV4cCI6MjA4MzU1MDE5Mn0.vRIYFq1iFyqUo98fKEwvajTjtNhoApEYlj6BG37ydww';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const color = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : '';
+            output.innerHTML += `<div class="${color}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+        }
+
+        async function checkSupabase() {
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+
+            log('🔍 Checking Supabase authentication...', 'info');
+
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                status.style.background = 'rgba(239, 68, 68, 0.2)';
+                status.style.border = '1px solid #ef4444';
+                status.innerHTML = '❌ NOT LOGGED IN - Your data is only in local storage!';
+                log('❌ You are not logged into Supabase!', 'error');
+                log('ℹ️  Your data is currently only saved locally in your browser.', 'warning');
+                log('ℹ️  To use cloud sync, please log in from Settings page.', 'warning');
+                return;
+            }
+
+            status.style.background = 'rgba(16, 185, 129, 0.2)';
+            status.style.border = '1px solid #10b981';
+            status.innerHTML = `✅ Logged in as: ${session.user.email}`;
+            log(`✅ Authenticated as: ${session.user.email}`, 'success');
+
+            log('\n🔍 Fetching your data from cloud...', 'info');
+
+            const { data, error } = await supabase
+                .from('user_data')
+                .select('content')
+                .eq('id', session.user.id)
+                .single();
+
+            if (error) {
+                log(`❌ Error fetching data: ${error.message}`, 'error');
+                return;
+            }
+
+            if (!data || !data.content) {
+                log('⚠️  No cloud data found!', 'warning');
+                log('ℹ️  Your data might only be stored locally.', 'warning');
+                return;
+            }
+
+            const cloudData = data.content;
+            log('\n✅ Cloud data found!', 'success');
+            log(`\n📊 Cloud Data Summary:`, 'info');
+            log(`  - Areas: ${Object.keys(cloudData.areas || {}).length}`, 'info');
+            log(`  - Skills: ${Object.keys(cloudData.skills || {}).length}`, 'info');
+            log(`  - Objectives: ${Object.keys(cloudData.objectives || {}).length}`, 'info');
+            log(`  - Tasks: ${Object.keys(cloudData.tasks || {}).length}`, 'info');
+
+            // Check Languages
+            const languagesArea = Object.values(cloudData.areas || {}).find(a => a.name === 'Languages');
+            if (languagesArea) {
+                log(`\n🌍 Languages area found!`, 'success');
+                log(`  - Language Skills: ${languagesArea.skillIds?.length || 0}`, 'info');
+
+                const allTasks = Object.values(cloudData.tasks || {});
+                const tasksWithActivities = allTasks.filter(t => t.activityTypes && t.activityTypes.length > 0);
+                const tasksWithoutSkillId = tasksWithActivities.filter(t => !t.skillId);
+
+                log(`  - Tasks with activities: ${tasksWithActivities.length}`, 'info');
+                log(`  - Tasks missing skillId: ${tasksWithoutSkillId.length}`, tasksWithoutSkillId.length > 0 ? 'warning' : 'success');
+
+                if (tasksWithoutSkillId.length > 0) {
+                    log('\n⚠️  FOUND THE PROBLEM:', 'warning');
+                    log(`${tasksWithoutSkillId.length} language tasks don't have a skill assigned!`, 'warning');
+                    log('This is why they are not showing up.', 'warning');
+                    log('\n🔧 Would you like me to fix this?', 'info');
+                }
+            }
+
+            // Compare with local
+            const localData = localStorage.getItem('tomato-app-data');
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                const cloudTaskCount = Object.keys(cloudData.tasks || {}).length;
+                const localTaskCount = Object.keys(parsed.tasks || {}).length;
+
+                log(`\n📊 Local vs Cloud:`, 'info');
+                log(`  - Cloud tasks: ${cloudTaskCount}`, 'info');
+                log(`  - Local tasks: ${localTaskCount}`, 'info');
+
+                if (cloudTaskCount > localTaskCount) {
+                    log(`\n⚠️  Cloud has MORE data! You should reload from cloud.`, 'warning');
+                    log('\n🔄 Reloading from cloud now...', 'info');
+                    localStorage.setItem('tomato-app-data', JSON.stringify(cloudData));
+                    log('✅ Data restored! Refreshing page...', 'success');
+                    setTimeout(() => window.location.href = '/', 1500);
+                } else if (localTaskCount > cloudTaskCount) {
+                    log(`\n⚠️  Local has MORE data! Cloud may be outdated.`, 'warning');
+                } else {
+                    log(`\n✅ Local and cloud are in sync!`, 'success');
+                }
+            }
+        }
+
+        // Auto-run on load
+        setTimeout(checkSupabase, 500);
+    </script>
+</body>
+
+</html>

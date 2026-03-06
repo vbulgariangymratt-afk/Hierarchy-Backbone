@@ -1,0 +1,490 @@
+{
+  "undefined": {
+    "areaId": "47cc5b89-b91c-4ed4-bf79-314c62d11e35",
+    "duration": 120,
+    "startTime": "10:30",
+    "scheduledDate": "2026-01-24"
+  },
+  "0016c434-3b62-4379-8c5c-2a0672a60001": {
+    "id": "0016c434-3b62-4379-8c5c-2a0672a60001",
+    "title": "Russian timeblock",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 120,
+    "habitIds": [],
+    "startTime": "15:165",
+    "scheduledDate": "2026-02-10"
+  },
+  "03f6319a-f932-4f97-a8a0-bbc714cc019f": {
+    "id": "03f6319a-f932-4f97-a8a0-bbc714cc019f",
+    "title": "Russian",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "11:15",
+    "scheduledDate": "2026-01-26"
+  },
+  "03f95df1-e53b-414c-9840-f22d3fc8ff75": {
+    "id": "03f95df1-e53b-414c-9840-f22d3fc8ff75",
+    "title": "Testing manifestation session",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "08:00",
+    "scheduledDate": "2026-01-21"
+  },
+  "048d7708-2ab5-4c70-8b65-44316a1e4ce1": {
+    "id": "048d7708-2ab5-4c70-8b65-44316a1e4ce1",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-20"
+  },
+  "18a323ff-614c-49e6-90e3-21087a94cfa8": {
+    "id": "18a323ff-614c-49e6-90e3-21087a94cfa8",
+    "title": "Testing manifestation session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "07:45",
+    "scheduledDate": "2026-01-22"
+  },
+  "1db09611-f10f-4e5f-8dee-751251dbe1de": {
+    "id": "1db09611-f10f-4e5f-8dee-751251dbe1de",
+    "title": "Ukrainian",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "17:30",
+    "scheduledDate": "2026-01-23"
+  },
+  "1ed895a7-0b3e-4c0b-b046-a841b405259d": {
+    "id": "1ed895a7-0b3e-4c0b-b046-a841b405259d",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 45,
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-17"
+  },
+  "20001a4c-efca-434d-bb77-233809453934": {
+    "id": "20001a4c-efca-434d-bb77-233809453934",
+    "title": "Testing manifestation session",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "07:45",
+    "scheduledDate": "2026-01-21"
+  },
+  "20887e53-13e1-4e67-83a3-c9408a773431": {
+    "id": "20887e53-13e1-4e67-83a3-c9408a773431",
+    "title": "Due diligence",
+    "areaId": "c1549cad-f571-4f81-a600-73a98b4bc31b",
+    "taskIds": [],
+    "duration": 240,
+    "habitIds": [],
+    "startTime": "12:45",
+    "scheduledDate": "2026-01-23"
+  },
+  "2640e031-f393-4f70-ae0d-db25a0ff2cb5": {
+    "id": "2640e031-f393-4f70-ae0d-db25a0ff2cb5",
+    "title": "Cantonese",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "16:15",
+    "scheduledDate": "2026-01-20"
+  },
+  "3617d4d8-7cd6-41f1-817b-ee2e6defd707": {
+    "id": "3617d4d8-7cd6-41f1-817b-ee2e6defd707",
+    "title": "English",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "07:00",
+    "scheduledDate": "2026-01-21"
+  },
+  "384439cb-76ce-472b-8227-179745a5fe4e": {
+    "id": "384439cb-76ce-472b-8227-179745a5fe4e",
+    "title": "Due diligence",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 240,
+    "startTime": "07:00",
+    "scheduledDate": "2026-01-16"
+  },
+  "3a91f232-f115-460c-a319-6232e0b1320c": {
+    "duration": 120,
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-24"
+  },
+  "3f140f78-1c18-4469-86b7-c3fb8d295354": {
+    "id": "3f140f78-1c18-4469-86b7-c3fb8d295354",
+    "title": "Cantonese",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "12:00",
+    "scheduledDate": "2026-01-26"
+  },
+  "4897acfd-96eb-45e5-8116-5035116d501c": {
+    "id": "4897acfd-96eb-45e5-8116-5035116d501c",
+    "title": "Due diligence",
+    "areaId": "c1549cad-f571-4f81-a600-73a98b4bc31b",
+    "duration": 240,
+    "startTime": "07:00",
+    "scheduledDate": "2026-01-17"
+  },
+  "4c8e2e1d-3c6e-44f8-b8b6-a14b0b61eed8": {
+    "id": "4c8e2e1d-3c6e-44f8-b8b6-a14b0b61eed8",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-24"
+  },
+  "4cac305d-8a0a-47bb-983b-ae7715f3f4ca": {
+    "id": "4cac305d-8a0a-47bb-983b-ae7715f3f4ca",
+    "title": "SATS belief rewiring session",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 90,
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-16"
+  },
+  "4d856a5b-8de2-4c55-bfa2-2d52dd242f79": {
+    "id": "4d856a5b-8de2-4c55-bfa2-2d52dd242f79",
+    "title": "Cantonese",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "duration": 45,
+    "startTime": "11:15",
+    "scheduledDate": "2026-01-17"
+  },
+  "4f46a1c6-bd7f-4dde-8052-7b55036c4f21": {
+    "id": "4f46a1c6-bd7f-4dde-8052-7b55036c4f21",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "duration": 45,
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-17"
+  },
+  "533adc4c-ce6b-411e-87ba-6f52ce97b11e": {
+    "id": "533adc4c-ce6b-411e-87ba-6f52ce97b11e",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-26"
+  },
+  "5576a06f-5b3e-4204-b173-13ec4352caa7": {
+    "id": "5576a06f-5b3e-4204-b173-13ec4352caa7",
+    "title": "English",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "07:00",
+    "scheduledDate": "2026-01-22"
+  },
+  "61b2ecd0-025e-4710-a10d-2e609db16156": {
+    "id": "61b2ecd0-025e-4710-a10d-2e609db16156",
+    "title": "Russian",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 45,
+    "startTime": "11:15",
+    "scheduledDate": "2026-01-16"
+  },
+  "648b00c6-41d2-43dd-8163-abb178f022a4": {
+    "id": "648b00c6-41d2-43dd-8163-abb178f022a4",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-25"
+  },
+  "66d3869b-8d72-4b5b-aef8-ee3fdb93529c": {
+    "id": "66d3869b-8d72-4b5b-aef8-ee3fdb93529c",
+    "title": "Cantonese",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "16:45",
+    "scheduledDate": "2026-01-23"
+  },
+  "6c4f8b74-de61-4df7-a36c-93276491bba4": {
+    "id": "6c4f8b74-de61-4df7-a36c-93276491bba4",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 45,
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-18"
+  },
+  "6c7a8125-e3f5-4a53-b883-0b7e523166be": {
+    "id": "6c7a8125-e3f5-4a53-b883-0b7e523166be",
+    "title": "Testing manifestation session",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "07:45",
+    "scheduledDate": "2026-01-25"
+  },
+  "6df943c8-eb24-4abc-a59a-5df9432dbaca": {
+    "id": "6df943c8-eb24-4abc-a59a-5df9432dbaca",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "duration": 45,
+    "startTime": "17:15",
+    "scheduledDate": "2026-01-19"
+  },
+  "71d2dfaa-65d7-4362-8fd8-8cbb76b0632b": {
+    "id": "71d2dfaa-65d7-4362-8fd8-8cbb76b0632b",
+    "title": "Ukrainian",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "duration": 45,
+    "startTime": "12:00",
+    "scheduledDate": "2026-01-17"
+  },
+  "72cbe241-5c14-49c8-9f0b-61adde5ea7f6": {
+    "id": "72cbe241-5c14-49c8-9f0b-61adde5ea7f6",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 45,
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-19"
+  },
+  "79e40d87-f40f-4930-a052-93da0c08f2a0": {
+    "id": "79e40d87-f40f-4930-a052-93da0c08f2a0",
+    "title": "Arabic timeblock",
+    "areaId": "47cc5b89-b91c-4ed4-bf79-314c62d11e35",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "13:45",
+    "scheduledDate": "2026-02-10"
+  },
+  "7d01b842-8602-487a-aa21-ea13ebc66c5d": {
+    "id": "7d01b842-8602-487a-aa21-ea13ebc66c5d",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-21"
+  },
+  "834958ba-0e73-4468-b4c0-aaded1fddc3d": {
+    "id": "834958ba-0e73-4468-b4c0-aaded1fddc3d",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "duration": 45,
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-18"
+  },
+  "8a5b0435-8932-4c59-9933-1b4e77b52d59": {
+    "id": "8a5b0435-8932-4c59-9933-1b4e77b52d59",
+    "title": "English",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "duration": 45,
+    "startTime": "07:00",
+    "scheduledDate": "2026-01-18"
+  },
+  "8fa56f19-e92d-4643-a51a-196140434c91": {
+    "id": "8fa56f19-e92d-4643-a51a-196140434c91",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 45,
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-16"
+  },
+  "9fde708c-d0e2-4f42-af6e-a0903ec59c86": {
+    "id": "9fde708c-d0e2-4f42-af6e-a0903ec59c86",
+    "title": "Testing manifestation session",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "13:30",
+    "scheduledDate": "2026-01-19"
+  },
+  "a6f25c50-fd5a-46d5-895f-db5f8e4f3d77": {
+    "id": "a6f25c50-fd5a-46d5-895f-db5f8e4f3d77",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-25"
+  },
+  "a729c1e3-90e8-4df3-adbd-16850e2b7b66": {
+    "id": "a729c1e3-90e8-4df3-adbd-16850e2b7b66",
+    "title": "Arabic",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "duration": 45,
+    "startTime": "12:00",
+    "scheduledDate": "2026-01-16"
+  },
+  "a80a64b4-e209-4895-a922-21c4d1fbe27d": {
+    "id": "a80a64b4-e209-4895-a922-21c4d1fbe27d",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-22"
+  },
+  "a8a92d1c-6c19-4510-be6c-60d11123b56e": {
+    "id": "a8a92d1c-6c19-4510-be6c-60d11123b56e",
+    "title": "SATS belief rewiring session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "18:15",
+    "scheduledDate": "2026-01-23"
+  },
+  "a93c852e-5b4a-4957-9036-ad55f1bd234e": {
+    "id": "a93c852e-5b4a-4957-9036-ad55f1bd234e",
+    "title": "FOCUS",
+    "areaId": "47cc5b89-b91c-4ed4-bf79-314c62d11e35",
+    "taskIds": [],
+    "duration": 120,
+    "habitIds": [],
+    "startTime": "12:45",
+    "scheduledDate": "2026-02-03"
+  },
+  "accc08df-110b-45aa-b46d-85b36bc758b4": {
+    "id": "accc08df-110b-45aa-b46d-85b36bc758b4",
+    "title": "Arabic",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "duration": 45,
+    "startTime": "16:30",
+    "scheduledDate": "2026-01-19"
+  },
+  "b0884262-a660-4cfc-9a59-6cf32cc329d3": {
+    "id": "b0884262-a660-4cfc-9a59-6cf32cc329d3",
+    "title": "Due diligence",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 225,
+    "habitIds": [],
+    "startTime": "11:15",
+    "scheduledDate": "2026-01-20"
+  },
+  "b100ba62-d325-466f-8229-d6b6e7fad6c8": {
+    "id": "b100ba62-d325-466f-8229-d6b6e7fad6c8",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-26"
+  },
+  "b939875a-1d5e-46ba-a7ed-6327744c697e": {
+    "areaId": "c1549cad-f571-4f81-a600-73a98b4bc31b"
+  },
+  "ce95965d-0bb6-46ab-9dc2-a46a41ff6976": {
+    "id": "ce95965d-0bb6-46ab-9dc2-a46a41ff6976",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-23"
+  },
+  "e5073d9e-0d84-40de-8c10-a137df11b3db": {
+    "id": "e5073d9e-0d84-40de-8c10-a137df11b3db",
+    "title": "SATS belief rewiring session",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "15:00",
+    "scheduledDate": "2026-01-21"
+  },
+  "e716df12-7286-489c-a155-28b999ff0198": {
+    "id": "e716df12-7286-489c-a155-28b999ff0198",
+    "title": "Russian",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "duration": 75,
+    "startTime": "14:45",
+    "scheduledDate": "2026-01-19"
+  },
+  "e7847135-05e3-4475-9f91-9d42a217261c": {
+    "id": "e7847135-05e3-4475-9f91-9d42a217261c",
+    "title": "SATS belief rewiring session",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "18:45",
+    "scheduledDate": "2026-01-20"
+  },
+  "ea07f4cd-6be4-4605-972f-49be02a5b96e": {
+    "id": "ea07f4cd-6be4-4605-972f-49be02a5b96e",
+    "title": "Morning routine",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "06:00",
+    "scheduledDate": "2026-01-22"
+  },
+  "eb63029e-5da3-47b7-8ec4-4b74b04c61d1": {
+    "id": "eb63029e-5da3-47b7-8ec4-4b74b04c61d1",
+    "title": "Testing manifestation session",
+    "areaId": "9fd33bd9-f289-4291-8473-8653270693d0",
+    "taskIds": [],
+    "duration": 75,
+    "habitIds": [],
+    "startTime": "07:45",
+    "scheduledDate": "2026-01-18"
+  },
+  "edd2e2f5-7c35-4e2a-8a39-683d4175984a": {
+    "id": "edd2e2f5-7c35-4e2a-8a39-683d4175984a",
+    "title": "English",
+    "areaId": "59d7ec9f-a0e9-4268-9673-fc25807f02ce",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "07:00",
+    "scheduledDate": "2026-01-25"
+  },
+  "ee04a29e-5752-42ed-a429-d8d1cec9267d": {
+    "id": "ee04a29e-5752-42ed-a429-d8d1cec9267d",
+    "title": "Ukrainian",
+    "areaId": "67a95806-2ae1-4f6d-9c82-60ca3d3af512",
+    "taskIds": [],
+    "duration": 45,
+    "habitIds": [],
+    "startTime": "17:15",
+    "scheduledDate": "2026-01-20"
+  },
+  "f6d24eca-e63c-4617-a3f5-43b4dfcd7177": {
+    "id": "f6d24eca-e63c-4617-a3f5-43b4dfcd7177",
+    "title": "Due diligence",
+    "areaId": "c1549cad-f571-4f81-a600-73a98b4bc31b",
+    "duration": 195,
+    "startTime": "06:240",
+    "scheduledDate": "2026-01-19"
+  }
+}

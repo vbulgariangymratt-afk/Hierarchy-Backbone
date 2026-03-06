@@ -1,0 +1,371 @@
+{
+  "0c0a33cf-57e1-4adf-831c-deae5e57c51a": {
+    "id": "0c0a33cf-57e1-4adf-831c-deae5e57c51a",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T21:19:38.968Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "Faje con Gabo de la prepa amigo de Cris"
+  },
+  "3453ae6a-c60a-4481-b926-a96a09c40f60": {
+    "id": "3453ae6a-c60a-4481-b926-a96a09c40f60",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:18:41.729Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "I'm really good friends with Billie Eilish"
+  },
+  "3514d87e-1f94-4005-9750-b97e5d01ad2a": {
+    "id": "3514d87e-1f94-4005-9750-b97e5d01ad2a",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:16:05.344Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "I'm Dante's best friend"
+  },
+  "3a4fb7b7-ce16-4c05-80b0-bb4809456d29": {
+    "id": "3a4fb7b7-ce16-4c05-80b0-bb4809456d29",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:15:58.093Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "I'm Speed's best friend"
+  },
+  "3e7b5409-6816-4eaf-bd02-e8deabc10e8c": {
+    "id": "3e7b5409-6816-4eaf-bd02-e8deabc10e8c",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:18:13.046Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "16 inch black, m5 iPad pro"
+  },
+  "44d26687-a005-4c17-b62e-5fd6645dcc52": {
+    "id": "44d26687-a005-4c17-b62e-5fd6645dcc52",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:16:44.178Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "Faje con Diego de Golden Gym"
+  },
+  "4d69b493-ab88-4fa0-9bbe-24683486e22b": {
+    "id": "4d69b493-ab88-4fa0-9bbe-24683486e22b",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:16:53.177Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "Faje con Luis Angel de golden gym"
+  },
+  "734bbfb0-daff-4783-ad4b-bab478a4b126": {
+    "id": "734bbfb0-daff-4783-ad4b-bab478a4b126",
+    "status": "active",
+    "sessions": [
+      {
+        "notes": "thoughts related to trying to manifest correctly kept appearing and I kept dismissing them and comming back to actually feeling the laptop, I kinda got bored and \"woke up\", it was hard to stay for more than 4 seconds in the scene, it was also kinda hard to remain inside the scene cause I kept seeing thoughts distracting me",
+        "method": "visualizing",
+        "duration": 40,
+        "timestamp": "2026-02-01T20:44:30.754Z",
+        "vividness": 5,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "I layed down sideways, think I accepted that the mac is already mine, kinda visualized it briefly, no effort on that ",
+        "method": "sats-lullaby",
+        "duration": 25,
+        "timestamp": "2026-02-08T20:53:05.102Z",
+        "vividness": 5,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "now I know what it is to visualize with no effort, ketp getting distracted by thoughts, felt satisfaction a couple times, idk why I woke up, dont wanna force things",
+        "method": "visualizing",
+        "duration": 35,
+        "timestamp": "2026-02-08T22:47:17.982Z",
+        "vividness": 6,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 4
+      },
+      {
+        "notes": "imagined my pulling out of my backpack my mac thinking \"justo la que queria\" a big sensation of power was present througout the entire session, felt really natural to know it was mine ",
+        "method": "visualizing",
+        "duration": 25,
+        "timestamp": "2026-02-09T01:02:13.363Z",
+        "vividness": 6,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 1
+      },
+      {
+        "notes": "spent most of the time trying to actually relax, felt that there was a bottom i'd reach and I could no longer relax myself past that point, used a scene again (in Notion) and I got really sick of it, im tired, maybe once or twice feelings according to the scene popped out but must of the time I was aware of this being a scene and trying to relax",
+        "method": "visualizing",
+        "duration": 75,
+        "timestamp": "2026-02-10T00:14:38.218Z",
+        "vividness": 4,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "I been using a very specific scene, marlon asking me if its the same macbook I wantes and I told him yes, down to the very last detail, while I open it and unlock it with my fingerprint ",
+        "method": "visualizing",
+        "duration": 55,
+        "timestamp": "2026-02-11T00:54:43.444Z",
+        "vividness": 7,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 1
+      }
+    ],
+    "createdAt": "2026-01-14T03:17:48.000Z",
+    "frequency": 6,
+    "vividness": 6,
+    "importance": 5,
+    "resistance": 2,
+    "targetDescription": "16 inch, black M4 Max macbook pro"
+  },
+  "76ce2434-1d04-4c9c-a412-422a218c31de": {
+    "id": "76ce2434-1d04-4c9c-a412-422a218c31de",
+    "status": "materialized",
+    "sessions": [
+      {
+        "notes": "I simpli imagined fabrizio not being able to come with us for some reason, I used different affirmations, imagined as if it had already passed, I imagined us alone, just fab and I, I had some resistance but I simply ignored it and dissmissed it, then I became indifferent to it, like it didn't matter if fabrizio came or didn't",
+        "method": "visualizing",
+        "duration": 25,
+        "timestamp": "2026-02-01T06:31:39.871Z",
+        "vividness": 4,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 3
+      }
+    ],
+    "createdAt": "2026-02-01T06:29:07.489Z",
+    "frequency": 1,
+    "vividness": 4,
+    "importance": 5,
+    "photoProof": "",
+    "resistance": 3,
+    "completedAt": "2026-02-01T06:34:59.854Z",
+    "bridgeMarkers": [
+      "miracle"
+    ],
+    "bridgeOfIncidents": "first after manifesting I became indifferent, it didn't matter if he came or not, I wasnt forcing this indifference, it was natural and it simply happened, then dani was an hour late to pick me up cause he fell asleep and then he was waiting for fabrizio to reply, turns out he didn't reply cause he got sick of sarampion or something, idk how much time he had been sick, I just know that he stoped repplying to dani and then he came to pick me up, fabrizio's parents talked to dani like 2 hours later apologizing and asking when the meeting was, I saw no signals, I went to starbucks to study, so my mind was off the topic ",
+    "targetDescription": "Only dani & I going out (without fab)\n"
+  },
+  "87ce10a3-029b-46a4-9412-e4fcd3613e33": {
+    "id": "87ce10a3-029b-46a4-9412-e4fcd3613e33",
+    "status": "active",
+    "sessions": [
+      {
+        "notes": "",
+        "method": "sats-lullaby",
+        "duration": 60,
+        "timestamp": "2026-01-26T21:54:29.457Z",
+        "vividness": 3,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 3
+      },
+      {
+        "notes": "",
+        "method": "visualizing",
+        "duration": 15,
+        "timestamp": "2026-01-29T00:31:04.797Z",
+        "vividness": 3,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 1
+      }
+    ],
+    "createdAt": "2026-01-14T03:15:49.094Z",
+    "frequency": 2,
+    "vividness": 3,
+    "importance": 5,
+    "resistance": 2,
+    "targetDescription": "Vivir con los Picus, Mike y Jerry por un rato"
+  },
+  "a2eeb6b6-982c-46b7-936c-0efd455e2f04": {
+    "id": "a2eeb6b6-982c-46b7-936c-0efd455e2f04",
+    "status": "active",
+    "taskIds": [
+      "a011ecce-b9c6-4c1b-bf45-c9b13d642a63",
+      "0137b42c-5ce8-432f-85dc-6cf953bbf6cd"
+    ],
+    "sessions": [
+      {
+        "notes": "",
+        "method": "visualizing",
+        "duration": 90,
+        "timestamp": "2026-01-27T20:32:21.944Z",
+        "vividness": 3,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "",
+        "method": "sats-lullaby",
+        "duration": 60,
+        "timestamp": "2026-01-29T00:00:18.664Z",
+        "vividness": 1,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "",
+        "method": "visualizing",
+        "duration": 30,
+        "timestamp": "2026-01-30T15:25:41.816Z",
+        "vividness": 3,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 4
+      },
+      {
+        "notes": "I kept trying to put myself in the scene trying to stop thinking about \"manifesting\" and just trying to live the scene, it was hard and I think I only achieved it a couple times out of the 60 minutes ",
+        "method": "visualizing",
+        "duration": 60,
+        "timestamp": "2026-02-01T06:36:18.854Z",
+        "vividness": 4,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 3
+      },
+      {
+        "notes": "there was no specific scene, the only concistent thing was aniversary, a lot of negative contrarian thoughts, I kept dismissing them, I felt no satisfaction or any special emotions, just kept being horny for dani being in a bulk ",
+        "method": "visualizing",
+        "duration": 30,
+        "timestamp": "2026-02-01T21:45:19.308Z",
+        "vividness": 2,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 3
+      },
+      {
+        "notes": "I switched scenes quite a bit but the common thing amogst all of them is my anniversary with Dani, like half of the time I was able to fully lost myself in living the scene, instead of \"thinking about manifesting it\" that is a common struggle I have, the few times that I realized that I was lost in the scene, either I went back to analyzing, or I was able to mainain it for a couple seconds before losing it again, I struggled to see Dani's face and hear his voice, so I focused most of the time in how it felt hugging him in starbucks and him telling me \"amor, me encanto nuestro aniversario\" for some time I felt really happy emotions, like love and happiness for him being mine, there were a few times where I managed to see his face whilst him telling me the phrase, in those seconds I felt a new vibration, a new kind of something, the only way I can describe it is a new kind of vibration, then I started to lose emotion, I didn't really wanna wake up, I wasnt fully asleep, I didn't reach the point of actually seeing things like in a lucid dream, I need to learn to see things in my imagination in this state, I had a lot of tiny micro spasms in my legs and body, my heart most of the time was racing quite a bit, even if my breathing was slow, about 30 minutes into visualizing I changed scenes cause I realized that the first scene I was using mentioned (today) and I remembered joseph alai said thats a nono, so switched to \"me encanto nuestro aniversario\" and variations of that scene, sometimes hugging, sometimes him telling me face to face (always at starbucks), I also saw us in his new car, that was only a couple seconds, and also in his bed, a couple times I started having natural thoughts according to this new vibration, like \"im so grateful to have him, like natural thoughts that I didn't have to force, that implied that it was already true, session lasted almost 2 hours, I made an expriment in this session, I took immediate release Tradea (3 pills) to see if I could focus better in actually living the scene instead of thinking about it, I dont really know if it worked, when writing this after the session, I feel something different in my inside, is subtle and small but I feel it, my conscious mind is doubting whether this was a successful session, but there (again) is a little light or a little voice, something telling me that its already done, or something changed, I felt satisfaction a couple times, \n\nI felt satisfaction specifically after scenes where I lost myself in them, like, after the scenes that I lost myself into, I felt tiny bits of satisfaction or achievement \n\ntowards the end I used another scene: my mom and I walking and she asked me what was that place where dani took me in our aniversary \n\nsome of the intruding thoughts included: dani not using the word Amor, he called me sors instead, and that implied that the anniversary was between him and someone else, so I was worried about imagining him calling me \"amor\" I countered by answering to him calling me \"amor\"\n\nthe other intrusive thought was me not being able to see his face or hear his voice so I was afraid it might manifest with someone else, I countered it by saying at the end \"yo también Dani\" or something mentioning his name, also hugging him at starbucks, in another scene I was in his room so I knew it was him, I got lost for a couple seconds a couple times and he started telling me that im the best boyfriend ever and stuff like that, then I returned to the scene\n\nwhenever I saw doubt, worry or anxiety I simply dissmised it, ignored it, at one point I stopped to admire the miniscule size of the doubt that I was seeing, it was so small and insignificant, then I returned to the scene \n\nmost of the time it was at starbucks with this dialogue:\nD:amor \nMe: Mande\nD: me encanto nuestro aniversario:\nMe: a mi también\n\nim gonna keep that scene in my Notion and use it in the future \n\nat some point (early) my brain started imagining \"I loved our birthday\" but that didint last long \n\nabout 65% of the time I was \"thinking about the scene\" or analyzing it instead of living it, and when I got lost in the scene a couple times, I felt a small dose of satisfaction every time \n\nthis was in a SATS session, I took tradea, put my sleep mask on, earbuds with adhd sleep music and started repeating the scene, it was NOT regular waking hours visualizing, \n\nthink im starting to get a little bit obsessed with this, cause I keep trying to push this into my subconscious instead of jsut enjoying it and living it \n\nI noticed that I stopped thinking about other manifestations, at some point during the sessions I got excited for Dani being in a bulk cause he is so hot like that, and idk if I already said it but at some point I was feeling really really happy for him being my boyfriend, but I remembered that it should feel natural, not exciting or gratefulness, dont remember what I did after that \n\nmy conclusion or observation is that I need to learn to get lost in the scene, also its different than falling asleep, falling asleep and laying down to imagine this or anything, lead to very different places (being asleep and  imaginative state)\n\nI had little spasms but most of the time I didn't wanna move, think my body was locked but I didn't try to verify it \n\nas I write this I'm noticing detachment, I could see if dani replied to my whatsapp but I know is not necessary, and im okay with not seeing it until tomorrow, the subtle feeling I had telling me that something changed, is stable, small but solid, \n\nat some point the battery on my earbuds ran out and I had to take them off, now that I think about it, I was less relaxed without my earbuds, and 1 or 2 times, I was interrupted by the ads in the youtube video (adhd sleep) but I kinda returned to the relaxed state, my heart was racing most of the time, even if my breathing was slow",
+        "method": "visualizing",
+        "duration": 110,
+        "timestamp": "2026-02-02T04:25:11.176Z",
+        "vividness": 4,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "this is the biggest satifsaction i've felt, today I used the scene of alfredo congratulating us for our anniversary, turns out that when I focus and I actually hear the voice of alfredo instead of using mine, it feels more realistic and I feel satisfaction, at the end, I felt the biggest \"is mine\"satisfaction i've felt and I didint wanna wake up but my body sorta did it on its own cause I was hearing somethig like \"dont force it\" the \"its mine\" feeling is definitely bigger than before, I struggle to assimilate that its already mine, but I definitely feel it, idk what im feeling, its really different, never felt this before, I feel really differnet, the feeling is confident but my conscious mind is still doubting, idk what im expecting, im gonna do this tomorrow, lets see what happens ",
+        "method": "visualizing",
+        "duration": 55,
+        "timestamp": "2026-02-02T21:45:57.096Z",
+        "vividness": 4,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 2
+      },
+      {
+        "notes": "switched to affirmations insteead of scenes, most of the sesison felt natural, kinda got bored and my body woke up automatically to write this, little anxious voice went completely silent, calm in my stomach, not much to add, just repeated similar sentences that imply that dani and I have been boyfriends for 2 years",
+        "method": "sats-lullaby",
+        "duration": 35,
+        "timestamp": "2026-02-05T19:26:39.761Z",
+        "vividness": 4,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 1
+      },
+      {
+        "notes": "I switched to affirmations insteaf of visualizing and it was waaay easier to relax, I was definitely on the border of sleep, dont remember much since I almost fell asleep,  when waking up now I feel nothing when affirming ",
+        "method": "sats-lullaby",
+        "duration": 90,
+        "timestamp": "2026-02-05T22:31:01.905Z",
+        "vividness": 5,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 1
+      },
+      {
+        "notes": "just finished, felt like the words lost its meaning, I felt satifaction thrice for a couple secconds, I no longer feel the hunger or desire (cognitively im still thinking about it but it has lost its emotional pull, I no longer feel that hunger or longing for the desire) neville says i've entered sabath and I no longer have to do anything, appartenly the seed is already in my subconscious ",
+        "method": "visualizing",
+        "duration": 50,
+        "timestamp": "2026-02-07T00:21:29.542Z",
+        "vividness": 1,
+        "importance": 5,
+        "repetition": "single-act",
+        "resistance": 1
+      }
+    ],
+    "createdAt": "2026-01-14T03:16:34.294Z",
+    "frequency": 10,
+    "vividness": 3,
+    "importance": 5,
+    "resistance": 2,
+    "targetDescription": "Whatever I want with Dani\n"
+  },
+  "a94825b0-3a6c-4710-a04f-4effb18701a1": {
+    "id": "a94825b0-3a6c-4710-a04f-4effb18701a1",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:17:17.895Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "Oswaldo siempre me invita y enamorado de mi\n"
+  },
+  "b132e5ec-0aac-4afc-958b-f22a7f5b4c1d": {
+    "id": "b132e5ec-0aac-4afc-958b-f22a7f5b4c1d",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:16:24.261Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "I live in Safi's RLH's top suite"
+  },
+  "f544b6ca-ff07-4b39-bb1f-40f26f47de23": {
+    "id": "f544b6ca-ff07-4b39-bb1f-40f26f47de23",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:17:54.329Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "iPhone Air"
+  },
+  "f804d192-164a-4953-8cb8-75e69a90f40e": {
+    "id": "f804d192-164a-4953-8cb8-75e69a90f40e",
+    "status": "waiting",
+    "sessions": [],
+    "createdAt": "2026-01-14T03:17:06.128Z",
+    "frequency": 0,
+    "vividness": 0,
+    "importance": 0,
+    "resistance": 0,
+    "targetDescription": "Faje con that one guy from the park"
+  }
+}

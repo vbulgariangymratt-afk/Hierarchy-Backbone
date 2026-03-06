@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>EMERGENCY DATA RESTORE</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .restore {
+            background: #ef4444;
+            color: white;
+        }
+
+        .restore:hover {
+            background: #dc2626;
+        }
+
+        .success {
+            background: #10b981;
+        }
+
+        pre {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 600px;
+            font-size: 12px;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .success-text {
+            color: #10b981;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        h1 {
+            color: #ef4444;
+            font-size: 24px;
+        }
+
+        #status {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <h1>🚨 EMERGENCY DATA RESTORE</h1>
+    <div id="status">Checking your cloud backup...</div>
+    <button onclick="restoreNow()" class="restore">🔄 RESTORE FROM CLOUD NOW</button>
+    <button onclick="window.location.href='/'" style="background: #6b7280; color: white;">← Back to App</button>
+    <pre id="output"></pre>
+
+    <script>
+        const supabaseUrl = 'https://eoaliivxbgcshnspfjic.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvYWxpaXZ4Ymdjc2huc3BmamljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc5NzQxOTIsImV4cCI6MjA4MzU1MDE5Mn0.vRIYFq1iFyqUo98fKEwvajTjtNhoApEYlj6BG37ydww';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const color = type === 'error' ? 'error' : type === 'success' ? 'success-text' : type === 'warning' ? 'warning' : '';
+            output.innerHTML += `<div class="${color}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+        }
+
+        async function restoreNow() {
+            const status = document.getElementById('status');
+            const output = document.getElementById('output');
+            output.innerHTML = '';
+
+            log('🔍 Checking authentication...', 'info');
+
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (!session) {
+                status.style.background = 'rgba(239, 68, 68, 0.3)';
+                status.innerHTML = '❌ NOT LOGGED IN - Cannot restore from cloud!';
+                log('❌ You are not logged into Supabase!', 'error');
+                log('Please log in from the Settings page first.', 'error');
+                return;
+            }
+
+            log(`✅ Authenticated as: ${session.user.email}`, 'success');
+            log('\n🔍 Fetching your FULL cloud backup...', 'info');
+
+            const { data, error } = await supabase
+                .from('user_data')
+                .select('content, updated_at')
+                .eq('id', session.user.id)
+                .single();
+
+            if (error) {
+                log(`❌ Error fetching data: ${error.message}`, 'error');
+                status.innerHTML = '❌ Failed to fetch cloud data!';
+                return;
+            }
+
+            if (!data || !data.content) {
+                log('❌ No cloud data found!', 'error');
+                status.innerHTML = '❌ No backup found in cloud!';
+                return;
+            }
+
+            const cloudData = data.content;
+            const cloudDate = new Date(data.updated_at);
+
+            log('\n📊 CLOUD BACKUP FOUND!', 'success');
+            log(`Last updated: ${cloudDate.toLocaleString()}`, 'info');
+            log(`\nCloud Backup Contains:`, 'info');
+            log(`  - Areas: ${Object.keys(cloudData.areas || {}).length}`, 'info');
+            log(`  - Skills: ${Object.keys(cloudData.skills || {}).length}`, 'info');
+            log(`  - Objectives: ${Object.keys(cloudData.objectives || {}).length}`, 'info');
+            log(`  - Tasks: ${Object.keys(cloudData.tasks || {}).length}`, 'info');
+            log(`  - Habits: ${Object.keys(cloudData.habits || {}).length}`, 'info');
+            log(`  - Desires: ${Object.keys(cloudData.desires || {}).length}`, 'info');
+            log(`  - Journal Entries: ${Object.keys(cloudData.journal || {}).length}`, 'info');
+            log(`  - Wealth Items: ${Object.keys(cloudData.wealthItems || {}).length}`, 'info');
+
+            // Check habit completions
+            const habitsWithCompletions = Object.values(cloudData.habits || {}).filter(h =>
+                h.completedDates && h.completedDates.length > 0
+            );
+            log(`  - Habits with completion history: ${habitsWithCompletions.length}`, 'info');
+
+            // Get local data for comparison
+            const localData = localStorage.getItem('tomato-app-data');
+            if (localData) {
+                const parsed = JSON.parse(localData);
+                log(`\n📊 Current Local Data:`, 'warning');
+                log(`  - Tasks: ${Object.keys(parsed.tasks || {}).length}`, 'warning');
+                log(`  - Habits: ${Object.keys(parsed.habits || {}).length}`, 'warning');
+                log(`  - Desires: ${Object.keys(parsed.desires || {}).length}`, 'warning');
+                log(`  - Journal Entries: ${Object.keys(parsed.journal || {}).length}`, 'warning');
+
+                const diff = Object.keys(cloudData.tasks || {}).length - Object.keys(parsed.tasks || {}).length;
+                if (diff > 0) {
+                    log(`\n⚠️  CLOUD HAS ${diff} MORE TASKS!`, 'warning');
+                } else if (diff < 0) {
+                    log(`\n⚠️  LOCAL HAS ${Math.abs(diff)} MORE TASKS!`, 'warning');
+                }
+            }
+
+            log('\n🔄 RESTORING FROM CLOUD...', 'info');
+
+            // Backup current local data first
+            const backupName = `emergency-backup-${Date.now()}.json`;
+            const blob = new Blob([localData || '{}'], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = backupName;
+            a.click();
+            log(`✅ Current state backed up as: ${backupName}`, 'success');
+
+            // Restore cloud data
+            localStorage.setItem('tomato-app-data', JSON.stringify(cloudData));
+
+            status.style.background = 'rgba(16, 185, 129, 0.3)';
+            status.style.borderColor = '#10b981';
+            status.innerHTML = '✅ DATA RESTORED FROM CLOUD!';
+
+            log('\n✅ RESTORE COMPLETE!', 'success');
+            log('Reloading app in 2 seconds...', 'info');
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        // Auto-run on load
+        setTimeout(restoreNow, 500);
+    </script>
+</body>
+
+</html>

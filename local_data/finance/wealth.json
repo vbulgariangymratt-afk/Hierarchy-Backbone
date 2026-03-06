@@ -1,0 +1,20 @@
+{
+  "7aa667b0-c471-4d22-bb05-4653c99eeeb0": {
+    "id": "7aa667b0-c471-4d22-bb05-4653c99eeeb0",
+    "name": "Brain meds",
+    "oneTime": false,
+    "skillId": "",
+    "category": "Essential",
+    "createdAt": "2026-01-09T16:34:31.200Z",
+    "monthlyPayment": 470
+  },
+  "d5f6d37c-7d7d-4032-a096-66ea6cbe29e3": {
+    "id": "d5f6d37c-7d7d-4032-a096-66ea6cbe29e3",
+    "name": "Haircut ",
+    "oneTime": false,
+    "skillId": "",
+    "category": "Essential",
+    "createdAt": "2026-01-09T16:34:44.231Z",
+    "monthlyPayment": 500
+  }
+}

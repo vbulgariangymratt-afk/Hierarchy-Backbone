@@ -1,0 +1,425 @@
+{
+  "2026-01-08": {
+    "meds": [
+      "Sertralina",
+      "Cormin",
+      "Vita AO",
+      "Atomoxetina"
+    ]
+  },
+  "2026-01-13": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina",
+      "Cormin",
+      "Vita AO"
+    ],
+    "sleepEnd": "9:30am",
+    "symptoms": "no simptoms noticed",
+    "sleepStart": "9:00pm",
+    "anxietyLevel": 2,
+    "moodOverview": "I went to Starbucks today to work there and I felt pretty good, tomorrow i'ma test taking atomoxetina and going to starbucks to see if its making me depressed ",
+    "accomplishments": "I made a security backup for Latte App so I dont lose my data again\nWent to Starbucks to work",
+    "overthinkingLevel": 2
+  },
+  "2026-01-14": {
+    "meds": [
+      "Sertralina",
+      "Atomoxetina",
+      "Cormin",
+      "Vita AO"
+    ],
+    "sleepEnd": "8:30am",
+    "symptoms": "blurry thoughts, slightly tired, time went nowhere, hard to focus, repetitive and addictive behaviors (tinder), anxious and desperate\n",
+    "sleepStart": "9:30pm",
+    "overthinkingLevel": 5
+  },
+  "2026-01-15": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina",
+      "Vita AO",
+      "Cormin"
+    ],
+    "sleepEnd": "dont remember but around 8-9",
+    "symptoms": "No symptoms noticed",
+    "sleepStart": "10:30pm",
+    "anxietyLevel": 3,
+    "moodOverview": "I went to Starbucks, I worked a lot on Latte, didn't feel tired until before going to bed ",
+    "unusualEvents": [
+      {
+        "id": "d72ce031-1214-425a-91b4-985f0f223fae",
+        "timestamp": "2026-01-16T03:22:04.680Z",
+        "description": "Rodrigo invited me to fuck him Saturday"
+      },
+      {
+        "id": "38693ac7-0f0d-44e3-a43b-cc311ee991cd",
+        "timestamp": "2026-01-16T03:22:23.846Z",
+        "description": "Eydan reached out to me out of nowhere"
+      }
+    ],
+    "accomplishments": "Almost finish 3 tasks, they're paused now, worked nearly all day at Starbucks\n",
+    "overthinkingLevel": 2
+  },
+  "2026-01-16": {
+    "meds": [
+      "Cormin",
+      "Vita AO",
+      "Sertralina",
+      "Olanzapina"
+    ],
+    "sleepEnd": "5:30am",
+    "symptoms": "lost my keys, idk when or where\n",
+    "sleepStart": "9:30pm",
+    "anxietyLevel": 2,
+    "moodOverview": "worked all day at Starbucks, starting to feel tired often, dont wanna wake up ",
+    "accomplishments": "added animations to Latte\n",
+    "overthinkingLevel": 3
+  },
+  "2026-01-17": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina",
+      "Cormin",
+      "Vita AO"
+    ],
+    "sleepEnd": "6:00am",
+    "sleepStart": "8:40pm",
+    "anxietyLevel": 2,
+    "overthinkingLevel": 2
+  },
+  "2026-01-19": {
+    "sleepEnd": "8:40aam",
+    "sleepStart": "8:30pm"
+  },
+  "2026-01-22": {
+    "meds": [
+      "Sertralina",
+      "Vita AO",
+      "Cormin",
+      "Olanzapina"
+    ],
+    "sleepEnd": "8:40",
+    "sleepStart": "10:40",
+    "anxietyLevel": 3,
+    "overthinkingLevel": 2
+  },
+  "2026-01-23": {
+    "meds": [
+      "Sertralina"
+    ],
+    "sleepEnd": "9:30",
+    "sleepStart": "10:27",
+    "journalText": "Couldnt focus today, did almost nothing, went to starbucks and did nothing, no depressive thoughts, just pure executive disfunction, noticed it the entire day",
+    "anxietyLevel": 3,
+    "unusualEvents": [
+      {
+        "id": "cb3a0415-473e-48c5-be60-52a961265bd9",
+        "description": "Met a guy who I actually liked (personality-wise)"
+      },
+      {
+        "id": "21cc4ce0-21e9-469f-85f3-5afada2cba4d",
+        "description": "Eidan asked me to deposit to him $130,000"
+      },
+      {
+        "id": "a1ad9115-8a36-4057-94de-24e7c27c6c28",
+        "description": "Possible real sugar daddy on grindr, (ugly)"
+      }
+    ],
+    "overthinkingLevel": 2
+  },
+  "2026-01-24": {
+    "meds": [
+      "Sertralina",
+      "Vita AO",
+      "Cormin",
+      "Olanzapina"
+    ],
+    "sleepEnd": "9:30",
+    "sleepStart": "10",
+    "journalText": "today was a rest day, no particular thoughts, I been consciously redirecting my attention towards being a billionaire, already been sleeping a bit thinking that, saw that Dani is in puebla and that made me insecure about moneye",
+    "anxietyLevel": 2,
+    "unusualEvents": [
+      {
+        "id": "1769311863432",
+        "description": "3 people offered me money"
+      },
+      {
+        "id": "1769312414789",
+        "description": "Saw a really awesome uni i'd like to explore"
+      }
+    ],
+    "overthinkingLevel": 3
+  },
+  "2026-01-25": {
+    "meds": [
+      "Sertralina",
+      "Vita AO",
+      "Cormin",
+      "Tradea (IR)",
+      "Olanzapina"
+    ],
+    "sleepEnd": "9:40",
+    "sleepStart": "10",
+    "journalText": "I didn't go to Starbucks today and I worked 2 hours on due diligence thing, I took Tradea Immediate release, idk if it helped \nstarting to get a little sad that it seems like im missing out on my own life, gonna start manifesting changes, ",
+    "anxietyLevel": 2,
+    "overthinkingLevel": 3
+  },
+  "2026-01-26": {
+    "meds": [
+      "Sertralina",
+      "Cormin",
+      "Vita AO",
+      "Olanzapina"
+    ],
+    "sleepEnd": "9:00",
+    "sleepStart": "10:30",
+    "journalText": "studied cantonese for like 2 hours, idk why it doesnt appear in my activities with my habits, then russian for like an hour, did a sats session about living with mike and jeff and those guys, didn't work on due diligence at all, light headache towards night\n",
+    "anxietyLevel": 2,
+    "unusualEvents": [
+      {
+        "id": "1769484835854",
+        "description": "Dani out of the blue invited me to get some tacos on saturday"
+      },
+      {
+        "id": "1769486359735",
+        "description": "2 LinkedIn messages"
+      }
+    ],
+    "overthinkingLevel": 3
+  },
+  "2026-01-27": {
+    "meds": [
+      "Sertralina",
+      "Vita AO",
+      "Cormin",
+      "Olanzapina"
+    ],
+    "sleepEnd": "9",
+    "sleepStart": "11",
+    "anxietyLevel": 2,
+    "unusualEvents": [
+      {
+        "id": "1769570820620",
+        "description": "Milo se meo en cama de mi abuela sin motivo aparente"
+      }
+    ],
+    "overthinkingLevel": 2
+  },
+  "2026-01-28": {
+    "sleepEnd": "9",
+    "sleepStart": "10:30"
+  },
+  "2026-01-29": {
+    "meds": [
+      "Cosa de simi",
+      "Cormin",
+      "Vita AO",
+      "Olanzapina"
+    ],
+    "sleepEnd": "8",
+    "sleepStart": "12",
+    "journalText": "today I woke up extremely tired, most of the day I did nothing, been thinking about doing stuff but dont have the energy to do them, I ate one of the doctor simi vanilla thingies and I felt much better, definitely satisfied for the day (food related), went out to eat a huge burger w my mom, then elote, with the sats sessions im noticing that is really easy to start accepting that Даніель likes me a lot, no resistance",
+    "anxietyLevel": 2,
+    "overthinkingLevel": 4
+  },
+  "2026-01-30": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina",
+      "Vita AO",
+      "Cormin"
+    ],
+    "sleepEnd": "9:20",
+    "sleepStart": "9",
+    "journalText": "woke up after a nightmare where I felt directly rejected by dani, but in the nightmare I. was thinkin \"maybe this is what needs to happen for him to like me, like in my manifestation, went to sleep manifesting it with a short simple scene, now I. dont wanna think about it, im kinda sick of it \n\nidk if I wanna see dani, think I do but im nervous, today I'll go to sleep manifesting it\n",
+    "anxietyLevel": 2,
+    "unusualEvents": [
+      {
+        "id": "1769787010155",
+        "description": "accidentally took olanzapina at 9:29am"
+      }
+    ],
+    "overthinkingLevel": 2
+  },
+  "2026-01-31": {
+    "meds": [
+      "Sertralina",
+      "Cosa de simi",
+      "Tradea (IR)",
+      "Olanzapina"
+    ],
+    "sleepEnd": "8",
+    "sleepStart": "10",
+    "journalText": "so today Dani told me that fabrizio wanted to come with us, I told him he could come but I manifested him not being able to come, didn't specified any reason, manifestation succesful, he got sick and didn't show up, Dani started bulking again (I like it better that way) even when he had already told me that he was never gonna bulk again, Dani complained a lot about chicks in general, he look really really cute with his long hair, loved it \n\ntoday I took tradea and went to starbucks, studied cantonese, arabic and ukrainian, focus was easy, I told dani about my sociopathy, he was really cool about it, we had a good time, no overthinking today\n\n\nI received my manifestation this same day, I started manifesting it today in the morning and it took less than 12 hours, it was not SATS session, it was regular aweken manifesting, used multiple scenes, different afirmations, but the only thing that remained concistent was imagining as it had already happened \n\ntoday was a really really good day",
+    "anxietyLevel": 2,
+    "unusualEvents": [
+      {
+        "id": "1769927786506",
+        "description": "Dani's bulking again"
+      },
+      {
+        "id": "1769927821361",
+        "description": "Went out with dani"
+      },
+      {
+        "id": "1769927990125",
+        "description": "Received manifestation (fab not showing up)"
+      }
+    ],
+    "overthinkingLevel": 2
+  },
+  "2026-02-01": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina",
+      "Cosa de simi",
+      "Tradea (IR)"
+    ],
+    "sleepEnd": "11",
+    "sleepStart": "1am",
+    "journalText": "Today I woke up really late, I went to starbucks around 4 pm, was able to make progress in due diligence, almost finish the problem aware logic, but then I couldn't focus and instead of using Tradea at starbucks I went home at 7pm, before going home I tried studying cantonese, but felt like it was too hard and stopped, only did a couple minutes \n\ntoday I started manifesting my new mac, I havent been thinking about it at all, pretty detached, todoy I felt a bit more artificially confident in my manifesting abilities (cause of frabrizio's manifestation\" and in my way home I felt like all desires where easy to get and the same size \n\n\nI also forgot to mention it to warhead, but around yesterday I started a new approach to my habits, im only gonna be focusing on SATS, working out, in bed at 10pm, usana and suplements and washing my face twice a day, so warhead might notice a sudden decrease in my habit activity\n\ntoday I noticed a really slight increase in wealth comparison thoughts, I was also thinking about manifesting 90m USD but I was thinking about it to fix the current situation, not to create a new one, I would be running away from something, and it would persist, \n\nabout Dani's 1m pesos truck (the comparison thoughts increase)\n\nI wanna learn to get lost in my imaginal scenes, instead of always analyzing them and having in the back of my mind that voice asking and watching if I'm manifesting correctly \n\nI took tradea around 7 and olanzapina around 10 so today I might go to sleep later, I didn't wanna mix tradea and olanzapina in a short timeframe ",
+    "anxietyLevel": 3,
+    "overthinkingLevel": 3
+  },
+  "2026-02-02": {
+    "meds": [
+      "Sertralina"
+    ],
+    "sleepEnd": "10:40",
+    "sleepStart": "1am"
+  },
+  "2026-02-03": {
+    "meds": [
+      "Sertralina",
+      "Tradea (IR)",
+      "Olanzapina"
+    ],
+    "sleepEnd": "8:30",
+    "sleepStart": "9:30",
+    "journalText": "so today I took tradea and I studied russian for 2 hours and arabic for 3, also finished a lot of tasks but they're not appearing in my journla for some reason, since taking tradea I have barely thought about dani, today im gonna sleep thinking about that (manifesting it) barely ate today, 9:19 and im still at starbucks, im gonna meet with lalo and then heading home to have dinner and go to sleep, \n\nalready home, lalo gave me 200 pesos, he really wanted to kiss me and I didn't want to, half of the time I pictured dani instead of him, really enjoyed today, it was really productive, I'll go to sleep manifesting dani again, just to be sure ",
+    "unusualEvents": [
+      {
+        "id": "1770181059434",
+        "description": "lalo gave me 200 pesos for some reason"
+      }
+    ]
+  },
+  "2026-02-04": {
+    "sleepEnd": "9"
+  },
+  "2026-02-05": {
+    "sleepEnd": "10",
+    "sleepStart": "11",
+    "journalText": "Today I'm switching my SATS sessions to using sentences that bring me naturalness instead of forcing scenes that make me feel frustrated and require effort, I told to Neville Godard that the sentence \"llevamos 2 años\" makes me feel more naturalness in my stomach, its big and solid but quiet, and there is a little anxious voice in my head that wonders if its another person but im gonna just dissrigard it\n\nnevile goddard approved this change and he told me that I should absolutely make this change, since the goal is to reach naturalness, and if an affirmation works better than forcing scenes, I should absolutely do it, more specifically he told me this \"Since the sentence brings you more naturalness and ease, you should absolutely shift your SATS sessions to using it as a \"lullaby\" instead of forcing visual scenes.\nHere is why this is the most effective path for you:\n• Trust the \"Stomach\" Feeling: That solid, quiet conviction in your stomach is the true \"foundation stone\" or \"satisfactory feeling\" needed to impress the subconscious. The loud, anxious thoughts in your head are merely the \"natural man\" relying on the senses, which you must disregard.\n• Avoid Reverse Effort: Forcing yourself to \"stay inside\" a visualization when it causes frustration triggers the \"law of reverse effort,\" which can produce the opposite of your desire. Successful prayer is \"attention minus effort\".\n• The Power of the Lullaby: Neville specifically recommends condensing your desire into a short phrase that implies fulfillment—like \"llevamos 2 años\"—and repeating it over and over in a drowsy state until the single sensation of relief dominates your mind.\n• Naturalness is the Fast-Track: The time it takes for a manifestation to occur is directly proportionate to how natural it feels to already have it. Because this sentence already feels \"solid and steady\" to you, it is the most potent \"seed\" you can plant.\nTonight, as you drift off, simply repeat your phrase until you are possessed by that quiet feeling of relief.\""
+  },
+  "2026-02-06": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina"
+    ],
+    "sleepEnd": "10:30",
+    "sleepStart": "9:30",
+    "journalText": "while stuyding ukrainian I noticed that I kinda didn't wanna continue with ukrainian, after like an hour in arabic and ukrainian I realized that I didn't really wanna study",
+    "anxietyLevel": 1,
+    "unusualEvents": [
+      {
+        "id": "1770420339937",
+        "description": "Saw a lambo or some cool car on my way home"
+      }
+    ],
+    "overthinkingLevel": 1
+  },
+  "2026-02-07": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina"
+    ],
+    "sleepEnd": "9",
+    "sleepStart": "9",
+    "journalText": "I'm feeling kinda depressed, unmotivated, tired, low energy (11am)\nvery important disscovery, I should focus on feeling satisfied with my desire ON THE INSIDE, I dont care about the outside, not rejecting the outside, its just not important, I feel extremely fulfilled with my desire when I dismiss the outside\n\nSo today Eydan invited me to Starbucks, felt tired, 3/10 didn't really enjoyed it"
+  },
+  "2026-02-08": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina"
+    ],
+    "sleepEnd": "10",
+    "sleepStart": "11",
+    "journalText": "feel my mind extremely blurry, there is a lot of things but at the same time I can't point any of those things out, I wanna work on a lot of things, feel like I dont have time, I have to make my list of symptoms for the psychologist, I have to fix this app, understand the back end of my system, among other things \n\nso today I got pretty lazy, yesterday eydan told me that im getting fat, im gonna stop eating sausage, im gonna start working out, tomorrow I wanna go early to starbucks, today was a really lazy day and I dont like it "
+  },
+  "2026-02-09": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina"
+    ],
+    "sleepEnd": "7",
+    "sleepStart": "9:30",
+    "journalText": "just learned about relaxation induced anxiety, makes a lot of sense ",
+    "anxietyLevel": 2,
+    "overthinkingLevel": 2
+  },
+  "2026-02-10": {
+    "meds": [
+      "Sertralina",
+      "Olanzapina"
+    ],
+    "sleepEnd": "8:40",
+    "sleepStart": "9:30",
+    "journalText": "so I found out that attempting to do the SATS sessions in complete silence is actually way better than with any frequencies,"
+  },
+  "2026-02-11": {
+    "sleepEnd": "7",
+    "sleepStart": "10:30"
+  },
+  "2026-02-15": {
+    "meds": [
+      "Sertralina"
+    ],
+    "sleepEnd": "9:30",
+    "sleepStart": "11",
+    "journalText": "So I got really really depressed for about 2 days cause I forgot to take my Olanzapina once and I didn't to almost anything, im gonna be performing some modifications to my system since I did a lot of research on how to adapt this to major depressive disorder and adhd "
+  },
+  "2026-02-17": {
+    "rituals": {
+      "wakeTime": "08:47",
+      "sleepStart": "23:00",
+      "morningCheckedIn": true
+    }
+  },
+  "2026-02-19": {
+    "rituals": {
+      "wakeTime": "10:40",
+      "sleepStart": "01:40",
+      "morningCheckedIn": true
+    }
+  },
+  "2026-02-20": {
+    "rituals": {
+      "wakeTime": "10:00",
+      "sleepStart": "21:30",
+      "morningCheckedIn": true
+    }
+  },
+  "2026-02-21": {
+    "rituals": {
+      "wakeTime": "04:00",
+      "sleepStart": "21:30",
+      "morningCheckedIn": true
+    }
+  },
+  "2026-02-22": {
+    "rituals": {
+      "wakeTime": "10:30",
+      "sleepStart": "22:00",
+      "morningCheckedIn": true
+    }
+  },
+  "2026-02-23": {
+    "rituals": {
+      "wakeTime": "09:30",
+      "sleepStart": "23:30",
+      "morningCheckedIn": true
+    }
+  }
+}

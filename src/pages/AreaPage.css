@@ -1,0 +1,559 @@
+.area-page {
+    padding: 60px 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: areaPageFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes areaPageFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.area-page-header {
+    margin-bottom: 60px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 40px;
+}
+
+.area-title {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+}
+
+.area-identity-anchor {
+    font-size: 20px;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-weight: 400;
+    max-width: 800px;
+    line-height: 1.6;
+}
+
+.section-header {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.8;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.skill-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 24px;
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.skill-card.is-active {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.skill-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.skill-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skill-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.skill-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.skill-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.tier-badge {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    width: fit-content;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+.tier-badge.core {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+}
+
+.tier-badge.exploration {
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+}
+
+.tier-badge.optional {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+.skill-card-center {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.lvl-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 14px;
+    border-radius: 12px;
+    letter-spacing: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.skill-card-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.focus-toggle {
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    cursor: pointer;
+}
+
+.toggle-track {
+    width: 36px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.toggle-handle {
+    width: 14px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.focus-toggle.active .toggle-track {
+    background: #3b82f6;
+}
+
+.focus-toggle.active .toggle-handle {
+    left: 19px;
+    background: white;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.toggle-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+}
+
+.focus-toggle.active .toggle-label {
+    color: #3b82f6;
+}
+
+.pinch-tag {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+    background: #ef4444;
+    padding: 2px 8px;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+.no-skills-message {
+    grid-column: 1 / -1;
+    padding: 60px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 24px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* Creation UI */
+.add-skill-card-btn {
+    background: rgba(255, 255, 255, 0.01);
+    border: 2px dashed rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-height: 200px;
+}
+
+.add-skill-card-btn:hover {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(59, 130, 246, 0.3);
+    transform: translateY(-4px);
+}
+
+.add-skill-card-btn .plus-icon {
+    font-size: 32px;
+    color: #3b82f6;
+    opacity: 0.6;
+}
+
+.add-skill-card-btn .btn-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.creation-card {
+    border: 2px solid rgba(59, 130, 246, 0.3) !important;
+    background: rgba(59, 130, 246, 0.03) !important;
+}
+
+.creation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skill-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 700;
+    padding: 8px 0;
+    outline: none;
+    width: 100%;
+}
+
+.skill-input:focus {
+    border-bottom-color: #3b82f6;
+}
+
+.creation-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.tier-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 6px 12px;
+    outline: none;
+    cursor: pointer;
+}
+
+.pinch-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 12px;
+    padding: 6px 12px;
+    outline: none;
+    flex: 1;
+}
+
+.creation-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.confirm-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.confirm-btn:hover {
+    background: #2563eb;
+    transform: scale(1.02);
+}
+
+.cancel-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+
+
+.area-page-loading,
+.area-page-error {
+    padding: 100px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 18px;
+}
+
+/* ── Skill Management Enhancements ────────────────────────── */
+
+.skills-section {
+    margin-bottom: 60px;
+}
+
+.sleeping-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 40px;
+}
+
+.section-header.collapsible {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s;
+}
+
+.section-header.collapsible:hover {
+    opacity: 0.7;
+}
+
+.collapse-arrow {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Skill Card Variants */
+.skill-card.is-sleeping {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.skill-card.is-sleeping:hover {
+    opacity: 0.8;
+    transform: scale(1);
+}
+
+/* Mini Objectives Preview */
+.skill-objectives-preview {
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 12px 0;
+}
+
+.mini-objective-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mini-objective-item {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mini-objective-item .dot {
+    width: 4px;
+    height: 4px;
+    background: #3b82f6;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mini-objective-more {
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    margin-left: 12px;
+}
+
+.no-objectives-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.2;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Status Buttons */
+.skill-status-btn {
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.skill-status-btn.activate {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.skill-status-btn.activate:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+.skill-status-btn.sleep {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+.skill-status-btn.sleep:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.limit-modal {
+    background: #1a1a1a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 32px;
+    padding: 48px;
+    max-width: 440px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+}
+
+.limit-modal-icon {
+    font-size: 48px;
+    margin-bottom: 24px;
+}
+
+.limit-modal-message {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin-bottom: 32px;
+    font-weight: 500;
+}
+
+.limit-modal-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 32px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.limit-modal-btn:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+}
+}

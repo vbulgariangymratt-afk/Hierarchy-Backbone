@@ -1,0 +1,565 @@
+/* src/styles/global.css */
+@import './variables.css';
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--color-bg-main);
+    color: var(--color-text-main);
+    /* Typography - Notion Robust Stack */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+    -webkit-font-smoothing: antialiased;
+    /* NUCLEAR ANIMATION RESET FOR PAGES */
+    view-transition-name: none !important;
+    scroll-behavior: auto !important;
+    overscroll-behavior-y: none;
+    /* Prevents mac rubber-banding which looks like a swipe */
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+img,
+video {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Card Action Buttons - Hidden by default, shown on hover */
+.hover-trigger {
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease, z-index 0s;
+}
+
+.hover-trigger:hover {
+    transform: translateY(-4px) !important;
+    z-index: 10 !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.hover-trigger:hover .action-buttons {
+    opacity: 1;
+}
+
+/* Force higher z-index on hover for calendar items to prevent shadow clipping */
+.hover-trigger.high-z:hover {
+    z-index: 200 !important;
+}
+
+/* Premium Shadow for Small Blocks (Calendar Tasks/Timeblocks) */
+/* "All around" soft shadow + lift */
+.premium-shadow {
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+    transform: translateZ(0);
+    /* Hardware accelerate */
+}
+
+.premium-shadow:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    z-index: 200 !important;
+    /* Soft, deep, all-around shadow */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Premium Liquid Glass Effect - Refined for Notion Aesthetic */
+.liquid-glass {
+    background: rgba(35, 35, 35, 0.2);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    box-shadow: none;
+
+    /* Optimization: Force GPU layering */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000;
+
+    /* Optimization: Isolate paint and layout */
+    contain: content;
+}
+
+/* Light mode liquid glass */
+.light .liquid-glass {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: none;
+    /* Use inset shadow to define edge without causing sub-pixel bleeding */
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+}
+
+/* Solid background for hidden backgrounds mode - NO liquid glass effect */
+.solid-bg {
+    background: rgba(20, 20, 20, 0.98);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+
+    /* Keep GPU optimizations */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000;
+    contain: content;
+}
+
+/* Light mode solid background */
+.light .solid-bg {
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Utility to hide elements until hover */
+
+/* Utility to hide elements until hover - Safari compatible */
+.hover-trigger .hide-until-hover {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-5px);
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-trigger:hover .hide-until-hover {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+/* Notion-style "Invisible" UI Inputs */
+.notion-input {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    transition: background 0.1s ease !important;
+    outline: none !important;
+}
+
+.notion-input:hover {
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.notion-input:focus {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Notion Cover & Header */
+.notion-cover {
+    height: 160px;
+    width: 100%;
+    background: linear-gradient(to bottom, #2c2c2c, #191919);
+    position: relative;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+}
+
+.notion-page-icon-wrapper {
+    position: relative;
+    margin-top: -40px;
+    padding-left: 20px;
+    margin-bottom: 20px;
+}
+
+.notion-page-icon {
+    font-size: 72px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+/* Notion block layout */
+.notion-block {
+    padding: 8px 0;
+    margin-bottom: 16px;
+    border: none !important;
+}
+
+.notion-callout {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+}
+
+.notion-property-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.1s;
+}
+
+.notion-property-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.notion-property-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 13px;
+}
+
+.notion-block-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* Premium Floating List (Replaces Rigid Tables) */
+.premium-activity-list {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    /* Vertical gap between rows */
+    margin-top: -8px;
+}
+
+.premium-activity-list th {
+    text-align: left;
+    padding: 16px 20px;
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border: none;
+}
+
+.premium-activity-list td {
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.01);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Rounded corners for the "Floating" effect */
+.premium-activity-list td:first-child {
+    border-left: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 12px 0 0 12px;
+}
+
+.premium-activity-list td:last-child {
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 0 12px 12px 0;
+}
+
+.premium-activity-list tr:hover td {
+    background: rgba(255, 255, 255, 0.05);
+    border-top-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    color: #fff;
+}
+
+.list-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    font-size: 1.2em;
+    margin-right: 12px;
+}
+
+/* Seamless Segmented Control - Full Pill Shape */
+.notion-tabs {
+    display: inline-flex;
+    gap: 0;
+    margin-bottom: 24px;
+    padding: 2px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 99px;
+    /* Pill Shape Track */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    /* Added shadow per user request */
+}
+
+.notion-tab-item {
+    padding: 6px 16px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 99px;
+    /* Pill Shape Items */
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+    user-select: none;
+    letter-spacing: -0.01em;
+}
+
+.notion-tab-item:hover {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.notion-tab-item.active {
+    color: white;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.notion-new-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+}
+
+.notion-new-row:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Premium Select Tags - Crimson Noir Update */
+.notion-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 6px;
+    /* Slightly sharper, more precise */
+    font-size: 10px;
+    font-weight: 800;
+    /* Heavier weight for better legibility at small sizes */
+    white-space: nowrap;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.notion-tag:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+/* Habit - Warm Gold */
+.tag-purple {
+    background: rgba(255, 191, 0, 0.12);
+    color: #ffd76b;
+    border-color: rgba(255, 191, 0, 0.25);
+}
+
+/* Task - Crisp Arctic White */
+.tag-blue {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Activity - Jewel Crimson */
+.tag-green {
+    background: rgba(239, 68, 68, 0.15);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Supplemental Amber/Orange */
+.tag-amber {
+    background: rgba(249, 115, 22, 0.15);
+    color: #fdba74;
+    border-color: rgba(249, 115, 22, 0.25);
+}
+
+/* Gold - Intense Sun (Special items) */
+.tag-gold {
+    background: rgba(253, 224, 71, 0.15);
+    color: #fef08a;
+    border-color: rgba(253, 224, 71, 0.3);
+}
+
+/* Area Tags - Ghost Glass */
+.tag-gray {
+    background: rgba(255, 255, 255, 0.02);
+    color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.03);
+    letter-spacing: 0.12em;
+}
+
+/* Removing old duplicate tab definitions */
+
+/* Refined Property Row for Grid Use */
+.notion-property-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 24px;
+}
+
+.notion-property-placeholder {
+    color: rgba(255, 255, 255, 0.2);
+    font-style: italic;
+}
+
+.notion-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 400;
+}
+
+.notion-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.05);
+    margin: 16px 0;
+}
+
+.notion-input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    padding: 2px 4px !important;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    transition: background 0.1s;
+    border-radius: 3px;
+}
+
+.notion-input:hover,
+.notion-input:focus {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.notion-input::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+/* Premium Grayscale Sliders - Notion Aesthetic */
+.range-liquid {
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 99px;
+    height: 4px !important;
+    outline: none;
+}
+
+.range-liquid::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.1s ease, background 0.1s ease;
+}
+
+.range-liquid::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    background: #f0f0f0;
+}
+
+.range-liquid::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: none;
+}
+
+/* Premium Text Utilities */
+.text-gradient-white {
+    background: linear-gradient(180deg, #FFFFFF 0%, rgba(255, 255, 255, 0.7) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.premium-page-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 56px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    margin-bottom: 12px;
+    line-height: 1.05;
+}
+
+.premium-sidebar-shadow {
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5), 0 10px 30px -15px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Flashcard Component Light Mode Enhancements */
+[data-theme='light'] .flashcard-container {
+    background: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(25px) saturate(180%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important;
+    color: #121212 !important;
+}
+
+[data-theme='light'] .flashcard-complete {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    color: #121212 !important;
+}
+
+[data-theme='light'] .flashcard-button {
+    background: rgba(255, 255, 255, 0.4) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #121212 !important;
+}
+
+[data-theme='light'] .flashcard-hint {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    color: #444 !important;
+}
+
+[data-theme='light'] .flashcard-stats {
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.3) !important;
+    color: #121212 !important;
+}
+
+[data-theme='light'] .liquid-glass.hover-trigger,
+[data-theme='light'] .liquid-glass:not(.primary-button) {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    color: #121212 !important;
+}

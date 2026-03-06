@@ -1,0 +1,246 @@
+/* src/pages/JournalPage.css */
+
+.journal-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    font-family: var(--font-family-sans);
+    color: var(--color-text-main);
+}
+
+.journal-header {
+    margin-bottom: 32px;
+}
+
+.journal-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.journal-date {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.locked-tag {
+    color: var(--color-warning);
+    margin-left: 8px;
+    font-weight: 500;
+}
+
+.journal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.journal-section {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: var(--transition-normal);
+}
+
+.section-header {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.section-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.toggle-arrow {
+    font-size: 10px;
+    color: var(--color-text-secondary);
+}
+
+.section-body {
+    padding: 0 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+.activation-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.activation-btn {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-main);
+    color: var(--color-text-main);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    font-size: 11px;
+    transition: var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.activation-btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--alpha-low);
+}
+
+.activation-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+
+.input-group.row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px !important;
+    color: var(--color-text-main) !important;
+}
+
+.collapsible-notes {
+    margin-top: 8px;
+}
+
+.text-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0;
+    cursor: pointer;
+}
+
+.notes-textarea {
+    width: 100%;
+    min-height: 120px;
+    margin-top: 12px;
+    padding: 12px;
+    background: var(--color-bg-main);
+    color: var(--color-text-main);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+}
+
+/* Summary Grid */
+.summary-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.metric:last-child {
+    border-bottom: none;
+}
+
+.metric .label {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.metric .value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.value-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.metric-tag {
+    font-size: 10px;
+    background: var(--alpha-high);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.friction-counts {
+    display: flex;
+    gap: 12px;
+}
+
+.count-item {
+    font-size: 13px;
+    color: var(--color-text-main);
+    font-weight: 500;
+}
+
+.metric .value.capitalize {
+    text-transform: capitalize;
+}
+
+/* AI Section */
+.ai-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--alpha-high);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.reflection-placeholder {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    background: var(--alpha-low);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    text-align: center;
+}
+
+.journal-skeleton {
+    padding: 40px;
+    text-align: center;
+    color: var(--color-text-secondary);
+}

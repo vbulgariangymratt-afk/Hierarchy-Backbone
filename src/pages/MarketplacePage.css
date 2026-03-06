@@ -1,0 +1,275 @@
+/* src/pages/MarketplacePage.css */
+.marketplace-page {
+    padding: 40px;
+    min-height: 100vh;
+    background: var(--color-bg-main);
+    color: var(--color-text-main);
+    transition: background var(--transition-normal), color var(--transition-normal);
+}
+
+.marketplace-header {
+    margin-bottom: 48px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.marketplace-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--color-text-main);
+}
+
+.title-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.create-reward-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    background: var(--alpha-low);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.create-reward-btn:hover {
+    background: var(--alpha-med);
+    color: var(--color-text-main);
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.create-reward-btn:active {
+    transform: translateY(0);
+}
+
+.plus-icon {
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.hryvnia-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-md);
+}
+
+.hryvnia-icon {
+    font-size: 24px;
+}
+
+.hryvnia-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.balance-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+}
+
+.balance-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.marketplace-main {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.rewards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    margin-bottom: 64px;
+}
+
+.reward-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.reward-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-lg);
+}
+
+.reward-tier {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--alpha-high);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+}
+
+.reward-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--color-text-main);
+}
+
+.reward-description {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+    margin: 0 0 24px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.reward-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.reward-cost {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cost-icon {
+    font-size: 16px;
+}
+
+.cost-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.buy-button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.buy-button:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: scale(1.02);
+}
+
+.buy-button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.buy-button:disabled {
+    background: var(--alpha-med);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
+.reward-card.insufficient {
+    opacity: 0.6;
+}
+
+.reward-card.insufficient:hover {
+    opacity: 0.8;
+}
+
+.reward-card.insufficient .cost-value {
+    color: var(--color-danger);
+}
+
+.marketplace-footer {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 40px;
+}
+
+.refill-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 30px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.refill-button:hover {
+    background: var(--alpha-high);
+    color: var(--color-text-main);
+    border-color: var(--color-primary);
+}
+
+.marketplace-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-main);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--alpha-high);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
