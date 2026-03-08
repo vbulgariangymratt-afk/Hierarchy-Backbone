@@ -1,0 +1,32 @@
+/* src/styles/tokens.css */
+
+:root {
+    /* Spacing Scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+
+    /* Radius Scale */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --radius-full: 9999px;
+
+    /* Blur Levels */
+    --blur-sm: 6px;
+    --blur-md: 12px;
+    --blur-lg: 24px;
+    --blur-xl: 40px;
+
+    /* Animation */
+    --transition-fast: 120ms ease;
+    --transition-normal: 220ms ease;
+    --transition-slow: 350ms ease;
+}

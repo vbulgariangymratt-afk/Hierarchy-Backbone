@@ -106,7 +106,7 @@ const MarketplacePage = () => {
                         </button>
                     </div>
 
-                    <div className="hryvnia-card">
+                    <div className="hryvnia-card liquid-glass">
                         <NodeIcon iconUrl={SVG_ICONS.COIN} size={24} />
                         <div className="hryvnia-details">
                             <span className="balance-label">Hryvnia Balance</span>
@@ -124,7 +124,7 @@ const MarketplacePage = () => {
                         const tier = reward.metadata?.rewardTier;
 
                         return (
-                            <div key={reward.id} className={`reward-card ${!canAfford ? 'insufficient' : ''}`}>
+                            <div key={reward.id} className={`reward-card liquid-glass ${!canAfford ? 'insufficient' : ''}`}>
                                 {tier && <div className="reward-tier">Tier {tier}</div>}
                                 <div className="reward-content">
                                     <h3 className="reward-name">{reward.name}</h3>

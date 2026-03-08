@@ -276,53 +276,29 @@ const AreaPage = () => {
                                                 </div>
                                             )}
                                             <h3 className="skill-name">{skill.name}</h3>
-                                            <span className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}>
-                                                {getTierLabel(skill.metadata?.identityTier)}
-                                            </span>
-                                            <div className="aura-display-new" style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '12px',
-                                                marginLeft: 'auto',
-                                                padding: '4px 8px',
-                                                background: 'var(--alpha-low)',
-                                                borderRadius: '8px'
-                                            }}>
-                                                <div className="aura-badge-sq" style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    border: '1.5px solid #3b82f6',
-                                                    borderRadius: '6px',
-                                                    background: 'rgba(59, 130, 246, 0.05)',
-                                                    color: '#3b82f6',
-                                                    fontSize: '14px',
-                                                    fontWeight: '800'
-                                                }}>
-                                                    L{skill.metadata?.auraLevel || 1}
-                                                </div>
-                                                <div className="aura-progress-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                                                        <span>Aura</span>
-                                                        <span>{(skill.metadata?.auraTotal || 0) % 12} / 12</span>
-                                                    </div>
-                                                    <div className="aura-bar-container" style={{ width: '100%', height: '4px', background: 'var(--alpha-medium)', borderRadius: '2px', overflow: 'hidden' }}>
-                                                        <div
-                                                            className="aura-bar-fill"
-                                                            style={{
-                                                                width: `${(((skill.metadata?.auraTotal || 0) % 12) / 12) * 100}%`,
-                                                                height: '100%',
-                                                                background: '#c29462',
-                                                                borderRadius: '2px'
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
+                                        </div>
+                                        <span className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}>
+                                            {getTierLabel(skill.metadata?.identityTier)}
+                                        </span>
+                                    </header>
+
+                                    <div className="aura-display-new">
+                                        <div className="aura-header-row">
+                                            <div className="aura-badge-insignia">L{skill.metadata?.auraLevel || 1}</div>
+                                            <div className="aura-stat-container">
+                                                <span className="aura-current-val">{(skill.metadata?.auraTotal || 0) % 12}</span>
+                                                <span className="aura-max-val">/ 12</span>
                                             </div>
                                         </div>
-                                    </header>
+                                        <div className="aura-bar-container">
+                                            <div
+                                                className="aura-bar-fill"
+                                                style={{
+                                                    width: `${(((skill.metadata?.auraTotal || 0) % 12) / 12) * 100}%`
+                                                }}
+                                            ></div>
+                                        </div>
+                                    </div>
 
                                     <div className="skill-objectives-preview">
                                         {skillObjectives.length > 0 ? (
@@ -348,7 +324,7 @@ const AreaPage = () => {
                                 </Link>
 
                                 <footer className="skill-card-footer">
-                                    <div className="footer-left" style={{ display: 'flex', gap: '8px' }}>
+                                    <div className="footer-left">
                                         <button
                                             className="skill-status-btn sleep"
                                             onClick={(e) => handleToggleSkill(e, skill)}
@@ -359,8 +335,8 @@ const AreaPage = () => {
                                         {!skill.metadata?.cooldownActive ? (
                                             <button
                                                 className="skill-status-btn rest"
-                                                style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}
                                                 onClick={async (e) => {
+
                                                     e.preventDefault();
                                                     e.stopPropagation();
                                                     if (window.confirm(`Start 5-day rest period for ${skill.name}?`)) {
@@ -404,53 +380,29 @@ const AreaPage = () => {
                                     <header className="skill-card-header">
                                         <div className="skill-title-group">
                                             <h3 className="skill-name">{skill.name}</h3>
-                                            <span className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}>
-                                                {getTierLabel(skill.metadata?.identityTier)}
-                                            </span>
-                                            <div className="aura-display-new" style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '12px',
-                                                marginLeft: 'auto',
-                                                padding: '4px 8px',
-                                                background: 'var(--alpha-low)',
-                                                borderRadius: '8px'
-                                            }}>
-                                                <div className="aura-badge-sq" style={{
-                                                    width: '32px',
-                                                    height: '32px',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    border: '1.5px solid #3b82f6',
-                                                    borderRadius: '6px',
-                                                    background: 'rgba(59, 130, 246, 0.05)',
-                                                    color: '#3b82f6',
-                                                    fontSize: '14px',
-                                                    fontWeight: '800'
-                                                }}>
-                                                    L{skill.metadata?.auraLevel || 1}
-                                                </div>
-                                                <div className="aura-progress-info" style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontWeight: '500', color: 'var(--text-secondary)' }}>
-                                                        <span>Aura</span>
-                                                        <span>{(skill.metadata?.auraTotal || 0) % 12} / 12</span>
-                                                    </div>
-                                                    <div className="aura-bar-container" style={{ width: '100%', height: '4px', background: 'var(--alpha-medium)', borderRadius: '2px', overflow: 'hidden' }}>
-                                                        <div
-                                                            className="aura-bar-fill"
-                                                            style={{
-                                                                width: `${(((skill.metadata?.auraTotal || 0) % 12) / 12) * 100}%`,
-                                                                height: '100%',
-                                                                background: '#c29462',
-                                                                borderRadius: '2px'
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
+                                        </div>
+                                        <span className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}>
+                                            {getTierLabel(skill.metadata?.identityTier)}
+                                        </span>
+                                    </header>
+
+                                    <div className="aura-display-new">
+                                        <div className="aura-header-row">
+                                            <div className="aura-badge-insignia">L{skill.metadata?.auraLevel || 1}</div>
+                                            <div className="aura-stat-container">
+                                                <span className="aura-current-val">{(skill.metadata?.auraTotal || 0) % 12}</span>
+                                                <span className="aura-max-val">/ 12</span>
                                             </div>
                                         </div>
-                                    </header>
+                                        <div className="aura-bar-container">
+                                            <div
+                                                className="aura-bar-fill"
+                                                style={{
+                                                    width: `${(((skill.metadata?.auraTotal || 0) % 12) / 12) * 100}%`
+                                                }}
+                                            ></div>
+                                        </div>
+                                    </div>
                                 </Link>
 
                                 <footer className="skill-card-footer">

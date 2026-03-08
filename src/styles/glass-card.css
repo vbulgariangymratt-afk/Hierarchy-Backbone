@@ -1,0 +1,136 @@
+/* ============================================================
+   glass-card.css – Reusable Liquid Glass Card System
+   ============================================================
+   Architecture:
+   - .glass-card        → base frosted glass panel
+   - .glass-card::before → top-edge highlight reflection
+   - .glass-card::after  → subtle inner specular sheen
+   - Modifier variants for different elevations / contexts
+   ============================================================ */
+
+/* ── Base Card ─────────────────────────────────────────────── */
+.glass-card {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+
+    /* Frosted glass fill */
+    background: rgba(255, 255, 255, 0.08);
+
+    /* Hair-thin luminous border */
+    border: 1px solid rgba(255, 255, 255, 0.25);
+
+    /* Native blur + chromatic saturation boost */
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+
+    /* Outer shadow depth + top-edge inset highlight */
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.35),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+
+    /* GPU isolation for smooth composite */
+    transform: translateZ(0);
+    will-change: transform;
+
+    transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--color-text-main, #ffffff);
+}
+
+/* ── Top-edge highlight reflection ────────────────────────── */
+.glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.35) 0%,
+            rgba(255, 255, 255, 0.05) 40%,
+            transparent 100%);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Inner specular sheen (radial caustic) ─────────────────── */
+.glass-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(ellipse at 50% -10%,
+            rgba(255, 255, 255, 0.18) 0%,
+            transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Keep actual content above both pseudo-element layers */
+.glass-card>* {
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Hover lift ────────────────────────────────────────────── */
+.glass-card:hover {
+    background: rgba(255, 255, 255, 0.11);
+    border-color: rgba(255, 255, 255, 0.32);
+    box-shadow:
+        0 18px 56px rgba(0, 0, 0, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px) translateZ(0);
+}
+
+/* ── Variant: Elevated (floating modals / popovers) ────────── */
+.glass-card--elevated {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.30);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.45),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* ── Variant: Subtle (nested cards inside panels) ──────────── */
+.glass-card--subtle {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.20),
+        inset 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.glass-card--subtle::before {
+    opacity: 0.25;
+}
+
+/* ── Variant: Sidebar panel ────────────────────────────────── */
+.glass-card--sidebar {
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.20),
+        inset 0 1px rgba(255, 255, 255, 0.3),
+        inset 0 -1px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Accent tint helpers ───────────────────────────────────── */
+.glass-card--blue {
+    background: rgba(59, 130, 246, 0.10);
+    border-color: rgba(59, 130, 246, 0.30);
+    box-shadow:
+        0 10px 40px rgba(59, 130, 246, 0.20),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.glass-card--amber {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.28);
+    box-shadow:
+        0 10px 40px rgba(245, 158, 11, 0.15),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+}

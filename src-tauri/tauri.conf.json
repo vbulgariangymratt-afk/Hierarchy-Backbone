@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "Orion",
+  "productName": "Backbone Hierarchy",
   "version": "0.1.0",
-  "identifier": "com.warhead.orion",
+  "identifier": "com.warhead.backbonehierarchy",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -10,11 +10,13 @@
     "beforeBuildCommand": "npm run build"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "Orion",
+        "title": "",
         "width": 800,
         "height": 600,
+        "transparent": true,
         "resizable": true,
         "fullscreen": false,
         "decorations": true,

@@ -1,0 +1,111 @@
+/* src/components/ui/GlassPanel.css */
+
+/* ── Base Panel ────────────────────────────────────────────── */
+.glass-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 24px;
+
+    /* Frosted glass fill */
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+
+    /* Native blur + chromatic saturation */
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+
+    /* Depth shadow + top inset highlight */
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.35),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+
+    transition: var(--transition-normal);
+    color: var(--surface-text, var(--color-text-main));
+
+    /* GPU composite isolation */
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* ── Top-edge highlight reflection ────────────────────────── */
+.glass-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.35) 0%,
+            rgba(255, 255, 255, 0.05) 40%,
+            transparent 100%);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ── Inner specular radial sheen ───────────────────────────── */
+.glass-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(ellipse at 50% -10%,
+            rgba(255, 255, 255, 0.18) 0%,
+            transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Keep content above sheens */
+.glass-panel>* {
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Variants ──────────────────────────────────────────────── */
+.glass-panel-primary {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.30);
+}
+
+.glass-panel-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+.glass-panel-floating {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.30);
+    box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.45),
+        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px) translateZ(0);
+}
+
+/* ── Radial Highlight (legacy slot) ───────────────────────── */
+.glass-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+    background: radial-gradient(circle at 50% -20%,
+            var(--glass-highlight, rgba(255, 255, 255, 0.15)) 0%,
+            transparent 60%);
+    opacity: 0;
+    transition: var(--transition-normal);
+}
+
+[data-surface="glass"] .glass-highlight {
+    opacity: 1;
+}
+
+.glass-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+}

@@ -3,6 +3,7 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { backbone, repository } from '../backbone-v2/index';
 import { useTheme } from '../context/ThemeContext';
 import NodeIcon from '../components/NodeIcon';
+import AppearanceSection from '../components/sidebar/AppearanceSection';
 import './Sidebar.css';
 
 const SVG_ICONS = {
@@ -14,12 +15,13 @@ const SVG_ICONS = {
     MOON: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z'/%3E%3C/svg%3E",
     PLUS: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E",
     PLANNING: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z'/%3E%3C/svg%3E",
-    FOCUS: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cline x1='12' y1='2' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='22'/%3E%3Cline x1='2' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='22' y2='12'/%3E%3C/svg%3E"
+    FOCUS: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cline x1='12' y1='2' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='22'/%3E%3Cline x1='2' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='22' y2='12'/%3E%3C/svg%3E",
+    WALLPAPER: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E"
 };
 
 const Sidebar = () => {
     const navigate = useNavigate();
-    const { theme, toggleTheme } = useTheme();
+    const { theme, toggleTheme, surface, setSurfaceMode, backgroundMode, setBackgroundMode } = useTheme();
     const [isFocusMode, setIsFocusMode] = useState(false);
     const [loading, setLoading] = useState(true);
     const [lifeAreas, setLifeAreas] = useState([]);
@@ -285,12 +287,12 @@ const Sidebar = () => {
                 </nav>
             </div>
 
+            <div className="hryvnia-display">
+                <span className="hryvnia-icon">₴</span>
+                <span className="hryvnia-amount">{hryvniaBalance}</span>
+            </div>
+
             <div className="sidebar-bottom">
-                <div className="hryvnia-display">
-                    <span className="hryvnia-icon">₴</span>
-                    <span className="hryvnia-amount">{hryvniaBalance}</span>
-                </div>
-                <div className="sidebar-divider"></div>
 
                 {/* Theme Toggle Button */}
                 <button className="nav-item theme-toggle-sidebar" onClick={toggleTheme}>
@@ -299,6 +301,34 @@ const Sidebar = () => {
                     </span>
                     <span className="btn-text">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
                 </button>
+
+                {/* Surface Mode Toggle (Liquid Mode) */}
+                <button
+                    className="nav-item surface-toggle-sidebar"
+                    onClick={() => setSurfaceMode(surface === 'liquid' ? 'solid' : 'liquid')}
+                >
+                    <span className="btn-icon">
+                        <NodeIcon iconUrl={surface === 'liquid' ? SVG_ICONS.PLANNING : SVG_ICONS.FOCUS} size={18} />
+                    </span>
+                    <span className="btn-text">{surface === 'liquid' ? 'Solid Mode' : 'Liquid Mode'}</span>
+                </button>
+
+                {/* Wallpaper Mode Toggle */}
+                <button
+                    className="nav-item wallpaper-toggle-sidebar"
+                    onClick={() => setBackgroundMode(backgroundMode === 'wallpaper' ? 'solid' : 'wallpaper')}
+                    type="button"
+                >
+                    <span className="btn-icon">
+                        <NodeIcon iconUrl={SVG_ICONS.WALLPAPER} size={18} />
+                    </span>
+                    <span className="btn-text">Wallpapers</span>
+                </button>
+
+                {/* Conditional wallpaper URL inputs */}
+                <AppearanceSection isWallpaperEnabled={backgroundMode === 'wallpaper'} />
+
+                <div className="sidebar-divider"></div>
 
                 <Link to="/settings" className="nav-item settings-btn">
                     <span className="btn-icon">

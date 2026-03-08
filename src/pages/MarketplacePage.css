@@ -2,9 +2,17 @@
 .marketplace-page {
     padding: 40px;
     min-height: 100vh;
+    transition: background var(--transition-normal), color var(--transition-normal);
+}
+
+.solid-mode .marketplace-page {
     background: var(--color-bg-main);
     color: var(--color-text-main);
-    transition: background var(--transition-normal), color var(--transition-normal);
+}
+
+.liquid-mode .marketplace-page {
+    background: transparent;
+    color: var(--text-primary);
 }
 
 .marketplace-header {
@@ -38,13 +46,26 @@
     gap: 8px;
     padding: 10px 20px;
     border-radius: 20px;
-    border: 1px solid var(--color-border);
-    background: var(--alpha-low);
-    color: var(--color-text-secondary);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.solid-mode .create-reward-btn {
+    background: var(--alpha-low);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.liquid-mode .create-reward-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.light .create-reward-btn {
+    background: rgba(0, 0, 0, 0.04);
 }
 
 .create-reward-btn:hover {
@@ -65,14 +86,22 @@
 }
 
 .hryvnia-card {
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
     border-radius: 16px;
     padding: 12px 24px;
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+.solid-mode .hryvnia-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     box-shadow: var(--shadow-md);
+}
+
+.liquid-mode .hryvnia-card {
+    /* liquid-glass in global.css handles background/blur/shadow */
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .hryvnia-icon {
@@ -110,8 +139,6 @@
 }
 
 .reward-card {
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
     border-radius: 20px;
     padding: 24px;
     display: flex;
@@ -120,7 +147,17 @@
     transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
     position: relative;
     overflow: hidden;
+}
+
+.solid-mode .reward-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     box-shadow: var(--shadow-sm);
+}
+
+.liquid-mode .reward-card {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* liquid-glass in global.css handles the rest */
 }
 
 .reward-card:hover {
@@ -188,16 +225,34 @@
     padding: 12px;
     border-radius: 12px;
     border: none;
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.solid-mode .buy-button {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+}
+
+.liquid-mode .buy-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.light .buy-button {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--color-text-main);
 }
 
 .buy-button:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-    transform: scale(1.02);
+    transform: translateY(-1px);
+    background: var(--color-primary);
+    color: white;
 }
 
 .buy-button:active:not(:disabled) {
@@ -205,9 +260,10 @@
 }
 
 .buy-button:disabled {
-    background: var(--alpha-med);
+    background: rgba(128, 128, 128, 0.05);
     color: var(--color-text-secondary);
     cursor: not-allowed;
+    border-color: transparent;
 }
 
 .reward-card.insufficient {
@@ -234,12 +290,21 @@
     gap: 10px;
     padding: 14px 28px;
     border-radius: 30px;
-    border: 1px solid var(--color-border);
-    background: transparent;
-    color: var(--color-text-secondary);
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.solid-mode .refill-button {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.liquid-mode .refill-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
 }
 
 .refill-button:hover {
@@ -261,7 +326,7 @@
 .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid var(--alpha-high);
+    border: 3px solid rgba(255, 255, 255, 0.1);
     border-top-color: var(--color-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;

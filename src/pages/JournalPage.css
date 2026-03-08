@@ -36,11 +36,18 @@
 }
 
 .journal-section {
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     overflow: hidden;
     transition: var(--transition-normal);
+}
+
+.solid-mode .journal-section {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+}
+
+.liquid-mode .journal-section {
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .section-header {
@@ -91,14 +98,29 @@
     min-width: 80px;
     padding: 8px 12px;
     border: 1px solid var(--color-border);
-    background: var(--color-bg-main);
-    color: var(--color-text-main);
     border-radius: var(--radius-md);
     font-weight: 500;
     font-size: 11px;
     transition: var(--transition-fast);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.solid-mode .activation-btn {
+    background: var(--color-bg-main);
+    color: var(--color-text-main);
+}
+
+.liquid-mode .activation-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.light .activation-btn {
+    background: rgba(0, 0, 0, 0.04);
+    color: var(--color-text-main);
+    border-color: rgba(0, 0, 0, 0.08);
 }
 
 .activation-btn:hover:not(:disabled) {
@@ -146,13 +168,28 @@
     min-height: 120px;
     margin-top: 12px;
     padding: 12px;
-    background: var(--color-bg-main);
-    color: var(--color-text-main);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     font-family: inherit;
     font-size: 14px;
     resize: vertical;
+}
+
+.solid-mode .notes-textarea {
+    background: var(--color-bg-main);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-main);
+}
+
+.liquid-mode .notes-textarea {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.liquid-mode.light .notes-textarea {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: var(--color-text-main);
 }
 
 /* Summary Grid */
@@ -229,14 +266,31 @@
     opacity: 0.7;
 }
 
+.liquid-mode .ai-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
 .reflection-placeholder {
     font-size: 13px;
     color: var(--color-text-secondary);
     font-style: italic;
-    background: var(--alpha-low);
     padding: 16px;
     border-radius: var(--radius-md);
     text-align: center;
+}
+
+.solid-mode .reflection-placeholder {
+    background: var(--alpha-low);
+}
+
+.liquid-mode .reflection-placeholder {
+    background: rgba(0, 0, 0, 0.1);
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+.liquid-mode.light .reflection-placeholder {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .journal-skeleton {

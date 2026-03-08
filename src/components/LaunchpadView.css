@@ -76,24 +76,73 @@
 }
 
 .area-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 40px;
+    border-radius: 24px;
     padding: 40px;
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow: visible;
     cursor: pointer;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
     transition: var(--transition-premium);
 }
 
-.area-card:hover {
-    background: var(--card-hover-bg);
-    border-color: var(--card-hover-border);
-    transform: translateY(-12px);
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+/* Liquid Mode Specifics */
+.liquid-mode .area-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.35),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.liquid-mode.light .area-card {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Solid Mode Specifics */
+.solid-mode .area-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Top-edge highlight reflection */
+.liquid-mode .area-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.35) 0%,
+            rgba(255, 255, 255, 0.05) 40%,
+            transparent 100%);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.area-card>* {
+    position: relative;
+    z-index: 1;
+}
+
+.liquid-mode .area-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow:
+        0 20px 56px rgba(0, 0, 0, 0.45),
+        inset 0 1px 1px rgba(255, 255, 255, 0.55);
+    transform: translateY(-6px) translateZ(0);
+}
+
+.solid-mode .area-card:hover {
+    background: var(--alpha-high);
+    border-color: var(--color-accent);
+    transform: translateY(-6px);
 }
 
 .area-card.is-motion {
@@ -411,17 +460,17 @@
 
 .selection-indicator {
     position: absolute;
-    top: -12px;
+    top: -18px;
     left: 20px;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     background: var(--accent-blue);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
-    z-index: 10;
+    z-index: 20;
     animation: selectionPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -450,21 +499,24 @@
     left: 0;
     right: 0;
     padding: 32px 0;
-    background: linear-gradient(to top, var(--color-bg-main) 0%, transparent 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
     z-index: 100;
     margin-top: 40px;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+}
+
+.solid-mode .start-day-footer {
+    background: linear-gradient(to top, var(--color-bg-main) 40%, transparent 100%);
+}
+
+.liquid-mode .start-day-footer {
+    background: transparent;
 }
 
 .start-day-btn {
     padding: 20px 60px;
-    background: var(--accent-blue);
-    color: var(--color-text-inverse);
     border: none;
     border-radius: 99px;
     font-size: 18px;
@@ -473,12 +525,41 @@
     letter-spacing: 2px;
     cursor: pointer;
     transition: var(--transition-premium);
+}
+
+.solid-mode .start-day-btn {
+    background: var(--accent-blue);
+    color: var(--color-text-inverse);
     box-shadow: 0 10px 30px rgba(96, 165, 250, 0.3);
+}
+
+.liquid-mode .start-day-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.liquid-mode.light .start-day-btn {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--color-text-main);
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
 .start-day-btn:hover:not(:disabled) {
     transform: translateY(-4px) scale(1.05);
+}
+
+.solid-mode .start-day-btn:hover:not(:disabled) {
+    background: #2563eb;
     box-shadow: 0 15px 40px rgba(96, 165, 250, 0.4);
+}
+
+.liquid-mode .start-day-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .start-day-btn:active:not(:disabled) {
@@ -490,6 +571,7 @@
     color: var(--color-text-secondary);
     cursor: not-allowed;
     box-shadow: none;
+    opacity: 0.5;
 }
 
 .selection-summary {

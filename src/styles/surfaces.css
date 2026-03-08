@@ -1,0 +1,58 @@
+/* src/styles/surfaces.css */
+
+/* SOLID SURFACE (Default) */
+[data-surface="solid"] {
+    --surface-bg: var(--color-surface);
+    --surface-border: var(--color-border);
+    --surface-blur: 0px;
+    --surface-shadow: var(--shadow-sm);
+    --surface-text: var(--color-text-primary);
+}
+
+/* GLASS SURFACE */
+[data-surface="glass"] {
+    --surface-blur: 30px;
+    --surface-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+[data-theme="light"][data-surface="glass"] {
+    --surface-bg: rgba(255, 255, 255, 0.15);
+    --surface-border: rgba(255, 255, 255, 0.3);
+    --surface-text: var(--color-text-primary);
+    --glass-highlight: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"][data-surface="glass"] {
+    --surface-bg: rgba(18, 18, 18, 0.25);
+    --surface-border: rgba(255, 255, 255, 0.1);
+    --surface-text: #ffffff;
+    --glass-highlight: rgba(255, 255, 255, 0.1);
+}
+
+/* WALLPAPER SURFACE */
+[data-surface="wallpaper"] {
+    --surface-bg: transparent;
+    --surface-border: transparent;
+    --surface-blur: 0px;
+    --surface-shadow: none;
+}
+
+/* Combination: Wallpaper + Glass */
+[data-wallpaper="true"][data-surface="glass"] {
+    --surface-blur: var(--blur-lg);
+}
+
+/* Apply Wallpaper to Body (Only when NOT in Liquid Glass mode) */
+[data-wallpaper="true"]:not([data-surface="glass"]) body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: var(--app-wallpaper);
+    background-size: cover;
+    background-position: center;
+    z-index: -1;
+    pointer-events: none;
+}

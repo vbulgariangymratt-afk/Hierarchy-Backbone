@@ -1,7 +1,7 @@
 .main-layout {
     display: flex;
     min-height: 100vh;
-    background-color: var(--color-bg-main);
+    background-color: transparent;
     color: var(--color-text-main);
     transition: background-color 0.3s ease, color 0.3s ease;
 }

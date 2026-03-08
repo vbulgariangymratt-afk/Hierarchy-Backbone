@@ -114,7 +114,7 @@ const JournalPage = () => {
 
             <main className="journal-content">
                 {/* SECTION 1: QUICK CHECK-IN */}
-                <section className="journal-section open">
+                <section className="journal-section liquid-glass open">
                     <div className="section-header">
                         <h2>Quick Check-In</h2>
                     </div>
@@ -164,7 +164,7 @@ const JournalPage = () => {
                 </section>
 
                 {/* SECTION 2: TODAY'S SIGNALS (AUTO) */}
-                <section className={`journal-section ${sections.summary ? 'open' : 'collapsed'}`}>
+                <section className={`journal-section liquid-glass ${sections.summary ? 'open' : 'collapsed'}`}>
                     <div className="section-header" onClick={() => toggleSection('summary')}>
                         <h2>Today's Signals (Auto)</h2>
                         <span className="toggle-arrow">{sections.summary ? '▼' : '▶'}</span>
@@ -205,7 +205,7 @@ const JournalPage = () => {
                 </section>
 
                 {/* IDENTITY REINFORCED TODAY */}
-                <section className="journal-section open">
+                <section className="journal-section liquid-glass open">
                     <div className="section-header">
                         <h2>Identity Reinforced Today</h2>
                     </div>
@@ -215,10 +215,9 @@ const JournalPage = () => {
                                 {Object.entries(todayAreaLog).map(([areaId, count]) => {
                                     const areaName = areas[areaId] || areaId;
                                     return (
-                                        <div key={areaId} className="identity-log-item" style={{
+                                        <div key={areaId} className="identity-log-item liquid-glass" style={{
                                             display: 'flex',
                                             justifyContent: 'space-between',
-                                            background: 'var(--alpha-low)',
                                             padding: '12px 16px',
                                             borderRadius: '8px',
                                             fontSize: '14px'
@@ -239,7 +238,7 @@ const JournalPage = () => {
 
 
                 {/* SECTION 3: AI REFLECTION */}
-                <section className={`journal-section ${sections.reflection ? 'open' : 'collapsed'}`}>
+                <section className={`journal-section liquid-glass ${sections.reflection ? 'open' : 'collapsed'}`}>
                     <div className="section-header" onClick={() => toggleSection('reflection')}>
                         <h2>AI Reflection</h2>
                         <span className="toggle-arrow">{sections.reflection ? '▼' : '▶'}</span>

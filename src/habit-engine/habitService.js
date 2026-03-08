@@ -326,7 +326,7 @@ export const createHabitService = (repository, auraService, backbone) => {
 
             // BACKEND PROTECTION: If any linked skill belongs to an objective with burnoutRisk, block evolution
             const allNodes = await backbone.getAllNodes();
-            const skillIds = habit.linkedSkillIds || (habit.linkedSkillId ? [habit.linkedSkillId] : []);
+            let skillIds = habit.linkedSkillIds || (habit.linkedSkillId ? [habit.linkedSkillId] : []);
 
             for (const skillId of skillIds) {
                 let current = allNodes.find(n => n.id === skillId);

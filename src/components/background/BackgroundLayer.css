@@ -1,0 +1,45 @@
+.background-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* 1. Wallpaper Style */
+.wallpaper-bg {
+    background: #000;
+    /* Dark fallback while loading */
+    z-index: -2;
+}
+
+.wallpaper-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Smooth transitions when switching wallpapers or themes */
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* 2. Wallpaper Overlay Layer */
+.wallpaper-overlay {
+    z-index: -1;
+}
+
+[data-theme="light"] .wallpaper-overlay {
+    background: linear-gradient(rgba(255, 255, 255, 0.18),
+            rgba(255, 255, 255, 0.25));
+}
+
+[data-theme="dark"] .wallpaper-overlay {
+    background: linear-gradient(rgba(0, 0, 0, 0.35),
+            rgba(0, 0, 0, 0.45));
+}
+
+/* 3. Default Solid Background Style */
+.default-bg {
+    background: var(--color-bg-main);
+}

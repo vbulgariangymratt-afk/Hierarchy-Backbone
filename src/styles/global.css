@@ -1,5 +1,9 @@
 /* src/styles/global.css */
+@import './tokens.css';
+@import './theme.css';
+@import './surfaces.css';
 @import './variables.css';
+@import './glass-card.css';
 
 * {
     box-sizing: border-box;
@@ -7,14 +11,43 @@
     padding: 0;
 }
 
+html,
+body,
+#root {
+    background: transparent;
+    height: 100%;
+}
+
+/* --- UI MODES: LIQUID vs SOLID --- */
+
+/* LIQUID MODE: Frosted Glass & Transparency */
+/* Logic moved to BackgroundLayer.jsx */
+
+/* SOLID MODE: Opaque & No Blur */
+/* Logic moved to BackgroundLayer.jsx */
+
+.solid-mode * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
 body {
-    background-color: var(--color-bg-main);
     color: var(--color-text-main);
     /* Typography - Notion Robust Stack */
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-family: 'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Helvetica,
+        Arial,
+        sans-serif,
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol";
     font-size: var(--font-size-base);
     line-height: 1.5;
-    transition: background-color var(--transition-normal), color var(--transition-normal);
+    transition: background-color var(--transition-normal),
+        color var(--transition-normal);
     -webkit-font-smoothing: antialiased;
     /* NUCLEAR ANIMATION RESET FOR PAGES */
     view-transition-name: none !important;
@@ -32,8 +65,6 @@ body {
 }
 
 .icon-container {
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
     border-radius: 8px;
     padding: 4px;
     transition: background-color 0.3s ease;
@@ -132,29 +163,40 @@ video {
 
 /* Premium Liquid Glass Effect - Refined for Notion Aesthetic */
 .liquid-glass {
-    background: rgba(35, 35, 35, 0.2);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.03);
-    box-shadow: none;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: background 0.3s ease, border 0.3s ease;
 
     /* Optimization: Force GPU layering */
     transform: translateZ(0);
     backface-visibility: hidden;
     perspective: 1000;
-
-    /* Optimization: Isolate paint and layout */
     contain: content;
 }
 
-/* Light mode liquid glass */
-.light .liquid-glass {
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: none;
-    /* Use inset shadow to define edge without causing sub-pixel bleeding */
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+/* Liquid Mode Specifics for Glass Cards */
+.liquid-mode .liquid-glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    box-shadow:
+        inset 0 1px rgba(255, 255, 255, 0.25),
+        inset 0 -1px rgba(0, 0, 0, 0.12),
+        0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.liquid-mode.light .liquid-glass {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Solid Mode Specifics for Cards */
+.solid-mode .liquid-glass {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-md);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 /* Solid background for hidden backgrounds mode - NO liquid glass effect */
@@ -412,7 +454,7 @@ video {
     white-space: nowrap;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    backdrop-filter: blur(12px);
+    backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.05);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
@@ -576,10 +618,12 @@ video {
 
 /* Flashcard Component Light Mode Enhancements */
 [data-theme='light'] .flashcard-container {
-    background: rgba(255, 255, 255, 0.25) !important;
-    backdrop-filter: blur(25px) saturate(180%) !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.4) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow:
+        inset 0 1px rgba(255, 255, 255, 0.25),
+        inset 0 -1px rgba(0, 0, 0, 0.12),
+        0 10px 30px rgba(0, 0, 0, 0.15) !important;
     color: #121212 !important;
 }
 
@@ -602,10 +646,9 @@ video {
 }
 
 [data-theme='light'] .flashcard-stats {
-    background: rgba(255, 255, 255, 0.2) !important;
-    backdrop-filter: blur(20px) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
     color: #121212 !important;
 }
 
@@ -614,4 +657,23 @@ video {
     background: rgba(255, 255, 255, 0.2) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
     color: #121212 !important;
+}
+
+/* --- Liquid Dark Mode Seamlessness: Remove Internal Dividers --- */
+body.dark.liquid-mode hr,
+body.dark.liquid-mode .divider,
+body.dark.liquid-mode .separator,
+body.dark.liquid-mode .sidebar-divider,
+body.dark.liquid-mode .border-t {
+    display: none !important;
+}
+
+body.dark.liquid-mode .sleeping-section,
+body.dark.liquid-mode .skill-card-footer,
+body.dark.liquid-mode .task-creation-inline,
+body.dark.liquid-mode .edit-actions,
+body.dark.liquid-mode .area-page-header,
+body.dark.liquid-mode .metric {
+    border-top: none !important;
+    border-bottom: none !important;
 }

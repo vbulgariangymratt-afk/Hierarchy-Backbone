@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 import './FocusPage.css';
+import GlassPanel from '../components/ui/GlassPanel';
 
 const ACKS = ["Good.", "Nice.", "Done."];
 
@@ -433,7 +434,7 @@ const FocusPage = () => {
                     </button>
                 </div>
 
-                <div className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
+                <GlassPanel className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
                     <h1 className="focus-task-name">{task.name}</h1>
 
                     {checkpointsCompleted > 0 && (
@@ -468,7 +469,7 @@ const FocusPage = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
+                </GlassPanel>
 
                 {task.metadata?.ifThen && (
                     <div className="focus-prompt">

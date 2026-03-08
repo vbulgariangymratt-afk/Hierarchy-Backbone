@@ -75,11 +75,13 @@ const LegacyApp = () => (
 );
 
 import { ThemeProvider } from './context/ThemeContext';
+import BackgroundLayer from './components/background/BackgroundLayer';
 
 function App() {
   useWindowState();
   return (
     <ThemeProvider>
+      <BackgroundLayer />
       <Router>
         <Routes>
           <Route path="/focus" element={<FocusPage />} />
