@@ -1,115 +1,264 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { supabase } from '../lib/supabase';
+import { fetchWallpaperConfig, saveWallpaperConfig } from '../lib/wallpaperService';
 
 const ThemeContext = createContext();
 
-export const ThemeProvider = ({ children }) => {
-    // 2. Helper function to detect OS theme
-    const getSystemTheme = () =>
-        window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
+// ─── Default wallpaper config shape ──────────────────────────────────────────
+const DEFAULT_WALLPAPER_CONFIG = {
+    wallpaperScope: 'global',
+    backgroundMode: 'solid',
+    wallpapers: {
+        global: { light: null, dark: null },
+        pages: {
+            launchpad: { light: null, dark: null },
+            journal: { light: null, dark: null },
+            marketplace: { light: null, dark: null },
+            area: { light: null, dark: null },
+        }
+    }
+};
 
-    // 1. Replace existing theme state with themePreference
+/**
+ * Migrate old flat { light, dark } shape → new nested shape.
+ */
+const migrateWallpaperConfig = (raw) => {
+    if (!raw) return DEFAULT_WALLPAPER_CONFIG;
+
+    if (raw.wallpaperScope !== undefined && raw.wallpapers !== undefined) {
+        const pages = { ...DEFAULT_WALLPAPER_CONFIG.wallpapers.pages, ...raw.wallpapers.pages };
+        const backgroundMode = raw.backgroundMode || 'solid';
+        return { ...raw, backgroundMode, wallpapers: { ...raw.wallpapers, pages } };
+    }
+
+    console.log('[ThemeContext] Migrating legacy wallpaper format');
+    return {
+        ...DEFAULT_WALLPAPER_CONFIG,
+        backgroundMode: raw.backgroundMode || 'solid',
+        wallpapers: {
+            ...DEFAULT_WALLPAPER_CONFIG.wallpapers,
+            global: { light: raw.light || null, dark: raw.dark || null }
+        }
+    };
+};
+
+export const ThemeProvider = ({ children }) => {
+    const getSystemTheme = () =>
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+
     const [themePreference, setThemePreference] = useState(
         () => localStorage.getItem("theme-preference") || "system"
     );
 
-    // Internal state to track system theme changes and trigger React re-renders
     const [systemTheme, setSystemTheme] = useState(getSystemTheme);
 
-    // 3. Resolved theme value (actual theme applied to UI)
     const resolvedTheme =
-        themePreference === "system"
-            ? systemTheme
-            : themePreference;
+        themePreference === "system" ? systemTheme : themePreference;
 
-    // 7. Initialization improvement for Tauri apps to avoid flicker
     document.documentElement.dataset.theme = resolvedTheme;
 
-    // Existing UI preference states
-    const [surfaceMode, setSurfaceMode] = useState(() => {
-        const saved = localStorage.getItem('app-surface-mode');
-        if (saved === 'glass') return 'liquid'; // Migration: 'glass' -> 'liquid'
-        return saved || 'solid';
-    });
-    const [backgroundMode, setBackgroundMode] = useState(() => localStorage.getItem('app-background-mode') || 'default');
+    const [backgroundMode, setBackgroundMode] = useState(() => {
+        // Migration: Check old localStorage flags
+        const savedBg = localStorage.getItem('app-background-mode');
+        if (savedBg === 'wallpaper') return 'wallpaper';
 
-    // Wallpaper configuration for Light and Dark modes
-    const [wallpaper, setWallpaperState] = useState(() => {
-        const saved = localStorage.getItem('app-wallpaper-config');
-        if (saved) {
+        const savedSurface = localStorage.getItem('app-surface-mode');
+        if (savedSurface === 'liquid' || savedSurface === 'glass') return 'liquid';
+
+        return 'solid';
+    });
+
+    // ─── Wallpaper Config ─────────────────────────────────────────────────────
+    const [wallpaperConfig, setWallpaperConfig] = useState(() => {
+        const savedNew = localStorage.getItem('app-wallpaper-config');
+        if (savedNew) {
             try {
-                return JSON.parse(saved);
-            } catch (e) {
-                console.error("Failed to parse wallpaper config:", e);
+                const parsed = migrateWallpaperConfig(JSON.parse(savedNew));
+                // Sync backgroundMode if present in saved config
+                if (parsed.backgroundMode) {
+                    // We don't call setBackgroundMode here as it's the initializer,
+                    // but we can't easily sync back to backgroundMode state from here
+                    // without causing a re-render or being redundant.
+                    // The effect and migrateWallpaperConfig will handle it.
+                }
+                return parsed;
             }
+            catch (e) { console.error('Failed to parse wallpaper config:', e); }
         }
-
-        // Migration: check if there was a single wallpaper set previously
-        const legacyWallpaper = localStorage.getItem('app-wallpaper');
-        if (legacyWallpaper) {
-            return { light: legacyWallpaper, dark: legacyWallpaper };
-        }
-
-        return { light: null, dark: null };
+        const legacy = localStorage.getItem('app-wallpaper');
+        if (legacy) return migrateWallpaperConfig({ light: legacy, dark: legacy });
+        return DEFAULT_WALLPAPER_CONFIG;
     });
 
-    // 5. System theme listener: only reacts when themePreference === "system"
+    // ─── Auth state ───────────────────────────────────────────────────────────
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // ─── Sync state flags ─────────────────────────────────────────────────────
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [syncError, setSyncError] = useState(null);
+    const [showCompletedTasks, setShowCompletedTasks] = useState(() => {
+        return localStorage.getItem('app-show-completed-tasks') === 'true';
+    });
+
+    // Ref to track whether the current config change came from a Supabase load
+    // (prevents echo-saving back what we just fetched)
+    const isLoadingFromSupabase = useRef(false);
+
+    // Debounce timer ref for Supabase saves
+    const saveDebounceRef = useRef(null);
+
+    // ─── Load wallpaper config from Supabase ──────────────────────────────────
+    const loadFromSupabase = async (userId) => {
+        setIsSyncing(true);
+        setSyncError(null);
+        try {
+            const remoteConfig = await fetchWallpaperConfig(userId);
+            if (remoteConfig) {
+                const migrated = migrateWallpaperConfig(remoteConfig);
+                isLoadingFromSupabase.current = true;
+                setWallpaperConfig(migrated);
+
+                // Update backgroundMode from remote if present
+                if (migrated.backgroundMode) {
+                    setBackgroundMode(migrated.backgroundMode);
+                }
+
+                // Also persist to localStorage for offline use
+                localStorage.setItem('app-wallpaper-config', JSON.stringify(migrated));
+            }
+        } catch (err) {
+            console.error('[ThemeContext] Failed to load wallpaper config from Supabase:', err);
+            setSyncError('Failed to sync wallpapers');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // ─── Auth listener: sign-in triggers remote load ──────────────────────────
+    useEffect(() => {
+        // Check session on mount
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            const user = session?.user ?? null;
+            setCurrentUser(user);
+            if (user) loadFromSupabase(user.id);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            const user = session?.user ?? null;
+            setCurrentUser(user);
+            if (user) {
+                loadFromSupabase(user.id);
+            } else {
+                // Signed out: revert to local-only config
+                setCurrentUser(null);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // ─── Debounced Supabase save whenever wallpaperConfig/backgroundMode changes ─────────────
+    useEffect(() => {
+        console.log("Save effect fired", { currentUser, wallpaperConfig, backgroundMode });
+
+        // Skip saving back to Supabase if this change originated from a remote load
+        if (isLoadingFromSupabase.current) {
+            isLoadingFromSupabase.current = false;
+            return;
+        }
+
+        if (!currentUser) return;
+
+        // Debounce: wait 1.5s after the last change before saving
+        if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+
+        saveDebounceRef.current = setTimeout(async () => {
+            setIsSyncing(true);
+            setSyncError(null);
+            try {
+                // Include backgroundMode in the saved config
+                const configToSave = { ...wallpaperConfig, backgroundMode };
+                const { processedConfig } = await saveWallpaperConfig(currentUser.id, configToSave);
+
+                // If data URLs were replaced with public URLs, update local state + localStorage
+                if (processedConfig) {
+                    isLoadingFromSupabase.current = true; // prevent save echo
+                    setWallpaperConfig(processedConfig);
+                    localStorage.setItem('app-wallpaper-config', JSON.stringify(processedConfig));
+                }
+            } catch (err) {
+                console.error('[ThemeContext] Failed to save wallpaper config to Supabase:', err);
+                setSyncError('Failed to save wallpapers');
+            } finally {
+                setIsSyncing(false);
+            }
+        }, 1500);
+
+        return () => {
+            if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+        };
+    }, [wallpaperConfig, backgroundMode, currentUser]);
+
+    // ─── System theme listener ────────────────────────────────────────────────
     useEffect(() => {
         const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
         const handleChange = () => {
-            const currentSystemTheme = mediaQuery.matches ? "dark" : "light";
-            setSystemTheme(currentSystemTheme);
-
+            const current = mediaQuery.matches ? "dark" : "light";
+            setSystemTheme(current);
             if (themePreference === "system") {
-                document.documentElement.setAttribute("data-theme", currentSystemTheme);
+                document.documentElement.setAttribute("data-theme", current);
             }
         };
-
         mediaQuery.addEventListener('change', handleChange);
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, [themePreference]);
 
-    // 4. DOM Application logic: only modifies document.documentElement
+    // ─── DOM & localStorage persistence ──────────────────────────────────────
     useEffect(() => {
         const root = document.documentElement;
-
         root.classList.remove("light", "dark");
         root.classList.add(resolvedTheme);
         root.setAttribute("data-theme", resolvedTheme);
-
-        console.log(`[ThemeEngine] Preference: ${themePreference}, Resolved: ${resolvedTheme}`);
     }, [resolvedTheme]);
 
-    // Side effects for Surface Mode and Native Tauri integration
     useEffect(() => {
-        if (surfaceMode === 'liquid') {
-            invoke('enable_liquid_glass', { theme: resolvedTheme }).catch(err => console.error("Failed to enable glass:", err));
+        // Liquid Mode (Full window transparency)
+        if (backgroundMode === 'liquid') {
+            invoke('enable_liquid_glass', { theme: resolvedTheme }).catch(err =>
+                console.error("Failed to enable glass:", err)
+            );
         } else {
-            invoke('disable_liquid_glass').catch(err => console.error("Failed to disable glass:", err));
+            invoke('disable_liquid_glass').catch(err =>
+                console.error("Failed to disable glass:", err)
+            );
         }
 
         const root = document.documentElement;
 
-        // Apply classes to root only
-        // CSS expects 'glass' for data-surface, but we call it 'liquid' in settings
-        const surfaceAttr = surfaceMode === 'liquid' ? 'glass' : 'solid';
+        // Map unified backgroundMode to historical surface attributes for CSS compatibility
+        // 'wallpaper' and 'liquid' both use glassy/translucent panels
+        const surfaceAttr = (backgroundMode === 'liquid' || backgroundMode === 'wallpaper') ? 'glass' : 'solid';
 
-        root.classList.remove('liquid-mode', 'solid-mode');
-        root.classList.add(surfaceMode === 'liquid' ? 'liquid-mode' : 'solid-mode');
+        root.classList.remove('liquid-mode', 'solid-mode', 'wallpaper-mode');
+        root.classList.add(`${backgroundMode}-mode`);
+
         root.setAttribute('data-surface', surfaceAttr);
-        localStorage.setItem('app-surface-mode', surfaceMode);
-
         root.setAttribute('data-background-mode', backgroundMode);
+
         localStorage.setItem('app-background-mode', backgroundMode);
+        // Clean up old surface mode setting
+        localStorage.removeItem('app-surface-mode');
 
-        // Persist Wallpaper Config
-        localStorage.setItem('app-wallpaper-config', JSON.stringify(wallpaper));
-    }, [surfaceMode, wallpaper, backgroundMode, resolvedTheme]);
+        // Always persist to localStorage (for offline / no-auth)
+        localStorage.setItem('app-wallpaper-config', JSON.stringify({ ...wallpaperConfig, backgroundMode }));
+    }, [backgroundMode, wallpaperConfig, resolvedTheme]);
 
-    // 6. Updated setter: persists the preference
+    useEffect(() => {
+        localStorage.setItem('app-show-completed-tasks', showCompletedTasks);
+    }, [showCompletedTasks]);
+
+    // ─── Theme setters ────────────────────────────────────────────────────────
     const setTheme = (theme) => {
         setThemePreference(theme);
         localStorage.setItem("theme-preference", theme);
@@ -117,36 +266,101 @@ export const ThemeProvider = ({ children }) => {
 
     const toggleTheme = () => {
         setThemePreference(prev => {
-            // Cycle: light -> dark -> system -> light
-            let next;
-            if (prev === 'light') next = 'dark';
-            else if (prev === 'dark') next = 'system';
-            else next = 'light';
-
+            const next = prev === 'light' ? 'dark' : prev === 'dark' ? 'system' : 'light';
             localStorage.setItem("theme-preference", next);
             return next;
         });
     };
 
-    // Helper setters for wallpaper
-    const setLightWallpaper = (url) => setWallpaperState(prev => ({ ...prev, light: url }));
-    const setDarkWallpaper = (url) => setWallpaperState(prev => ({ ...prev, dark: url }));
-    const clearWallpaper = () => setWallpaperState({ light: null, dark: null });
+    // ─── Wallpaper scope setter ───────────────────────────────────────────────
+    const setWallpaperScope = (scope) => {
+        setWallpaperConfig(prev => ({ ...prev, wallpaperScope: scope }));
+    };
+
+    // ─── Wallpaper setters (scope-aware) ─────────────────────────────────────
+    const setLightWallpaper = (url, page = null) => {
+        console.log("LOG A: setLightWallpaper called", { url, page });
+        setWallpaperConfig(prev => {
+            if (page) {
+                return {
+                    ...prev,
+                    wallpapers: {
+                        ...prev.wallpapers,
+                        pages: {
+                            ...prev.wallpapers.pages,
+                            [page]: { ...prev.wallpapers.pages[page], light: url }
+                        }
+                    }
+                };
+            }
+            return {
+                ...prev,
+                wallpapers: { ...prev.wallpapers, global: { ...prev.wallpapers.global, light: url } }
+            };
+        });
+    };
+
+    const setDarkWallpaper = (url, page = null) => {
+        console.log("LOG A: setDarkWallpaper called", { url, page });
+        setWallpaperConfig(prev => {
+            if (page) {
+                return {
+                    ...prev,
+                    wallpapers: {
+                        ...prev.wallpapers,
+                        pages: {
+                            ...prev.wallpapers.pages,
+                            [page]: { ...prev.wallpapers.pages[page], dark: url }
+                        }
+                    }
+                };
+            }
+            return {
+                ...prev,
+                wallpapers: { ...prev.wallpapers, global: { ...prev.wallpapers.global, dark: url } }
+            };
+        });
+    };
+
+    const clearWallpaper = (page = null) => {
+        setWallpaperConfig(prev => {
+            if (page) {
+                return {
+                    ...prev,
+                    wallpapers: {
+                        ...prev.wallpapers,
+                        pages: { ...prev.wallpapers.pages, [page]: { light: null, dark: null } }
+                    }
+                };
+            }
+            return { ...prev, wallpapers: { ...DEFAULT_WALLPAPER_CONFIG.wallpapers } };
+        });
+    };
+
+    // Convenience alias (global pair only) — keeps existing consumers working
+    const wallpaper = wallpaperConfig.wallpapers.global;
+    const wallpaperScope = wallpaperConfig.wallpaperScope;
 
     return (
         <ThemeContext.Provider value={{
-            theme: resolvedTheme, // Keep API compatibility (resolved light/dark)
-            themePreference,      // Expose new preference state
-            setTheme,             // Expose updated setter
+            theme: resolvedTheme,
+            themePreference,
+            setTheme,
             toggleTheme,
-            surface: surfaceMode,
-            setSurfaceMode,
             backgroundMode,
             setBackgroundMode,
             wallpaper,
+            wallpaperConfig,
+            wallpaperScope,
+            setWallpaperScope,
             setLightWallpaper,
             setDarkWallpaper,
-            clearWallpaper
+            clearWallpaper,
+            // Sync status (optional: show in UI)
+            isSyncing,
+            syncError,
+            showCompletedTasks,
+            setShowCompletedTasks,
         }}>
             {children}
         </ThemeContext.Provider>
@@ -155,9 +369,6 @@ export const ThemeProvider = ({ children }) => {
 
 export const useTheme = () => {
     const context = useContext(ThemeContext);
-    if (!context) {
-        throw new Error('useTheme must be used within a ThemeProvider');
-    }
+    if (!context) throw new Error('useTheme must be used within a ThemeProvider');
     return context;
 };
-

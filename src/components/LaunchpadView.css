@@ -6,13 +6,17 @@
     --card-hover-border: var(--color-secondary);
     /* Subtle purple lift */
 
-    --text-muted: var(--color-text-secondary);
+    --text-muted: var(--text-tertiary);
     --accent-blue: var(--color-secondary);
     --accent-purple: #a855f7;
     --accent-amber: var(--color-warning);
 
     --glass-blur: blur(16px);
-    --transition-premium: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-premium: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .launchpad-view {
@@ -21,9 +25,26 @@
     min-height: 100%;
     color: var(--color-text-main);
     padding: 60px 80px;
-    animation: launchpadFadeIn 0.8s ease-out;
     max-width: 1400px;
     margin: 0 auto;
+}
+
+.launchpad-loading {
+    padding: 80px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    margin: 40px auto;
+    max-width: 400px;
+    border-radius: 24px;
+    background: var(--alpha-med);
+    border: 1px solid var(--color-border);
+}
+
+.wallpaper-mode .launchpad-loading {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* 1. FIXED HEADER SECTION */
@@ -54,6 +75,7 @@
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px;
+    color: var(--text-primary);
 }
 
 .stat-value.aura {
@@ -61,6 +83,13 @@
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+.liquid-mode .stat-value.aura,
+.wallpaper-mode .stat-value.aura {
+    background: var(--color-text-main);
+    -webkit-text-fill-color: initial;
+    color: var(--color-text-main);
 }
 
 .stat-value.hryvnia {
@@ -95,6 +124,13 @@
     box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.35),
         inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.wallpaper-mode .area-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .liquid-mode.light .area-card {
@@ -150,6 +186,11 @@
     /* Very subtle blue glow */
 }
 
+.liquid-mode .area-card.is-motion,
+.wallpaper-mode .area-card.is-motion {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
 .area-aura-badge {
     position: absolute;
     top: 32px;
@@ -167,12 +208,17 @@
     line-height: 1;
 }
 
+.liquid-mode .aura-badge-value,
+.wallpaper-mode .aura-badge-value {
+    color: var(--color-text-main);
+}
+
 .aura-badge-label {
     font-size: 8px;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     font-weight: 700;
-    color: var(--text-muted);
+    color: var(--text-tertiary);
     margin-top: 4px;
 }
 
@@ -214,6 +260,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    color: var(--text-primary);
 }
 
 .active-marker-dot {
@@ -223,7 +270,12 @@
     border-radius: 50%;
     box-shadow: 0 0 12px var(--accent-blue);
     display: inline-block;
-    animation: launchpadDotGlow 3s infinite ease-in-out;
+}
+
+.liquid-mode .active-marker-dot,
+.wallpaper-mode .active-marker-dot {
+    background-color: var(--color-text-main);
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
 }
 
 @keyframes launchpadDotGlow {
@@ -242,7 +294,7 @@
 
 .area-value-statement {
     font-size: 15px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     line-height: 1.4;
     white-space: nowrap;
     overflow: hidden;
@@ -266,6 +318,13 @@
     border: 1px solid rgba(96, 165, 250, 0.2);
 }
 
+.liquid-mode .motion-badge,
+.wallpaper-mode .motion-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-main);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
 .pinch-badge {
     background: rgba(239, 68, 68, 0.1);
     color: #f87171;
@@ -282,7 +341,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: var(--text-muted);
+    color: var(--text-tertiary);
     display: block;
     margin-bottom: 12px;
 }
@@ -320,6 +379,12 @@
     box-shadow: 0 0 12px rgba(96, 165, 250, 0.5);
 }
 
+.liquid-mode .pip-fill.is-current,
+.wallpaper-mode .pip-fill.is-current {
+    background: var(--color-text-main);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+}
+
 /* INVITING ACTION BLOCK */
 .inviting-action-block {
     margin-top: auto;
@@ -341,6 +406,12 @@
     transform: scale(1.02);
 }
 
+.liquid-mode .area-card:hover .inviting-action-block,
+.wallpaper-mode .area-card:hover .inviting-action-block {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .action-main-text {
     font-size: 16px;
     font-weight: 500;
@@ -352,6 +423,14 @@
 .task-highlight {
     font-weight: 700;
     color: var(--color-secondary);
+}
+
+.liquid-mode .task-highlight,
+.wallpaper-mode .task-highlight {
+    color: var(--color-text-main);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-color: rgba(255, 255, 255, 0.3);
 }
 
 .action-reward-text {
@@ -398,6 +477,13 @@
     padding: 24px 32px;
     border-radius: 24px;
     border: 1px solid var(--color-border);
+}
+
+.wallpaper-mode .maintenance-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .maintenance-info {
@@ -458,6 +544,12 @@
     box-shadow: 0 0 30px rgba(96, 165, 250, 0.1);
 }
 
+.liquid-mode .area-card.is-selected,
+.wallpaper-mode .area-card.is-selected {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.12);
+}
+
 .selection-indicator {
     position: absolute;
     top: -18px;
@@ -471,7 +563,12 @@
     justify-content: center;
     box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
     z-index: 20;
-    animation: selectionPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.liquid-mode .selection-indicator,
+.wallpaper-mode .selection-indicator {
+    background: var(--color-text-main);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .selection-indicator .check-icon {

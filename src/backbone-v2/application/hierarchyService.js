@@ -1104,7 +1104,7 @@ export const HierarchyService = (repository, auraService) => {
                 }
             }
 
-            // Objective status logic
+            // Objective status logic (Part 1: Validation and Achieved timestamp)
             if (existing.type === NodeTypes.OBJECTIVE && updates.metadata?.status) {
                 if (updates.metadata.status === ObjectiveStatuses.ACHIEVED &&
                     existing.metadata?.status !== ObjectiveStatuses.ACHIEVED) {
@@ -1112,27 +1112,10 @@ export const HierarchyService = (repository, auraService) => {
                         ...newUpdates.metadata,
                         achievedAt: Date.now()
                     };
-                    console.log("CALLING DAILY COMPLETION INCREMENT");
-                    await incrementDailyCompletionCount();
-
-                    // Tier progression
-                    const root = await repository.getById('ROOT');
-                    if (root) {
-                        const currentTier = root.metadata?.unlockedRewardTier || 1;
-                        await repository.update('ROOT', {
-                            metadata: { ...root.metadata, unlockedRewardTier: currentTier + 1 }
-                        });
-                        console.log(`[Tier Progression] Reward Tier upgraded to ${currentTier + 1}`);
-                    }
                 }
             }
 
-            // Aspect maintenance logic (if needed, currently none)
-            if (existing.type === NodeTypes.ASPECT && updates.metadata?.status) {
-                // No linear completion logic anymore
-            }
-
-            // Task status logic: store completedAt when status becomes DONE
+            // Task status logic (Part 1: Completed timestamp)
             if (existing.type === NodeTypes.TASK && newUpdates.metadata?.status === TaskStatuses.DONE && existing.metadata?.status !== TaskStatuses.DONE) {
                 const completedAt = existing.metadata?.completedAt || Date.now();
                 newUpdates.metadata = {
@@ -1140,8 +1123,63 @@ export const HierarchyService = (repository, auraService) => {
                     completedAt
                 };
                 console.log(`DEBUG: Task completedAt set to ${completedAt}`);
+            }
 
-                // 1. Task Reward runs FIRST
+            // Active Skill Logic: Max 4
+            if (existing.type === NodeTypes.SKILL && updates.metadata?.isActive !== undefined) {
+                const isActivating = updates.metadata.isActive;
+                const wasActive = existing.metadata?.isActive;
+
+                if (isActivating && !wasActive) {
+                    // Cooldown Authority: Prevent activation if on cooldown
+                    if (existing.metadata?.cooldownActive) {
+                        throw new Error("Cooldown Authority: This skill is resting and cannot be activated manually.");
+                    }
+
+                    const allNodes = await repository.getAll();
+                    const activeSkillsCount = allNodes.filter(n => n.type === NodeTypes.SKILL && n.metadata?.isActive).length;
+
+                    if (activeSkillsCount >= 4) {
+                        console.log("ACTIVE LIMIT BLOCKED: 4 skills already active");
+                        throw new Error("ACTIVE_LIMIT_REACHED");
+                    }
+
+                    newUpdates.metadata.activatedAt = Date.now();
+                } else if (!isActivating && wasActive) {
+                    delete newUpdates.metadata.activatedAt;
+                }
+            }
+
+            // Cooldown Logic: Force deactivation if cooldown is enabled
+            if (existing.type === NodeTypes.SKILL && newUpdates.metadata?.cooldownActive) {
+                newUpdates.metadata.isActive = false;
+                delete newUpdates.metadata.activatedAt;
+            }
+
+            // --- PRIMARY UPDATE ---
+            // We save the node itself BEFORE side-effects so reactive refreshes (subscriptions)
+            // see the correct status immediately when rewards/counters update.
+            const result = await repository.update(nodeId, newUpdates);
+
+            // SIDE EFFECTS - OBJECTIVE
+            if (existing.type === NodeTypes.OBJECTIVE && newUpdates.metadata?.status === ObjectiveStatuses.ACHIEVED && existing.metadata?.status !== ObjectiveStatuses.ACHIEVED) {
+                console.log("Achieved Objective -> Triggering Achieved Rewards");
+                await incrementDailyCompletionCount();
+
+                // Tier progression
+                const root = await repository.getById('ROOT');
+                if (root) {
+                    const currentTier = root.metadata?.unlockedRewardTier || 1;
+                    await repository.update('ROOT', {
+                        metadata: { ...root.metadata, unlockedRewardTier: currentTier + 1 }
+                    });
+                    console.log(`[Tier Progression] Reward Tier upgraded to ${currentTier + 1}`);
+                }
+            }
+
+            // SIDE EFFECTS - TASK
+            if (existing.type === NodeTypes.TASK && newUpdates.metadata?.status === TaskStatuses.DONE && existing.metadata?.status !== TaskStatuses.DONE) {
+                // 1. Task Reward
                 await awardHryvnia(1, "Task Reward");
 
                 // 2. Momentum Update
@@ -1177,39 +1215,6 @@ export const HierarchyService = (repository, auraService) => {
                 console.log("CALLING DAILY COMPLETION INCREMENT");
                 await incrementDailyCompletionCount();
             }
-
-            // Active Skill Logic: Max 4
-            if (existing.type === NodeTypes.SKILL && updates.metadata?.isActive !== undefined) {
-                const isActivating = updates.metadata.isActive;
-                const wasActive = existing.metadata?.isActive;
-
-                if (isActivating && !wasActive) {
-                    // Cooldown Authority: Prevent activation if on cooldown
-                    if (existing.metadata?.cooldownActive) {
-                        throw new Error("Cooldown Authority: This skill is resting and cannot be activated manually.");
-                    }
-
-                    const allNodes = await repository.getAll();
-                    const activeSkillsCount = allNodes.filter(n => n.type === NodeTypes.SKILL && n.metadata?.isActive).length;
-
-                    if (activeSkillsCount >= 4) {
-                        console.log("ACTIVE LIMIT BLOCKED: 4 skills already active");
-                        throw new Error("ACTIVE_LIMIT_REACHED");
-                    }
-
-                    newUpdates.metadata.activatedAt = Date.now();
-                } else if (!isActivating && wasActive) {
-                    delete newUpdates.metadata.activatedAt;
-                }
-            }
-
-            // Cooldown Logic: Force deactivation if cooldown is enabled
-            if (existing.type === NodeTypes.SKILL && newUpdates.metadata?.cooldownActive) {
-                newUpdates.metadata.isActive = false;
-                delete newUpdates.metadata.activatedAt;
-            }
-
-            const result = await repository.update(nodeId, newUpdates);
 
             // Sync objective accumulation after any aspect metadata change
             if (existing.type === NodeTypes.ASPECT && (updates.metadata?.accumulatedMetric !== undefined || updates.metadata?.status)) {
@@ -1915,7 +1920,6 @@ export const HierarchyService = (repository, auraService) => {
 
                 return {
                     ...area,
-                    icon: area.metadata?.icon || '🌐',
                     score,
                     areaAura,
                     activePinch: pinchStates[0] || null,

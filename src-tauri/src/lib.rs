@@ -38,6 +38,7 @@ fn disable_liquid_glass(app: tauri::AppHandle) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .plugin(tauri_plugin_deep_link::init())
     .plugin(tauri_plugin_liquid_glass::init())
     .invoke_handler(tauri::generate_handler![enable_liquid_glass, disable_liquid_glass])
     .setup(|app| {

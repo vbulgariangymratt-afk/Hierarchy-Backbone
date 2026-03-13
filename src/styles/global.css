@@ -18,6 +18,25 @@ body,
     height: 100%;
 }
 
+/* ── Transparent Window Drag Region (Tauri MacOS) ────────── */
+.app-drag-region {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 36px;
+    z-index: 9998; /* Just below modals/portals (9999) but above content */
+    pointer-events: none; /* Allow events through by default */
+}
+
+/* The actual draggable sub-layer */
+.app-drag-region[data-tauri-drag-region] {
+    pointer-events: auto; /* Re-enable for the drag region itself */
+    -webkit-app-region: drag;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 /* --- UI MODES: LIQUID vs SOLID --- */
 
 /* LIQUID MODE: Frosted Glass & Transparency */
@@ -96,7 +115,7 @@ body {
 }
 
 .light .node-icon {
-    color: #444444;
+    color: var(--text-secondary);
     /* Dark gray for light mode */
 }
 
@@ -109,15 +128,23 @@ body {
 a {
     color: var(--color-primary);
     text-decoration: none;
+    -webkit-app-region: no-drag;
 }
 
 a:hover {
     text-decoration: underline;
 }
 
-button {
-    font-family: inherit;
-    cursor: pointer;
+button,
+input,
+textarea,
+select,
+a,
+[role="button"],
+.clickable,
+.nav-item,
+.mode-toggle-btn {
+    -webkit-app-region: no-drag;
 }
 
 img,
@@ -174,20 +201,43 @@ video {
     contain: content;
 }
 
-/* Liquid Mode Specifics for Glass Cards */
-.liquid-mode .liquid-glass {
+/* Liquid Mode Specifics for Glass Cards & Modals */
+.liquid-mode .liquid-glass,
+.liquid-mode .modal-content,
+.liquid-mode .reward-modal,
+.liquid-mode .floating-ui,
+.liquid-mode .popover {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(30px) saturate(160%);
-    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     box-shadow:
-        inset 0 1px rgba(255, 255, 255, 0.25),
-        inset 0 -1px rgba(0, 0, 0, 0.12),
-        0 10px 30px rgba(0, 0, 0, 0.15);
+        0 8px 30px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.wallpaper-mode .liquid-glass,
+.wallpaper-mode .modal-content,
+.wallpaper-mode .reward-modal,
+.wallpaper-mode .create-reward-modal,
+.wallpaper-mode .create-skill-modal,
+.wallpaper-mode .limit-modal,
+.wallpaper-mode .floating-ui,
+.wallpaper-mode .popover {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .liquid-mode.light .liquid-glass {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.40);
+    border-color: rgba(255, 255, 255, 0.50);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.6),
+        0 10px 30px rgba(0, 0, 0, 0.10);
 }
 
 /* Solid Mode Specifics for Cards */
@@ -312,7 +362,7 @@ video {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-tertiary);
     font-size: 13px;
 }
 
@@ -321,7 +371,7 @@ video {
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 600;
 }
@@ -338,7 +388,7 @@ video {
 .premium-activity-list th {
     text-align: left;
     padding: 16px 20px;
-    color: rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
@@ -401,7 +451,7 @@ video {
 
 .notion-tab-item {
     padding: 6px 16px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -429,7 +479,7 @@ video {
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    color: rgba(255, 255, 255, 0.25);
+    color: var(--text-tertiary);
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
@@ -504,7 +554,7 @@ video {
 /* Area Tags - Ghost Glass */
 .tag-gray {
     background: rgba(255, 255, 255, 0.02);
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-muted);
     border-color: rgba(255, 255, 255, 0.03);
     letter-spacing: 0.12em;
 }
@@ -519,13 +569,13 @@ video {
 }
 
 .notion-property-placeholder {
-    color: rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
     font-style: italic;
 }
 
 .notion-meta {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-tertiary);
     font-weight: 400;
 }
 
@@ -553,7 +603,7 @@ video {
 }
 
 .notion-input::placeholder {
-    color: rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
 }
 
 /* Premium Grayscale Sliders - Notion Aesthetic */
@@ -624,39 +674,39 @@ video {
         inset 0 1px rgba(255, 255, 255, 0.25),
         inset 0 -1px rgba(0, 0, 0, 0.12),
         0 10px 30px rgba(0, 0, 0, 0.15) !important;
-    color: #121212 !important;
+    color: var(--text-primary);
 }
 
 [data-theme='light'] .flashcard-complete {
     background: rgba(255, 255, 255, 0.3) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    color: #121212 !important;
+    color: var(--text-primary);
 }
 
 [data-theme='light'] .flashcard-button {
     background: rgba(255, 255, 255, 0.4) !important;
     border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    color: #121212 !important;
+    color: var(--text-primary);
 }
 
 [data-theme='light'] .flashcard-hint {
     background: rgba(0, 0, 0, 0.04) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    color: #444 !important;
+    color: var(--text-secondary);
 }
 
 [data-theme='light'] .flashcard-stats {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04) !important;
-    color: #121212 !important;
+    color: var(--text-primary);
 }
 
 [data-theme='light'] .liquid-glass.hover-trigger,
 [data-theme='light'] .liquid-glass:not(.primary-button) {
     background: rgba(255, 255, 255, 0.2) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
-    color: #121212 !important;
+    color: var(--text-primary);
 }
 
 /* --- Liquid Dark Mode Seamlessness: Remove Internal Dividers --- */
@@ -676,4 +726,183 @@ body.dark.liquid-mode .area-page-header,
 body.dark.liquid-mode .metric {
     border-top: none !important;
     border-bottom: none !important;
+}
+
+/* --- Segmented Control (Appearance) --- */
+.segmented-control-container {
+    padding: 0 16px;
+    margin: 8px 0 16px 0;
+}
+
+.segmented-control-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+    display: block;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+.segmented-control {
+    display: flex;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 11px;
+    padding: 3px;
+    gap: 1px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.segmented-control-item {
+    flex: 1;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 6px 4px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-main);
+    opacity: 0.6;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+    font-family: inherit;
+    user-select: none;
+}
+
+.segmented-control-item:hover {
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.segmented-control-item.active {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   NEUTRAL GLASS OVERRIDES (Wallpaper & Liquid Mode)
+   Removes blue accents across all pages for a neutral aesthetic.
+   ============================================================ */
+
+.liquid-mode,
+.wallpaper-mode {
+    /* Base Neutral Overrides */
+    --accent-blue: var(--color-text-main);
+    --color-secondary: var(--color-text-main);
+    --accent-focus: var(--color-text-main);
+}
+
+/* ── Launchpad & Area Page Overrides ──────────────────────── */
+.liquid-mode .active-marker-dot,
+.wallpaper-mode .active-marker-dot,
+.liquid-mode .active-skill-dot,
+.wallpaper-mode .active-skill-dot {
+    background-color: var(--color-text-main) !important;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.5) !important;
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.4)) !important;
+}
+
+.liquid-mode .skill-card.is-active,
+.wallpaper-mode .skill-card.is-active,
+.liquid-mode .area-card.is-selected,
+.wallpaper-mode .area-card.is-selected {
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ── Skill Page Overrides ─────────────────────────────────── */
+.liquid-mode .skill-identity-input,
+.wallpaper-mode .skill-identity-input {
+    color: var(--color-text-main) !important;
+    border-bottom-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.liquid-mode .suggestion-chip.momentum,
+.wallpaper-mode .suggestion-chip.momentum {
+    border-left-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.liquid-mode .objective-container.is-focused .objective-title,
+.wallpaper-mode .objective-container.is-focused .objective-title {
+    color: var(--color-text-main) !important;
+}
+
+.liquid-mode .focus-pill,
+.wallpaper-mode .focus-pill {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--color-text-main) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.liquid-mode .add-task-btn,
+.wallpaper-mode .add-task-btn,
+.liquid-mode .add-objective-btn,
+.wallpaper-mode .add-objective-btn {
+    color: var(--color-text-main) !important;
+    opacity: 0.5 !important;
+}
+
+.liquid-mode .add-task-btn:hover,
+.wallpaper-mode .add-task-btn:hover,
+.liquid-mode .add-objective-btn:hover,
+.wallpaper-mode .add-objective-btn:hover {
+    opacity: 1 !important;
+}
+
+.liquid-mode .task-confirm-btn,
+.wallpaper-mode .task-confirm-btn,
+.liquid-mode .confirm-btn,
+.wallpaper-mode .confirm-btn {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: var(--color-text-main) !important;
+}
+
+.liquid-mode .aspect-card.drag-over,
+.wallpaper-mode .aspect-card.drag-over {
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.liquid-mode .aspect-card.is-active,
+.wallpaper-mode .aspect-card.is-active,
+.liquid-mode .aspect-card.is-done,
+.wallpaper-mode .aspect-card.is-done {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.liquid-mode .active-indicator,
+.wallpaper-mode .active-indicator,
+.liquid-mode .task-today-badge.active,
+.wallpaper-mode .task-today-badge.active {
+    background: rgba(255, 255, 255, 0.8) !important;
+    color: var(--text-on-light-primary) !important;
+}
+
+.liquid-mode .motion-badge,
+.wallpaper-mode .motion-badge {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--color-text-main) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ── Focus Page Overrides ─────────────────────────────────── */
+.liquid-mode .focus-action-card.glow,
+.wallpaper-mode .focus-action-card.glow {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25) !important;
+}
+
+.liquid-mode .hyperfocus-warning-toast,
+.wallpaper-mode .hyperfocus-warning-toast {
+    color: var(--color-text-main) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    background: rgba(40, 40, 40, 0.9) !important;
+}
+
+.liquid-mode .focus-toggle.active .toggle-track,
+.wallpaper-mode .focus-toggle.active .toggle-track {
+    background: rgba(255, 255, 255, 0.3) !important;
 }

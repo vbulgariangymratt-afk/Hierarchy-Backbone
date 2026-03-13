@@ -75,7 +75,6 @@ const LaunchpadView = ({
                                 <div className="area-icon-container">
                                     <NodeIcon
                                         iconUrl={area.metadata?.iconUrl}
-                                        emoji={area.icon}
                                         defaultIcon="🌐"
                                         size={24}
                                     />

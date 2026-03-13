@@ -2,10 +2,12 @@
     --sidebar-width: 260px;
     --sidebar-bg: var(--color-bg-sidebar-translucent);
     --sidebar-border: var(--color-border);
-    --accent-focus: #3b82f6;
+    --accent-focus: var(--color-accent);
     --accent-planning: #f59e0b;
-    --text-primary: var(--color-text-main);
-    --text-secondary: var(--color-text-secondary);
+    --text-primary: var(--text-primary);
+    --text-secondary: var(--text-secondary);
+    --text-tertiary: var(--text-tertiary);
+    --text-muted: var(--text-muted);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -32,18 +34,31 @@
 
 /* Mode Specific Backgrounds */
 .liquid-mode .sidebar {
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    backdrop-filter: blur(30px) saturate(160%);
-    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     box-shadow:
-        0 12px 48px rgba(0, 0, 0, 0.30),
-        inset 0 1px 1px rgba(255, 255, 255, 0.45),
-        inset 0 -1px rgba(0, 0, 0, 0.12);
+        0 8px 32px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.wallpaper-mode .sidebar {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .liquid-mode.light .sidebar {
     background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.10),
+        inset 0 1px 1px rgba(255, 255, 255, 0.8),
+        inset 0 -1px rgba(0, 0, 0, 0.05);
 }
 
 .solid-mode .sidebar {
@@ -60,8 +75,8 @@
     inset: 0;
     border-radius: inherit;
     background: linear-gradient(180deg,
-            rgba(255, 255, 255, 0.32) 0%,
-            rgba(255, 255, 255, 0.04) 35%,
+            rgba(255, 255, 255, 0.40) 0%,
+            rgba(255, 255, 255, 0.08) 35%,
             transparent 100%);
     opacity: 0.45;
     pointer-events: none;
@@ -137,17 +152,45 @@
 
 /* Mode Specific Styles */
 .mode-focus .mode-toggle-btn {
-    border-color: rgba(59, 130, 246, 0.3);
-    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--color-accent);
+    background: var(--alpha-low);
+}
+
+.liquid-mode .mode-focus .mode-toggle-btn,
+.wallpaper-mode .mode-focus .mode-toggle-btn {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .mode-focus .btn-icon {
-    background: rgba(59, 130, 246, 0.2);
+    background: var(--alpha-med);
+}
+
+.liquid-mode .mode-focus .btn-icon,
+.wallpaper-mode .mode-focus .btn-icon {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .mode-focus .btn-status-indicator {
     background: var(--accent-focus);
     box-shadow: 0 0 12px var(--accent-focus);
+}
+
+.liquid-mode .mode-focus .mode-toggle-btn,
+.wallpaper-mode .mode-focus .mode-toggle-btn {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode .mode-focus .btn-icon,
+.wallpaper-mode .mode-focus .btn-icon {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.liquid-mode .mode-focus .btn-status-indicator,
+.wallpaper-mode .mode-focus .btn-status-indicator {
+    background: var(--text-primary);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
 }
 
 .mode-planning .mode-toggle-btn {
@@ -274,6 +317,12 @@
     box-shadow: 0 0 8px var(--accent-focus);
 }
 
+.liquid-mode .btn-status-dot.active,
+.wallpaper-mode .btn-status-dot.active {
+    background: var(--text-primary);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
 
 /* Navigation Items */
 .sidebar-nav {
@@ -363,6 +412,12 @@
     margin-left: auto;
     filter: drop-shadow(0 0 4px var(--accent-focus));
     animation: sidebarDotGlow 3s infinite ease-in-out;
+}
+
+.liquid-mode .active-skill-dot,
+.wallpaper-mode .active-skill-dot {
+    background-color: var(--text-primary);
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
 }
 
 @keyframes sidebarDotGlow {
@@ -482,10 +537,24 @@
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    color: var(--accent-focus);
+    color: var(--color-accent);
+}
+
+.liquid-mode .placeholder-item,
+.wallpaper-mode .placeholder-item {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+}
+
+.liquid-mode .placeholder-item,
+.wallpaper-mode .placeholder-item {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
 }
 
 .placeholder-hint {
@@ -576,6 +645,11 @@
     border-color: var(--accent-focus);
 }
 
+.liquid-mode .popover-input:focus,
+.wallpaper-mode .popover-input:focus {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
 .popover-preview {
     display: flex;
     align-items: center;
@@ -605,6 +679,13 @@
 .popover-actions .confirm-btn {
     background: var(--accent-focus);
     color: white;
+}
+
+.liquid-mode .popover-actions .confirm-btn,
+.wallpaper-mode .popover-actions .confirm-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
 }
 
 .popover-actions .cancel-btn {

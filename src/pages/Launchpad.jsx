@@ -57,7 +57,7 @@ const Launchpad = () => {
 
     if (data.loading) {
         return (
-            <div style={{ padding: '80px', color: 'var(--color-text-secondary)', textAlign: 'center' }}>
+            <div className="launchpad-loading">
                 Initializing Launchpad...
             </div>
         );

@@ -21,9 +21,11 @@
  * @property {string} [notes]
  */
 
+import { supabase } from '../../lib/supabase';
+
 /**
  * Persistent implementation of the Journal Repository.
- * Stores entries and lifecycle metadata.
+ * Stores entries and lifecycle metadata in Supabase.
  */
 export const createJournalRepository = () => {
     let storage = {
@@ -35,15 +37,34 @@ export const createJournalRepository = () => {
     };
     const instanceId = Math.random().toString(36).substr(2, 5);
 
-    const persist = async () => {
+    // Internal helper to get current authenticated user
+    const getUserId = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        return user?.id;
+    };
+
+    const persist = async (entry) => {
+        const userId = await getUserId();
+        if (!userId) return;
+
         try {
-            await fetch('/api/journal-data/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(storage)
-            });
+            const { error } = await supabase
+                .from('journal_entries')
+                .upsert({
+                    id: entry.id,
+                    user_id: userId,
+                    date: entry.date,
+                    biological: entry.biological || {},
+                    activation: entry.activation || {},
+                    regulation: entry.regulation || {},
+                    notes: entry.notes || '',
+                    metadata: storage.metadata || {},
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
         } catch (e) {
-            console.error('Failed to persist Journal data:', e);
+            console.error('Failed to persist Journal entry to Supabase:', e);
         }
     };
 
@@ -76,14 +97,45 @@ export const createJournalRepository = () => {
         initialize: async () => {
             if (initPromise) return initPromise;
             initPromise = (async () => {
+                console.log(`JournalRepo [ID:${instanceId}]: Initializing from Supabase...`);
                 try {
-                    const response = await fetch('/api/journal-data/load');
-                    const data = await response.json();
-                    storage = normalize(data);
+                    const userId = await getUserId();
+                    if (!userId) {
+                        console.warn('JournalRepo: No user authenticated.');
+                        return;
+                    }
+
+                    const { data, error } = await supabase
+                        .from('journal_entries')
+                        .select('*')
+                        .eq('user_id', userId);
+
+                    if (error) throw error;
+
+                    const entries = (data || []).map(row => ({
+                        id: row.id,
+                        date: row.date,
+                        biological: row.biological,
+                        activation: row.activation,
+                        regulation: row.regulation,
+                        notes: row.notes,
+                        createdAt: row.created_at,
+                        updatedAt: row.updated_at
+                    }));
+
+                    // Metadata might be repeated across rows or stored elsewhere. 
+                    // For now, take from the first row if available
+                    const metadata = data?.[0]?.metadata || storage.metadata;
+
+                    storage = {
+                        entries,
+                        metadata
+                    };
+
                     notify();
                 } catch (e) {
-                    console.error('Failed to load Journal data, initializing empty:', e);
-                    storage = normalize(null); // Ensure valid state even on failure
+                    console.error('Failed to load Journal data from Supabase:', e);
+                    storage = normalize(null);
                 }
             })();
             return initPromise;
@@ -96,7 +148,11 @@ export const createJournalRepository = () => {
         updateMetadata: async (updates) => {
             if (!storage.metadata) storage.metadata = { lastAppCloseTime: null, firstAppOpenTime: null };
             storage.metadata = { ...storage.metadata, ...updates };
-            await persist();
+
+            // Sync metadata (this will upsert one entry with the new metadata)
+            if (storage.entries.length > 0) {
+                await persist(storage.entries[0]);
+            }
             notify();
         },
 
@@ -117,7 +173,7 @@ export const createJournalRepository = () => {
                     updatedAt: Date.now()
                 });
             }
-            await persist();
+            await persist(entry);
             notify();
             return entry;
         },
@@ -127,7 +183,7 @@ export const createJournalRepository = () => {
             const index = storage.entries.findIndex(e => e.id === id);
             if (index !== -1) {
                 storage.entries[index] = { ...storage.entries[index], ...updates, updatedAt: Date.now() };
-                await persist();
+                await persist(storage.entries[index]);
                 notify();
                 return { ...storage.entries[index] };
             }

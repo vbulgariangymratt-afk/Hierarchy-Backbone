@@ -1,0 +1,149 @@
+/* ── Pair container ────────────────────────────────────────────────────── */
+.wp-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.wp-pair-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    opacity: 0.55;
+    color: var(--color-text, #fff);
+}
+
+/* ── Single slot ──────────────────────────────────────────────────────── */
+.wp-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wp-slot-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.5;
+    color: var(--color-text, #fff);
+}
+
+/* ── Row: upload button + "or" + url input + clear ───────────────────── */
+.wp-slot-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Upload button */
+.wp-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 12px;
+    background: var(--alpha-low, rgba(255, 255, 255, 0.07));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.14));
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text, #e2e8f0);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.wp-upload-btn:hover {
+    background: var(--alpha-mid, rgba(255, 255, 255, 0.13));
+    border-color: var(--accent-focus, #6366f1);
+}
+
+/* "or" separator */
+.wp-or {
+    font-size: 11px;
+    opacity: 0.35;
+    flex-shrink: 0;
+}
+
+/* URL text input */
+.wp-url-input {
+    flex: 1;
+    min-width: 0;
+    background: var(--alpha-low, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--color-text, #e2e8f0);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.wp-url-input::placeholder {
+    opacity: 0.35;
+}
+
+.wp-url-input:focus {
+    border-color: var(--accent-focus, #6366f1);
+}
+
+/* Clear button */
+.wp-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    color: var(--color-text, #e2e8f0);
+    opacity: 0.4;
+    cursor: pointer;
+    font-size: 12px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.wp-clear-btn:hover {
+    opacity: 0.9;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Preview ──────────────────────────────────────────────────────────── */
+.wp-preview-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    background: rgba(0, 0, 0, 0.2);
+    max-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wp-preview {
+    display: block;
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 7px;
+}
+
+.wp-preview-badge {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+    pointer-events: none;
+}

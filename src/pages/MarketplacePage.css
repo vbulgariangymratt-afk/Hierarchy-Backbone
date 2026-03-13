@@ -7,7 +7,7 @@
 
 .solid-mode .marketplace-page {
     background: var(--color-bg-main);
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .liquid-mode .marketplace-page {
@@ -31,7 +31,7 @@
     font-size: 32px;
     font-weight: 700;
     margin: 0;
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .title-section {
@@ -45,23 +45,27 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    border-radius: 20px;
+    border-radius: 12px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .solid-mode .create-reward-btn {
     background: var(--alpha-low);
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     border: 1px solid var(--color-border);
 }
 
-.liquid-mode .create-reward-btn {
-    background: rgba(255, 255, 255, 0.05);
+.liquid-mode .create-reward-btn,
+.wallpaper-mode .create-reward-btn {
+    background: var(--alpha-high);
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
 .liquid-mode.light .create-reward-btn {
@@ -70,7 +74,7 @@
 
 .create-reward-btn:hover {
     background: var(--alpha-med);
-    color: var(--color-text-main);
+    color: var(--text-primary);
     border-color: var(--color-primary);
     transform: translateY(-1px);
 }
@@ -117,13 +121,13 @@
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
 .balance-value {
     font-size: 24px;
     font-weight: 700;
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .marketplace-main {
@@ -144,7 +148,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+    transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1), background-color 0.3s cubic-bezier(0.2, 0, 0, 1), border-color 0.3s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1);
     position: relative;
     overflow: hidden;
 }
@@ -156,6 +160,11 @@
 }
 
 .liquid-mode .reward-card {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* liquid-glass in global.css handles the rest */
+}
+
+.wallpaper-mode .reward-card {
     border: 1px solid rgba(255, 255, 255, 0.15);
     /* liquid-glass in global.css handles the rest */
 }
@@ -176,20 +185,20 @@
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
 .reward-name {
     font-size: 18px;
     font-weight: 600;
     margin: 0 0 12px 0;
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .reward-description {
     font-size: 14px;
     line-height: 1.5;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     margin: 0 0 24px 0;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -217,7 +226,7 @@
 .cost-value {
     font-size: 18px;
     font-weight: 700;
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .buy-button {
@@ -238,15 +247,16 @@
     color: var(--color-text-inverse);
 }
 
-.liquid-mode .buy-button {
-    background: rgba(255, 255, 255, 0.1);
+.liquid-mode .buy-button,
+.wallpaper-mode .buy-button {
+    background: transparent;
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .liquid-mode.light .buy-button {
-    background: rgba(0, 0, 0, 0.06);
-    color: var(--color-text-main);
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text-primary);
 }
 
 .buy-button:hover:not(:disabled) {
@@ -261,7 +271,7 @@
 
 .buy-button:disabled {
     background: rgba(128, 128, 128, 0.05);
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     cursor: not-allowed;
     border-color: transparent;
 }
@@ -288,28 +298,33 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 28px;
-    border-radius: 30px;
+    padding: 10px 20px;
+    border-radius: 12px;
     font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .solid-mode .refill-button {
     background: transparent;
     border: 1px solid var(--color-border);
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
-.liquid-mode .refill-button {
-    background: rgba(255, 255, 255, 0.05);
+.liquid-mode .refill-button,
+.wallpaper-mode .refill-button {
+    background: var(--alpha-high);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .refill-button:hover {
     background: var(--alpha-high);
-    color: var(--color-text-main);
+    color: var(--text-primary);
     border-color: var(--color-primary);
 }
 
@@ -319,7 +334,7 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     background: var(--color-bg-main);
 }
 

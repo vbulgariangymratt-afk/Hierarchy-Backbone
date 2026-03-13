@@ -39,3 +39,64 @@
 .wallpaper-input:focus {
     border-color: var(--accent-focus);
 }
+
+/* ── Scope toggle ──────────────────────────────────────────────────────── */
+.wallpaper-scope-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.08));
+    margin-bottom: 2px;
+}
+
+.wallpaper-radio-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.wallpaper-radio-row input[type="radio"] {
+    accent-color: var(--accent-focus, #6366f1);
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* ── Per-page section ─────────────────────────────────────────────────── */
+.wallpaper-per-page {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.wallpaper-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wallpaper-pair-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.wallpaper-divider {
+    height: 1px;
+    background: var(--sidebar-border, rgba(255, 255, 255, 0.08));
+}
+.wallpaper-no-page-hint {
+    font-size: 11px;
+    opacity: 0.5;
+    font-style: italic;
+    padding: 2px 0;
+}

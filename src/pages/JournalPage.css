@@ -5,7 +5,7 @@
     margin: 0 auto;
     padding: 40px 20px;
     font-family: var(--font-family-sans);
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .journal-header {
@@ -20,7 +20,7 @@
 
 .journal-date {
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
 .locked-tag {
@@ -50,6 +50,13 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.wallpaper-mode .journal-section {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 .section-header {
     padding: 16px 20px;
     display: flex;
@@ -66,7 +73,7 @@
 
 .toggle-arrow {
     font-size: 10px;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
 .section-body {
@@ -84,7 +91,7 @@
 
 .input-group label {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
 .activation-selector {
@@ -108,7 +115,7 @@
 
 .solid-mode .activation-btn {
     background: var(--color-bg-main);
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .liquid-mode .activation-btn {
@@ -119,7 +126,7 @@
 
 .liquid-mode.light .activation-btn {
     background: rgba(0, 0, 0, 0.04);
-    color: var(--color-text-main);
+    color: var(--text-primary);
     border-color: rgba(0, 0, 0, 0.08);
 }
 
@@ -146,7 +153,7 @@
     gap: 10px;
     cursor: pointer;
     font-size: 14px !important;
-    color: var(--color-text-main) !important;
+    color: var(--text-primary) !important;
 }
 
 .collapsible-notes {
@@ -177,7 +184,7 @@
 .solid-mode .notes-textarea {
     background: var(--color-bg-main);
     border: 1px solid var(--color-border);
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 .liquid-mode .notes-textarea {
@@ -189,7 +196,7 @@
 .liquid-mode.light .notes-textarea {
     background: rgba(255, 255, 255, 0.4);
     border: 1px solid rgba(0, 0, 0, 0.1);
-    color: var(--color-text-main);
+    color: var(--text-primary);
 }
 
 /* Summary Grid */
@@ -213,7 +220,7 @@
 
 .metric .label {
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }
 
 .metric .value {
@@ -244,7 +251,7 @@
 
 .count-item {
     font-size: 13px;
-    color: var(--color-text-main);
+    color: var(--text-primary);
     font-weight: 500;
 }
 
@@ -259,7 +266,7 @@
     background: var(--alpha-high);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;
     cursor: not-allowed;
@@ -273,7 +280,7 @@
 
 .reflection-placeholder {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     font-style: italic;
     padding: 16px;
     border-radius: var(--radius-md);
@@ -296,5 +303,5 @@
 .journal-skeleton {
     padding: 40px;
     text-align: center;
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
 }

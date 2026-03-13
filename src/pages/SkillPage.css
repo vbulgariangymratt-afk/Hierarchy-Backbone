@@ -2,7 +2,25 @@
     padding: 60px 80px;
     max-width: 1000px;
     margin: 0 auto;
-    animation: skillPageFadeIn 0.5s ease-out;
+}
+
+.skill-page-loading {
+    padding: 80px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 18px;
+    margin: 40px auto;
+    max-width: 400px;
+    border-radius: 24px;
+    background: var(--alpha-med);
+    border: 1px solid var(--color-border);
+}
+
+.wallpaper-mode .skill-page-loading {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 @keyframes skillPageFadeIn {
@@ -68,7 +86,7 @@
     background: transparent;
     border: none;
     border-bottom: 1px solid transparent;
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 15px;
     font-weight: 600;
     padding: 2px 0;
@@ -79,12 +97,11 @@
 
 .skill-identity-input:hover,
 .skill-identity-input:focus {
-    border-bottom-color: rgba(59, 130, 246, 0.3);
+    border-bottom-color: var(--color-accent);
 }
 
 .skill-identity-input::placeholder {
-    opacity: 0.2;
-    color: var(--text-secondary);
+    color: var(--text-muted);
 }
 
 .skill-subtitle {
@@ -104,6 +121,13 @@
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 20px;
+}
+
+.wallpaper-mode .suggested-focus-section {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .suggestions-label {
@@ -145,7 +169,7 @@
 }
 
 .suggestion-chip.momentum {
-    border-left: 3px solid #3b82f6;
+    border-left: 3px solid var(--color-accent);
 }
 
 .suggestion-chip.completion {
@@ -171,8 +195,8 @@
     }
 
     20% {
-        background: rgba(59, 130, 246, 0.15);
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+        background: var(--alpha-med);
+        box-shadow: 0 0 20px var(--alpha-low);
     }
 
     100% {
@@ -228,18 +252,26 @@
 }
 
 .objective-container.is-focused .objective-title {
-    color: #3b82f6;
+    color: var(--color-accent);
 }
 
 .focus-pill {
     font-size: 9px;
     font-weight: 800;
     text-transform: uppercase;
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    background: var(--alpha-med);
+    color: var(--text-secondary);
     padding: 2px 8px;
     border-radius: 4px;
     letter-spacing: 0.5px;
+    border: 1px solid var(--color-border);
+}
+
+.liquid-mode .focus-pill,
+.wallpaper-mode .focus-pill {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .focus-action-btn {
@@ -269,21 +301,8 @@
 }
 
 .objective-content {
-    padding-left: 32px;
+    padding: 0;
     margin-top: 16px;
-    animation: slideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 .objective-meta-inline {
@@ -344,7 +363,7 @@
 .add-task-btn {
     background: transparent;
     border: none;
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -434,7 +453,7 @@
 }
 
 .task-confirm-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 4px;
@@ -505,7 +524,7 @@
 .add-objective-btn {
     background: transparent;
     border: none;
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 14px;
     font-weight: 700;
     text-transform: uppercase;
@@ -546,27 +565,53 @@
 
 .aspects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    align-items: start;
+    grid-auto-flow: dense;
 }
 
 .aspect-card {
-    /* Liquid Glass card */
+    /* Liquid Glass host - Position and Layout */
+    position: relative;
+    border-radius: 18px;
+    padding: 24px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: auto;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    z-index: 1;
+}
+
+/* Isolated Glass Background Layer */
+.aspect-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(30px) saturate(160%);
-    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border-radius: inherit;
     box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.35),
         inset 0 1px 1px rgba(255, 255, 255, 0.4);
-    border-radius: 24px;
-    padding: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: visible;
-    /* Ensure task creation dropdowns aren't clipped */
-    transform: translateZ(0);
+    pointer-events: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.solid-mode .aspect-card::before {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
+}
+
+.wallpaper-mode .aspect-card::before {
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* Top-edge highlight reflection */
@@ -600,14 +645,14 @@
 
 .aspect-card.drag-over {
     background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
+    border-color: var(--color-accent);
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
     transform: scale(1.02);
 }
 
 .aspect-card.is-active {
-    background: rgba(59, 130, 246, 0.08);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: var(--alpha-low);
+    border-color: var(--color-accent);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -618,8 +663,8 @@
 }
 
 .aspect-card.is-done:hover {
-    border-color: rgba(59, 130, 246, 0.8) !important;
-    background: rgba(59, 130, 246, 0.08) !important;
+    border-color: var(--color-accent);
+    background: var(--alpha-med);
 }
 
 .aspect-header {
@@ -680,7 +725,7 @@
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     padding: 2px 8px;
     border-radius: 4px;
@@ -737,7 +782,6 @@
     background: rgba(255, 255, 255, 0.05);
     padding: 1px 6px;
     border-radius: 4px;
-    margin-left: 12px;
     opacity: 0.4;
     transition: all 0.2s ease;
     cursor: pointer;
@@ -758,13 +802,13 @@
 
 .task-today-badge.active {
     opacity: 1 !important;
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
 }
 
 .dragging-overlay {
     background: rgba(255, 255, 255, 0.12) !important;
-    border: 1px solid #3b82f6 !important;
+    border: 1px solid var(--color-accent) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
     opacity: 1;
     z-index: 9999;
@@ -784,6 +828,7 @@
     gap: 12px;
     padding: 6px 0;
     transition: all 0.2s ease;
+    min-height: 32px;
 }
 
 .task-status-symbol {
@@ -809,7 +854,7 @@
 }
 
 .status-progress {
-    color: #3b82f6;
+    color: var(--color-accent);
 }
 
 .status-done {
@@ -818,10 +863,26 @@
 
 .task-name-text {
     flex: 1;
+    min-width: 0;
     color: var(--text-primary);
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
+    line-height: 1.4;
+}
+
+.task-main-name {
+    word-break: break-word;
+}
+
+.task-actions-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: 12px;
 }
 
 .task-delete-btn {
@@ -861,6 +922,40 @@
     animation: fadeIn 0.2s ease-out;
 }
 
+/* Pre-rendered moday overlay */
+.pre-rendered-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pre-rendered-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.pre-rendered-modal-overlay > .confirmation-modal {
+    transform: translateY(10px) translateZ(0);
+    transition: transform 0.15s ease-out;
+    will-change: transform;
+    animation: none; 
+}
+
+.pre-rendered-modal-overlay.active > .confirmation-modal {
+    transform: translateY(0) translateZ(0);
+}
+
 .confirmation-modal {
     border-radius: 18px;
     padding: 24px;
@@ -879,6 +974,19 @@
         inset 0 1px rgba(255, 255, 255, 0.25),
         inset 0 -1px rgba(0, 0, 0, 0.12),
         0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Wallpaper Mode: Active Skills frosted glass styling */ 
+.wallpaper-mode .confirmation-modal {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Reuses skill-card background, filter, and border. We retain some shadow for depth. */
+    box-shadow:
+        inset 0 1px rgba(255, 255, 255, 0.25),
+        inset 0 -1px rgba(0, 0, 0, 0.12),
+        0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 /* Liquid + Light */
@@ -1008,6 +1116,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
 }
 
 .task-repetition-progress {
@@ -1022,7 +1131,7 @@
 }
 
 .task-repetition-add-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 4px;
@@ -1050,7 +1159,7 @@
 .show-more-tasks-btn {
     background: transparent;
     border: none;
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -1084,8 +1193,8 @@
 
 .add-habit-trigger-btn {
     background: transparent;
-    border: 1px solid rgba(59, 130, 246, 0.4);
-    color: #3b82f6;
+    border: 1px solid var(--color-border);
+    color: var(--text-secondary);
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -1096,9 +1205,22 @@
     transition: all 0.2s ease;
 }
 
+.liquid-mode .add-habit-trigger-btn,
+.wallpaper-mode .add-habit-trigger-btn {
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+}
+
 .add-habit-trigger-btn:hover {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
+    background: var(--alpha-low);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.liquid-mode .add-habit-trigger-btn:hover,
+.wallpaper-mode .add-habit-trigger-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Habit Creation Inline */
@@ -1148,7 +1270,7 @@
 }
 
 .creation-actions .confirm-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -1233,14 +1355,21 @@
 }
 
 .habit-actions .complete-btn {
-    background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: var(--alpha-high);
+    color: var(--text-primary);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 6px 12px;
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
+}
+
+.liquid-mode .habit-actions .complete-btn,
+.wallpaper-mode .habit-actions .complete-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
 }
 
 .friction-selector-minimal {
@@ -1423,8 +1552,7 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-secondary);
-    opacity: 0.5;
+    color: var(--text-tertiary);
     margin-bottom: 8px;
 }
 
@@ -1452,7 +1580,7 @@
 
 .progress-fill {
     height: 100%;
-    background: #3b82f6;
+    background: var(--color-accent);
     border-radius: 2px;
     transition: width 0.5s ease;
 }
@@ -1478,7 +1606,7 @@
 
 .identity-reinforcement {
     background: rgba(59, 130, 246, 0.05);
-    border-left: 3px solid #3b82f6;
+    border-left: 3px solid var(--color-accent);
     padding: 20px;
     border-radius: 0 16px 16px 0;
     margin-bottom: 32px;
@@ -1508,7 +1636,7 @@
 
 .evolve-btn {
     width: 100%;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    background: linear-gradient(135deg, var(--color-accent), #2563eb);
     color: white;
     border: none;
     border-radius: 12px;
@@ -1616,9 +1744,9 @@
 }
 
 .pleasure-btn.selected {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
-    border-color: #3b82f6;
+    border-color: var(--color-accent);
     box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
 }
 
@@ -1783,7 +1911,7 @@
 .reward-action-btn {
     background: transparent;
     border: none;
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
@@ -1803,7 +1931,7 @@
 .attach-reward-trigger {
     background: transparent;
     border: 1px dashed rgba(59, 130, 246, 0.3);
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 11px;
     font-weight: 700;
     padding: 6px 12px;
@@ -1814,7 +1942,7 @@
 
 .attach-reward-trigger:hover {
     background: rgba(59, 130, 246, 0.05);
-    border-color: #3b82f6;
+    border-color: var(--color-accent);
 }
 
 .reward-error {
@@ -2016,7 +2144,7 @@
 
 .unexplored-badge {
     background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 9px;
     font-weight: 900;
     padding: 2px 6px;
@@ -2056,13 +2184,20 @@
 }
 
 .obj-status-btn.activate {
-    background: rgba(59, 130, 246, 0.1);
-    color: #3b82f6;
-    border-color: rgba(59, 130, 246, 0.2);
+    background: var(--alpha-med);
+    color: var(--text-primary);
+    border-color: var(--color-border);
+}
+
+.liquid-mode .obj-status-btn.activate,
+.wallpaper-mode .obj-status-btn.activate {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .obj-status-btn.activate:hover {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
 }
 
@@ -2137,7 +2272,7 @@
 }
 
 .limit-modal-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 8px;
@@ -2163,7 +2298,7 @@
 }
 
 .day-count {
-    color: #3b82f6;
+    color: var(--color-accent);
     font-weight: 700;
 }
 
@@ -2243,8 +2378,7 @@
     font-size: 10px;
     font-weight: 800;
     text-transform: uppercase;
-    color: var(--text-secondary);
-    opacity: 0.6;
+    color: var(--text-tertiary);
     letter-spacing: 0.05em;
 }
 
@@ -2296,7 +2430,7 @@
 }
 
 .form-input:focus {
-    border-color: #3b82f6;
+    border-color: var(--color-accent);
     background: rgba(59, 130, 246, 0.05);
 }
 
@@ -2341,7 +2475,7 @@
 }
 
 .creation-actions .confirm-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
 }
@@ -2372,7 +2506,7 @@
 }
 
 .dashboard-input:focus {
-    border-bottom-color: #3b82f6;
+    border-bottom-color: var(--color-accent);
 }
 
 .metric-value-row {
@@ -2386,7 +2520,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 4px;
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 14px;
     font-weight: 700;
     width: 50px;
@@ -2488,15 +2622,14 @@
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     margin-bottom: 4px;
-    opacity: 0.6;
 }
 
 .stat-value {
     font-size: 20px;
     font-weight: 700;
-    color: #3b82f6;
+    color: var(--color-accent);
 }
 
 .aspect-detail-logging,
@@ -2530,7 +2663,7 @@
 }
 
 .log-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 12px;
@@ -2585,12 +2718,34 @@
 /* Visual Hierarchy Improvements */
 
 .objective-container.is-focused {
-    border: 2px solid rgba(59, 130, 246, 0.4);
-    background: rgba(255, 255, 255, 0.02);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    /* Host properties */
+    position: relative;
     border-radius: 20px;
     padding: 16px;
     margin-bottom: 24px;
+    z-index: 1;
+}
+
+.objective-container.is-focused::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: rgba(255, 255, 255, 0.08); /* Unified glass background */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    border-radius: inherit;
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    pointer-events: none;
+}
+
+.solid-mode .objective-container.is-focused {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .objective-container.is-sleeping {
@@ -2598,6 +2753,12 @@
     background: rgba(255, 255, 255, 0.01);
     border-radius: 16px;
     padding: 12px;
+}
+
+.wallpaper-mode .objective-container.is-sleeping {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 
 .aspects-section-header {
@@ -2616,8 +2777,10 @@
 .aspects-indented-grid {
     padding-left: 20px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    align-items: start;
+    grid-auto-flow: dense;
 }
 
 .experiment-duration-controls {
@@ -2647,7 +2810,7 @@
     background: transparent;
     border: none;
     border-bottom: 1px solid transparent;
-    color: #3b82f6;
+    color: var(--color-accent);
     font-size: 22px;
     font-weight: 800;
     letter-spacing: -0.5px;
@@ -2672,7 +2835,14 @@
     padding: 20px;
     margin-bottom: 24px;
     position: relative;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+}
+
+.wallpaper-mode .experiment-display-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .experiment-display-header {
@@ -2721,11 +2891,10 @@
 
 .mve-label {
     font-size: 11px;
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
     text-transform: uppercase;
     margin-bottom: 4px;
     display: block;
-    opacity: 0.5;
 }
 
 .mve-text {
@@ -2746,18 +2915,51 @@
 }
 
 .edit-experiment-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: var(--alpha-med);
+    color: var(--text-primary);
 }
 
 /* Edit Mode */
 
 .experiment-edit-container {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: var(--alpha-med);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
+}
+
+.liquid-mode .experiment-edit-container,
+.wallpaper-mode .experiment-edit-container {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.wallpaper-mode .experiment-edit-container {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.woop-box {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--alpha-low);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wallpaper-mode .woop-box {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .edit-grid {
@@ -2957,13 +3159,6 @@
     gap: 24px;
 }
 
-.active-experiment-wrapper {
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px;
-    padding: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
 /* Novelty Sprint UI */
 .novelty-sprint-glow {
     animation: noveltySkillGlow 8s infinite alternate ease-in-out;
@@ -3038,17 +3233,6 @@
     background: rgba(139, 92, 246, 0.2);
 }
 
-.fresh-badge {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    font-size: 9px;
-    font-weight: 800;
-    padding: 2px 6px;
-    border-radius: 4px;
-    letter-spacing: 0.5px;
-    margin-left: 8px;
-    vertical-align: middle;
-}
 
 .challenge-opportunity-card {
     background: rgba(245, 158, 11, 0.05);
@@ -3078,7 +3262,7 @@
 }
 
 .challenge-card-desc {
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     font-size: 14px;
     opacity: 0.9;
 }
@@ -3106,13 +3290,13 @@
 
 .challenge-action-btn.new-angle-btn {
     background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
+    color: var(--color-accent);
     border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .challenge-action-btn.dismiss-btn {
     background: var(--alpha-low);
-    color: var(--color-text-secondary);
+    color: var(--text-secondary);
     border: 1px solid var(--color-border);
 }
 
@@ -3137,5 +3321,5 @@
 
 .challenge-badge.new-angle {
     background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
+    color: var(--color-accent);
 }

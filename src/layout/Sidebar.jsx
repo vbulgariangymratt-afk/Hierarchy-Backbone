@@ -4,6 +4,7 @@ import { backbone, repository } from '../backbone-v2/index';
 import { useTheme } from '../context/ThemeContext';
 import NodeIcon from '../components/NodeIcon';
 import AppearanceSection from '../components/sidebar/AppearanceSection';
+import { supabase } from '../lib/supabase';
 import './Sidebar.css';
 
 const SVG_ICONS = {
@@ -21,7 +22,7 @@ const SVG_ICONS = {
 
 const Sidebar = () => {
     const navigate = useNavigate();
-    const { theme, toggleTheme, surface, setSurfaceMode, backgroundMode, setBackgroundMode } = useTheme();
+    const { theme, toggleTheme, backgroundMode, setBackgroundMode } = useTheme();
     const [isFocusMode, setIsFocusMode] = useState(false);
     const [loading, setLoading] = useState(true);
     const [lifeAreas, setLifeAreas] = useState([]);
@@ -45,6 +46,7 @@ const Sidebar = () => {
                     repository.getAll()
                 ]);
                 setIsFocusMode(!!root?.metadata?.focusModeEntryAt);
+
                 setLifeAreas(areas);
                 setHryvniaBalance(balance);
 
@@ -72,6 +74,7 @@ const Sidebar = () => {
 
         // Keep interval as a fallback/safety measure since it was already there
         const interval = setInterval(fetchData, 1000);
+
         return () => {
             clearInterval(interval);
             if (unsubscribe) unsubscribe();
@@ -213,7 +216,6 @@ const Sidebar = () => {
                                                 >
                                                     <NodeIcon
                                                         iconUrl={area.metadata?.iconUrl}
-                                                        emoji={area.icon}
                                                         defaultIcon="🌐"
                                                     />
                                                     {editingIconNode?.id === area.id && (
@@ -231,7 +233,7 @@ const Sidebar = () => {
                                                                 }}
                                                             />
                                                             <div className="popover-preview">
-                                                                <NodeIcon iconUrl={tempIconUrl} emoji={area.icon} size={24} />
+                                                                <NodeIcon iconUrl={tempIconUrl} size={24} />
                                                             </div>
                                                             <div className="popover-actions">
                                                                 <button className="confirm-btn" onClick={handleSaveIcon}>Save</button>
@@ -302,33 +304,36 @@ const Sidebar = () => {
                     <span className="btn-text">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
                 </button>
 
-                {/* Surface Mode Toggle (Liquid Mode) */}
-                <button
-                    className="nav-item surface-toggle-sidebar"
-                    onClick={() => setSurfaceMode(surface === 'liquid' ? 'solid' : 'liquid')}
-                >
-                    <span className="btn-icon">
-                        <NodeIcon iconUrl={surface === 'liquid' ? SVG_ICONS.PLANNING : SVG_ICONS.FOCUS} size={18} />
-                    </span>
-                    <span className="btn-text">{surface === 'liquid' ? 'Solid Mode' : 'Liquid Mode'}</span>
-                </button>
-
-                {/* Wallpaper Mode Toggle */}
-                <button
-                    className="nav-item wallpaper-toggle-sidebar"
-                    onClick={() => setBackgroundMode(backgroundMode === 'wallpaper' ? 'solid' : 'wallpaper')}
-                    type="button"
-                >
-                    <span className="btn-icon">
-                        <NodeIcon iconUrl={SVG_ICONS.WALLPAPER} size={18} />
-                    </span>
-                    <span className="btn-text">Wallpapers</span>
-                </button>
+                {/* Unified Appearance Segmented Control */}
+                <div className="segmented-control-container">
+                    <label className="segmented-control-label">Appearance</label>
+                    <div className="segmented-control">
+                        <button
+                            title="Solid background mode"
+                            className={`segmented-control-item ${backgroundMode === 'solid' ? 'active' : ''}`}
+                            onClick={() => setBackgroundMode('solid')}
+                        >
+                            Solid
+                        </button>
+                        <button
+                            title="Liquid glass background mode"
+                            className={`segmented-control-item ${backgroundMode === 'liquid' ? 'active' : ''}`}
+                            onClick={() => setBackgroundMode('liquid')}
+                        >
+                            Liquid
+                        </button>
+                        <button
+                            title="Wallpaper background mode"
+                            className={`segmented-control-item ${backgroundMode === 'wallpaper' ? 'active' : ''}`}
+                            onClick={() => setBackgroundMode('wallpaper')}
+                        >
+                            Wallpaper
+                        </button>
+                    </div>
+                </div>
 
                 {/* Conditional wallpaper URL inputs */}
-                <AppearanceSection isWallpaperEnabled={backgroundMode === 'wallpaper'} />
-
-                <div className="sidebar-divider"></div>
+                <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />
 
                 <Link to="/settings" className="nav-item settings-btn">
                     <span className="btn-icon">

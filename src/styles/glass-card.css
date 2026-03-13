@@ -133,4 +133,48 @@
     box-shadow:
         0 10px 40px rgba(245, 158, 11, 0.15),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
+
+}
+
+/* ── Liquid Dark Mode Overrides (Neutral Dark Glass) ───────── */
+/* Ensures glass cards match the neutral palette in dark mode   */
+.dark.liquid-mode .glass-card,
+.dark.wallpaper-mode .glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.dark.liquid-mode .glass-card:hover,
+.dark.wallpaper-mode .glass-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.20);
+}
+
+.dark.liquid-mode .glass-card::before,
+.dark.wallpaper-mode .glass-card::before {
+    opacity: 0.2;
+}
+
+/* Elevated variant for modals/popovers in dark mode */
+.dark.liquid-mode .glass-card--elevated,
+.dark.wallpaper-mode .glass-card--elevated {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Neutralize blue variant in dark mode if it clashes - Updated to be completely neutral */
+.dark.liquid-mode .glass-card--blue,
+.dark.wallpaper-mode .glass-card--blue {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
 }

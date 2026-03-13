@@ -2,7 +2,6 @@
     padding: 60px 80px;
     max-width: 1200px;
     margin: 0 auto;
-    animation: areaPageFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes areaPageFadeIn {
@@ -50,7 +49,7 @@
     color: var(--text-primary);
     text-transform: uppercase;
     letter-spacing: 2px;
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 .skills-grid {
@@ -62,7 +61,7 @@
 .skill-card {
     border-radius: 24px;
     padding: 24px;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -71,7 +70,8 @@
 }
 
 /* Liquid Mode Specifics */
-.liquid-mode .skill-card {
+.liquid-mode .skill-card,
+.liquid-mode .add-skill-card-btn {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(30px) saturate(160%);
@@ -79,6 +79,14 @@
     box-shadow:
         0 10px 30px rgba(0, 0, 0, 0.18),
         inset 0 1px 1px rgba(255, 255, 255, 0.4);
+}
+
+.wallpaper-mode .skill-card,
+.wallpaper-mode .add-skill-card-btn {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .liquid-mode.light .skill-card {
@@ -114,8 +122,20 @@
 }
 
 .skill-card.is-active {
-    background: rgba(59, 130, 246, 0.10);
-    border-color: rgba(59, 130, 246, 0.30);
+    background: var(--alpha-low);
+    border-color: var(--color-accent);
+}
+
+.liquid-mode .skill-card.is-active,
+.wallpaper-mode .skill-card.is-active {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.liquid-mode .skill-card.is-active,
+.wallpaper-mode .skill-card.is-active {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.35);
 }
 
 .liquid-mode .skill-card:hover {
@@ -170,7 +190,7 @@
     border-radius: 6px;
     width: fit-content;
     background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
+    color: var(--text-tertiary);
 }
 
 .tier-badge.core {
@@ -260,7 +280,17 @@
 }
 
 .focus-toggle.active .toggle-track {
-    background: #3b82f6;
+    background: var(--color-accent);
+}
+
+.liquid-mode .focus-toggle.active .toggle-track,
+.wallpaper-mode .focus-toggle.active .toggle-track {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.liquid-mode .focus-toggle.active .toggle-track,
+.wallpaper-mode .focus-toggle.active .toggle-track {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .focus-toggle.active .toggle-handle {
@@ -277,7 +307,12 @@
 }
 
 .focus-toggle.active .toggle-label {
-    color: #3b82f6;
+    color: var(--color-accent);
+}
+
+.liquid-mode .focus-toggle.active .toggle-label,
+.wallpaper-mode .focus-toggle.active .toggle-label {
+    color: var(--text-primary);
 }
 
 .pinch-tag {
@@ -323,14 +358,20 @@
 
 .add-skill-card-btn:hover {
     background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(59, 130, 246, 0.3);
+    border-color: var(--color-accent);
     transform: translateY(-4px);
 }
 
 .add-skill-card-btn .plus-icon {
     font-size: 32px;
-    color: #3b82f6;
+    color: var(--color-accent);
     opacity: 0.6;
+}
+
+.liquid-mode .add-skill-card-btn .plus-icon,
+.wallpaper-mode .add-skill-card-btn .plus-icon {
+    color: var(--text-primary);
+    opacity: 0.3;
 }
 
 .add-skill-card-btn .btn-text {
@@ -342,8 +383,20 @@
 }
 
 .creation-card {
-    border: 2px solid rgba(59, 130, 246, 0.3) !important;
-    background: rgba(59, 130, 246, 0.03) !important;
+    border: 1px dashed var(--color-accent) !important;
+    background: var(--alpha-low) !important;
+}
+
+.liquid-mode .creation-card,
+.wallpaper-mode .creation-card {
+    border: 1px dashed rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.liquid-mode .creation-card,
+.wallpaper-mode .creation-card {
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .creation-form {
@@ -365,7 +418,17 @@
 }
 
 .skill-input:focus {
-    border-bottom-color: #3b82f6;
+    border-bottom-color: var(--color-accent);
+}
+
+.liquid-mode .skill-input:focus,
+.wallpaper-mode .skill-input:focus {
+    border-bottom-color: rgba(255, 255, 255, 0.5);
+}
+
+.liquid-mode .skill-input:focus,
+.wallpaper-mode .skill-input:focus {
+    border-bottom-color: rgba(255, 255, 255, 0.5);
 }
 
 .creation-row {
@@ -403,7 +466,7 @@
 }
 
 .confirm-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 12px;
@@ -414,9 +477,22 @@
     transition: all 0.2s ease;
 }
 
+.liquid-mode .confirm-btn,
+.wallpaper-mode .confirm-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
 .confirm-btn:hover {
-    background: #2563eb;
+    background: var(--color-accent-hover);
     transform: scale(1.02);
+}
+
+.liquid-mode .confirm-btn:hover,
+.wallpaper-mode .confirm-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .cancel-btn {
@@ -439,10 +515,23 @@
 
 .area-page-loading,
 .area-page-error {
-    padding: 100px;
+    padding: 80px;
     text-align: center;
     color: var(--text-secondary);
     font-size: 18px;
+    margin: 40px auto;
+    max-width: 400px;
+    border-radius: 24px;
+    background: var(--alpha-med);
+    border: 1px solid var(--color-border);
+}
+
+.wallpaper-mode .area-page-loading,
+.wallpaper-mode .area-page-error {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* ── Skill Management Enhancements ────────────────────────── */
@@ -476,12 +565,20 @@
 
 /* Skill Card Variants */
 .skill-card.is-sleeping {
-    opacity: 0.5;
+    opacity: 0.6;
     transform: scale(0.98);
 }
 
+.liquid-mode .skill-card.is-sleeping,
+.wallpaper-mode .skill-card.is-sleeping {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(30px) saturate(160%);
+    -webkit-backdrop-filter: blur(30px) saturate(160%);
+}
+
 .skill-card.is-sleeping:hover {
-    opacity: 0.8;
+    opacity: 0.9;
     transform: scale(1);
 }
 
@@ -517,22 +614,26 @@
 .mini-objective-item .dot {
     width: 4px;
     height: 4px;
-    background: #3b82f6;
+    background: var(--color-accent);
     border-radius: 50%;
     flex-shrink: 0;
 }
 
+.liquid-mode .mini-objective-item .dot,
+.wallpaper-mode .mini-objective-item .dot {
+    background: var(--text-secondary);
+    opacity: 0.5;
+}
+
 .mini-objective-more {
     font-size: 11px;
-    color: var(--text-secondary);
-    opacity: 0.5;
+    color: var(--text-muted);
     margin-left: 12px;
 }
 
 .no-objectives-hint {
     font-size: 12px;
-    color: var(--text-secondary);
-    opacity: 0.2;
+    color: var(--text-muted);
     font-style: italic;
     text-align: center;
 }
@@ -633,7 +734,7 @@
 
 .light .skill-status-btn.activate {
     background: rgba(0, 0, 0, 0.06);
-    color: var(--color-text-main);
+    color: var(--text-primary);
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
@@ -712,7 +813,7 @@
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
 
 .limit-modal-btn:hover {

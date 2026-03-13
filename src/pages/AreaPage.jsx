@@ -329,7 +329,7 @@ const AreaPage = () => {
                                             className="skill-status-btn sleep"
                                             onClick={(e) => handleToggleSkill(e, skill)}
                                         >
-                                            💤 Put to Sleep
+                                            Put to Sleep
                                         </button>
 
                                         {!skill.metadata?.cooldownActive ? (
@@ -345,7 +345,7 @@ const AreaPage = () => {
                                                     }
                                                 }}
                                             >
-                                                🛌 Rest 5 Days
+                                                Rest 5 Days
                                             </button>
                                         ) : (
                                             <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600', padding: '6px 10px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '8px' }}>

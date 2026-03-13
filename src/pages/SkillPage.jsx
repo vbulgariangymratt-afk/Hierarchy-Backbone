@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
@@ -26,12 +27,24 @@ import {
     ObjectiveStatuses,
     TaskStatuses
 } from '../backbone-v2/index';
+import { useTheme } from '../context/ThemeContext';
 import './SkillPage.css';
 import NodeIcon from '../components/NodeIcon';
+
+const macOSSpring = {
+    type: "spring",
+    stiffness: 300,
+    damping: 30,
+    mass: 0.8
+};
+
+const CARD_BORDER_RADIUS = 18;
+const CONTAINER_BORDER_RADIUS = 20;
 
 const SkillPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showCompletedTasks, setShowCompletedTasks } = useTheme();
     const [skill, setSkill] = useState(null);
     const [objectives, setObjectives] = useState([]);
     const [allNodes, setAllNodes] = useState([]);
@@ -42,6 +55,11 @@ const SkillPage = () => {
     const [expandedObjectiveIds, setExpandedObjectiveIds] = useState([]);
     const [expandedAspectIds, setExpandedAspectIds] = useState([]);
     const [aspectShowMoreIds, setAspectShowMoreIds] = useState([]);
+    
+    // Becoming Section Performance Optimization
+    const [tempBecoming, setTempBecoming] = useState('');
+    const [isSyncingBecoming, setIsSyncingBecoming] = useState(false);
+
     const [dragActiveId, setDragActiveId] = useState(null);
     const location = useLocation();
 
@@ -85,10 +103,12 @@ const SkillPage = () => {
     // Deletion State
     const [taskToDelete, setTaskToDelete] = useState(null);
     const [aspectToDelete, setAspectToDelete] = useState(null);
+    const [objectiveToDelete, setObjectiveToDelete] = useState(null);
     const [aspectForDetails, setAspectForDetails] = useState(null);
-    const [activeAspectId, setActiveAspectId] = useState(null);
     const [editingObjectiveId, setEditingObjectiveId] = useState(null);
     const [objectiveEditForm, setObjectiveEditForm] = useState(null);
+
+    const taskNameInputRef = useRef(null);
 
     // Challenge Mode State
     const [challengeDismissed, setChallengeDismissed] = useState(false);
@@ -155,6 +175,37 @@ const SkillPage = () => {
         const sub1 = repository.subscribe(fetchData);
         return () => sub1();
     }, [id]);
+
+    // Update local Becoming state when skill data arrives
+    useEffect(() => {
+        if (skill?.metadata?.identityAnchor !== undefined) {
+            setTempBecoming(skill.metadata.identityAnchor || '');
+        }
+    }, [skill?.id, skill?.metadata?.identityAnchor]);
+
+    const debouncedUpdateBecoming = useMemo(() => {
+        let timeout;
+        return (val) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(async () => {
+                if (!skill?.id) return;
+                setIsSyncingBecoming(true);
+                try {
+                    await backbone.updateNode(skill.id, {
+                        metadata: { ...skill.metadata, identityAnchor: val }
+                    });
+                } finally {
+                    setIsSyncingBecoming(false);
+                }
+            }, 800); // 800ms debounce
+        };
+    }, [skill?.id, skill?.metadata]);
+
+    useEffect(() => {
+        if (creatingTaskForAspectId && taskNameInputRef.current) {
+            setTimeout(() => taskNameInputRef.current.focus(), 50);
+        }
+    }, [creatingTaskForAspectId]);
 
     const handleCreateObjective = async (e) => {
         if (e && e.key !== 'Enter' && e.type !== 'click') return;
@@ -258,10 +309,16 @@ const SkillPage = () => {
         }
     };
 
-    const handleDeleteObjective = async (objId) => {
-        if (!window.confirm("Are you sure you want to delete this Experiment? All Aspects and logs will be permanently removed. This action cannot be undone.")) return;
+    const handleDeleteObjective = (obj) => {
+        setObjectiveToDelete(obj);
+    };
+
+    const confirmDeleteObjective = async () => {
+        if (!objectiveToDelete) return;
+        const idToDelete = objectiveToDelete.id;
+        setObjectiveToDelete(null);
         try {
-            await backbone.deleteNode(objId);
+            await backbone.deleteNode(idToDelete);
             setEditingObjectiveId(null);
             fetchData();
         } catch (error) {
@@ -499,56 +556,112 @@ const SkillPage = () => {
         if (e && e.stopPropagation) e.stopPropagation();
         if (!newTaskName.trim()) return;
 
-        try {
-            const metadata = {
-                status: TaskStatuses.NOT_STARTED,
-                dependsOnTaskId: newTaskDependencyId || null,
-                itemType: newTaskItemType
-            };
+        const metadata = {
+            status: TaskStatuses.NOT_STARTED,
+            dependsOnTaskId: newTaskDependencyId || null,
+            itemType: newTaskItemType
+        };
 
-            if (newTaskItemType === 'REPETITION') {
-                metadata.unitName = newTaskUnitName;
-                metadata.targetUnits = parseInt(newTaskTargetUnits) || 1;
-                metadata.currentUnits = 0;
-            }
-
-            await backbone.addNode({
-                type: NodeTypes.TASK,
-                parentId: aspectId,
-                name: newTaskName.trim(),
-                metadata: {
-                    ...metadata,
-                    type: newTaskItemType // "FINITE" or "REPETITION"
-                }
-            });
-            setNewTaskName('');
-            setNewTaskDependencyId('');
-            setNewTaskItemType('FINITE');
-            setNewTaskUnitName('units');
-            setNewTaskTargetUnits(1);
-            setCreatingTaskForAspectId(null);
-            fetchData();
-        } catch (error) {
-            console.error("Failed to create task:", error);
+        if (newTaskItemType === 'REPETITION') {
+            metadata.unitName = newTaskUnitName;
+            metadata.targetUnits = parseInt(newTaskTargetUnits) || 1;
+            metadata.currentUnits = 0;
         }
+
+        // Optimistic UI: Close form and reset inputs right away
+        setNewTaskName('');
+        setNewTaskDependencyId('');
+        setNewTaskItemType('FINITE');
+        setNewTaskUnitName('units');
+        setNewTaskTargetUnits(1);
+        setCreatingTaskForAspectId(null);
+
+        // Run creation in background
+        backbone.addNode({
+            type: NodeTypes.TASK,
+            parentId: aspectId,
+            name: newTaskName.trim(),
+            metadata: {
+                ...metadata,
+                type: newTaskItemType // "FINITE" or "REPETITION"
+            }
+        }).catch(error => {
+            console.error("Failed to create task:", error);
+            fetchData(); // Rollback/Sync on error
+        });
+    };
+
+    const handleIncrementRepetition = (taskId) => {
+        const task = allNodes.find(n => n.id === taskId);
+        if (!task) return;
+
+        const currentUnits = task.metadata?.currentUnits || 0;
+        const targetUnits = task.metadata?.targetUnits || 0;
+        const nextUnits = currentUnits + 1;
+
+        // --- OPTIMISTIC UPDATE ---
+        setAllNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === taskId) {
+                const updatedMetadata = {
+                    ...n.metadata,
+                    currentUnits: nextUnits
+                };
+                // Auto-complete if target reached
+                if (nextUnits >= targetUnits && targetUnits > 0) {
+                    updatedMetadata.status = TaskStatuses.DONE;
+                    updatedMetadata.completedAt = Date.now();
+                }
+
+                return {
+                    ...n,
+                    metadata: updatedMetadata
+                };
+            }
+            return n;
+        }));
+
+        // Backend update in background
+        backbone.incrementTaskRepetition(taskId)
+            .catch(error => {
+                console.error("Failed to increment repetition:", error);
+                fetchData(); // Rollback/Sync on error
+            });
     };
 
     const handleToggleTaskStatus = async (task) => {
         const currentStatus = task.metadata?.status || TaskStatuses.NOT_STARTED;
         const nextStatus = currentStatus === TaskStatuses.DONE ? TaskStatuses.NOT_STARTED : TaskStatuses.DONE;
+        const completedAt = nextStatus === TaskStatuses.DONE ? Date.now() : null;
 
-        try {
-            await backbone.updateNode(task.id, {
-                metadata: {
-                    ...task.metadata,
-                    status: nextStatus,
-                    completedAt: nextStatus === TaskStatuses.DONE ? Date.now() : null
-                }
-            });
-            fetchData();
-        } catch (error) {
+        // --- OPTIMISTIC UPDATE START ---
+        setAllNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === task.id) {
+                return {
+                    ...n,
+                    updatedAt: new Date().toISOString(),
+                    metadata: {
+                        ...n.metadata,
+                        status: nextStatus,
+                        completedAt
+                    }
+                };
+            }
+            return n;
+        }));
+        // --- OPTIMISTIC UPDATE END ---
+
+        // Fire and forget the update. 
+        // No manual .then(fetchData) needed because we are subscribed to the repository.
+        backbone.updateNode(task.id, {
+            metadata: {
+                ...task.metadata,
+                status: nextStatus,
+                completedAt
+            }
+        }).catch(error => {
             console.error("Failed to toggle task status:", error);
-        }
+            fetchData(); // Rollback/Sync on absolute error
+        });
     };
 
     const handleAddToToday = async (e, taskId) => {
@@ -561,33 +674,49 @@ const SkillPage = () => {
         if (!task) return;
 
         const isToday = !!task.metadata?.isToday;
-        try {
-            // minimal update to avoid stale metadata merge issues
-            await backbone.updateNode(taskId, {
-                metadata: { isToday: !isToday }
-            });
-            // Immediately refresh data to update Today state
-            await fetchData();
-        } catch (error) {
+
+        // --- OPTIMISTIC UPDATE START ---
+        setAllNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === taskId) {
+                return {
+                    ...n,
+                    metadata: {
+                        ...n.metadata,
+                        isToday: !isToday
+                    }
+                };
+            }
+            return n;
+        }));
+        // --- OPTIMISTIC UPDATE END ---
+
+        // Fire and forget, then refresh
+        backbone.updateNode(taskId, {
+            metadata: { isToday: !isToday }
+        }).catch(error => {
             console.error("Failed to toggle today status:", error);
-        }
+            fetchData(); // Rollback/Sync on error
+        });
     };
 
     const handleDeleteTask = async () => {
         if (!taskToDelete) return;
         const idToDelete = taskToDelete.id;
         console.log("Deleting task:", idToDelete);
-        setTaskToDelete(null); // Immediate UI feedback: close modal
+        // Optimistic UI: Close the delete modal immediately
+        setTaskToDelete(null);
 
-        try {
-            await backbone.deleteNode(idToDelete);
-            console.log("Task deleted successfully");
-            fetchData();
-        } catch (error) {
-            console.error("Failed to delete task:", error);
-            alert("Error deleting task: " + error.message);
-            fetchData(); // Refresh anyway to ensure UI is in sync with backend
-        }
+        // Deletion in background
+        backbone.deleteNode(idToDelete)
+            .then(() => {
+                console.log("Task deleted successfully");
+                fetchData();
+            })
+            .catch(error => {
+                console.error("Failed to delete task:", error);
+                alert("Error deleting task: " + error.message);
+                fetchData(); // Sync state with backend on failure
+            });
     };
 
     const handleDeleteAspect = async () => {
@@ -984,24 +1113,7 @@ const SkillPage = () => {
                             ⏱ 10m
                         </button>
                     )}
-                    {task.metadata?.itemType === 'REPETITION' ? (
-                        <div className="task-repetition-ui">
-                            <span className="task-repetition-progress">
-                                {task.metadata.currentUnits || 0} / {task.metadata.targetUnits || 0} {task.metadata.unitName || 'units'}
-                            </span>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    backbone.incrementTaskRepetition(task.id).then(fetchData);
-                                }}
-                                className="task-repetition-add-btn"
-                                title="Increment progress"
-                            >
-                                +
-                            </button>
-                        </div>
-                    ) : (
+                    {task.metadata?.itemType !== 'REPETITION' && (
                         <span
                             className={`task-status-symbol clickable ${statusInfo.colorClass}`}
                             onClick={(e) => {
@@ -1014,12 +1126,14 @@ const SkillPage = () => {
                             {statusInfo.symbol}
                         </span>
                     )}
-                    <span className="task-name-text">
-                        {task.name}
-                        {isFresh && <span className="fresh-badge">FRESH</span>}
+                    <div className="task-name-text">
+                        <span className="task-main-name">{task.name}</span>
                         {isChallengeTarget && challengeType === 'MASTERY' && <span className="challenge-badge mastery">Mastery Check</span>}
                         {isChallengeTarget && challengeType === 'NEW_ANGLE' && <span className="challenge-badge new-angle">New Angle</span>}
                         {rewardId && <span className="task-reward-badge-collapsed" title={`Reward: ${reward?.name || 'Unknown'}`}>🍬</span>}
+                    </div>
+
+                    <div className="task-actions-col">
                         {!isDone && (
                             <span
                                 className={`task-today-badge ${task.metadata?.isToday ? 'active' : ''}`}
@@ -1028,7 +1142,25 @@ const SkillPage = () => {
                                 Today
                             </span>
                         )}
-                    </span>
+                        {task.metadata?.itemType === 'REPETITION' && (
+                            <div className="task-repetition-ui">
+                                <span className="task-repetition-progress">
+                                    {task.metadata.currentUnits || 0} / {task.metadata.targetUnits || 0} {task.metadata.unitName || 'units'}
+                                </span>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        handleIncrementRepetition(task.id);
+                                    }}
+                                    className="task-repetition-add-btn"
+                                    title="Increment progress"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     {dependencyId && <span className="task-dependency-icon" title={`Suggested next step after: ${dependencyTask?.name}`}>↗</span>}
 
                     <button
@@ -1117,9 +1249,19 @@ const SkillPage = () => {
         });
 
         return (
-            <div
+            <motion.div
+                layout="position"
                 ref={setNodeRef}
                 className={`aspect-card ${isOver ? 'drag-over' : ''} ${isUntouched ? 'is-untouched' : ''} ${isNoveltyHighlighted ? 'novelty-highlight' : ''}`}
+                transition={macOSSpring}
+                style={{
+                    borderRadius: CARD_BORDER_RADIUS,
+                    overflow: 'hidden',
+                    willChange: 'transform',
+                    WebkitBackfaceVisibility: 'hidden',
+                    backfaceVisibility: 'hidden',
+                    transform: 'translateZ(0)'
+                }}
                 onClick={(e) => {
                     e.stopPropagation();
                     toggleAspect(aspect.id);
@@ -1128,8 +1270,11 @@ const SkillPage = () => {
                 {isNoveltyHighlighted && (
                     <div className="novelty-badge">UNEXPLORED</div>
                 )}
-                {children}
-            </div>
+                {/* Plain div — no layout animation so children don't stretch */}
+                <div style={{ width: '100%' }}>
+                    {children}
+                </div>
+            </motion.div>
         );
     };
 
@@ -1227,7 +1372,7 @@ const SkillPage = () => {
                             <button className="save-btn" onClick={() => handleSaveObjectiveEdit(obj.id)}>Save Changes</button>
                             <button className="cancel-btn" onClick={() => setEditingObjectiveId(null)}>Cancel</button>
                         </div>
-                        <button className="delete-experiment-btn" onClick={() => handleDeleteObjective(obj.id)}>Delete Experiment</button>
+                        <button className="delete-experiment-btn" onClick={() => handleDeleteObjective(obj)}>Delete Experiment</button>
                     </div>
                 </div>
             );
@@ -1241,7 +1386,14 @@ const SkillPage = () => {
                 onDragStart={handleTaskDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className={`objective-container ${isSleeping ? 'is-sleeping' : 'is-focused'} ${obj.metadata?.burnoutRisk ? 'burnout-risk-border' : ''}`}>
+                <motion.div 
+                    layout="position"
+                    key={obj.id}
+                    transition={macOSSpring}
+                >
+                    <div 
+                        className={`objective-container ${isSleeping ? 'is-sleeping' : 'is-focused'} ${obj.metadata?.burnoutRisk ? 'burnout-risk-border' : ''}`}
+                    >
                     <div className="objective-header" onClick={() => !isSleeping && toggleObjective(obj.id)}>
                         <div className="objective-header-left">
                             <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`}>
@@ -1261,17 +1413,30 @@ const SkillPage = () => {
 
                         <div className="objective-status-actions">
                             {!isSleeping && (
-                                <button
-                                    className="edit-experiment-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        handleStartEditObjective(obj);
-                                    }}
-                                    style={{ marginRight: '10px' }}
-                                >
-                                    Edit Experiment
-                                </button>
+                                <>
+                                    <button
+                                        className="edit-experiment-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleStartEditObjective(obj);
+                                        }}
+                                        style={{ marginRight: '10px' }}
+                                    >
+                                        Edit Experiment
+                                    </button>
+                                    <button
+                                        className="delete-experiment-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleDeleteObjective(obj);
+                                        }}
+                                        style={{ marginRight: '10px' }}
+                                    >
+                                        Delete
+                                    </button>
+                                </>
                             )}
                             <button
                                 className={`obj-status-btn ${isSleeping ? 'activate' : 'sleep'}`}
@@ -1285,299 +1450,333 @@ const SkillPage = () => {
                             </button>
                         </div>
                     </div>
-
-                    {isExpanded && !isSleeping && (
-                        <div className="objective-content">
-                            <div className="experiment-display-card">
-                                <div className="experiment-display-header">
-                                    <div className="experiment-display-info">
-                                        <span className="experiment-theme-badge">{obj.metadata?.theme || 'General'}</span>
-                                        <div className="experiment-main-metric">
-                                            {obj.metadata?.masterAccumulatedMetric || 0} {obj.metadata?.accumulationType || 'units'}
-                                            <span style={{ fontSize: '14px', fontWeight: '400', opacity: '0.6', marginLeft: '10px' }}>Accumulated</span>
-                                        </div>
-                                    </div>
-                                    <div className="experiment-mve-preview">
-                                        <label className="mve-label">Minimum Viable Effort</label>
-                                        <div className="mve-text">{obj.metadata?.mve || 'No MVE defined.'}</div>
-                                    </div>
-                                </div>
-                                {(!obj.metadata?.isArchived) && (
-                                    <div className="woop-box" style={{
-                                        marginTop: '16px',
-                                        padding: '16px',
-                                        background: 'var(--alpha-low)',
-                                        borderRadius: '12px',
-                                        border: '1px solid var(--color-border)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '12px'
-                                    }}>
-                                        <div className="woop-item" onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (inlineEditingWishId !== obj.id) {
-                                                setInlineEditingWishId(obj.id);
-                                                setTempWish(obj.metadata?.wish || '');
-                                            }
-                                        }}>
-                                            <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>Wish</label>
-                                            {inlineEditingWishId === obj.id ? (
-                                                <input
-                                                    autoFocus
-                                                    className="inline-edit-input"
-                                                    style={{
-                                                        width: '100%',
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        borderBottom: '1px solid var(--color-primary)',
-                                                        color: 'var(--text-primary)',
-                                                        fontSize: '14px',
-                                                        outline: 'none',
-                                                        padding: '2px 0'
-                                                    }}
-                                                    value={tempWish}
-                                                    onChange={(e) => setTempWish(e.target.value)}
-                                                    onBlur={() => handleInlineSaveWish(obj.id)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleInlineSaveWish(obj.id)}
-                                                />
-                                            ) : (
-                                                <div style={{
-                                                    fontSize: '14px',
-                                                    color: obj.metadata?.wish ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                                    cursor: 'pointer',
-                                                    minHeight: '20px',
-                                                    fontStyle: obj.metadata?.wish ? 'normal' : 'italic'
-                                                }}>
-                                                    {obj.metadata?.wish || "What do I want?"}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="woop-item" onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (inlineEditingOutcomeId !== obj.id) {
-                                                setInlineEditingOutcomeId(obj.id);
-                                                setTempOutcome(obj.metadata?.outcome || '');
-                                            }
-                                        }}>
-                                            <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>Outcome</label>
-                                            {inlineEditingOutcomeId === obj.id ? (
-                                                <input
-                                                    autoFocus
-                                                    className="inline-edit-input"
-                                                    style={{
-                                                        width: '100%',
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        borderBottom: '1px solid var(--color-primary)',
-                                                        color: 'var(--text-primary)',
-                                                        fontSize: '14px',
-                                                        outline: 'none',
-                                                        padding: '2px 0'
-                                                    }}
-                                                    value={tempOutcome}
-                                                    onChange={(e) => setTempOutcome(e.target.value)}
-                                                    onBlur={() => handleInlineSaveOutcome(obj.id)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleInlineSaveOutcome(obj.id)}
-                                                />
-                                            ) : (
-                                                <div style={{
-                                                    fontSize: '14px',
-                                                    color: obj.metadata?.outcome ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                                    cursor: 'pointer',
-                                                    minHeight: '20px',
-                                                    fontStyle: obj.metadata?.outcome ? 'normal' : 'italic'
-                                                }}>
-                                                    {obj.metadata?.outcome || "What does success look like?"}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="aspects-section-header">
-                                <span className="section-subtitle">Engagement Aspects</span>
-                                <p className="aspects-helper-text">Aspects are parallel lenses of engagement inside this experiment.</p>
-                            </div>
-                            <div className="aspects-indented-grid">
-                                {aspects.map(aspect => {
-                                    const aspectTasks = getChildren(aspect.id, NodeTypes.TASK);
-                                    const isHistoryActive = activeAspectId === aspect.id;
-                                    const isUntouched = skill.metadata?.pinchState === 'INTEREST' &&
-                                        aspectTasks.length > 0 &&
-                                        !aspectTasks.some(t => t.metadata?.status === TaskStatuses.DONE);
-
-                                    const isNoveltyHighlighted = window.unexploredAspectIds?.includes(aspect.id);
-                                    const firstIncompleteTask = aspectTasks.find(t => t.metadata?.status !== TaskStatuses.DONE);
-
-                                    return (
-                                        <DroppableAspect
-                                            key={aspect.id}
-                                            aspect={aspect}
-                                            aspectTasks={aspectTasks}
-                                            isUntouched={isUntouched}
-                                            isNoveltyHighlighted={isNoveltyHighlighted}
-                                        >
-                                            <div
-                                                className="aspect-card-internal"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveAspectId(activeAspectId === aspect.id ? null : aspect.id);
-                                                }}
-                                            >
-                                                <div className="aspect-header">
-                                                    <div className="aspect-title-group">
-                                                        <span className="aspect-name">{aspect.name}</span>
-                                                        <span className="aspect-task-count">
-                                                            {aspect.metadata?.accumulatedMetric || 0} {obj.metadata?.accumulationType} &bull; {aspect.metadata?.taskCount || 0} logs
-                                                        </span>
+                        <AnimatePresence>
+                            {isExpanded && !isSleeping && (
+                                <motion.div 
+                                    className="objective-content"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={macOSSpring}
+                                    style={{ overflow: 'hidden' }}
+                                >
+                                        <div className="experiment-display-card">
+                                            <div className="experiment-display-header">
+                                                <div className="experiment-display-info">
+                                                    <span className="experiment-theme-badge">{obj.metadata?.theme || 'General'}</span>
+                                                    <label className="show-completed-toggle-inline" style={{ 
+                                                        marginLeft: '12px', 
+                                                        fontSize: '11px', 
+                                                        opacity: 0.6, 
+                                                        cursor: 'pointer', 
+                                                        display: 'inline-flex', 
+                                                        alignItems: 'center', 
+                                                        gap: '4px',
+                                                        userSelect: 'none'
+                                                    }}>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={showCompletedTasks} 
+                                                            onChange={(e) => setShowCompletedTasks(e.target.checked)}
+                                                            onClick={e => e.stopPropagation()}
+                                                        />
+                                                        Show completed
+                                                    </label>
+                                                    <div className="experiment-main-metric">
+                                                        {obj.metadata?.masterAccumulatedMetric || 0} {obj.metadata?.accumulationType || 'units'}
+                                                        <span style={{ fontSize: '14px', fontWeight: '400', opacity: '0.6', marginLeft: '10px' }}>Accumulated</span>
                                                     </div>
-                                                    <div className="aspect-header-right">
-                                                        {isNoveltyHighlighted && firstIncompleteTask && (
-                                                            <button
-                                                                className="novelty-sprint-btn"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    e.preventDefault();
-                                                                    navigate(`/focus?taskId=${firstIncompleteTask.id}&safeSession=true`);
+                                                </div>
+                                                <div className="experiment-mve-preview">
+                                                    <label className="mve-label">Minimum Viable Effort</label>
+                                                    <div className="mve-text">{obj.metadata?.mve || 'No MVE defined.'}</div>
+                                                </div>
+                                            </div>
+                                            {(!obj.metadata?.isArchived) && (
+                                                <div className="woop-box">
+                                                    <div className="woop-item" onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (inlineEditingWishId !== obj.id) {
+                                                            setInlineEditingWishId(obj.id);
+                                                            setTempWish(obj.metadata?.wish || '');
+                                                        }
+                                                    }}>
+                                                        <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>Wish</label>
+                                                        {inlineEditingWishId === obj.id ? (
+                                                            <input
+                                                                autoFocus
+                                                                className="inline-edit-input"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    background: 'transparent',
+                                                                    border: 'none',
+                                                                    borderBottom: '1px solid var(--color-primary)',
+                                                                    color: 'var(--text-primary)',
+                                                                    fontSize: '14px',
+                                                                    outline: 'none',
+                                                                    padding: '2px 0'
                                                                 }}
-                                                            >
-                                                                Start 10-minute experiment
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            className="aspect-open-details-btn"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                e.preventDefault();
-                                                                console.log("History toggle clicked for:", aspect.id);
-                                                                setActiveAspectId(activeAspectId === aspect.id ? null : aspect.id);
-                                                            }}
-                                                        >
-                                                            {isHistoryActive ? 'Close History' : 'View History'}
-                                                        </button>
-                                                        <button
-                                                            className="aspect-delete-btn"
-                                                            title="Delete Aspect"
-                                                            onClick={(e) => {
-                                                                setAspectToDelete(aspect);
-                                                            }}
-                                                            style={{
-                                                                position: 'relative',
-                                                                zIndex: 100,
+                                                                value={tempWish}
+                                                                onChange={(e) => setTempWish(e.target.value)}
+                                                                onBlur={() => handleInlineSaveWish(obj.id)}
+                                                                onKeyDown={(e) => e.key === 'Enter' && handleInlineSaveWish(obj.id)}
+                                                            />
+                                                        ) : (
+                                                            <div style={{
+                                                                fontSize: '14px',
+                                                                color: obj.metadata?.wish ? 'var(--text-primary)' : 'var(--text-secondary)',
                                                                 cursor: 'pointer',
-                                                                pointerEvents: 'auto'
-                                                            }}
-                                                        >
-                                                            🗑️
-                                                        </button>
+                                                                minHeight: '20px',
+                                                                fontStyle: obj.metadata?.wish ? 'normal' : 'italic'
+                                                            }}>
+                                                                {obj.metadata?.wish || "What do I want?"}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="woop-item" onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (inlineEditingOutcomeId !== obj.id) {
+                                                            setInlineEditingOutcomeId(obj.id);
+                                                            setTempOutcome(obj.metadata?.outcome || '');
+                                                        }
+                                                    }}>
+                                                        <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>Outcome</label>
+                                                        {inlineEditingOutcomeId === obj.id ? (
+                                                            <input
+                                                                autoFocus
+                                                                className="inline-edit-input"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    background: 'transparent',
+                                                                    border: 'none',
+                                                                    borderBottom: '1px solid var(--color-primary)',
+                                                                    color: 'var(--text-primary)',
+                                                                    fontSize: '14px',
+                                                                    outline: 'none',
+                                                                    padding: '2px 0'
+                                                                }}
+                                                                value={tempOutcome}
+                                                                onChange={(e) => setTempOutcome(e.target.value)}
+                                                                onBlur={() => handleInlineSaveOutcome(obj.id)}
+                                                                onKeyDown={(e) => e.key === 'Enter' && handleInlineSaveOutcome(obj.id)}
+                                                            />
+                                                        ) : (
+                                                            <div style={{
+                                                                fontSize: '14px',
+                                                                color: obj.metadata?.outcome ? 'var(--text-primary)' : 'var(--text-secondary)',
+                                                                cursor: 'pointer',
+                                                                minHeight: '20px',
+                                                                fontStyle: obj.metadata?.outcome ? 'normal' : 'italic'
+                                                            }}>
+                                                                {obj.metadata?.outcome || "What does success look like?"}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
-
-                                                {isHistoryActive && (
-                                                    <div className="aspect-history-panel" onClick={e => e.stopPropagation()}>
-                                                        <div className="history-header">
-                                                            <span className="history-title">Engagement History</span>
-                                                            <div className="quick-log-inline">
-                                                                <input
-                                                                    type="number"
-                                                                    placeholder="Add amount..."
-                                                                    className="log-input-mini"
-                                                                    onKeyDown={(e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            handleLogAspectAccumulation(aspect.id, e.target.value);
-                                                                            e.target.value = '';
-                                                                        }
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                        <div className="log-list">
-                                                            {(aspect.metadata?.logs || []).slice().reverse().map(log => (
-                                                                <div key={log.id} className="log-entry">
-                                                                    <div className="log-main">
-                                                                        <span className="log-task-name">{log.name}</span>
-                                                                        <span className="log-meta">{new Date(log.timestamp).toLocaleString()}</span>
+                                            )}
+                                        </div>
+        
+                                        <div className="aspects-section-header">
+                                            <span className="section-subtitle">Engagement Aspects</span>
+                                            <p className="aspects-helper-text">Aspects are parallel lenses of engagement inside this experiment.</p>
+                                        </div>
+                                        <div className="masonry-columns-wrapper" style={{ display: 'flex', gap: '24px', padding: '32px' }}>
+                                            {(() => {
+                                                const leftColumn = [];
+                                                const rightColumn = [];
+                                                let leftHeight = 0;
+                                                let rightHeight = 0;
+        
+                                                aspects.forEach(aspect => {
+                                                    const rawAspectTasks = getChildren(aspect.id, NodeTypes.TASK);
+                                                    const aspectTasks = showCompletedTasks 
+                                                        ? rawAspectTasks 
+                                                        : rawAspectTasks.filter(t => t.metadata?.status !== TaskStatuses.DONE);
+                                                        
+                                                    const isUntouched = skill.metadata?.pinchState === 'INTEREST' &&
+                                                        aspectTasks.length > 0 &&
+                                                        !aspectTasks.some(t => t.metadata?.status === TaskStatuses.DONE);
+        
+                                                    const isNoveltyHighlighted = window.unexploredAspectIds?.includes(aspect.id);
+                                                    const firstIncompleteTask = aspectTasks.find(t => t.metadata?.status !== TaskStatuses.DONE);
+        
+                                                    const visibleTasksCount = aspectShowMoreIds.includes(aspect.id) ? aspectTasks.length : Math.min(aspectTasks.length, 5);
+                                                    const estimatedHeight = 110 + (visibleTasksCount * 45) + 30;
+        
+                                                    const aspectElement = (
+                                                        <DroppableAspect
+                                                            key={aspect.id}
+                                                            aspect={aspect}
+                                                            aspectTasks={aspectTasks}
+                                                            isUntouched={isUntouched}
+                                                            isNoveltyHighlighted={isNoveltyHighlighted}
+                                                        >
+                                                            <div className="aspect-card-internal">
+                                                                <div className="aspect-header">
+                                                                    <div className="aspect-title-group">
+                                                                        <span className="aspect-name">{aspect.name}</span>
+                                                                        <span className="aspect-task-count">
+                                                                            {aspect.metadata?.accumulatedMetric || 0} {obj.metadata?.accumulationType} &bull; {aspect.metadata?.taskCount || 0} logs
+                                                                        </span>
                                                                     </div>
-                                                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                                                        <span className="log-amount">+{log.amount}</span>
+                                                                    <div className="aspect-header-right">
+                                                                        {isNoveltyHighlighted && firstIncompleteTask && (
+                                                                            <button
+                                                                                className="novelty-sprint-btn"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    e.preventDefault();
+                                                                                    navigate(`/focus?taskId=${firstIncompleteTask.id}&safeSession=true`);
+                                                                                }}
+                                                                            >
+                                                                                Start 10-minute experiment
+                                                                            </button>
+                                                                        )}
                                                                         <button
-                                                                            className="delete-log-btn"
-                                                                            onClick={() => handleDeleteLog(aspect.id, log.id)}
-                                                                            title="Remove log entry"
+                                                                            className="aspect-delete-btn"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                e.preventDefault();
+                                                                                setAspectToDelete(aspect);
+                                                                            }}
+                                                                            title="Delete Aspect"
                                                                         >
                                                                             🗑️
                                                                         </button>
                                                                     </div>
                                                                 </div>
-                                                            ))}
-                                                            {(!aspect.metadata?.logs || aspect.metadata.logs.length === 0) && (
-                                                                <div className="no-logs-message">No engagement logged yet.</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="aspect-tasks" onClick={e => e.stopPropagation()}>
-                                                    <SortableContext items={aspectTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                                                        <AnimatePresence>
-                                                            {aspectTasks.slice(0, 5).map(task => (
-                                                                <SortableTaskRow key={task.id} task={task} />
-                                                            ))}
-                                                        </AnimatePresence>
-                                                    </SortableContext>
-
-                                                    <button
-                                                        className="add-task-btn"
+        
+                                                                <div className="aspect-tasks" onClick={e => e.stopPropagation()}>
+                                                                    <SortableContext items={aspectTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                                                                        <AnimatePresence>
+                                                                            {(aspectShowMoreIds.includes(aspect.id) ? aspectTasks : aspectTasks.slice(0, 5)).map(task => (
+                                                                                <SortableTaskRow key={task.id} task={task} />
+                                                                            ))}
+                                                                        </AnimatePresence>
+                                                                    </SortableContext>
+        
+                                                                    {aspectTasks.length > 5 && (
+                                                                        <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                                                                            <button
+                                                                                className="show-all-tasks-btn"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setAspectShowMoreIds(prev => 
+                                                                                        prev.includes(aspect.id) 
+                                                                                            ? prev.filter(id => id !== aspect.id)
+                                                                                            : [...prev, aspect.id]
+                                                                                    );
+                                                                                }}
+                                                                                style={{
+                                                                                    background: 'transparent',
+                                                                                    border: 'none',
+                                                                                    color: 'var(--text-secondary)',
+                                                                                    fontSize: '11px',
+                                                                                    fontWeight: '600',
+                                                                                    cursor: 'pointer',
+                                                                                    opacity: 0.7,
+                                                                                    padding: '4px 8px',
+                                                                                    transition: 'opacity 0.2s',
+                                                                                }}
+                                                                                onMouseEnter={e => e.target.style.opacity = 1}
+                                                                                onMouseLeave={e => e.target.style.opacity = 0.7}
+                                                                            >
+                                                                                {aspectShowMoreIds.includes(aspect.id) ? 'Show fewer tasks' : 'Show all tasks'}
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+        
+                                                                    <button
+                                                                        className="add-task-btn"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setCreatingTaskForAspectId(aspect.id);
+                                                                            setNewTaskItemType('FINITE');
+                                                                        }}
+                                                                    >
+                                                                        + Add Task
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </DroppableAspect>
+                                                    );
+        
+                                                    if (leftHeight <= rightHeight) {
+                                                        leftColumn.push(aspectElement);
+                                                        leftHeight += estimatedHeight;
+                                                    } else {
+                                                        rightColumn.push(aspectElement);
+                                                        rightHeight += estimatedHeight;
+                                                    }
+                                                });
+        
+                                                const addAspectElement = creatingAspectForObjId === obj.id ? (
+                                                    <motion.div layout="position" key="add-aspect-btn" className="aspect-card creation-card" onClick={(e) => e.stopPropagation()}>
+                                                        <input
+                                                            autoFocus
+                                                            className="inline-creation-input"
+                                                            placeholder="Aspect name..."
+                                                            value={newAspectName}
+                                                            onChange={(e) => setNewAspectName(e.target.value)}
+                                                            onKeyDown={(e) => handleCreateAspect(e, obj.id)}
+                                                            onBlur={() => setCreatingAspectForObjId(null)}
+                                                        />
+                                                    </motion.div>
+                                                ) : (
+                                                    <motion.button
+                                                        layout="position"
+                                                        key="add-aspect-btn"
+                                                        className="add-aspect-btn"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setCreatingTaskForAspectId(aspect.id);
-                                                            setNewTaskItemType('FINITE');
+                                                            setCreatingAspectForObjId(obj.id);
                                                         }}
+                                                        transition={macOSSpring}
                                                     >
-                                                        + Add Task
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </DroppableAspect>
-                                    );
-                                })}
-
-                                {creatingAspectForObjId === obj.id ? (
-                                    <div className="aspect-card creation-card" onClick={(e) => e.stopPropagation()}>
-                                        <input
-                                            autoFocus
-                                            className="inline-creation-input"
-                                            placeholder="Aspect name..."
-                                            value={newAspectName}
-                                            onChange={(e) => setNewAspectName(e.target.value)}
-                                            onKeyDown={(e) => handleCreateAspect(e, obj.id)}
-                                            onBlur={() => setCreatingAspectForObjId(null)}
-                                        />
-                                    </div>
-                                ) : (
-                                    <button
-                                        className="add-aspect-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setCreatingAspectForObjId(obj.id);
-                                        }}
-                                    >
-                                        + Add Aspect
-                                    </button>
-                                )}
-                            </div>
+                                                        + Add Aspect
+                                                    </motion.button>
+                                                );
+        
+                                                const addAspectHeight = 60;
+                                                if (leftHeight <= rightHeight) {
+                                                    leftColumn.push(addAspectElement);
+                                                    leftHeight += addAspectHeight;
+                                                } else {
+                                                    rightColumn.push(addAspectElement);
+                                                    rightHeight += addAspectHeight;
+                                                }
+        
+                                                return (
+                                                    <>
+                                                        <div 
+                                                            className="masonry-column" 
+                                                            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
+                                                        >
+                                                            {leftColumn}
+                                                        </div>
+                                                        <div 
+                                                            className="masonry-column" 
+                                                            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
+                                                        >
+                                                            {rightColumn}
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </motion.div>
+                <DragOverlay dropAnimation={null}>
+                    {dragActiveId ? (
+                        <div className="task-row-container dragging-overlay">
+                            {allNodes.find(n => n.id === dragActiveId)?.name}
                         </div>
-                    )}
-                    <DragOverlay dropAnimation={null}>
-                        {dragActiveId ? (
-                            <div className="task-row-container dragging-overlay">
-                                {allNodes.find(n => n.id === dragActiveId)?.name}
-                            </div>
-                        ) : null}
-                    </DragOverlay>
-                </div>
-            </DndContext >
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
         );
     };
 
@@ -1715,14 +1914,14 @@ const SkillPage = () => {
                     <input
                         className="skill-identity-input"
                         placeholder="Define who you are becoming..."
-                        value={skill.metadata?.identityAnchor || ''}
+                        value={tempBecoming}
                         onChange={(e) => {
                             const val = e.target.value;
-                            backbone.updateNode(skill.id, {
-                                metadata: { ...skill.metadata, identityAnchor: val }
-                            });
+                            setTempBecoming(val);
+                            debouncedUpdateBecoming(val);
                         }}
                     />
+                    {isSyncingBecoming && <span className="sync-indicator" style={{ fontSize: '10px', opacity: 0.5, marginLeft: '8px' }}>Saving...</span>}
                 </div>
                 <p className="skill-subtitle">Planning Mode &bull; Structural Map</p>
             </header>
@@ -1825,13 +2024,11 @@ const SkillPage = () => {
             {activeObjectives.length > 0 && (
                 <section className="skill-section active-experiments-section">
                     <span className="section-label">Active Experiments</span>
-                    <div className="active-experiments-list">
-                        {activeObjectives.map(obj => (
-                            <div key={obj.id} className="active-experiment-wrapper">
-                                {renderObjective(obj)}
-                            </div>
-                        ))}
-                    </div>
+                    <LayoutGroup id="active-objectives">
+                        <div className="active-experiments-list">
+                            {activeObjectives.map(obj => renderObjective(obj))}
+                        </div>
+                    </LayoutGroup>
                 </section>
             )}
 
@@ -1850,9 +2047,11 @@ const SkillPage = () => {
                     </header>
 
                     {isSleepingExpanded && (
-                        <div className="sleeping-content">
-                            {sleepingObjectives.map(renderObjective)}
-                        </div>
+                        <LayoutGroup id="sleeping-objectives">
+                            <div className="sleeping-content">
+                                {sleepingObjectives.map(renderObjective)}
+                            </div>
+                        </LayoutGroup>
                     )}
                 </section>
             )}
@@ -2026,27 +2225,54 @@ const SkillPage = () => {
                 </div>
             )}
 
-            {/* TASK CREATION MODAL */}
-            {creatingTaskForAspectId && (
-                <div className="modal-overlay" onClick={() => setCreatingTaskForAspectId(null)}>
+            {/* DELETE EXPERIMENT CONFIRMATION MODAL */}
+            {objectiveToDelete && (
+                <div className="modal-overlay" onClick={() => setObjectiveToDelete(null)}>
                     <div className="confirmation-modal" onClick={e => e.stopPropagation()}>
-                        <h3>Create New Mission</h3>
+                        <h3>Delete Experiment</h3>
+                        <p>Delete <strong>"{objectiveToDelete.name}"</strong>? All Aspects and logs will be permanently removed. This cannot be undone.</p>
+                        <div className="modal-actions">
+                            <button className="cancel-btn" onClick={() => setObjectiveToDelete(null)}>Cancel</button>
+                            <button className="delete-btn" onClick={confirmDeleteObjective}>Delete</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                        <div className="form-group" style={{ marginBottom: '20px', textAlign: 'left' }}>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-secondary)' }}>Task Type</label>
-                            <div style={{ display: 'flex', gap: '10px' }}>
+            {/* TASK CREATION MODAL - Using Portal to render on top of entire app */}
+            {creatingTaskForAspectId && createPortal(
+                <div className={`pre-rendered-modal-overlay active`} onClick={() => setCreatingTaskForAspectId(null)}>
+                    <div className="confirmation-modal" onClick={e => e.stopPropagation()} style={{
+                        background: 'var(--color-bg-card, #2c2c2e)',
+                        border: '1px solid var(--color-border, rgba(255, 255, 255, 0.1))',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        width: '420px', // Slightly wider for premium feel
+                        padding: '32px'
+                    }}>
+                        <h3 style={{ 
+                            fontSize: '20px', 
+                            fontWeight: '700', 
+                            marginBottom: '24px', 
+                            textAlign: 'left',
+                            color: 'var(--text-primary)'
+                        }}>Create New Mission</h3>
+
+                        <div className="form-group" style={{ marginBottom: '24px', textAlign: 'left' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '10px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>Task Type</label>
+                            <div style={{ display: 'flex', gap: '12px', background: 'var(--alpha-low)', padding: '4px', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
                                 <button
                                     className={`toggle-btn ${newTaskItemType === 'FINITE' ? 'active' : ''}`}
                                     style={{
                                         flex: 1,
                                         padding: '10px',
                                         borderRadius: '8px',
-                                        border: '1px solid var(--color-border)',
-                                        background: newTaskItemType === 'FINITE' ? 'var(--color-primary)' : 'var(--alpha-low)',
-                                        color: newTaskItemType === 'FINITE' ? 'white' : 'var(--text-primary)',
+                                        border: 'none',
+                                        background: newTaskItemType === 'FINITE' ? 'var(--color-primary)' : 'transparent',
+                                        color: newTaskItemType === 'FINITE' ? 'white' : 'var(--text-secondary)',
                                         cursor: 'pointer',
                                         fontSize: '12px',
-                                        fontWeight: '600'
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s ease'
                                     }}
                                     onClick={() => setNewTaskItemType('FINITE')}
                                 >
@@ -2058,12 +2284,13 @@ const SkillPage = () => {
                                         flex: 1,
                                         padding: '10px',
                                         borderRadius: '8px',
-                                        border: '1px solid var(--color-border)',
-                                        background: newTaskItemType === 'REPETITION' ? 'var(--color-primary)' : 'var(--alpha-low)',
-                                        color: newTaskItemType === 'REPETITION' ? 'white' : 'var(--text-primary)',
+                                        border: 'none',
+                                        background: newTaskItemType === 'REPETITION' ? 'var(--color-primary)' : 'transparent',
+                                        color: newTaskItemType === 'REPETITION' ? 'white' : 'var(--text-secondary)',
                                         cursor: 'pointer',
                                         fontSize: '12px',
-                                        fontWeight: '600'
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s ease'
                                     }}
                                     onClick={() => setNewTaskItemType('REPETITION')}
                                 >
@@ -2072,18 +2299,21 @@ const SkillPage = () => {
                             </div>
                         </div>
 
-                        <div className="form-group" style={{ marginBottom: '20px', textAlign: 'left' }}>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-secondary)' }}>Task Name</label>
+                        <div className="form-group" style={{ marginBottom: '24px', textAlign: 'left' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '10px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>Task Name</label>
                             <input
-                                autoFocus
+                                ref={taskNameInputRef}
                                 className="form-input"
+                                autoFocus
                                 style={{
-                                    width: '93%',
+                                    width: '100%',
                                     background: 'var(--alpha-low)',
                                     border: '1px solid var(--color-border)',
-                                    borderRadius: '8px',
-                                    padding: '10px 12px',
-                                    color: 'var(--text-primary)'
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '14px',
+                                    boxSizing: 'border-box'
                                 }}
                                 placeholder="What needs to be done?"
                                 value={newTaskName}
@@ -2093,18 +2323,20 @@ const SkillPage = () => {
                         </div>
 
                         {newTaskItemType === 'REPETITION' && (
-                            <div className="repetition-fields" style={{ display: 'flex', gap: '15px', marginBottom: '24px' }}>
+                            <div className="repetition-fields" style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
                                 <div className="form-group" style={{ flex: 2, textAlign: 'left' }}>
-                                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-secondary)' }}>Unit Name</label>
+                                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '10px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>Unit Name</label>
                                     <input
                                         className="form-input"
                                         style={{
-                                            width: '88%',
+                                            width: '100%',
                                             background: 'var(--alpha-low)',
                                             border: '1px solid var(--color-border)',
-                                            borderRadius: '8px',
-                                            padding: '10px 12px',
-                                            color: 'var(--text-primary)'
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            color: 'var(--text-primary)',
+                                            fontSize: '14px',
+                                            boxSizing: 'border-box'
                                         }}
                                         placeholder="e.g. reps, pages"
                                         value={newTaskUnitName}
@@ -2112,17 +2344,19 @@ const SkillPage = () => {
                                     />
                                 </div>
                                 <div className="form-group" style={{ flex: 1, textAlign: 'left' }}>
-                                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-secondary)' }}>Target</label>
+                                    <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', marginBottom: '10px', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>Target</label>
                                     <input
                                         type="number"
                                         className="form-input"
                                         style={{
-                                            width: '78%',
+                                            width: '100%',
                                             background: 'var(--alpha-low)',
                                             border: '1px solid var(--color-border)',
-                                            borderRadius: '8px',
-                                            padding: '10px 12px',
-                                            color: 'var(--text-primary)'
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            color: 'var(--text-primary)',
+                                            fontSize: '14px',
+                                            boxSizing: 'border-box'
                                         }}
                                         value={newTaskTargetUnits}
                                         onChange={(e) => setNewTaskTargetUnits(e.target.value)}
@@ -2131,14 +2365,33 @@ const SkillPage = () => {
                             </div>
                         )}
 
-                        <div className="modal-actions">
-                            <button className="cancel-btn" onClick={() => setCreatingTaskForAspectId(null)}>Cancel</button>
-                            <button className="delete-btn" style={{ background: 'var(--color-primary)' }} onClick={() => handleCreateTask(null, creatingTaskForAspectId)}>Create Task</button>
+                        <div className="modal-actions" style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                            <button className="cancel-btn" style={{ 
+                                flex: 1, 
+                                padding: '12px', 
+                                borderRadius: '12px', 
+                                border: '1px solid var(--color-border)',
+                                background: 'transparent',
+                                color: 'var(--text-secondary)',
+                                fontWeight: '600',
+                                cursor: 'pointer'
+                            }} onClick={() => setCreatingTaskForAspectId(null)}>Cancel</button>
+                            <button className="create-btn" style={{ 
+                                flex: 1, 
+                                padding: '12px', 
+                                borderRadius: '12px', 
+                                border: 'none',
+                                background: 'var(--color-primary)',
+                                color: 'white',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(var(--color-primary-rgb), 0.3)'
+                            }} onClick={() => handleCreateTask(null, creatingTaskForAspectId)}>Create Task</button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
-
         </div>
     );
 };

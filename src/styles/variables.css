@@ -33,6 +33,12 @@
   --color-success: #36b37e;
   --color-warning: #ffab00;
   --color-danger: #ff5630;
+
+  /* FIXED CONTRAST TOKENS - FOR TEXT ON SPECIFIC BACKGROUNDS */
+  --text-on-light-primary: #111111;
+  --text-on-light-secondary: #555555;
+  --text-on-dark-primary: #ffffff;
+  --text-on-dark-secondary: #e5e5e5;
 }
 
 /* DARK MODE (Default & Explicit) */
@@ -44,8 +50,8 @@
   --color-bg-sidebar-translucent: rgba(0, 0, 0, 0.4);
   --color-bg-card: #2c2c2c;
 
-  --color-text-main: #ffffff;
-  --color-text-secondary: #b0b0b0;
+  --color-text-main: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
   --color-text-inverse: #121212;
 
   --color-border: #2f2f2f;
@@ -56,6 +62,12 @@
   --alpha-high: rgba(255, 255, 255, 0.1);
   --alpha-med: rgba(255, 255, 255, 0.05);
   --alpha-low: rgba(255, 255, 255, 0.02);
+
+  /* TEXT HIERARCHY - DARK MODE (Solid Grayscale) */
+  --text-primary: #fcfcfc;
+  --text-secondary: #d4d4d4;
+  --text-tertiary: #a0a0a0;
+  --text-muted: #707070;
 }
 
 /* LIGHT MODE OVERRIDES */
@@ -66,8 +78,8 @@
   --color-bg-sidebar-solid: #ffffff;
   --color-bg-sidebar-translucent: rgba(255, 255, 255, 0.8);
 
-  --color-text-main: #121212;
-  --color-text-secondary: #86868b;
+  --color-text-main: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
   --color-text-inverse: #ffffff;
 
   --color-border: #d1d1d1;
@@ -78,4 +90,10 @@
   --alpha-high: rgba(0, 0, 0, 0.1);
   --alpha-med: rgba(0, 0, 0, 0.05);
   --alpha-low: rgba(0, 0, 0, 0.02);
+
+  /* TEXT HIERARCHY - LIGHT MODE (Specified Grayscale) */
+  --text-primary: #111111;
+  --text-secondary: #555555;
+  --text-tertiary: #8f8f8f;
+  --text-muted: #bfbfbf;
 }

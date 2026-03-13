@@ -1,4 +1,7 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
 import MainLayout from './layout/MainLayout';
 import { useWindowState } from './hooks/useWindowState';
 import Launchpad from './pages/Launchpad';
@@ -29,7 +32,8 @@ const SkillDetail = () => <SkillPage />;
 const Marketplace = () => <MarketplacePage />;
 const Journal = () => <JournalPage />;
 const Calendar = () => <ArchivedPage name="Calendar" />;
-const Settings = () => <ArchivedPage name="Settings" />;
+import SettingsPage from './pages/SettingsPage';
+const Settings = () => <SettingsPage />;
 const WarheadChatPage = () => <ArchivedPage name="Warhead Chat" />;
 const StoreProvider = ({ children }) => <>{children}</>;
 const WarheadChat = () => null;
@@ -77,21 +81,141 @@ const LegacyApp = () => (
 import { ThemeProvider } from './context/ThemeContext';
 import BackgroundLayer from './components/background/BackgroundLayer';
 
+import { supabase } from './lib/supabase';
+import { waitForReady } from './backbone-v2';
+
 function App() {
   useWindowState();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [repositoriesReady, setRepositoriesReady] = useState(false);
+
+  const handleDoubleClick = async () => {
+    try {
+      const appWindow = getCurrentWindow();
+      const maximized = await appWindow.isMaximized();
+      if (maximized) {
+        await appWindow.unmaximize();
+      } else {
+        await appWindow.maximize();
+      }
+    } catch (err) {
+      console.error('[App] Error toggling maximization:', err);
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalDoubleClick = (e) => {
+      // If double click is in the top 36px zone
+      if (e.clientY <= 36) {
+        // Check if the target is NOT an interactive element
+        const isInteractive = e.target.closest('button, a, input, textarea, select, .no-drag, [role="button"]');
+        if (!isInteractive) {
+          handleDoubleClick();
+        }
+      }
+    };
+
+    window.addEventListener('dblclick', handleGlobalDoubleClick);
+    return () => window.removeEventListener('dblclick', handleGlobalDoubleClick);
+  }, []);
+
+  useEffect(() => {
+    // 1. Initialization
+    console.log('[App Init] Starting initialization flow');
+    console.log('[App Init] Calling supabase.auth.getSession()');
+
+    supabase.auth.getSession()
+      .then(({ data: { session: initialSession } }) => {
+        console.log('[App Init] Session check complete. Result:', initialSession ? `Session for ${initialSession.user.email}` : 'No session');
+
+        setSession(initialSession);
+        setLoading(false);
+
+        // Once session check is done, ensure repositories are ready
+        waitForReady().then((success) => {
+          console.log('[App Init] Repositories READY. Success:', success);
+          setRepositoriesReady(true);
+        });
+      })
+      .catch(error => {
+        console.error('[App Init] CRITICAL: Session check failed with error:', error);
+        setLoading(false);
+        setRepositoriesReady(true);
+      });
+
+    // Handle deep links for OAuth redirects (Tauri Production)
+    let unsubscribeDeepLink;
+
+    import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
+      onOpenUrl((urls) => {
+        for (const url of urls) {
+          if (url.includes('auth')) {
+            const urlObj = new URL(url.replace('#', '?'));
+            const accessToken = urlObj.searchParams.get('access_token');
+            const refreshToken = urlObj.searchParams.get('refresh_token');
+
+            if (accessToken && refreshToken) {
+              supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              }).then(({ data, error }) => {
+                if (error) console.error('[App] Error setting session from deep link:', error.message);
+                else setSession(data.session);
+              });
+            }
+          }
+        }
+      }).then(unsub => { unsubscribeDeepLink = unsub; });
+    }).catch(err => {
+      console.warn('[App] Deep link plugin not initialized or available:', err);
+    });
+
+    // 3. Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      setSession(newSession);
+      if (loading) setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (unsubscribeDeepLink) unsubscribeDeepLink();
+    };
+  }, []);
+
+  if (loading || !repositoriesReady) {
+    return (
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#050505',
+        color: '#fff',
+        fontFamily: 'sans-serif'
+      }}>
+        <div className="loading-spinner" style={{ marginBottom: '20px' }}>
+          Initializing Backbone...
+        </div>
+        <p style={{ opacity: 0.5, fontSize: '12px' }}>
+          {!loading ? 'Synchronizing Repository Data...' : 'Verifying secure session'}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <ThemeProvider>
-      <BackgroundLayer />
       <Router>
+        <BackgroundLayer />
         <Routes>
           <Route path="/focus" element={<FocusPage />} />
-          {/* LEGACY APPLICATION */}
           <Route path="/*" element={<LegacyApp />} />
         </Routes>
       </Router>
     </ThemeProvider>
   );
 }
-
 
 export default App;

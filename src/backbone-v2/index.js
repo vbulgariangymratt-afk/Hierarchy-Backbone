@@ -59,11 +59,19 @@ const getInstance = () => {
     const journalService = JournalService(journalRepo, backbone, habitService);
 
     // Initial triggers
-    repository.initialize();
-    journalRepo.initialize();
-    backbone.initialize();
-    habitService.initialize();
-    journalService.initialize();
+    const readyPromise = Promise.all([
+        repository.initialize(),
+        journalRepo.initialize(),
+        backbone.initialize(),
+        habitService.initialize(),
+        journalService.initialize()
+    ]).then(() => {
+        console.log('Backbone V2: All systems READY');
+        return true;
+    }).catch(err => {
+        console.error('Backbone V2: Error during system initialization', err);
+        return false;
+    });
 
     globalThis[key] = {
         backbone,
@@ -72,7 +80,8 @@ const getInstance = () => {
         habitRepo,
         habitService,
         journalRepo,
-        journalService
+        journalService,
+        waitForReady: () => readyPromise
     };
 
     console.log('Backbone V2: Fresh singleton stored in globalThis');
@@ -86,7 +95,8 @@ const {
     habitRepo,
     habitService,
     journalRepo,
-    journalService
+    journalService,
+    waitForReady
 } = getInstance();
 
 export {
@@ -97,6 +107,7 @@ export {
     auraService,
     journalRepo,
     journalService,
+    waitForReady,
     NodeTypes,
     ObjectiveStatuses,
     TaskStatuses,

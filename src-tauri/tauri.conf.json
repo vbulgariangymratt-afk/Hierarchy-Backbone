@@ -27,6 +27,14 @@
       "csp": null
     }
   },
+  "plugins": {
+    "deep-link": {
+      "schemes": [
+        "com.warhead.backbonehierarchy",
+        "backbone"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",
