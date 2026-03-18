@@ -117,13 +117,35 @@ export const createPersistentRepository = () => {
                 storage[index] = { ...storage[index], ...updates, updatedAt: Date.now() };
                 await persist(storage[index]);
                 notify();
-                return { ...storage[index] };
+                return storage[index];
             }
             throw new Error(`Node with ID ${id} not found.`);
         },
 
         getAll: async () => {
-            return storage.map(node => ({ ...node }));
+            return [...storage];
+        },
+
+        /**
+         * Optimized query: Returns only nodes with specific parentId.
+         * References are preserved for efficient React.memo usage.
+         */
+        getNodesByParent: async (parentId) => {
+            return storage.filter(n => n.parentId === parentId);
+        },
+
+        /**
+         * Optimized query: Returns only nodes of specific type.
+         */
+        getNodesByType: async (type) => {
+            return storage.filter(n => n.type === type);
+        },
+
+        /**
+         * Alias for getNodesByParent for clearer semantic usage.
+         */
+        getChildrenOf: async (nodeId) => {
+            return storage.filter(n => n.parentId === nodeId);
         },
 
         delete: async (id) => {

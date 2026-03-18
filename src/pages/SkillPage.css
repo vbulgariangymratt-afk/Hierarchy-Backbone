@@ -20,7 +20,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 @keyframes skillPageFadeIn {
@@ -127,7 +127,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .suggestions-label {
@@ -592,7 +592,7 @@
     inset: 0;
     z-index: -1;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
     border-radius: inherit;
@@ -611,7 +611,7 @@
 }
 
 .wallpaper-mode .aspect-card::before {
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* Top-edge highlight reflection */
@@ -873,7 +873,9 @@
 }
 
 .task-main-name {
-    word-break: break-word;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .task-actions-col {
@@ -2842,7 +2844,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .experiment-display-header {
@@ -2941,7 +2943,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .woop-box {
@@ -2959,7 +2961,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .edit-grid {

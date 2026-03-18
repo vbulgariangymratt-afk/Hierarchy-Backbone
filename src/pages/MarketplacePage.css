@@ -105,7 +105,7 @@
 
 .liquid-mode .hryvnia-card {
     /* liquid-glass in global.css handles background/blur/shadow */
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .hryvnia-icon {
@@ -160,12 +160,12 @@
 }
 
 .liquid-mode .reward-card {
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     /* liquid-glass in global.css handles the rest */
 }
 
 .wallpaper-mode .reward-card {
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     /* liquid-glass in global.css handles the rest */
 }
 
@@ -251,7 +251,7 @@
 .wallpaper-mode .buy-button {
     background: transparent;
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .liquid-mode.light .buy-button {

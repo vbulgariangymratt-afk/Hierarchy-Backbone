@@ -26,7 +26,6 @@ const Sidebar = () => {
     const [isFocusMode, setIsFocusMode] = useState(false);
     const [loading, setLoading] = useState(true);
     const [lifeAreas, setLifeAreas] = useState([]);
-    const [activeAreaIds, setActiveAreaIds] = useState(new Set());
     const [isAreasExpanded, setIsAreasExpanded] = useState(true);
     const [sectionTitle, setSectionTitle] = useState("Life Areas");
     const [isAddingArea, setIsAddingArea] = useState(false);
@@ -49,14 +48,6 @@ const Sidebar = () => {
 
                 setLifeAreas(areas);
                 setHryvniaBalance(balance);
-
-                // Calculate which areas have active skills
-                const activeSkills = allNodes.filter(n =>
-                    n.type === 'SKILL' &&
-                    (n.metadata?.status === 'ACTIVE' || (n.metadata?.isActive && n.metadata?.status !== 'SLEEPING'))
-                );
-                const activeIds = new Set(activeSkills.map(s => s.parentId));
-                setActiveAreaIds(activeIds);
             } catch (error) {
                 console.error("Failed to fetch sidebar data:", error);
             } finally {
@@ -243,8 +234,8 @@ const Sidebar = () => {
                                                     )}
                                                 </div>
                                                 <span className="btn-text">{area.name}</span>
-                                                {activeAreaIds.has(area.id) && (
-                                                    <div className="active-skill-dot" title="Active Skills inside"></div>
+                                                {area.isActive && (
+                                                    <span className="area-dot" title="Active in Launchpad"></span>
                                                 )}
                                             </NavLink>
                                         ))}

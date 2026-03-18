@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 import MainLayout from './layout/MainLayout';
@@ -67,8 +67,8 @@ const LegacyApp = () => (
         <Route path="trackers/wealth" element={<Wealth />} />
         <Route path="wealth/:id" element={<WealthItemDetail />} />
         <Route path="trackers/:trackerId" element={<GenericTracker />} />
-
       </Route>
+      <Route path="*" element={<div style={{color:'white'}}>No route matched in LegacyApp. Path: {window.location.pathname}</div>} />
     </Routes>
     <DailyRituals />
     <WarheadPulse />
@@ -78,11 +78,112 @@ const LegacyApp = () => (
   </StoreProvider>
 );
 
-import { ThemeProvider } from './context/ThemeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { SessionProvider, useSession } from './context/SessionContext';
 import BackgroundLayer from './components/background/BackgroundLayer';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+
+/**
+ * Global Keyboard Shortcuts Manager
+ * Centralized way to define and manage in-app keyboard shortcuts.
+ */
+const KeyboardShortcuts = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { 
+    completeSession, 
+    isSessionActive, 
+    activeSessionId, 
+    previousRoute, 
+    setPreviousRoute 
+  } = useSession();
+
+  const { 
+    theme, 
+    setTheme, 
+    backgroundMode, 
+    setBackgroundMode,
+    isMultipleWallpapersMode,
+    setIsMultipleWallpapersMode
+  } = useTheme();
+
+
+  // Track the last non-focus, non-settings route to return to it later
+  useEffect(() => {
+    if (location.pathname !== '/focus' && location.pathname !== '/settings') {
+      setPreviousRoute(location.pathname);
+    }
+  }, [location.pathname, setPreviousRoute]);
+
+
+  // Defined as a memoized object to ensure hook efficiency
+  const shortcuts = useMemo(() => ({
+    // Requirement: Shortcut: Cmd + , 
+    "cmd+,": () => navigate('/settings'),
+    
+    // Requirement: Cmd + Enter → complete current session
+    // Context awareness: Only work when a session is active
+    "cmd+enter": () => {
+      if (isSessionActive && activeSessionId) {
+        completeSession();
+      }
+    },
+
+    // Requirement: Cmd + Shift + F → Toggle Focus Mode
+    "cmd+shift+f": () => {
+      // Condition: Use routing state to determine toggle target
+      if (location.pathname === '/focus') {
+        // Return to previous route (Launchpad as fallback)
+        navigate(previousRoute || '/launchpad');
+      } else {
+        // Navigate to Focus mode
+        navigate('/focus');
+      }
+    },
+
+    // Appearance Shortcut 1: Toggle binary Light/Dark (Cmd + Shift + L)
+    "cmd+shift+l": () => {
+      setTheme(theme === 'light' ? 'dark' : 'light');
+    },
+
+    // Appearance Shortcut 2: Cycle background modes (Cmd + Shift + M)
+    "cmd+shift+m": () => {
+      const modes = ['liquid', 'solid', 'wallpaper'];
+      const currentIndex = modes.indexOf(backgroundMode);
+      const nextIndex = (currentIndex + 1) % modes.length;
+      setBackgroundMode(modes[nextIndex]);
+    },
+
+    // Navigation Shortcut 1: Go Back (Cmd + {)
+    "cmd+{": () => navigate(-1),
+
+    // Navigation Shortcut 2: Go Forward (Cmd + })
+    "cmd+}": () => navigate(1)
+  }), [
+    navigate, location.pathname, 
+    completeSession, isSessionActive, activeSessionId, 
+    previousRoute, theme, setTheme, backgroundMode, setBackgroundMode,
+    isMultipleWallpapersMode, setIsMultipleWallpapersMode
+  ]);
+
+
+
+  useKeyboardShortcuts(shortcuts);
+
+  return null;
+};
+
+
+
 
 import { supabase } from './lib/supabase';
 import { waitForReady } from './backbone-v2';
+import PremiumLoadingScreen from './components/loading/PremiumLoadingScreen';
+
+const LandingLog = () => {
+  useEffect(() => { console.log("App: Root /* route matched (LandingLog mounted)"); }, []);
+  return null;
+};
 
 function App() {
   useWindowState();
@@ -183,36 +284,23 @@ function App() {
     };
   }, []);
 
-  if (loading || !repositoriesReady) {
-    return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#050505',
-        color: '#fff',
-        fontFamily: 'sans-serif'
-      }}>
-        <div className="loading-spinner" style={{ marginBottom: '20px' }}>
-          Initializing Backbone...
-        </div>
-        <p style={{ opacity: 0.5, fontSize: '12px' }}>
-          {!loading ? 'Synchronizing Repository Data...' : 'Verifying secure session'}
-        </p>
-      </div>
-    );
-  }
-
   return (
     <ThemeProvider>
       <Router>
-        <BackgroundLayer />
-        <Routes>
-          <Route path="/focus" element={<FocusPage />} />
-          <Route path="/*" element={<LegacyApp />} />
-        </Routes>
+        {loading || !repositoriesReady ? (
+          <PremiumLoadingScreen 
+            secondaryText={!loading ? 'Synchronizing Repository Data...' : ''} 
+          />
+        ) : (
+          <SessionProvider>
+            <KeyboardShortcuts />
+            <BackgroundLayer />
+            <Routes>
+              <Route path="/focus" element={<FocusPage />} />
+              <Route path="/*" element={<><LandingLog /><LegacyApp /></>} />
+            </Routes>
+          </SessionProvider>
+        )}
       </Router>
     </ThemeProvider>
   );

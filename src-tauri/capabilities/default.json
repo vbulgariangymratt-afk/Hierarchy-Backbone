@@ -12,6 +12,7 @@
     "core:window:allow-scale-factor",
     "core:window:allow-set-size",
     "core:window:allow-set-position",
+
     "liquid-glass:default",
     "deep-link:default",
     "opener:default"

@@ -1,0 +1,101 @@
+/* src/components/loading/PremiumLoadingScreen.css */
+.premium-loader-container {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Glass-style centering container */
+.loader-glass {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    /* Apple-style Premium Glassmorphism */
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 44px;
+    
+    /* Soft, deep shadow to give depth to the glass */
+    box-shadow: 
+        0 24px 64px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    
+    transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Variant for light mode contexts specifically if the global theme is set early */
+[data-theme='light'] .loader-glass {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(32px) saturate(120%);
+    box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.8);
+}
+
+/* Elegant thin spinner */
+.loader-ring {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.85); /* Highly legible crisp stroke */
+    border-radius: 50%;
+    animation: spinPage 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+[data-theme='light'] .loader-ring {
+    border: 1.5px solid rgba(0, 0, 0, 0.05);
+    border-top: 1.5px solid #000;
+}
+
+@keyframes spinPage {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loader-text {
+    margin-top: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary, #fff);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.4;
+    animation: pulseLoaderText 2.5s ease-in-out infinite;
+}
+
+@keyframes pulseLoaderText {
+    0%, 100% { opacity: 0.2; transform: translateY(0); }
+    50% { opacity: 0.6; transform: translateY(-1px); }
+}
+
+/* The loading background — subtle dark overlay for better text/glass contrast */
+.loader-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35); /* Soft darken to increase legibility */
+    z-index: -1;
+}
+
+[data-theme='light'] .loader-bg-overlay {
+    background: rgba(255, 255, 255, 0.2);
+}

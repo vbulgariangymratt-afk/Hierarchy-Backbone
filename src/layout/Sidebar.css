@@ -47,7 +47,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .liquid-mode.light .sidebar {
@@ -403,7 +403,7 @@
     align-items: center;
 }
 
-.active-skill-dot {
+.area-dot {
     width: 6px;
     height: 6px;
     background-color: var(--accent-focus);
@@ -414,8 +414,8 @@
     animation: sidebarDotGlow 3s infinite ease-in-out;
 }
 
-.liquid-mode .active-skill-dot,
-.wallpaper-mode .active-skill-dot {
+.liquid-mode .area-dot,
+.wallpaper-mode .area-dot {
     background-color: var(--text-primary);
     filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
 }

@@ -1139,9 +1139,9 @@ export const HierarchyService = (repository, auraService) => {
                     const allNodes = await repository.getAll();
                     const activeSkillsCount = allNodes.filter(n => n.type === NodeTypes.SKILL && n.metadata?.isActive).length;
 
-                    if (activeSkillsCount >= 4) {
-                        console.log("ACTIVE LIMIT BLOCKED: 4 skills already active");
-                        throw new Error("ACTIVE_LIMIT_REACHED");
+                    if (activeSkillsCount >= 100) {
+                        console.log("ACTIVE LIMIT BLOCKED: 100 skills already active");
+                        throw new Error("Active Skill Capacity Reached: You have 100 active skills. Please rest some before activating more.");
                     }
 
                     newUpdates.metadata.activatedAt = Date.now();
@@ -1640,6 +1640,28 @@ export const HierarchyService = (repository, auraService) => {
             return await repository.getAll();
         },
 
+        /**
+         * Selective Query: Returns only nodes belonging to a specific parent.
+         * Use this instead of getAllNodes() + filter in UI for better performance.
+         */
+        getNodesByParent: async (parentId) => {
+            return await repository.getNodesByParent(parentId);
+        },
+
+        /**
+         * Selective Query: Returns only nodes of a specific type.
+         */
+        getNodesByType: async (type) => {
+            return await repository.getNodesByType(type);
+        },
+
+        /**
+         * Selective Query: Returns immediate children of a node.
+         */
+        getChildrenOf: async (nodeId) => {
+            return await repository.getChildrenOf(nodeId);
+        },
+
         recalculateObjectiveAccumulation: async (objectiveId) => {
             return await recalculateObjectiveAccumulation(objectiveId);
         },
@@ -1822,6 +1844,9 @@ export const HierarchyService = (repository, auraService) => {
             const oneDayMs = 24 * 60 * 60 * 1000;
             const windowDays = [today, today - oneDayMs, today - (2 * oneDayMs)];
 
+            const root = await repository.getById('ROOT');
+            const selectedIds = root?.metadata?.todaySelectedAreaIds || [];
+
             const scoredAreas = areas.map(area => {
                 const descendantNodes = allNodes.filter(n => {
                     // Simple parent-child recursion check (since it's a shallow tree usually)
@@ -1927,7 +1952,8 @@ export const HierarchyService = (repository, auraService) => {
                     rollingMomentum: { reinforcedDaysLast3 },
                     inMotion,
                     nextMinimalStep,
-                    hasActiveSkills
+                    hasActiveSkills,
+                    isActive: selectedIds.includes(area.id)
                 };
             });
 

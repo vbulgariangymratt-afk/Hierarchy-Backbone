@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -9,16 +9,13 @@ import {
     useSensor,
     useSensors,
     DragOverlay,
-    defaultDropAnimationSideEffects,
-    useDroppable
+    defaultDropAnimationSideEffects
 } from '@dnd-kit/core';
 import {
     arrayMove,
     SortableContext,
     verticalListSortingStrategy,
-    useSortable,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import {
     backbone,
     repository,
@@ -30,6 +27,10 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import './SkillPage.css';
 import NodeIcon from '../components/NodeIcon';
+import SortableTaskRow from '../components/SortableTaskRow';
+import DroppableAspect from '../components/DroppableAspect';
+import HabitCard from '../components/HabitCard';
+import EvolutionDrillIn from '../components/EvolutionDrillIn';
 
 const macOSSpring = {
     type: "spring",
@@ -38,12 +39,12 @@ const macOSSpring = {
     mass: 0.8
 };
 
-const CARD_BORDER_RADIUS = 18;
-const CONTAINER_BORDER_RADIUS = 20;
+
+console.log("SkillPage module loaded");
 
 const SkillPage = () => {
     const { id } = useParams();
-    const navigate = useNavigate();
+    const location = useLocation();
     const { showCompletedTasks, setShowCompletedTasks } = useTheme();
     const [skill, setSkill] = useState(null);
     const [objectives, setObjectives] = useState([]);
@@ -61,7 +62,7 @@ const SkillPage = () => {
     const [isSyncingBecoming, setIsSyncingBecoming] = useState(false);
 
     const [dragActiveId, setDragActiveId] = useState(null);
-    const location = useLocation();
+    const navigate = useNavigate();
 
     // UI state for creation
     const [isCreatingObjective, setIsCreatingObjective] = useState(false);
@@ -99,6 +100,9 @@ const SkillPage = () => {
     const [isCreatingHabit, setIsCreatingHabit] = useState(false);
     const [newHabitTrigger, setNewHabitTrigger] = useState('');
     const [newHabitAction, setNewHabitAction] = useState('');
+    
+    // Drag Reorder Lock
+    const isReorderingRef = useRef(false);
 
     // Deletion State
     const [taskToDelete, setTaskToDelete] = useState(null);
@@ -109,8 +113,51 @@ const SkillPage = () => {
     const [objectiveEditForm, setObjectiveEditForm] = useState(null);
 
     const taskNameInputRef = useRef(null);
+    
+    // Performance Optimized Data Access
+    const nodesByParent = useMemo(() => {
+        const map = new Map();
+        for (const node of allNodes || []) {
+            if (!node) continue;
+            const parent = node.parentId || "root";
+            if (!map.has(parent)) {
+                map.set(parent, []);
+            }
+            map.get(parent).push(node);
+        }
+        return map;
+    }, [allNodes]);
 
-    // Challenge Mode State
+    const getChildren = useCallback((parentId, type) => {
+        if (!nodesByParent) return [];
+        const parentKey = parentId || "root";
+        const children = nodesByParent.get(parentKey) || [];
+        
+        if (!type) return children;
+
+        return children.filter(n => {
+            if (type === NodeTypes.ASPECT) {
+                return n.type === 'ASPECT' || n.type === 'STAGE';
+            }
+            return n.type === type;
+        });
+    }, [nodesByParent]);
+
+    // Derived State
+    const activeObjectives = useMemo(() => 
+        (objectives || []).filter(o => o.metadata?.isActive === true || (!o.metadata?.isActive && !o.metadata?.isSleeping && !o.metadata?.isArchived)), 
+    [objectives]);
+    const sleepingObjectives = useMemo(() => 
+        (objectives || []).filter(o => o.metadata?.isSleeping === true), 
+    [objectives]);
+    const archivedObjectives = useMemo(() => 
+        (objectives || []).filter(o => o.metadata?.isArchived === true), 
+    [objectives]);
+    const anyBurnoutRisk = useMemo(() => 
+        (objectives || []).some(o => o.metadata?.burnoutRisk === true), 
+    [objectives]);
+
+    const [activeId, setActiveId] = useState(null);
     const [challengeDismissed, setChallengeDismissed] = useState(false);
     const [activeChallengeHighlight, setActiveChallengeHighlight] = useState(null);
 
@@ -123,65 +170,206 @@ const SkillPage = () => {
         })
     );
 
-    // Active Drag Item
-    const [activeId, setActiveId] = useState(null);
+    // Independent Memoized Values
+    const isNoveltySprint = skill?.metadata?.pinchState === 'NOVELTY';
+    const unexploredAspectIds = useMemo(() => {
+        if (!isNoveltySprint || !skill?.id) return [];
+        
+        // Get aspects that belong to active objectives of this skill
+        const aspects = getChildren(id, NodeTypes.ASPECT);
+        
+        const unexplored = aspects.filter(a => {
+            const aspectTasks = getChildren(a.id, NodeTypes.TASK);
+            if (aspectTasks.length === 0) return false;
+            return !aspectTasks.some(t => t.metadata?.status === TaskStatuses.DONE);
+        });
+        
+        return unexplored.slice(0, 2).map(a => a.id);
+    }, [isNoveltySprint, skill?.id, id, getChildren]);
 
-    const fetchData = async () => {
-        try {
-            const nodes = await repository.getAll();
-            setAllNodes(nodes);
+    const isChallengeState = skill?.metadata?.pinchState === 'CHALLENGE';
+    const challengeInfo = useMemo(() => {
+        let masteryCheckTaskId = null;
+        let newAngleTaskId = null;
+        let showChallengeCard = false;
 
-            const skillNode = nodes.find(n => n.id === id);
-            if (skillNode) {
-                setSkill(skillNode);
-                const skillObjectives = nodes.filter(n => n.parentId === id && n.type === NodeTypes.OBJECTIVE);
-                setObjectives(skillObjectives);
+        if (isChallengeState && !challengeDismissed) {
+            const activeObj = (objectives || []).find(o => !o.metadata?.isSleeping);
+            if (activeObj) {
+                const aspects = (allNodes || []).filter(n => n.type === NodeTypes.ASPECT && n.parentId === activeObj.id);
+                let bestProgress = -1;
+                let worstProgress = 2;
 
-                const inProgress = skillObjectives.find(obj => obj.metadata?.isActive === true);
-                if (inProgress && expandedObjectiveIds.length === 0 && !loading) {
-                    console.log("Auto-expanding active experiment:", inProgress.id);
-                    setExpandedObjectiveIds([inProgress.id]);
+                aspects.forEach(a => {
+                    const aTasks = (allNodes || []).filter(n => n.parentId === a.id && n.type === NodeTypes.TASK);
+                    if (aTasks.length > 0) {
+                        const sortedTasks = [...aTasks].sort((t1, t2) => (t1.metadata?.orderIndex || 0) - (t2.metadata?.orderIndex || 0));
+                        const incomplete = sortedTasks.filter(t => t.metadata?.status !== TaskStatuses.DONE);
+
+                        if (incomplete.length > 0) {
+                            const firstInc = incomplete[0];
+                            const progress = (aTasks.length - incomplete.length) / aTasks.length;
+
+                            if (progress >= bestProgress) {
+                                bestProgress = progress;
+                                masteryCheckTaskId = firstInc.id;
+                            }
+                            if (progress < worstProgress) {
+                                worstProgress = progress;
+                                newAngleTaskId = firstInc.id;
+                            }
+                        }
+                    }
+                });
+                if (masteryCheckTaskId === newAngleTaskId) newAngleTaskId = null;
+                if (masteryCheckTaskId) showChallengeCard = true;
+            }
+        }
+        return { masteryCheckTaskId, newAngleTaskId, showChallengeCard };
+    }, [isChallengeState, challengeDismissed, objectives, allNodes]);
+
+    const { masteryCheckTaskId, newAngleTaskId, showChallengeCard } = challengeInfo;
+
+    const suggestions = useMemo(() => {
+        if (!allNodes.length) return [];
+        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK);
+        if (!tasks.length) return [];
+
+        const nextTasks = [];
+        let latestSessionTime = 0;
+        let latestTaskId = null;
+
+        tasks.forEach(t => {
+            const sessions = t.metadata?.sessions || [];
+            sessions.forEach(s => {
+                if (s.status === 'completed' && s.endTime > latestSessionTime) {
+                    latestSessionTime = s.endTime;
+                    latestTaskId = t.id;
+                }
+            });
+        });
+
+        if (latestTaskId) {
+            const latestTask = allNodes.find(n => n.id === latestTaskId);
+            const aspect = allNodes.find(n => n.id === latestTask.parentId);
+            if (aspect) {
+                const aspectTasks = allNodes.filter(n => n.parentId === aspect.id && n.type === NodeTypes.TASK)
+                    .sort((a, b) => (a.metadata?.orderIndex || 0) - (b.metadata?.orderIndex || 0));
+
+                const nextIncompleteInAspect = aspectTasks.find(t => t.metadata?.status !== TaskStatuses.DONE);
+                if (nextIncompleteInAspect) {
+                    let skillParent = allNodes.find(n => n.id === aspect.parentId);
+                    while (skillParent && skillParent.type !== NodeTypes.SKILL) {
+                        skillParent = allNodes.find(n => n.id === skillParent?.parentId);
+                    }
+
+                    nextTasks.push({
+                        task: nextIncompleteInAspect,
+                        type: 'MOMENTUM',
+                        label: `Continue: ${nextIncompleteInAspect.name} (Momentum)`,
+                        skillId: skillParent?.id
+                    });
+                }
+            }
+        }
+
+        const aspects = allNodes.filter(n => n.type === NodeTypes.ASPECT);
+        const aspectProgress = aspects.map(a => {
+            const aspectTasks = allNodes.filter(n => n.parentId === a.id && n.type === NodeTypes.TASK);
+            if (aspectTasks.length === 0) return { aspect: a, progress: 0, nextTask: null };
+
+            const completedCount = aspectTasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+            const progress = completedCount / aspectTasks.length;
+            const nextTask = aspectTasks
+                .sort((a, b) => (a.metadata?.orderIndex || 0) - (b.metadata?.orderIndex || 0))
+                .find(t => t.metadata?.status !== TaskStatuses.DONE);
+
+            return { aspect: a, progress, nextTask, completedCount, totalCount: aspectTasks.length };
+        }).filter(ap => ap.nextTask && ap.progress < 1).sort((a, b) => b.progress - a.progress);
+
+        if (aspectProgress.length > 0) {
+            const best = aspectProgress[0];
+            if (!nextTasks.some(nt => nt.task.id === best.nextTask.id)) {
+                let skillParent = allNodes.find(n => n.id === best.aspect.parentId);
+                while (skillParent && skillParent.type !== NodeTypes.SKILL) {
+                    skillParent = allNodes.find(n => n.id === skillParent?.parentId);
                 }
 
-                // Fetch Habits for this Skill
-                const allRepoHabits = habitService.getAllHabits();
-                const todayStr = new Date().toDateString();
-
-                const matchedHabits = allRepoHabits.filter(h =>
-                    (h.linkedSkillIds && h.linkedSkillIds.includes(id)) ||
-                    h.linkedSkillId === id
-                ).sort((a, b) => {
-                    const aCompleted = a.lastCompletedAt && new Date(a.lastCompletedAt).toDateString() === todayStr;
-                    const bCompleted = b.lastCompletedAt && new Date(b.lastCompletedAt).toDateString() === todayStr;
-                    if (aCompleted && !bCompleted) return 1;
-                    if (!aCompleted && bCompleted) return -1;
-                    return 0;
+                nextTasks.push({
+                    task: best.nextTask,
+                    type: 'COMPLETION',
+                    label: `Focus: ${best.nextTask.name} (${best.completedCount}/${best.totalCount} logs)`,
+                    skillId: skillParent?.id
                 });
-                setHabits(matchedHabits);
             }
+        }
+
+        habits.filter(h => h.isActive).forEach(h => {
+            const isCompletedToday = h.lastCompletedAt &&
+                new Date(h.lastCompletedAt).toDateString() === new Date().toDateString();
+
+            if (!isCompletedToday) {
+                nextTasks.push({
+                    habit: h,
+                    type: 'HABIT',
+                    label: `Habit: ${h.ifTrigger} (Active)`,
+                    skillId: id
+                });
+            }
+        });
+
+        return nextTasks.slice(0, 3);
+    }, [allNodes, habits, id]);
+
+    const fetchSkills = useCallback(async () => {
+        const nodes = await repository.getAll();
+        console.log("SkillPage fetch - allNodes count:", nodes?.length);
+        const sortedNodes = [...(nodes || [])].sort((a, b) => (a.metadata?.orderIndex || 0) - (b.metadata?.orderIndex || 0));
+        setAllNodes(sortedNodes);
+
+        const skillNode = sortedNodes.find(n => n.id === id);
+        if (skillNode) {
+            setSkill(skillNode);
+            const skillObjectives = sortedNodes.filter(n => n.parentId === id && n.type === NodeTypes.OBJECTIVE);
+            setObjectives(skillObjectives);
+
+            const inProgress = skillObjectives.find(obj => obj.metadata?.isActive === true);
+            if (inProgress && expandedObjectiveIds.length === 0 && !loading) {
+                console.log("Auto-expanding active experiment:", inProgress.id);
+                setExpandedObjectiveIds([inProgress.id]);
+            }
+
+            const allRepoHabits = habitService.getAllHabits();
+            const todayStr = new Date().toDateString();
+
+            const matchedHabits = allRepoHabits.filter(h =>
+                (h.linkedSkillIds && h.linkedSkillIds.includes(id)) ||
+                h.linkedSkillId === id
+            ).sort((a, b) => {
+                const aCompleted = a.lastCompletedAt && new Date(a.lastCompletedAt).toDateString() === todayStr;
+                const bCompleted = b.lastCompletedAt && new Date(b.lastCompletedAt).toDateString() === todayStr;
+                if (aCompleted && !bCompleted) return 1;
+                if (!aCompleted && bCompleted) return -1;
+                return 0;
+            });
+            setHabits(matchedHabits);
+        } else {
+            console.log("SkillPage fetch - Skill node not found for ID:", id);
+            setSkill(null);
+            setObjectives([]);
+            setHabits([]);
+        }
+    }, [id, expandedObjectiveIds, loading]);
+
+    const fetchData = useCallback(async () => {
+        try {
+            await fetchSkills();
         } catch (error) {
             console.error("Failed to fetch skill hierarchy:", error);
         } finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        const init = async () => {
-            await backbone.checkExpirations();
-            fetchData();
-        };
-        init();
-        const sub1 = repository.subscribe(fetchData);
-        return () => sub1();
-    }, [id]);
-
-    // Update local Becoming state when skill data arrives
-    useEffect(() => {
-        if (skill?.metadata?.identityAnchor !== undefined) {
-            setTempBecoming(skill.metadata.identityAnchor || '');
-        }
-    }, [skill?.id, skill?.metadata?.identityAnchor]);
+    }, [fetchSkills]);
 
     const debouncedUpdateBecoming = useMemo(() => {
         let timeout;
@@ -197,17 +385,11 @@ const SkillPage = () => {
                 } finally {
                     setIsSyncingBecoming(false);
                 }
-            }, 800); // 800ms debounce
+            }, 800); 
         };
     }, [skill?.id, skill?.metadata]);
 
-    useEffect(() => {
-        if (creatingTaskForAspectId && taskNameInputRef.current) {
-            setTimeout(() => taskNameInputRef.current.focus(), 50);
-        }
-    }, [creatingTaskForAspectId]);
-
-    const handleCreateObjective = async (e) => {
+    const handleCreateObjective = useCallback(async (e) => {
         if (e && e.key !== 'Enter' && e.type !== 'click') return;
 
         const name = newObjectiveName.trim();
@@ -217,7 +399,6 @@ const SkillPage = () => {
         const accType = newObjectiveAccType;
 
         if (!name || !theme || !mve || isNaN(duration) || !accType) {
-            // Keep fields until valid
             return;
         }
 
@@ -253,8 +434,9 @@ const SkillPage = () => {
         } catch (error) {
             console.error("Failed to create objective:", error);
         }
-    };
-    const handleStartEditObjective = (obj) => {
+    }, [newObjectiveName, newObjectiveTheme, newObjectiveMVE, newObjectiveDuration, newObjectiveAccType, newObjectiveWish, newObjectiveOutcome, newObjectiveIconUrl, id]);
+
+    const handleStartEditObjective = useCallback((obj) => {
         setEditingObjectiveId(obj.id);
         setObjectiveEditForm({
             theme: obj.metadata?.theme || '',
@@ -265,9 +447,9 @@ const SkillPage = () => {
             outcome: obj.metadata?.outcome || '',
             iconUrl: obj.metadata?.iconUrl || ''
         });
-    };
+    }, []);
 
-    const handleSaveObjectiveEdit = async (objId) => {
+    const handleSaveObjectiveEdit = useCallback(async (objId) => {
         if (!objectiveEditForm) return;
         try {
             await backbone.updateNode(objId, {
@@ -281,39 +463,51 @@ const SkillPage = () => {
         } catch (error) {
             console.error("Failed to save objective edit:", error);
         }
-    };
+    }, [objectiveEditForm, allNodes]);
 
-    const handleInlineSaveWish = async (objId) => {
-        try {
-            const obj = allNodes.find(n => n.id === objId);
-            await backbone.updateNode(objId, {
-                metadata: { ...obj.metadata, wish: tempWish }
-            });
-            setInlineEditingWishId(null);
-            fetchData();
-        } catch (error) {
+    const handleInlineSaveWish = useCallback((objId) => {
+        const obj = allNodes.find(n => n.id === objId);
+        if (!obj) return;
+
+        setAllNodes(prev => prev.map(n => 
+            n.id === objId 
+                ? { ...n, metadata: { ...n.metadata, wish: tempWish }, updatedAt: new Date().toISOString() } 
+                : n
+        ));
+        setInlineEditingWishId(null);
+
+        backbone.updateNode(objId, {
+            metadata: { ...obj.metadata, wish: tempWish }
+        }).catch(error => {
             console.error("Failed to save wish inline:", error);
-        }
-    };
-
-    const handleInlineSaveOutcome = async (objId) => {
-        try {
-            const obj = allNodes.find(n => n.id === objId);
-            await backbone.updateNode(objId, {
-                metadata: { ...obj.metadata, outcome: tempOutcome }
-            });
-            setInlineEditingOutcomeId(null);
             fetchData();
-        } catch (error) {
+        });
+    }, [allNodes, tempWish]);
+
+    const handleInlineSaveOutcome = useCallback((objId) => {
+        const obj = allNodes.find(n => n.id === objId);
+        if (!obj) return;
+
+        setAllNodes(prev => prev.map(n => 
+            n.id === objId 
+                ? { ...n, metadata: { ...n.metadata, outcome: tempOutcome }, updatedAt: new Date().toISOString() } 
+                : n
+        ));
+        setInlineEditingOutcomeId(null);
+
+        backbone.updateNode(objId, {
+            metadata: { ...obj.metadata, outcome: tempOutcome }
+        }).catch(error => {
             console.error("Failed to save outcome inline:", error);
-        }
-    };
+            fetchData();
+        });
+    }, [allNodes, tempOutcome]);
 
-    const handleDeleteObjective = (obj) => {
+    const handleDeleteObjective = useCallback((obj) => {
         setObjectiveToDelete(obj);
-    };
+    }, []);
 
-    const confirmDeleteObjective = async () => {
+    const confirmDeleteObjective = useCallback(async () => {
         if (!objectiveToDelete) return;
         const idToDelete = objectiveToDelete.id;
         setObjectiveToDelete(null);
@@ -324,9 +518,9 @@ const SkillPage = () => {
         } catch (error) {
             console.error("Failed to delete objective:", error);
         }
-    };
+    }, [objectiveToDelete]);
 
-    const handleDeleteLog = async (aspectId, logId) => {
+    const handleDeleteLog = useCallback(async (aspectId, logId) => {
         const aspect = allNodes.find(n => n.id === aspectId);
         if (!aspect) return;
 
@@ -357,114 +551,14 @@ const SkillPage = () => {
         } catch (error) {
             console.error("Failed to delete log:", error);
         }
-    };
+    }, [allNodes]);
 
-    const suggestions = useMemo(() => {
-        if (!allNodes.length) return [];
-        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK);
-        if (!tasks.length) return [];
 
-        const nextTasks = [];
-
-        // 1. Momentum logic
-        let latestSessionTime = 0;
-        let latestTaskId = null;
-
-        tasks.forEach(t => {
-            const sessions = t.metadata?.sessions || [];
-            sessions.forEach(s => {
-                if (s.status === 'completed' && s.endTime > latestSessionTime) {
-                    latestSessionTime = s.endTime;
-                    latestTaskId = t.id;
-                }
-            });
-        });
-
-        if (latestTaskId) {
-            const latestTask = allNodes.find(n => n.id === latestTaskId);
-            const aspect = allNodes.find(n => n.id === latestTask.parentId);
-            if (aspect) {
-                const aspectTasks = allNodes.filter(n => n.parentId === aspect.id && n.type === NodeTypes.TASK)
-                    .sort((a, b) => (a.metadata?.orderIndex || 0) - (b.metadata?.orderIndex || 0));
-
-                const nextIncompleteInAspect = aspectTasks.find(t => t.metadata?.status !== TaskStatuses.DONE);
-                if (nextIncompleteInAspect) {
-                    // Find Skill ID
-                    let skillParent = allNodes.find(n => n.id === aspect.parentId); // Objective
-                    while (skillParent && skillParent.type !== NodeTypes.SKILL) {
-                        skillParent = allNodes.find(n => n.id === skillParent?.parentId);
-                    }
-
-                    nextTasks.push({
-                        task: nextIncompleteInAspect,
-                        type: 'MOMENTUM',
-                        label: `Continue: ${nextIncompleteInAspect.name} (Momentum)`,
-                        skillId: skillParent?.id
-                    });
-                }
-            }
-        }
-
-        // 2. Near-Completion logic (Focusing on an engagement gap)
-        const aspects = allNodes.filter(n => n.type === NodeTypes.ASPECT);
-        const aspectProgress = aspects.map(a => {
-            const aspectTasks = allNodes.filter(n => n.parentId === a.id && n.type === NodeTypes.TASK);
-            if (aspectTasks.length === 0) return { aspect: a, progress: 0, nextTask: null };
-
-            const completedCount = aspectTasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
-            const progress = completedCount / aspectTasks.length;
-            const nextTask = aspectTasks
-                .sort((a, b) => (a.metadata?.orderIndex || 0) - (b.metadata?.orderIndex || 0))
-                .find(t => t.metadata?.status !== TaskStatuses.DONE);
-
-            return { aspect: a, progress, nextTask, completedCount, totalCount: aspectTasks.length };
-        }).filter(ap => ap.nextTask && ap.progress < 1).sort((a, b) => b.progress - a.progress);
-
-        if (aspectProgress.length > 0) {
-            const best = aspectProgress[0];
-            // Avoid duplicate if same task as momentum
-            if (!nextTasks.some(nt => nt.task.id === best.nextTask.id)) {
-                // Find Skill ID for navigation
-                let skillParent = allNodes.find(n => n.id === best.aspect.parentId);
-                while (skillParent && skillParent.type !== NodeTypes.SKILL) {
-                    skillParent = allNodes.find(n => n.id === skillParent?.parentId);
-                }
-
-                nextTasks.push({
-                    task: best.nextTask,
-                    type: 'COMPLETION',
-                    label: `Focus: ${best.nextTask.name} (${best.completedCount}/${best.totalCount} logs)`,
-                    skillId: skillParent?.id
-                });
-            }
-        }
-
-        // 3. Active Habits logic
-        habits.filter(h => h.isActive).forEach(h => {
-            const isCompletedToday = h.lastCompletedAt &&
-                new Date(h.lastCompletedAt).toDateString() === new Date().toDateString();
-
-            if (!isCompletedToday) {
-                nextTasks.push({
-                    habit: h,
-                    type: 'HABIT',
-                    label: `Habit: ${h.ifTrigger} (Active)`,
-                    skillId: id
-                });
-            }
-        });
-
-        // 4. Return top 3 suggestions
-        return nextTasks.slice(0, 3);
-    }, [allNodes, habits, id]);
-
-    const handleSuggestionClick = async (suggestion) => {
+    const handleSuggestionClick = useCallback(async (suggestion) => {
         if (suggestion.habit) {
-            // Highlight specific habit card
             const el = document.getElementById(`habit-${suggestion.habit.id}`);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // We reuse the task highlight class if it exists or add a pulse
                 el.classList.add('habit-highlight-pulse');
                 setTimeout(() => el.classList.remove('habit-highlight-pulse'), 2000);
             }
@@ -473,13 +567,11 @@ const SkillPage = () => {
 
         const { task, skillId } = suggestion;
 
-        // Mark as Today
         await backbone.updateNode(task.id, {
             metadata: { ...task.metadata, isToday: true }
         });
 
         if (skillId === id) {
-            // Already on this skill page, just scroll
             const aspect = allNodes.find(n => n.id === task.parentId);
             const obj = allNodes.find(n => n.id === aspect?.parentId);
             if (obj) setExpandedObjectiveIds(prev => prev.includes(obj.id) ? prev : [...prev, obj.id]);
@@ -494,10 +586,691 @@ const SkillPage = () => {
                 }
             }, 300);
         } else {
-            // Navigate
             navigate(`/skill/${skillId}?scrollTo=${task.id}&markToday=true`);
         }
-    };
+    }, [id, allNodes, navigate]);
+
+
+    const handleCreateAspect = useCallback(async (e, objId) => {
+        if (e && e.key !== 'Enter' && e.type !== 'click') return;
+        if (!newAspectName.trim()) return;
+
+        try {
+            await backbone.addNode({
+                type: NodeTypes.ASPECT,
+                parentId: objId,
+                name: newAspectName.trim(),
+                metadata: {}
+            });
+            setNewAspectName('');
+            setCreatingAspectForObjId(null);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to create aspect:", error);
+        }
+    }, [newAspectName, fetchData]);
+
+    const handleCreateTask = useCallback(async (e, aspectId) => {
+        if (e && e.key && e.key !== 'Enter') return;
+        if (e && e.stopPropagation) e.stopPropagation();
+        if (!newTaskName.trim()) return;
+
+        const metadata = {
+            status: TaskStatuses.NOT_STARTED,
+            dependsOnTaskId: newTaskDependencyId || null,
+            itemType: newTaskItemType
+        };
+
+        if (newTaskItemType === 'REPETITION') {
+            metadata.unitName = newTaskUnitName;
+            metadata.targetUnits = parseInt(newTaskTargetUnits) || 1;
+            metadata.currentUnits = 0;
+        }
+
+        setNewTaskName('');
+        setNewTaskDependencyId('');
+        setNewTaskItemType('FINITE');
+        setNewTaskUnitName('units');
+        setNewTaskTargetUnits(1);
+        setCreatingTaskForAspectId(null);
+
+        backbone.addNode({
+            type: NodeTypes.TASK,
+            parentId: aspectId,
+            name: newTaskName.trim(),
+            metadata: {
+                ...metadata,
+                type: newTaskItemType
+            }
+        }).catch(error => {
+            console.error("Failed to create task:", error);
+            fetchData();
+        });
+    }, [newTaskName, newTaskDependencyId, newTaskItemType, newTaskUnitName, newTaskTargetUnits, fetchData]);
+
+    const handleIncrementRepetition = useCallback((taskId) => {
+        const task = allNodes.find(n => n.id === taskId);
+        if (!task) return;
+
+        const currentUnits = task.metadata?.currentUnits || 0;
+        const targetUnits = task.metadata?.targetUnits || 0;
+        const nextUnits = currentUnits + 1;
+
+        const parentAspectId = task.parentId;
+        const parentAspect = allNodes.find(n => n.id === parentAspectId);
+        const ancestorObjectiveId = parentAspect?.parentId;
+        const ancestorObjective = allNodes.find(n => n.id === ancestorObjectiveId);
+
+        const shouldAccumulate = parentAspect && ancestorObjective?.metadata?.accumulationType === 'reps';
+
+        setAllNodes(prevNodes => {
+            const updatedNodes = prevNodes.map(n => {
+                if (n.id === taskId) {
+                    const updatedMetadata = {
+                        ...n.metadata,
+                        currentUnits: nextUnits
+                    };
+                    if (nextUnits >= targetUnits && targetUnits > 0) {
+                        updatedMetadata.status = TaskStatuses.DONE;
+                        updatedMetadata.completedAt = Date.now();
+                    }
+
+                    return {
+                        ...n,
+                        metadata: updatedMetadata
+                    };
+                }
+                return n;
+            });
+
+            if (shouldAccumulate) {
+                const afterAspectUpdate = updatedNodes.map(n => {
+                    if (n.id === parentAspectId) {
+                        return {
+                            ...n,
+                            metadata: {
+                                ...n.metadata,
+                                accumulatedMetric: (n.metadata?.accumulatedMetric || 0) + 1,
+                                taskCount: (n.metadata?.taskCount || 0) + 1
+                            }
+                        };
+                    }
+                    return n;
+                });
+
+                const childAspects = afterAspectUpdate.filter(n => n.parentId === ancestorObjectiveId && n.type === NodeTypes.ASPECT);
+                const totalMetric = childAspects.reduce((sum, a) => sum + (a.metadata?.accumulatedMetric || 0), 0);
+
+                return afterAspectUpdate.map(n => {
+                    if (n.id === ancestorObjectiveId) {
+                        return {
+                            ...n,
+                            metadata: {
+                                ...n.metadata,
+                                masterAccumulatedMetric: totalMetric
+                            }
+                        };
+                    }
+                    return n;
+                });
+            }
+
+            return updatedNodes;
+        });
+
+        backbone.incrementTaskRepetition(taskId)
+            .catch(error => {
+                console.error("Failed to increment repetition:", error);
+                fetchData();
+            });
+    }, [allNodes, fetchData]);
+
+    const handleToggleTaskStatus = useCallback(async (task) => {
+        const currentStatus = task.metadata?.status || TaskStatuses.NOT_STARTED;
+        const nextStatus = currentStatus === TaskStatuses.DONE ? TaskStatuses.NOT_STARTED : TaskStatuses.DONE;
+        const completedAt = nextStatus === TaskStatuses.DONE ? Date.now() : null;
+
+        setAllNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === task.id) {
+                return {
+                    ...n,
+                    updatedAt: new Date().toISOString(),
+                    metadata: {
+                        ...n.metadata,
+                        status: nextStatus,
+                        completedAt
+                    }
+                };
+            }
+            return n;
+        }));
+
+        backbone.updateNode(task.id, {
+            metadata: {
+                ...task.metadata,
+                status: nextStatus,
+                completedAt
+            }
+        }).catch(error => {
+            console.error("Failed to toggle task status:", error);
+            fetchData();
+        });
+    }, [fetchData]);
+
+    const handleAddToToday = useCallback(async (e, taskId) => {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+        const task = allNodes.find(n => n.id === taskId);
+        if (!task) return;
+
+        const isToday = !!task.metadata?.isToday;
+
+        setAllNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === taskId) {
+                return {
+                    ...n,
+                    metadata: {
+                        ...n.metadata,
+                        isToday: !isToday
+                    }
+                };
+            }
+            return n;
+        }));
+
+        backbone.updateNode(taskId, {
+            metadata: { isToday: !isToday }
+        }).catch(error => {
+            console.error("Failed to toggle today status:", error);
+            fetchData();
+        });
+    }, [allNodes, fetchData]);
+
+    const handleDeleteTask = useCallback(async () => {
+        if (!taskToDelete) return;
+        const idToDelete = taskToDelete.id;
+        setTaskToDelete(null);
+
+        backbone.deleteNode(idToDelete)
+            .then(() => {
+                fetchData();
+            })
+            .catch(error => {
+                console.error("Failed to delete task:", error);
+                alert("Error deleting task: " + error.message);
+                fetchData();
+            });
+    }, [taskToDelete, fetchData]);
+
+    const handleDeleteAspect = useCallback(async () => {
+        if (!aspectToDelete) return;
+        const idToDelete = aspectToDelete.id;
+        setAspectToDelete(null);
+
+        try {
+            await backbone.deleteNode(idToDelete);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to delete aspect:", error);
+            alert("Error deleting aspect: " + error.message);
+            fetchData();
+        }
+    }, [aspectToDelete, fetchData]);
+
+    const handleTaskDragStart = useCallback((event) => {
+        setDragActiveId(event.active.id);
+    }, []);
+
+    const handleDragOver = useCallback((event) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const activeId = active.id;
+        const overId = over.id;
+
+        const activeTask = allNodes.find(n => n.id === activeId);
+        if (!activeTask || activeTask.type !== NodeTypes.TASK) return;
+
+        const overData = over.data.current;
+        let overContainerId = null;
+
+        if (overData?.type === 'ASPECT') {
+            overContainerId = overId;
+        } else if (overData?.type === 'TASK') {
+            const overTask = allNodes.find(n => n.id === overId);
+            overContainerId = overTask?.parentId;
+        }
+
+        setAllNodes(prev => {
+            const activeIndex = prev.findIndex(n => n.id === activeId);
+            const overIndex = prev.findIndex(n => n.id === overId);
+            
+            if (activeIndex === -1 || overIndex === -1) return prev;
+
+            const reordered = arrayMove(prev, activeIndex, overIndex);
+            return reordered.map(n => {
+                if (n.id === activeId) return { ...n, parentId: overContainerId };
+                return n;
+            });
+        });
+    }, [allNodes]);
+
+    const handleDragEnd = useCallback((event) => {
+        const { active, over } = event;
+        setDragActiveId(null);
+        if (!over) return;
+
+        const activeTaskId = active.id;
+        const overId = over.id;
+
+        const activeTask = allNodes.find(n => n.id === activeTaskId);
+        if (!activeTask) return;
+
+        const overData = over.data.current;
+        let targetAspectId = null;
+        let targetIndex = -1;
+
+        if (overData?.type === 'ASPECT') {
+            targetAspectId = overId;
+            const targetTasks = getChildren(targetAspectId, NodeTypes.TASK);
+            targetIndex = targetTasks.length;
+        } else if (overData?.type === 'TASK') {
+            const overTask = allNodes.find(n => n.id === overId);
+            if (!overTask) return;
+            targetAspectId = overTask.parentId;
+            const targetTasks = getChildren(targetAspectId, NodeTypes.TASK);
+            targetIndex = targetTasks.findIndex(t => t.id === overId);
+        }
+
+        const targetContainer = allNodes.find(n => n.id === targetAspectId);
+        if (!targetContainer || (targetContainer.type !== NodeTypes.ASPECT && targetContainer.type !== NodeTypes.STAGE)) {
+            console.warn("DnD Aborted: Invalid target container type", targetContainer?.type);
+            return;
+        }
+
+        const sourceAspectId = activeTask.parentId;
+        const currentTargetTasks = getChildren(targetAspectId, NodeTypes.TASK);
+        const currentSourceTasks = getChildren(sourceAspectId, NodeTypes.TASK);
+
+        let reorderedNodes = [];
+
+        if (targetAspectId === sourceAspectId) {
+            const oldIndex = currentTargetTasks.findIndex(t => t.id === activeTaskId);
+            const newList = arrayMove(currentTargetTasks, oldIndex, targetIndex);
+            
+            reorderedNodes = newList.map((t, i) => ({
+                ...t,
+                metadata: { ...t.metadata, orderIndex: i }
+            }));
+        } else {
+            const sourceTasks = currentSourceTasks.filter(t => t.id !== activeTaskId);
+            const targetTasks = [...currentTargetTasks];
+            
+            targetTasks.splice(targetIndex, 0, { 
+                ...activeTask, 
+                parentId: targetAspectId 
+            });
+
+            const reindexedSource = sourceTasks.map((t, i) => ({ ...t, metadata: { ...t.metadata, orderIndex: i } }));
+            const reindexedTarget = targetTasks.map((t, i) => ({ ...t, metadata: { ...t.metadata, orderIndex: i } }));
+            
+            reorderedNodes = [...reindexedSource, ...reindexedTarget];
+        }
+
+        setAllNodes(prev => {
+            const otherNodes = prev.filter(n => !reorderedNodes.some(rn => rn.id === n.id));
+            const aspectIndex = otherNodes.findIndex(n => n.id === targetAspectId);
+            const insertIndex = aspectIndex !== -1 ? aspectIndex + 1 : 0;
+            
+            const newAll = [...otherNodes];
+            newAll.splice(insertIndex, 0, ...reorderedNodes);
+            return newAll;
+        });
+    }, [allNodes, getChildren]);
+
+    const handleUpdateObjectiveMetadata = useCallback(async (objId, field, value) => {
+        const obj = objectives.find(o => o.id === objId);
+        if (!obj) return;
+
+        try {
+            await backbone.updateNode(objId, {
+                metadata: {
+                    ...obj.metadata,
+                    [field]: value
+                }
+            });
+            fetchData();
+        } catch (error) {
+            console.error(`Failed to update objective ${field}:`, error);
+        }
+    }, [objectives, fetchData]);
+
+    const handleUpdateObjectiveName = useCallback(async (objId, name) => {
+        try {
+            await backbone.updateNode(objId, { name });
+            fetchData();
+        } catch (error) {
+            console.error("Failed to update objective name:", error);
+        }
+    }, [fetchData]);
+
+    const toggleObjective = useCallback((objId) => {
+        setExpandedObjectiveIds(prev =>
+            prev.includes(objId) ? prev.filter(id => id !== objId) : [...prev, objId]
+        );
+    }, []);
+
+    const performObjectiveToggle = useCallback(async (obj) => {
+        console.log("Experiment close attempt:", obj);
+        console.log("experimentNode.id:", obj?.id);
+        console.log("experimentNode.parentId:", obj?.parentId);
+        console.log("experimentNode.type:", obj?.type);
+        console.log("experimentNode.status:", obj?.metadata?.status);
+        console.log("experimentNode.order:", obj?.metadata?.orderIndex);
+
+        const isCurrentlyActive = obj.metadata?.isActive === true || (!obj.metadata?.isActive && !obj.metadata?.isSleeping && !obj.metadata?.isArchived);
+        const nextIsActive = !isCurrentlyActive;
+        const nextStatus = nextIsActive ? ObjectiveStatuses.ACTIVE : ObjectiveStatuses.SLEEPING;
+        const now = Date.now();
+
+        try {
+            await backbone.updateNode(obj.id, {
+                metadata: {
+                    ...obj.metadata,
+                    status: nextStatus,
+                    isActive: nextStatus === 'ACTIVE',
+                    isSleeping: nextStatus === 'SLEEPING',
+                    isArchived: false,
+                    [nextStatus === 'ACTIVE' ? 'activatedAt' : 'deactivatedAt']: now
+                }
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Failed to toggle objective status:", error);
+        }
+    }, [fetchData]);
+
+    const handleToggleObjectiveStatus = useCallback(async (e, obj) => {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+
+        const isCurrentlyActive = obj.metadata?.isActive === true || (!obj.metadata?.isActive && !obj.metadata?.isSleeping && !obj.metadata?.isArchived);
+
+        if (!isCurrentlyActive) {
+            const activeInSkill = objectives.filter(o => o.metadata?.isActive === true).length;
+            if (activeInSkill >= 1) {
+                setIsLimitModalOpen(true);
+                return;
+            }
+        } else {
+            const activatedAt = obj.metadata?.activatedAt;
+            if (activatedAt) {
+                const daysActive = Math.floor((Date.now() - activatedAt) / (24 * 60 * 60 * 1000));
+                if (daysActive < 14) {
+                    setPendingSleepObj(obj);
+                    setIsConfirmSleepModalOpen(true);
+                    return;
+                }
+            }
+        }
+
+        await performObjectiveToggle(obj);
+    }, [objectives, performObjectiveToggle]);
+
+    const handleChallengeAction = useCallback((type) => {
+        if (type === 'MASTERY' && masteryCheckTaskId) {
+            setActiveChallengeHighlight({ taskId: masteryCheckTaskId, type });
+            const pId = (allNodes || []).find(n => n.id === masteryCheckTaskId)?.parentId;
+            if (pId) {
+                setExpandedAspectIds(prev => prev.includes(pId) ? prev : [...prev, pId]);
+                setTimeout(() => {
+                    const el = document.getElementById(`task-${masteryCheckTaskId}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        } else if (type === 'NEW_ANGLE' && newAngleTaskId) {
+            setActiveChallengeHighlight({ taskId: newAngleTaskId, type });
+            const pId = (allNodes || []).find(n => n.id === newAngleTaskId)?.parentId;
+            if (pId) {
+                setExpandedAspectIds(prev => prev.includes(pId) ? prev : [...prev, pId]);
+                setTimeout(() => {
+                    const el = document.getElementById(`task-${newAngleTaskId}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        } else if (type === 'DISMISS') {
+            setChallengeDismissed(true);
+            setActiveChallengeHighlight(null);
+        }
+    }, [masteryCheckTaskId, newAngleTaskId, allNodes]);
+
+    const handleLogAspectAccumulation = useCallback((aspectId, amount) => {
+        const val = parseFloat(amount);
+        if (isNaN(val)) return;
+
+        const aspect = allNodes.find(n => n.id === aspectId);
+        if (!aspect) return;
+
+        const objectiveId = aspect.parentId;
+
+        const newLog = {
+            id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            name: 'Manual Log',
+            amount: val,
+            timestamp: Date.now()
+        };
+
+        setAllNodes(prevNodes => {
+            const updatedNodes = prevNodes.map(n => {
+                if (n.id === aspectId) {
+                    return {
+                        ...n,
+                        metadata: {
+                            ...n.metadata,
+                            accumulatedMetric: (n.metadata?.accumulatedMetric || 0) + val,
+                            taskCount: (n.metadata?.taskCount || 0) + 1,
+                            logs: [...(n.metadata?.logs || []), newLog]
+                        }
+                    };
+                }
+                return n;
+            });
+
+            if (objectiveId) {
+                const childAspects = updatedNodes.filter(n => n.parentId === objectiveId && n.type === NodeTypes.ASPECT);
+                const totalMetric = childAspects.reduce((sum, a) => sum + (a.metadata?.accumulatedMetric || 0), 0);
+
+                return updatedNodes.map(n => {
+                    if (n.id === objectiveId) {
+                        return {
+                            ...n,
+                            metadata: {
+                                ...n.metadata,
+                                masterAccumulatedMetric: totalMetric
+                            }
+                        };
+                    }
+                    return n;
+                });
+            }
+
+            return updatedNodes;
+        });
+
+        (async () => {
+            try {
+                const currentAspect = allNodes.find(n => n.id === aspectId);
+                await backbone.updateNode(aspectId, {
+                    metadata: {
+                        ...currentAspect.metadata,
+                        accumulatedMetric: (currentAspect.metadata?.accumulatedMetric || 0) + val,
+                        taskCount: (currentAspect.metadata?.taskCount || 0) + 1,
+                        logs: [...(currentAspect.metadata?.logs || []), newLog]
+                    }
+                });
+                if (objectiveId) {
+                    await backbone.recalculateObjectiveAccumulation(objectiveId);
+                }
+            } catch (error) {
+                console.error("Failed to log accumulation:", error);
+                fetchData();
+            }
+        })();
+    }, [allNodes, fetchData]);
+
+    const handleUpdateAspectNotes = useCallback(async (aspectId, notes) => {
+        const aspect = allNodes.find(n => n.id === aspectId);
+        if (!aspect) return;
+        try {
+            await backbone.updateNode(aspectId, {
+                metadata: { ...aspect.metadata, notes }
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Failed to update aspect notes:", error);
+        }
+    }, [allNodes, fetchData]);
+
+    const toggleAspect = useCallback((aspectId) => {
+        setExpandedAspectIds(prev =>
+            prev.includes(aspectId) ? prev.filter(id => id !== aspectId) : [...prev, aspectId]
+        );
+    }, []);
+
+    const toggleTask = useCallback((taskId) => {
+        setExpandedTaskIds(prev =>
+            prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
+        );
+    }, []);
+
+    const handleAttachReward = useCallback(async (taskId, rewardId) => {
+        try {
+            const task = allNodes.find(n => n.id === taskId);
+            await backbone.updateNode(taskId, {
+                metadata: { ...task.metadata, rewardId }
+            });
+            setIsSelectingRewardForTaskId(null);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to attach reward:", error);
+        }
+    }, [allNodes, fetchData]);
+
+    const handleRemoveReward = useCallback(async (taskId) => {
+        try {
+            const task = allNodes.find(n => n.id === taskId);
+            await backbone.updateNode(taskId, {
+                metadata: { ...task.metadata, rewardId: null }
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Failed to remove reward:", error);
+        }
+    }, [allNodes, fetchData]);
+
+    const toggleShowMore = useCallback((e, stageId) => {
+        e.stopPropagation();
+        setAspectShowMoreIds(prev =>
+            prev.includes(stageId) ? prev.filter(id => id !== stageId) : [...prev, stageId]
+        );
+    }, []);
+
+    const handleReorderTasks = useCallback(async (newTasks, stageId) => {
+        try {
+            await Promise.all(newTasks.map((task, index) => {
+                if (task.metadata?.orderIndex !== index) {
+                    return backbone.updateNode(task.id, {
+                        metadata: { ...task.metadata, orderIndex: index }
+                    });
+                }
+                return Promise.resolve();
+            }));
+            fetchData();
+        } catch (error) {
+            console.error("Failed to reorder tasks:", error);
+        }
+    }, [fetchData]);
+
+
+    const handleOpenEvolution = useCallback((habit) => {
+        setActiveHabitForEvolution(habit);
+    }, []);
+
+    const handleToggleHabitActive = useCallback(async (h) => {
+        await habitService.updateHabit(h.id, { isActive: !h.isActive });
+        fetchData();
+    }, [fetchData]);
+
+    const handleCreateHabit = useCallback(async (e) => {
+        if (e && e.key && e.key !== 'Enter') return;
+        if (!newHabitTrigger.trim() || !newHabitAction.trim()) return;
+
+        try {
+            await habitService.createHabit(
+                id,
+                newHabitTrigger.trim(),
+                newHabitAction.trim()
+            );
+            setNewHabitTrigger('');
+            setNewHabitAction('');
+            setIsCreatingHabit(false);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to create habit:", error);
+        }
+    }, [newHabitTrigger, newHabitAction, id, fetchData]);
+
+    const getObjectiveTimeInfo = useCallback((obj) => {
+        const m = obj.metadata || {};
+        const isActive = m.isActive === true || (!m.isActive && !m.isSleeping && !m.isArchived);
+        if (!isActive || !m.activatedAt) return null;
+
+        const now = Date.now();
+        const diff = now - obj.metadata.activatedAt;
+        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+        const displayDays = days + 1;
+
+        let phase = '';
+        let hint = '';
+
+        if (displayDays <= 14) phase = 'Early Phase';
+        else if (displayDays <= 45) phase = 'Deep Phase';
+        else if (displayDays <= 60) phase = 'Late Phase';
+        else hint = 'Consider rotating or refreshing this Objective.';
+
+        return { days: displayDays, rawDays: days, phase, hint };
+    }, []);
+
+    // Effects
+    useEffect(() => {
+        const init = async () => {
+            await backbone.checkExpirations();
+            fetchData();
+        };
+        init();
+        const sub1 = repository.subscribe(() => {
+            if (!isReorderingRef.current) {
+                fetchData();
+            }
+        });
+        return () => sub1();
+    }, [fetchData, id]);
+
+    useEffect(() => {
+        if (skill?.metadata?.identityAnchor !== undefined) {
+            setTempBecoming(skill.metadata.identityAnchor || '');
+        }
+    }, [skill?.id, skill?.metadata?.identityAnchor]);
+
+    useEffect(() => {
+        if (creatingTaskForAspectId && taskNameInputRef.current) {
+            setTimeout(() => taskNameInputRef.current.focus(), 50);
+        }
+    }, [creatingTaskForAspectId]);
 
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
@@ -530,753 +1303,46 @@ const SkillPage = () => {
                 }
             }
         }
-    }, [loading, id, location.search, allNodes.length]);
+    }, [loading, id, location.search, allNodes.length, handleAddToToday]);
 
-    const handleCreateAspect = async (e, objId) => {
-        if (e && e.key !== 'Enter' && e.type !== 'click') return;
-        if (!newAspectName.trim()) return;
+    useEffect(() => {
+        window.unexploredAspectIds = unexploredAspectIds;
+    }, [unexploredAspectIds]);
 
-        try {
-            await backbone.addNode({
-                type: NodeTypes.ASPECT,
-                parentId: objId,
-                name: newAspectName.trim(),
-                metadata: {}
+    // DIAGNOSTIC LOGGING - Moved to useEffect for performance
+    useEffect(() => {
+        if (process.env.NODE_ENV === "development") {
+            console.log("--- SkillPage Diagnostic ---");
+            console.log("SkillPage skill:", skill);
+            console.log("allNodes length:", allNodes?.length);
+            console.log("activeObjectives:", activeObjectives);
+            
+            (activeObjectives || []).forEach((obj, index) => {
+                console.log(`Active Experiment [${index}]:`, {
+                    id: obj.id,
+                    parentId: obj.parentId,
+                    type: obj.type,
+                    status: obj.metadata?.status,
+                    order: obj.metadata?.orderIndex,
+                    metadata: obj.metadata
+                });
             });
-            setNewAspectName('');
-            setCreatingAspectForObjId(null);
-            fetchData();
-        } catch (error) {
-            console.error("Failed to create aspect:", error);
+
+            console.log("sleepingObjectives:", sleepingObjectives);
+            console.log("archivedObjectives:", archivedObjectives);
+            console.log("nodesByParent size:", nodesByParent?.size);
+            console.log("loading:", loading);
+            console.log("----------------------------");
         }
-    };
+    }, [skill, allNodes.length, activeObjectives, sleepingObjectives, archivedObjectives, nodesByParent.size, loading]);
+
+    if (loading) {
+        return <div className="skill-page-loading">Loading Hierarchy...</div>;
+    }
+    if (!skill) {
+        return <div className="skill-page-error">Skill not found.</div>;
+    }
 
-    const handleCreateTask = async (e, aspectId) => {
-        if (e && e.key && e.key !== 'Enter') return;
-        if (e && e.stopPropagation) e.stopPropagation();
-        if (!newTaskName.trim()) return;
-
-        const metadata = {
-            status: TaskStatuses.NOT_STARTED,
-            dependsOnTaskId: newTaskDependencyId || null,
-            itemType: newTaskItemType
-        };
-
-        if (newTaskItemType === 'REPETITION') {
-            metadata.unitName = newTaskUnitName;
-            metadata.targetUnits = parseInt(newTaskTargetUnits) || 1;
-            metadata.currentUnits = 0;
-        }
-
-        // Optimistic UI: Close form and reset inputs right away
-        setNewTaskName('');
-        setNewTaskDependencyId('');
-        setNewTaskItemType('FINITE');
-        setNewTaskUnitName('units');
-        setNewTaskTargetUnits(1);
-        setCreatingTaskForAspectId(null);
-
-        // Run creation in background
-        backbone.addNode({
-            type: NodeTypes.TASK,
-            parentId: aspectId,
-            name: newTaskName.trim(),
-            metadata: {
-                ...metadata,
-                type: newTaskItemType // "FINITE" or "REPETITION"
-            }
-        }).catch(error => {
-            console.error("Failed to create task:", error);
-            fetchData(); // Rollback/Sync on error
-        });
-    };
-
-    const handleIncrementRepetition = (taskId) => {
-        const task = allNodes.find(n => n.id === taskId);
-        if (!task) return;
-
-        const currentUnits = task.metadata?.currentUnits || 0;
-        const targetUnits = task.metadata?.targetUnits || 0;
-        const nextUnits = currentUnits + 1;
-
-        // --- OPTIMISTIC UPDATE ---
-        setAllNodes(prevNodes => prevNodes.map(n => {
-            if (n.id === taskId) {
-                const updatedMetadata = {
-                    ...n.metadata,
-                    currentUnits: nextUnits
-                };
-                // Auto-complete if target reached
-                if (nextUnits >= targetUnits && targetUnits > 0) {
-                    updatedMetadata.status = TaskStatuses.DONE;
-                    updatedMetadata.completedAt = Date.now();
-                }
-
-                return {
-                    ...n,
-                    metadata: updatedMetadata
-                };
-            }
-            return n;
-        }));
-
-        // Backend update in background
-        backbone.incrementTaskRepetition(taskId)
-            .catch(error => {
-                console.error("Failed to increment repetition:", error);
-                fetchData(); // Rollback/Sync on error
-            });
-    };
-
-    const handleToggleTaskStatus = async (task) => {
-        const currentStatus = task.metadata?.status || TaskStatuses.NOT_STARTED;
-        const nextStatus = currentStatus === TaskStatuses.DONE ? TaskStatuses.NOT_STARTED : TaskStatuses.DONE;
-        const completedAt = nextStatus === TaskStatuses.DONE ? Date.now() : null;
-
-        // --- OPTIMISTIC UPDATE START ---
-        setAllNodes(prevNodes => prevNodes.map(n => {
-            if (n.id === task.id) {
-                return {
-                    ...n,
-                    updatedAt: new Date().toISOString(),
-                    metadata: {
-                        ...n.metadata,
-                        status: nextStatus,
-                        completedAt
-                    }
-                };
-            }
-            return n;
-        }));
-        // --- OPTIMISTIC UPDATE END ---
-
-        // Fire and forget the update. 
-        // No manual .then(fetchData) needed because we are subscribed to the repository.
-        backbone.updateNode(task.id, {
-            metadata: {
-                ...task.metadata,
-                status: nextStatus,
-                completedAt
-            }
-        }).catch(error => {
-            console.error("Failed to toggle task status:", error);
-            fetchData(); // Rollback/Sync on absolute error
-        });
-    };
-
-    const handleAddToToday = async (e, taskId) => {
-        if (e) {
-            e.stopPropagation();
-            e.preventDefault();
-        }
-        console.log("handleAddToToday runs for task:", taskId);
-        const task = allNodes.find(n => n.id === taskId);
-        if (!task) return;
-
-        const isToday = !!task.metadata?.isToday;
-
-        // --- OPTIMISTIC UPDATE START ---
-        setAllNodes(prevNodes => prevNodes.map(n => {
-            if (n.id === taskId) {
-                return {
-                    ...n,
-                    metadata: {
-                        ...n.metadata,
-                        isToday: !isToday
-                    }
-                };
-            }
-            return n;
-        }));
-        // --- OPTIMISTIC UPDATE END ---
-
-        // Fire and forget, then refresh
-        backbone.updateNode(taskId, {
-            metadata: { isToday: !isToday }
-        }).catch(error => {
-            console.error("Failed to toggle today status:", error);
-            fetchData(); // Rollback/Sync on error
-        });
-    };
-
-    const handleDeleteTask = async () => {
-        if (!taskToDelete) return;
-        const idToDelete = taskToDelete.id;
-        console.log("Deleting task:", idToDelete);
-        // Optimistic UI: Close the delete modal immediately
-        setTaskToDelete(null);
-
-        // Deletion in background
-        backbone.deleteNode(idToDelete)
-            .then(() => {
-                console.log("Task deleted successfully");
-                fetchData();
-            })
-            .catch(error => {
-                console.error("Failed to delete task:", error);
-                alert("Error deleting task: " + error.message);
-                fetchData(); // Sync state with backend on failure
-            });
-    };
-
-    const handleDeleteAspect = async () => {
-        if (!aspectToDelete) return;
-        const idToDelete = aspectToDelete.id;
-        console.log("Deleting aspect:", idToDelete);
-        setAspectToDelete(null); // Immediate UI feedback: close modal
-
-        try {
-            await backbone.deleteNode(idToDelete);
-            console.log("Aspect deleted successfully");
-            fetchData();
-        } catch (error) {
-            console.error("Failed to delete aspect:", error);
-            alert("Error deleting aspect: " + error.message);
-            fetchData();
-        }
-    };
-
-    const handleTaskDragStart = (event) => {
-        setDragActiveId(event.active.id);
-    };
-
-    const handleDragEnd = async (event) => {
-        const { active, over } = event;
-        setDragActiveId(null);
-        if (!over) return;
-
-        const activeTaskId = active.id;
-        const overId = over.id;
-
-        const activeTask = allNodes.find(n => n.id === activeTaskId);
-        if (!activeTask) return;
-
-        // Identify target container and index
-        const overData = over.data.current;
-        let targetAspectId = null;
-        let targetIndex = -1;
-
-        if (overData?.type === 'ASPECT') {
-            targetAspectId = overId;
-            const targetTasks = getChildren(targetAspectId, NodeTypes.TASK);
-            targetIndex = targetTasks.length;
-        } else if (overData?.type === 'TASK') {
-            const overTask = allNodes.find(n => n.id === overId);
-            if (!overTask) return;
-            targetAspectId = overTask.parentId;
-            const targetTasks = getChildren(targetAspectId, NodeTypes.TASK);
-            targetIndex = targetTasks.findIndex(t => t.id === overId);
-        }
-
-        if (targetAspectId && targetIndex !== -1) {
-            try {
-                // Get fresh list of tasks in target aspect (excluding active if cross-aspect)
-                const targetTasks = getChildren(targetAspectId, NodeTypes.TASK)
-                    .filter(t => t.id !== activeTaskId);
-
-                // Insert at target index
-                targetTasks.splice(targetIndex, 0, activeTask);
-
-                // Update all indices in target aspect
-                await Promise.all(targetTasks.map((t, i) => {
-                    const updates = { metadata: { ...t.metadata, orderIndex: i } };
-                    if (t.id === activeTaskId) updates.parentId = targetAspectId;
-                    return backbone.updateNode(t.id, updates);
-                }));
-
-                // If moving AT ALL, refresh
-                fetchData();
-            } catch (err) {
-                console.error("DnD persistence failed:", err);
-            }
-        }
-    };
-
-    const handleUpdateObjectiveMetadata = async (objId, field, value) => {
-        const obj = objectives.find(o => o.id === objId);
-        if (!obj) return;
-
-        try {
-            await backbone.updateNode(objId, {
-                metadata: {
-                    ...obj.metadata,
-                    [field]: value
-                }
-            });
-            fetchData();
-        } catch (error) {
-            console.error(`Failed to update objective ${field}:`, error);
-        }
-    };
-
-    const handleUpdateObjectiveName = async (objId, name) => {
-        try {
-            await backbone.updateNode(objId, { name });
-            fetchData();
-        } catch (error) {
-            console.error("Failed to update objective name:", error);
-        }
-    };
-
-    const toggleObjective = (objId) => {
-        console.log("toggleExperiment triggered for:", objId);
-        setExpandedObjectiveIds(prev =>
-            prev.includes(objId) ? prev.filter(id => id !== objId) : [...prev, objId]
-        );
-    };
-
-    const handleToggleObjectiveStatus = async (e, obj) => {
-        if (e) {
-            e.stopPropagation();
-            e.preventDefault();
-        }
-
-        const isCurrentlyActive = obj.metadata?.isActive === true || (!obj.metadata?.isActive && !obj.metadata?.isSleeping && !obj.metadata?.isArchived);
-
-        if (!isCurrentlyActive) {
-            // Check per-skill limit: Max 1
-            const activeInSkill = objectives.filter(o => o.metadata?.isActive === true).length;
-            if (activeInSkill >= 1) {
-                setIsLimitModalOpen(true);
-                return;
-            }
-        } else {
-            // Check 14-day soft minimum
-            const activatedAt = obj.metadata?.activatedAt;
-            if (activatedAt) {
-                const daysActive = Math.floor((Date.now() - activatedAt) / (24 * 60 * 60 * 1000));
-                if (daysActive < 14) {
-                    setPendingSleepObj(obj);
-                    setIsConfirmSleepModalOpen(true);
-                    return;
-                }
-            }
-        }
-
-        await performObjectiveToggle(obj);
-    };
-
-    const performObjectiveToggle = async (obj) => {
-        const isCurrentlyActive = obj.metadata?.isActive === true || (!obj.metadata?.isActive && !obj.metadata?.isSleeping && !obj.metadata?.isArchived);
-        const nextIsActive = !isCurrentlyActive;
-        const nextStatus = nextIsActive ? ObjectiveStatuses.ACTIVE : ObjectiveStatuses.SLEEPING;
-        const now = Date.now();
-
-        try {
-            await backbone.updateNode(obj.id, {
-                metadata: {
-                    ...obj.metadata,
-                    status: nextStatus,
-                    isActive: nextStatus === 'ACTIVE',
-                    isSleeping: nextStatus === 'SLEEPING',
-                    isArchived: false,
-                    [nextStatus === 'ACTIVE' ? 'activatedAt' : 'deactivatedAt']: now
-                }
-            });
-            fetchData();
-        } catch (error) {
-            console.error("Failed to toggle objective status:", error);
-        }
-    };
-
-    const handleLogAspectAccumulation = async (aspectId, amount) => {
-        const aspect = allNodes.find(n => n.id === aspectId);
-        if (!aspect) return;
-
-        const val = parseFloat(amount);
-        if (isNaN(val)) return;
-
-        try {
-            const currentMetric = aspect.metadata?.accumulatedMetric || 0;
-            const currentCount = aspect.metadata?.taskCount || 0;
-            const currentLogs = aspect.metadata?.logs || [];
-
-            const newLog = {
-                id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-                name: 'Manual Log',
-                amount: val,
-                timestamp: Date.now()
-            };
-
-            await backbone.updateNode(aspectId, {
-                metadata: {
-                    ...aspect.metadata,
-                    accumulatedMetric: currentMetric + val,
-                    taskCount: currentCount + 1,
-                    logs: [...currentLogs, newLog]
-                }
-            });
-            // Recalculate objective
-            if (aspect.parentId) {
-                await backbone.recalculateObjectiveAccumulation(aspect.parentId);
-            }
-            fetchData();
-        } catch (error) {
-            console.error("Failed to log accumulation:", error);
-        }
-    };
-
-    const handleUpdateAspectNotes = async (aspectId, notes) => {
-        const aspect = allNodes.find(n => n.id === aspectId);
-        if (!aspect) return;
-        try {
-            await backbone.updateNode(aspectId, {
-                metadata: { ...aspect.metadata, notes }
-            });
-            fetchData();
-        } catch (error) {
-            console.error("Failed to update aspect notes:", error);
-        }
-    };
-
-    const toggleAspect = (aspectId) => {
-        setExpandedAspectIds(prev =>
-            prev.includes(aspectId) ? prev.filter(id => id !== aspectId) : [...prev, aspectId]
-        );
-    };
-
-    const toggleTask = (taskId) => {
-        setExpandedTaskIds(prev =>
-            prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
-        );
-    };
-
-    const handleAttachReward = async (taskId, rewardId) => {
-        try {
-            const task = allNodes.find(n => n.id === taskId);
-            await backbone.updateNode(taskId, {
-                metadata: { ...task.metadata, rewardId }
-            });
-            setIsSelectingRewardForTaskId(null);
-            fetchData();
-        } catch (error) {
-            console.error("Failed to attach reward:", error);
-        }
-    };
-
-    const handleRemoveReward = async (taskId) => {
-        try {
-            const task = allNodes.find(n => n.id === taskId);
-            await backbone.updateNode(taskId, {
-                metadata: { ...task.metadata, rewardId: null }
-            });
-            fetchData();
-        } catch (error) {
-            console.error("Failed to remove reward:", error);
-        }
-    };
-
-    const toggleShowMore = (e, stageId) => {
-        e.stopPropagation();
-        setStageShowMoreIds(prev =>
-            prev.includes(stageId) ? prev.filter(id => id !== stageId) : [...prev, stageId]
-        );
-    };
-
-    const handleReorderTasks = async (newTasks, stageId) => {
-        try {
-            await Promise.all(newTasks.map((task, index) => {
-                if (task.metadata?.orderIndex !== index) {
-                    return backbone.updateNode(task.id, {
-                        metadata: { ...task.metadata, orderIndex: index }
-                    });
-                }
-                return Promise.resolve();
-            }));
-            fetchData();
-        } catch (error) {
-            console.error("Failed to reorder tasks:", error);
-        }
-    };
-
-    const getChildren = (parentId, type) => {
-        return allNodes
-            .filter(n => {
-                if (n.parentId !== parentId) return false;
-                if (type === NodeTypes.ASPECT) {
-                    return n.type === 'ASPECT' || n.type === 'STAGE';
-                }
-                return n.type === type;
-            })
-            .sort((a, b) => (a.metadata?.orderIndex || 0) - (b.metadata?.orderIndex || 0));
-    };
-
-    if (loading) return <div className="skill-page-loading">Loading Hierarchy...</div>;
-    if (!skill) return <div className="skill-page-error">Skill not found.</div>;
-
-    const activeObjectives = objectives.filter(o => {
-        const m = o.metadata || {};
-        return m.isActive === true || (!m.isActive && !m.isSleeping && !m.isArchived);
-    });
-    const sleepingObjectives = objectives.filter(o => o.metadata?.isSleeping === true);
-    const archivedObjectives = objectives.filter(o => o.metadata?.isArchived === true);
-
-    // Burnout Safe Mode: true if any objective on this skill has burnoutRisk
-    const anyBurnoutRisk = objectives.some(o => o.metadata?.burnoutRisk === true);
-
-    const getObjectiveTimeInfo = (obj) => {
-        const m = obj.metadata || {};
-        const isActive = m.isActive === true || (!m.isActive && !m.isSleeping && !m.isArchived);
-        if (!isActive || !m.activatedAt) return null;
-
-        const now = Date.now();
-        const diff = now - obj.metadata.activatedAt;
-        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-        const displayDays = days + 1; // Start at Day 1
-
-        let phase = '';
-        let hint = '';
-
-        if (displayDays <= 14) phase = 'Early Phase';
-        else if (displayDays <= 45) phase = 'Deep Phase';
-        else if (displayDays <= 60) phase = 'Late Phase';
-        else hint = 'Consider rotating or refreshing this Objective.';
-
-        return { days: displayDays, rawDays: days, phase, hint };
-    };
-
-    const getTaskStatusInfo = (task) => {
-        const status = task.metadata?.status;
-        if (status === TaskStatuses.DONE) return { symbol: '✓', colorClass: 'status-done' };
-        if (status === TaskStatuses.IN_PROGRESS) return { symbol: '◉', colorClass: 'status-progress' };
-        return { symbol: '☐', colorClass: 'status-todo' };
-    };
-
-    const SortableTaskRow = ({ task }) => {
-        const {
-            attributes,
-            listeners,
-            setNodeRef,
-            transform,
-            transition,
-            isDragging
-        } = useSortable({
-            id: task.id,
-            data: { type: 'TASK', task }
-        });
-
-        const style = {
-            transform: CSS.Translate.toString(transform),
-            transition,
-            opacity: isDragging ? 0.3 : 1,
-            zIndex: isDragging ? 10 : 1,
-        };
-
-        const statusInfo = getTaskStatusInfo(task);
-        const isDone = task.metadata?.status === TaskStatuses.DONE;
-        const dependencyId = task.metadata?.dependsOnTaskId;
-        const dependencyTask = dependencyId ? allNodes.find(n => n.id === dependencyId) : null;
-        const isExpanded = expandedTaskIds.includes(task.id);
-        const rewardId = task.metadata?.rewardId;
-        const reward = rewardId ? allNodes.find(n => n.id === rewardId) : null;
-
-        const isFresh = !isDone && (
-            (task.metadata?.sessions?.length || 0) === 0 ||
-            (task.updatedAt && (Date.now() - new Date(task.updatedAt).getTime()) > 14 * 24 * 60 * 60 * 1000)
-        );
-
-        const isChallengeTarget = activeChallengeHighlight?.taskId === task.id;
-        const challengeType = activeChallengeHighlight?.type;
-
-        let contrastClass = '';
-        if (isDone) {
-            contrastClass = 'task-ghosted';
-        } else {
-            contrastClass = 'task-high-contrast';
-        }
-
-        return (
-            <div
-                ref={setNodeRef}
-                style={style}
-                id={`task-${task.id}`}
-                className={`task-row-container ${isExpanded ? 'is-expanded' : ''} ${isDragging ? 'is-dragging-ghost' : ''}`}
-                onClick={(e) => { e.stopPropagation(); toggleTask(task.id); }}
-            >
-                <div
-                    className={`task-row ${contrastClass}`}
-                >
-                    <div className="drag-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()}>
-                        ⠿
-                    </div>
-                    {/* PASSION Safe Start Option */}
-                    {skill?.metadata?.pinchState === 'PASSION' && !isDone && (
-                        <button
-                            className="task-safe-start-btn"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                navigate(`/focus?taskId=${task.id}&safeSession=true`);
-                            }}
-                            title="Start 10-minute safe session"
-                        >
-                            ⏱ 10m
-                        </button>
-                    )}
-                    {task.metadata?.itemType !== 'REPETITION' && (
-                        <span
-                            className={`task-status-symbol clickable ${statusInfo.colorClass}`}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                handleToggleTaskStatus(task);
-                            }}
-                            title={isDone ? "Mark as Not Started" : "Mark as Done"}
-                        >
-                            {statusInfo.symbol}
-                        </span>
-                    )}
-                    <div className="task-name-text">
-                        <span className="task-main-name">{task.name}</span>
-                        {isChallengeTarget && challengeType === 'MASTERY' && <span className="challenge-badge mastery">Mastery Check</span>}
-                        {isChallengeTarget && challengeType === 'NEW_ANGLE' && <span className="challenge-badge new-angle">New Angle</span>}
-                        {rewardId && <span className="task-reward-badge-collapsed" title={`Reward: ${reward?.name || 'Unknown'}`}>🍬</span>}
-                    </div>
-
-                    <div className="task-actions-col">
-                        {!isDone && (
-                            <span
-                                className={`task-today-badge ${task.metadata?.isToday ? 'active' : ''}`}
-                                onClick={(e) => handleAddToToday(e, task.id)}
-                            >
-                                Today
-                            </span>
-                        )}
-                        {task.metadata?.itemType === 'REPETITION' && (
-                            <div className="task-repetition-ui">
-                                <span className="task-repetition-progress">
-                                    {task.metadata.currentUnits || 0} / {task.metadata.targetUnits || 0} {task.metadata.unitName || 'units'}
-                                </span>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        handleIncrementRepetition(task.id);
-                                    }}
-                                    className="task-repetition-add-btn"
-                                    title="Increment progress"
-                                >
-                                    +
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    {dependencyId && <span className="task-dependency-icon" title={`Suggested next step after: ${dependencyTask?.name}`}>↗</span>}
-
-                    <button
-                        className="task-delete-btn"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setTaskToDelete(task);
-                        }}
-                        title="Delete Task"
-                    >
-                        🗑️
-                    </button>
-                </div>
-
-                {isExpanded && (
-                    <div className="task-expanded-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="micro-reward-section">
-                            <span className="expanded-label-small">Micro Reward</span>
-                            {rewardId ? (
-                                <div className="reward-info-block">
-                                    {reward ? (
-                                        <>
-                                            <div className="reward-main">
-                                                <span className="reward-icon-inline">🍬</span>
-                                                <span className="reward-name-inline">{reward.name}</span>
-                                                <span className="reward-tier-inline">T{reward.metadata?.rewardTier || 1}</span>
-                                            </div>
-                                            <div className="reward-actions-inline">
-                                                <button className="reward-action-btn" onClick={() => setIsSelectingRewardForTaskId(task.id)}>Change</button>
-                                                <button className="reward-action-btn remove" onClick={() => handleRemoveReward(task.id)}>Remove</button>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="reward-error">
-                                            <span>Reward not found</span>
-                                            <button className="reward-action-btn remove" onClick={() => handleRemoveReward(task.id)}>Remove</button>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <button
-                                    className="attach-reward-trigger"
-                                    onClick={() => setIsSelectingRewardForTaskId(task.id)}
-                                >
-                                    + Attach Micro Reward
-                                </button>
-                            )}
-                        </div>
-
-                        {isSelectingRewardForTaskId === task.id && (
-                            <div className="reward-picker-overlay" onClick={() => setIsSelectingRewardForTaskId(null)}>
-                                <div className="reward-picker-container" onClick={(e) => e.stopPropagation()}>
-                                    <h4 className="picker-title">Select Micro Reward</h4>
-                                    <div className="reward-list-scroll">
-                                        {allNodes
-                                            .filter(n => n.type === NodeTypes.REWARD && n.metadata?.rewardCategory === 'TASK')
-                                            .map(r => (
-                                                <div
-                                                    key={r.id}
-                                                    className="reward-pick-item"
-                                                    onClick={() => handleAttachReward(task.id, r.id)}
-                                                >
-                                                    <span className="pick-name">{r.name}</span>
-                                                    <span className={`tier-badge tier-${r.metadata?.rewardTier || 1}`}>T{r.metadata?.rewardTier || 1}</span>
-                                                </div>
-                                            ))}
-                                        {allNodes.filter(n => n.type === NodeTypes.REWARD && n.metadata?.rewardCategory === 'TASK').length === 0 && (
-                                            <div className="no-rewards-found">No Micro Rewards found in Bank.</div>
-                                        )}
-                                    </div>
-                                    <button className="picker-close-btn" onClick={() => setIsSelectingRewardForTaskId(null)}>Cancel</button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const DroppableAspect = ({ aspect, aspectTasks, isUntouched, isNoveltyHighlighted, children }) => {
-        const { setNodeRef, isOver } = useDroppable({
-            id: aspect.id,
-            data: { type: 'ASPECT', aspect }
-        });
-
-        return (
-            <motion.div
-                layout="position"
-                ref={setNodeRef}
-                className={`aspect-card ${isOver ? 'drag-over' : ''} ${isUntouched ? 'is-untouched' : ''} ${isNoveltyHighlighted ? 'novelty-highlight' : ''}`}
-                transition={macOSSpring}
-                style={{
-                    borderRadius: CARD_BORDER_RADIUS,
-                    overflow: 'hidden',
-                    willChange: 'transform',
-                    WebkitBackfaceVisibility: 'hidden',
-                    backfaceVisibility: 'hidden',
-                    transform: 'translateZ(0)'
-                }}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    toggleAspect(aspect.id);
-                }}
-            >
-                {isNoveltyHighlighted && (
-                    <div className="novelty-badge">UNEXPLORED</div>
-                )}
-                {/* Plain div — no layout animation so children don't stretch */}
-                <div style={{ width: '100%' }}>
-                    {children}
-                </div>
-            </motion.div>
-        );
-    };
 
     const renderObjective = (obj) => {
         const isEditing = editingObjectiveId === obj.id;
@@ -1379,13 +1445,6 @@ const SkillPage = () => {
         }
 
         return (
-            <DndContext
-                key={obj.id}
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragStart={handleTaskDragStart}
-                onDragEnd={handleDragEnd}
-            >
                 <motion.div 
                     layout="position"
                     key={obj.id}
@@ -1441,6 +1500,8 @@ const SkillPage = () => {
                             <button
                                 className={`obj-status-btn ${isSleeping ? 'activate' : 'sleep'}`}
                                 onClick={(e) => {
+                                    console.log("Experiment close clicked:", obj.id);
+                                    console.log("Experiment node:", obj);
                                     e.stopPropagation();
                                     e.preventDefault();
                                     handleToggleObjectiveStatus(e, obj);
@@ -1458,7 +1519,7 @@ const SkillPage = () => {
                                     animate={{ height: "auto", opacity: 1 }}
                                     exit={{ height: 0, opacity: 0 }}
                                     transition={macOSSpring}
-                                    style={{ overflow: 'hidden' }}
+                                    style={{ overflow: 'visible' }}
                                 >
                                         <div className="experiment-display-card">
                                             <div className="experiment-display-header">
@@ -1610,6 +1671,8 @@ const SkillPage = () => {
                                                             aspectTasks={aspectTasks}
                                                             isUntouched={isUntouched}
                                                             isNoveltyHighlighted={isNoveltyHighlighted}
+                                                            isExpanded={aspectShowMoreIds.includes(aspect.id)}
+                                                            onToggleAspect={toggleAspect}
                                                         >
                                                             <div className="aspect-card-internal">
                                                                 <div className="aspect-header">
@@ -1645,15 +1708,36 @@ const SkillPage = () => {
                                                                         </button>
                                                                     </div>
                                                                 </div>
-        
                                                                 <div className="aspect-tasks" onClick={e => e.stopPropagation()}>
-                                                                    <SortableContext items={aspectTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                                                                        <AnimatePresence>
-                                                                            {(aspectShowMoreIds.includes(aspect.id) ? aspectTasks : aspectTasks.slice(0, 5)).map(task => (
-                                                                                <SortableTaskRow key={task.id} task={task} />
-                                                                            ))}
-                                                                        </AnimatePresence>
-                                                                    </SortableContext>
+                                                                    {(() => {
+                                                                        const visibleTasks = aspectShowMoreIds.includes(aspect.id) 
+                                                                            ? aspectTasks 
+                                                                            : aspectTasks.slice(0, 5);
+                                                                            
+                                                                        return (
+                                                                                <AnimatePresence>
+                                                                                    {(visibleTasks || []).map(task => (
+                                                                                        <SortableTaskRow 
+                                                                                            key={task.id} 
+                                                                                            task={task} 
+                                                                                            allNodes={allNodes}
+                                                                                            expandedTaskIds={expandedTaskIds}
+                                                                                            activeChallengeHighlight={activeChallengeHighlight}
+                                                                                            skill={skill}
+                                                                                            onToggleTask={toggleTask}
+                                                                                            onToggleTaskStatus={handleToggleTaskStatus}
+                                                                                            onAddToToday={handleAddToToday}
+                                                                                            onIncrementRepetition={handleIncrementRepetition}
+                                                                                            onDeleteTask={setTaskToDelete}
+                                                                                            isSelectingRewardForTaskId={isSelectingRewardForTaskId}
+                                                                                            onSetSelectingRewardForTaskId={setIsSelectingRewardForTaskId}
+                                                                                            onRemoveReward={handleRemoveReward}
+                                                                                            onAttachReward={handleAttachReward}
+                                                                                            />
+                                                                                        ))}
+                                                                                </AnimatePresence>
+                                                                        );
+                                                                    })()}
         
                                                                     {aspectTasks.length > 5 && (
                                                                         <div style={{ textAlign: 'center', marginTop: '4px' }}>
@@ -1769,95 +1853,9 @@ const SkillPage = () => {
                         </AnimatePresence>
                     </div>
                 </motion.div>
-                <DragOverlay dropAnimation={null}>
-                    {dragActiveId ? (
-                        <div className="task-row-container dragging-overlay">
-                            {allNodes.find(n => n.id === dragActiveId)?.name}
-                        </div>
-                    ) : null}
-                </DragOverlay>
-            </DndContext>
         );
     };
 
-    const isNoveltySprint = skill?.metadata?.pinchState === 'NOVELTY';
-    if (isNoveltySprint) {
-        const activeAspects = allNodes.filter(n => n.type === NodeTypes.ASPECT && !n.metadata?.isSleeping && n.parentId && allNodes.find(p => p.id === n.parentId)?.parentId === skill?.id);
-        const unexplored = activeAspects.filter(a => {
-            const aspectTasks = allNodes.filter(n => n.parentId === a.id && n.type === NodeTypes.TASK);
-            if (aspectTasks.length === 0) return false;
-            return !aspectTasks.some(t => t.metadata?.status === TaskStatuses.DONE);
-        });
-        window.unexploredAspectIds = unexplored.slice(0, 2).map(a => a.id);
-    } else {
-        window.unexploredAspectIds = [];
-    }
-
-    const isChallengeState = skill?.metadata?.pinchState === 'CHALLENGE';
-    let masteryCheckTaskId = null;
-    let newAngleTaskId = null;
-    let showChallengeCard = false;
-
-    if (isChallengeState && !challengeDismissed) {
-        const activeObj = objectives.find(o => !o.metadata?.isSleeping);
-        if (activeObj) {
-            const aspects = allNodes.filter(n => n.type === NodeTypes.ASPECT && n.parentId === activeObj.id);
-            let bestProgress = -1;
-            let worstProgress = 2; // progress is 0-1
-
-            aspects.forEach(a => {
-                const aTasks = allNodes.filter(n => n.parentId === a.id && n.type === NodeTypes.TASK);
-                if (aTasks.length > 0) {
-                    const sortedTasks = [...aTasks].sort((t1, t2) => (t1.metadata?.orderIndex || 0) - (t2.metadata?.orderIndex || 0));
-                    const incomplete = sortedTasks.filter(t => t.metadata?.status !== TaskStatuses.DONE);
-
-                    if (incomplete.length > 0) {
-                        const firstInc = incomplete[0];
-                        const progress = (aTasks.length - incomplete.length) / aTasks.length;
-
-                        // Use >= to pick the most recent one if progress is identical
-                        if (progress >= bestProgress) {
-                            bestProgress = progress;
-                            masteryCheckTaskId = firstInc.id;
-                        }
-                        if (progress < worstProgress) {
-                            worstProgress = progress;
-                            newAngleTaskId = firstInc.id;
-                        }
-                    }
-                }
-            });
-            if (masteryCheckTaskId === newAngleTaskId) newAngleTaskId = null;
-            if (masteryCheckTaskId) showChallengeCard = true;
-        }
-    }
-
-    const handleChallengeAction = (type) => {
-        if (type === 'MASTERY' && masteryCheckTaskId) {
-            setActiveChallengeHighlight({ taskId: masteryCheckTaskId, type });
-            const pId = allNodes.find(n => n.id === masteryCheckTaskId)?.parentId;
-            if (pId) {
-                setExpandedAspectIds(prev => prev.includes(pId) ? prev : [...prev, pId]);
-                setTimeout(() => {
-                    const el = document.getElementById(`task-${masteryCheckTaskId}`);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 100);
-            }
-        } else if (type === 'NEW_ANGLE' && newAngleTaskId) {
-            setActiveChallengeHighlight({ taskId: newAngleTaskId, type });
-            const pId = allNodes.find(n => n.id === newAngleTaskId)?.parentId;
-            if (pId) {
-                setExpandedAspectIds(prev => prev.includes(pId) ? prev : [...prev, pId]);
-                setTimeout(() => {
-                    const el = document.getElementById(`task-${newAngleTaskId}`);
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 100);
-            }
-        } else if (type === 'DISMISS') {
-            setChallengeDismissed(true);
-            setActiveChallengeHighlight(null);
-        }
-    };
 
     return (
         <div className={`skill-page ${isNoveltySprint ? 'novelty-sprint-glow' : ''}`}>
@@ -1942,7 +1940,7 @@ const SkillPage = () => {
                 <div className="suggested-focus-section">
                     <span className="suggestions-label">Suggested Focus</span>
                     <div className="suggestions-list">
-                        {suggestions.map((s) => (
+                        {(suggestions || []).map((s) => (
                             <button
                                 key={s.task?.id || s.habit?.id}
                                 className={`suggestion-chip ${s.type.toLowerCase()}`}
@@ -1993,16 +1991,13 @@ const SkillPage = () => {
                 )}
 
                 <div className="habits-grid">
-                    {habits.length > 0 ? (
-                        habits.map(habit => (
+                    {(habits || []).length > 0 ? (
+                        (habits || []).map(habit => (
                             <HabitCard
                                 key={habit.id}
                                 habit={habit}
-                                onOpenEvolution={() => setActiveHabitForEvolution(habit)}
-                                onToggleActive={async (h) => {
-                                    await habitService.updateHabit(h.id, { isActive: !h.isActive });
-                                    fetchData();
-                                }}
+                                onOpenEvolution={handleOpenEvolution}
+                                onToggleActive={handleToggleHabitActive}
                             />
                         ))
                     ) : !isCreatingHabit && (
@@ -2026,7 +2021,7 @@ const SkillPage = () => {
                     <span className="section-label">Active Experiments</span>
                     <LayoutGroup id="active-objectives">
                         <div className="active-experiments-list">
-                            {activeObjectives.map(obj => renderObjective(obj))}
+                            {(activeObjectives || []).map(obj => renderObjective(obj))}
                         </div>
                     </LayoutGroup>
                 </section>
@@ -2049,7 +2044,7 @@ const SkillPage = () => {
                     {isSleepingExpanded && (
                         <LayoutGroup id="sleeping-objectives">
                             <div className="sleeping-content">
-                                {sleepingObjectives.map(renderObjective)}
+                                {(sleepingObjectives || []).map(renderObjective)}
                             </div>
                         </LayoutGroup>
                     )}
@@ -2154,7 +2149,7 @@ const SkillPage = () => {
                 <section className="skill-section archived-section">
                     <span className="section-label">Experiment Archive</span>
                     <div className="archived-list">
-                        {archivedObjectives.map(obj => renderObjective(obj))}
+                        {(archivedObjectives || []).map(obj => renderObjective(obj))}
                     </div>
                 </section>
             )}
@@ -2392,181 +2387,6 @@ const SkillPage = () => {
                 </div>,
                 document.body
             )}
-        </div>
-    );
-};
-
-const HabitCard = ({ habit, onOpenEvolution, onToggleActive }) => {
-    const [completing, setCompleting] = useState(false);
-    const currentPhase = habit.phases?.[habit.currentPhaseLevel] || {};
-    const isCompletedToday = habit.lastCompletedAt &&
-        new Date(habit.lastCompletedAt).toDateString() === new Date().toDateString();
-
-    const handleComplete = async (friction) => {
-        try {
-            await habitService.completeHabit(habit.id, friction);
-            setCompleting(false);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    return (
-        <div className={`habit-card-minimal ${isCompletedToday ? 'completed' : ''}`} id={`habit-${habit.id}`}>
-            <div className="habit-card-main" onClick={onOpenEvolution}>
-                <div className="habit-info">
-                    <div className="habit-header-row">
-                        <h4 className="habit-name">{habit.ifTrigger}</h4>
-                        <span
-                            className={`habit-activation-tag ${habit.isActive ? 'active' : 'paused'}`}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleActive(habit);
-                            }}
-                        >
-                            {habit.isActive ? '🟢 Active' : '⚪ Paused'}
-                        </span>
-                    </div>
-                    <p className="habit-phase-desc">Then: {currentPhase.description}</p>
-                    <span className="habit-phase-label">Phase {habit.currentPhaseLevel + 1}</span>
-                </div>
-
-                {!isCompletedToday && (
-                    <div className="habit-actions" onClick={e => e.stopPropagation()}>
-                        {!completing ? (
-                            <button className="complete-btn" onClick={() => setCompleting(true)}>Complete</button>
-                        ) : (
-                            <div className="friction-selector-minimal">
-                                <button onClick={() => handleComplete('low')} title="Easy">🟢</button>
-                                <button onClick={() => handleComplete('medium')} title="Medium">🟡</button>
-                                <button onClick={() => handleComplete('high')} title="Hard">🔴</button>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {isCompletedToday && <span className="completion-check">✓</span>}
-            </div>
-        </div>
-    );
-};
-
-const EvolutionDrillIn = ({ habit, skill, onClose, onRefresh }) => {
-    const [stats, setStats] = useState(null);
-    const [newVariation, setNewVariation] = useState('');
-    const [isUpgrading, setIsUpgrading] = useState(false);
-
-    useEffect(() => {
-        const loadStats = async () => {
-            const eligibility = await habitService.evaluateEvolutionEligibility(habit.id);
-            setStats(eligibility);
-        };
-        loadStats();
-    }, [habit.id]);
-
-    const handleLevelUp = async () => {
-        if (habit.currentPhaseLevel >= 4 && !newVariation.trim()) {
-            alert("Please define the next variation for this open-ended phase.");
-            return;
-        }
-
-        try {
-            setIsUpgrading(true);
-            const desc = habit.currentPhaseLevel >= 4 ? newVariation.trim() : ""; // Backend handles growth if level < 5
-            await habitService.upgradePhase(habit.id, desc);
-            onRefresh();
-            onClose();
-        } catch (error) {
-            alert(error.message);
-        } finally {
-            setIsUpgrading(false);
-        }
-    };
-
-    if (!stats) return <div className="evolution-drill-in-overlay">Loading Evolution Data...</div>;
-
-    const currentPhase = habit.phases?.[habit.currentPhaseLevel] || {};
-    const stabilityPercent = Math.round((stats.stabilityCount / 12) * 100);
-    const isReady = stats.evolutionReady;
-    const isPostCap = habit.currentPhaseLevel >= 4;
-
-    return (
-        <div className="evolution-drill-in-overlay" onClick={onClose}>
-            <div className="evolution-modal" onClick={e => e.stopPropagation()}>
-                <header className="modal-header">
-                    <div className="header-text">
-                        <h3>Habit Evolution</h3>
-                        <p className="subtitle">{habit.ifTrigger}</p>
-                    </div>
-                    <button className="close-x" onClick={onClose}>×</button>
-                </header>
-
-                <div className="modal-body">
-                    <div className="metrics-grid">
-                        <div className="metric-card">
-                            <span className="label">Stability (12d)</span>
-                            <span className="value">{stats.stabilityCount}/12</span>
-                            <div className="progress-bar-bg">
-                                <div className="progress-fill" style={{ width: `${stabilityPercent}%` }}></div>
-                            </div>
-                        </div>
-                        <div className="metric-card">
-                            <span className="label">Lifetime</span>
-                            <span className="value">{habit.totalCompletions || 0}</span>
-                            <span className="sub-value">Goal: {currentPhase.threshold}</span>
-                        </div>
-                        <div className="metric-card">
-                            <span className="label">Friction (8x)</span>
-                            <span className="value">{stats.frictionAvg?.toFixed(1) || 'N/A'}</span>
-                            <span className={`status-pill ${stats.frictionGate ? 'pass' : 'fail'}`}>
-                                {stats.frictionGate ? 'Solid' : 'Unstable'}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="identity-reinforcement">
-                        <p className="becoming-message">This habit is stabilizing.</p>
-                        <p className="identity-anchor">
-                            You are becoming someone with {skill.metadata?.identityAnchor || 'unstoppable momentum'}.
-                        </p>
-                    </div>
-
-                    {isReady ? (
-                        <div className="evolution-actions">
-                            {isPostCap ? (
-                                <div className="post-cap-creation">
-                                    <label>Define Habit Variation / Refinement</label>
-                                    <textarea
-                                        placeholder="Higher intensity, different context, or refined form..."
-                                        value={newVariation}
-                                        onChange={e => setNewVariation(e.target.value)}
-                                    />
-                                    <button
-                                        className="evolve-btn"
-                                        disabled={isUpgrading}
-                                        onClick={handleLevelUp}
-                                    >
-                                        Solidify & Evolve
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    className="evolve-btn"
-                                    disabled={isUpgrading}
-                                    onClick={handleLevelUp}
-                                >
-                                    Solidify & Evolve
-                                </button>
-                            )}
-                            <p className="manual-hint">Manual confirmation required to upgrade phase.</p>
-                        </div>
-                    ) : (
-                        <div className="evolution-status-message">
-                            Continuing baseline execution. Evolution gates are currently locked.
-                        </div>
-                    )}
-                </div>
-            </div>
         </div>
     );
 };

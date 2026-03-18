@@ -113,4 +113,4 @@ const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon'
     );
 };
 
-export default NodeIcon;
+export default React.memo(NodeIcon);

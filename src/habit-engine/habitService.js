@@ -126,7 +126,7 @@ export const createHabitService = (repository, auraService, backbone) => {
                     heavyBlockWindow: 3,
                     sizeCapPhase: 5
                 },
-                isActive: false,
+                isActive: true,
                 createdAt: new Date().toISOString(),
                 auraPerSkill: { [linkedSkillId]: 0 },
                 sessions: []

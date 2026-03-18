@@ -100,6 +100,10 @@ export const ThemeProvider = ({ children }) => {
     const [showCompletedTasks, setShowCompletedTasks] = useState(() => {
         return localStorage.getItem('app-show-completed-tasks') === 'true';
     });
+    const [isMultipleWallpapersMode, setIsMultipleWallpapersMode] = useState(() => {
+        return localStorage.getItem('app-multiple-wallpapers-mode') === 'true';
+    });
+
 
     // Ref to track whether the current config change came from a Supabase load
     // (prevents echo-saving back what we just fetched)
@@ -258,6 +262,11 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem('app-show-completed-tasks', showCompletedTasks);
     }, [showCompletedTasks]);
 
+    useEffect(() => {
+        localStorage.setItem('app-multiple-wallpapers-mode', isMultipleWallpapersMode);
+    }, [isMultipleWallpapersMode]);
+
+
     // ─── Theme setters ────────────────────────────────────────────────────────
     const setTheme = (theme) => {
         setThemePreference(theme);
@@ -361,7 +370,10 @@ export const ThemeProvider = ({ children }) => {
             syncError,
             showCompletedTasks,
             setShowCompletedTasks,
+            isMultipleWallpapersMode,
+            setIsMultipleWallpapersMode,
         }}>
+
             {children}
         </ThemeContext.Provider>
     );

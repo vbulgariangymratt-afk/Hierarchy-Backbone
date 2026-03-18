@@ -11,7 +11,7 @@
     --accent-purple: #a855f7;
     --accent-amber: var(--color-warning);
 
-    --glass-blur: blur(16px);
+    --glass-blur: blur(18px) saturate(160%);
     --transition-premium: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
@@ -44,7 +44,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* 1. FIXED HEADER SECTION */
@@ -130,7 +130,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .liquid-mode.light .area-card {
@@ -418,6 +418,9 @@
     color: var(--color-text-main);
     margin-bottom: 6px;
     line-height: 1.4;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .task-highlight {
@@ -483,7 +486,7 @@
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
     -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .maintenance-info {
@@ -496,6 +499,9 @@
     font-size: 16px;
     font-weight: 600;
     color: var(--color-text-main);
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .maintenance-duration {
@@ -633,9 +639,9 @@
 .liquid-mode .start-day-btn {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 

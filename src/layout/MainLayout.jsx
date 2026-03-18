@@ -31,6 +31,8 @@ const MainLayout = () => {
 
     const location = useLocation();
     const outlet = useOutlet();
+    console.log("MainLayout rendering. Location:", location.pathname);
+    console.log("MainLayout outlet exists:", !!outlet);
     const showBanner = safeMode && !bannerDismissed;
 
     return (
@@ -51,24 +53,9 @@ const MainLayout = () => {
                     </div>
                 )}
                 
-                <AnimatePresence mode="wait">
-                    {outlet && (
-                        <motion.div
-                            key={location.pathname}
-                            initial={{ opacity: 0.01, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            transition={{ duration: 0.22, ease: "easeOut" }}
-                            style={{ 
-                                height: '100%', 
-                                width: '100%',
-                                willChange: 'opacity, transform'
-                            }}
-                        >
-                            {outlet}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                <div style={{ height: '100%', width: '100%' }}>
+                    {outlet}
+                </div>
             </main>
         </div>
     );

@@ -105,7 +105,7 @@ const AreaPage = () => {
         if (!isCurrentlyActive) {
             // Check global limit
             const totalActive = allNodes.filter(n => n.type === NodeTypes.SKILL && (n.metadata?.status === 'ACTIVE' || (n.metadata?.isActive && n.metadata?.status !== 'SLEEPING'))).length;
-            if (totalActive >= 3) {
+            if (totalActive >= 100) {
                 setIsLimitModalOpen(true);
                 return;
             }
@@ -493,7 +493,7 @@ const AreaPage = () => {
                     <div className="limit-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="limit-modal-icon">🚫</div>
                         <p className="limit-modal-message">
-                            You can only have 3 Active Skills. Put one to sleep to activate this one.
+                            You can only have 100 Active Skills. Put one to sleep to activate this one.
                         </p>
                         <button className="limit-modal-btn" onClick={() => setIsLimitModalOpen(false)}>
                             Got it

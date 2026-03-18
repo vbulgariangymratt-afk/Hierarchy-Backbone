@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 import './FocusPage.css';
 import GlassPanel from '../components/ui/GlassPanel';
+import { useSession } from '../context/SessionContext';
+
 
 const ACKS = ["Good.", "Nice.", "Done."];
 
@@ -59,6 +61,22 @@ const FocusPage = () => {
             return nextC;
         });
     }, []);
+
+    // Central Session Context sync
+    const { 
+        setIsSessionActive, 
+        setActiveSessionId: setGlobalSessionId, 
+        registerCompleteHandler, 
+        unregisterCompleteHandler,
+        previousRoute
+    } = useSession();
+
+
+    useEffect(() => {
+        setIsSessionActive(!!activeSessionId);
+        setGlobalSessionId(activeSessionId);
+    }, [activeSessionId, setIsSessionActive, setGlobalSessionId]);
+
 
     const handleToggleSubStep = async (index) => {
         const updated = [...subSteps];
@@ -205,16 +223,7 @@ const FocusPage = () => {
             return;
         }
 
-        // Logic check: Is it the first ever session?
-        const sessions = task.metadata?.sessions || [];
-        const firstSession = sessions.length === 0;
-
-        if (firstSession) {
-            setShowSetup(true);
-        } else {
-            // Start immediately if not first session
-            await startBackboneSession(5); // Default pleasure for subsequent sessions
-        }
+        setShowSetup(true);
     };
 
     const startBackboneSession = async (pleasureValue) => {
@@ -235,12 +244,15 @@ const FocusPage = () => {
         setShowSummary(true);
     };
 
-    const completeBackboneSession = async () => {
+    const completeBackboneSession = useCallback(async () => {
+        console.time("sessionComplete");
         try {
-            await backbone.completeSession(task.id, activeSessionId, actualPleasure, mastery);
+            // Optimistic update
             setActiveSessionId(null);
             setSeconds(0);
             setShowSummary(false);
+
+            await backbone.completeSession(task.id, activeSessionId, actualPleasure, mastery);
 
             // Subtle reinforcement
             setIsGlowing(true);
@@ -248,36 +260,22 @@ const FocusPage = () => {
 
             if (isNavigatingAway) {
                 await backbone.trackFocusMode(false);
-                navigate('/launchpad');
+                navigate(previousRoute || '/launchpad');
             }
         } catch (error) {
             console.error("Failed to complete session:", error);
+        } finally {
+            console.timeEnd("sessionComplete");
         }
-    };
+    }, [task?.id, activeSessionId, actualPleasure, mastery, isNavigatingAway, navigate, previousRoute]);
 
-    const handleAction = async () => {
-        if (!task || isToggling) return;
 
-        // If session is active, we must pause/complete it first
-        if (activeSessionId) {
-            setIsPaused(true);
-            // We set a flag or just show the summary. 
-            // The completion logic will proceed after summary is submitted.
-            // But for "Mechanical Closure", maybe we complete the task first then ask for summary?
-            // User requested: "If session active: Trigger Pause logic first. After session closed: Mark task complete."
 
-            // To handle this sequence, we can set a 'pendingTaskComplete' flag.
-            setPendingTaskComplete(true);
-            setShowSummary(true);
-            return;
-        }
 
-        proceedWithTaskCompletion();
-    };
 
     const [pendingTaskComplete, setPendingTaskComplete] = useState(false);
 
-    const proceedWithTaskCompletion = async () => {
+    const proceedWithTaskCompletion = useCallback(async () => {
         setIsToggling(true);
 
         // 1. Mechanical engagement delay (100ms)
@@ -298,18 +296,24 @@ const FocusPage = () => {
 
             // 3. Database Execution & Transition
             setTimeout(async () => {
+                console.time("taskCompleteTransition");
                 try {
-                    if (task.metadata?.itemType === 'REPETITION') {
-                        await backbone.incrementTaskRepetition(task.id);
-                    } else {
-                        await backbone.updateNode(task.id, {
+                    // Start async work
+                    const taskUpdatePromise = task.metadata?.itemType === 'REPETITION'
+                        ? backbone.incrementTaskRepetition(task.id)
+                        : backbone.updateNode(task.id, {
                             metadata: {
                                 ...task.metadata,
                                 status: TaskStatuses.DONE,
                                 completedAt: Date.now()
                             }
                         });
-                    }
+
+                    // Fetch allNodes needed for identity savoring BEFORE the timeout finishes
+                    const allNodes = await backbone.getAllNodes();
+
+                    await taskUpdatePromise;
+
                     // Load next task after a brief pause for neurological closure
                     setTimeout(() => {
                         // PASSION Identity Savoring
@@ -323,10 +327,12 @@ const FocusPage = () => {
                                 setSavoringIdentity(null);
                                 loadNextTask();
                                 setPendingTaskComplete(false);
+                                console.timeEnd("taskCompleteTransition");
                             }, 3000);
                         } else {
                             loadNextTask();
                             setPendingTaskComplete(false);
+                            console.timeEnd("taskCompleteTransition");
                         }
                     }, 400);
                 } catch (error) {
@@ -334,17 +340,48 @@ const FocusPage = () => {
                     setIsToggling(false);
                     setIsToggled(false);
                     setPendingTaskComplete(false);
+                    console.timeEnd("taskCompleteTransition");
                 }
             }, 600);
         }, 100);
-    };
+    }, [task, skill, ack, loadNextTask]);
 
-    const handleSummarySubmit = async () => {
+
+    const handleSummarySubmit = useCallback(async () => {
         await completeBackboneSession();
         if (pendingTaskComplete) {
             proceedWithTaskCompletion();
         }
-    };
+    }, [completeBackboneSession, pendingTaskComplete, proceedWithTaskCompletion]);
+
+    const handleAction = useCallback(async () => {
+        if (!task || isToggling) return;
+
+        // Requirement: "The action must feel instant" 
+        // We trigger the summary modal view instantly if session is active
+        if (activeSessionId) {
+            // Already in summary? Submit it.
+            if (showSummary) {
+                handleSummarySubmit();
+                return;
+            }
+
+            setIsPaused(true);
+            setPendingTaskComplete(true);
+            setShowSummary(true);
+            return;
+        }
+
+        proceedWithTaskCompletion();
+    }, [task, isToggling, activeSessionId, showSummary, handleSummarySubmit]);
+
+    useEffect(() => {
+        // Expose handleAction to the global shortcut system
+        registerCompleteHandler(handleAction);
+        return () => unregisterCompleteHandler();
+    }, [registerCompleteHandler, unregisterCompleteHandler, handleAction]);
+
+
 
     const handleExit = async () => {
         if (activeSessionId) {
@@ -358,8 +395,9 @@ const FocusPage = () => {
         } catch (error) {
             console.error("Failed to exit focus mode:", error);
         }
-        navigate('/launchpad');
+        navigate(previousRoute || '/launchpad');
     };
+
 
     if (loading && !task) {
         return (
@@ -434,7 +472,7 @@ const FocusPage = () => {
                     </button>
                 </div>
 
-                <GlassPanel className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
+                <div className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
                     <h1 className="focus-task-name">{task.name}</h1>
 
                     {checkpointsCompleted > 0 && (
@@ -469,7 +507,7 @@ const FocusPage = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </GlassPanel>
+                </div>
 
                 {task.metadata?.ifThen && (
                     <div className="focus-prompt">
@@ -531,6 +569,7 @@ const FocusPage = () => {
             {showSetup && (
                 <div className="focus-modal-overlay">
                     <div className="focus-modal-content">
+                        <button className="focus-modal-close" onClick={() => setShowSetup(false)}>×</button>
                         <h3>Session Intent</h3>
                         <div className="focus-modal-group">
                             <span className="focus-modal-label">Predicted Pleasure</span>
@@ -597,7 +636,7 @@ const FocusPage = () => {
                                     onClick={async () => {
                                         await completeBackboneSession();
                                         await backbone.trackFocusMode(false);
-                                        navigate('/launchpad');
+                                        navigate(previousRoute || '/launchpad');
                                     }}
                                 >
                                     Stop Cleanly
