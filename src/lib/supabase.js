@@ -9,17 +9,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '')
 
+import { openUrl } from '@tauri-apps/plugin-opener';
+
 export const loginWithGoogle = async () => {
     console.log('[AUTH] Starting Google login flow');
 
-    // In production (Tauri), we use the manual opener and skip auto-redirect
-    // In development (base URL localhost), we can use the localhost URL and default redirect
-    const isProd = !window.location.href.includes('localhost:5173')
-    const redirectTo = isProd
-        ? 'backbone://auth'
-        : 'http://localhost:5173/auth/callback'
+    // Hardcoded for Tauri production environment
+    const redirectTo = 'backbone://auth/callback';
 
-    console.log('[AUTH] Environment:', isProd ? 'Production (Tauri)' : 'Development (Vite)');
     console.log('[AUTH] Redirect URL configured:', redirectTo);
 
     try {
@@ -27,29 +24,34 @@ export const loginWithGoogle = async () => {
             provider: 'google',
             options: {
                 redirectTo,
-                skipBrowserRedirect: isProd,
+                // ALWAYS skip browser redirect in the Tauri app
+                skipBrowserRedirect: true,
             },
-        })
+        });
+
+        console.log('[AUTH] OAuth URL:', data?.url);
 
         if (error) {
             console.error('[AUTH] Supabase OAuth error:', error.message);
             return { data, error };
         }
 
-        console.log('[AUTH] OAuth URL generated:', data?.url);
+        console.log('[AUTH] OAuth response data:', data);
 
-        if (isProd && data?.url) {
-            console.log('[AUTH] Manually opening system browser via Tauri Opener...');
+        if (data?.url) {
+            console.log('[AUTH] Manually opening system browser via Tauri Opener:', data.url);
             try {
-                const { open } = await import('@tauri-apps/plugin-opener');
-                await open(data.url);
+                // Using openUrl as required by Tauri v2
+                await openUrl(data.url);
                 console.log('[AUTH] Browser open command sent successfully');
             } catch (openErr) {
                 console.error('[AUTH] Failed to open system browser:', openErr);
             }
+        } else {
+             console.warn('[AUTH] No OAuth URL returned even with skipBrowserRedirect: true');
         }
 
-        return { data, error }
+        return { data, error };
     } catch (err) {
         console.error('[AUTH] Unexpected error during OAuth flow:', err);
         return { data: null, error: err };

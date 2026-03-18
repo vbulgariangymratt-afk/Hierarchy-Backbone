@@ -246,41 +246,87 @@ function App() {
       });
 
     // Handle deep links for OAuth redirects (Tauri Production)
-    let unsubscribeDeepLink;
+    let unsubscribers = [];
 
-    import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
-      onOpenUrl((urls) => {
-        for (const url of urls) {
-          if (url.includes('auth')) {
-            const urlObj = new URL(url.replace('#', '?'));
-            const accessToken = urlObj.searchParams.get('access_token');
-            const refreshToken = urlObj.searchParams.get('refresh_token');
+    const handleOAuthUrl = async (url) => {
+      console.log('[App Auth] Deep link received:', url);
+      
+      // Look for our callback path (e.g. backbone://auth/callback) or general auth segments
+      if (typeof url === 'string' && (url.includes('auth/callback') || url.includes('access_token='))) {
+        console.log('[App Auth] Detected OAuth callback segment. Processing session...');
+        
+        try {
+          // Supabase helper to extract session from the hash fragment
+          const { data, error } = await supabase.auth.getSessionFromUrl({ 
+            url, 
+            storeSession: true 
+          });
 
-            if (accessToken && refreshToken) {
-              supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
-              }).then(({ data, error }) => {
-                if (error) console.error('[App] Error setting session from deep link:', error.message);
-                else setSession(data.session);
-              });
-            }
+          if (error) {
+            console.error('[App Auth] Error getting session from URL:', error.message);
+          } else if (data?.session) {
+            console.log('[App Auth] Session retrieved successfully for:', data.session.user.email);
+            setSession(data.session);
+          } else {
+            console.warn('[App Auth] No session data returned from getSessionFromUrl');
           }
+        } catch (err) {
+          console.error('[App Auth] Unexpected exception during deep link processing:', err);
         }
-      }).then(unsub => { unsubscribeDeepLink = unsub; });
+      }
+    };
+
+    // 1. Specialized Deep Link Plugin Listener (Preferred)
+    import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
+      console.log('[App Auth] Initializing Deep Link plugin listener');
+      onOpenUrl((urls) => {
+        urls.forEach(handleOAuthUrl);
+      }).then(unsub => { unsubscribers.push(unsub); });
     }).catch(err => {
-      console.warn('[App] Deep link plugin not initialized or available:', err);
+      console.warn('[App Auth] Deep link plugin not available:', err.message);
+    });
+
+    // 2. Event System Fallback (tauri://url or app://open-url)
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      // Listen for both event names as requested for redundancy
+      ['tauri://url', 'app://open-url'].forEach(eventName => {
+        listen(eventName, (event) => {
+          console.log(`[App Auth] Event received via ${eventName}:`, event.payload);
+          const url = typeof event.payload === 'string' ? event.payload : event.payload?.[0];
+          if (url) handleOAuthUrl(url);
+        }).then(unsub => { unsubscribers.push(unsub); });
+      });
     });
 
     // 3. Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('[App] Auth Event:', event);
       setSession(newSession);
+
+      // Requirement: When user signs in, ensure data is refetched and UI state is refreshed
+      if (event === 'SIGNED_IN') {
+        console.log('[App] User signed in, synchronizing repository data...');
+        setRepositoriesReady(false); // Show loading state while fetching user data
+        
+        try {
+          // Re-trigger the repository initialization flow
+          const success = await waitForReady(); 
+          console.log('[App] Synchronization complete. Success:', success);
+        } catch (err) {
+          console.error('[App] Failed to sync data after sign-in:', err);
+        } finally {
+          setRepositoriesReady(true);
+        }
+      }
+
       if (loading) setLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
-      if (unsubscribeDeepLink) unsubscribeDeepLink();
+      unsubscribers.forEach(unsub => {
+        if (typeof unsub === 'function') unsub();
+      });
     };
   }, []);
 
