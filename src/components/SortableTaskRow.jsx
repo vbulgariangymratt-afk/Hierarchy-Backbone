@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
-import { NodeTypes, TaskStatuses } from '../backbone-v2/index';
+import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 
 const getTaskStatusInfo = (task) => {
     const status = task.metadata?.status;
@@ -28,6 +28,9 @@ const SortableTaskRow = React.memo(({
     onAttachReward
 }) => {
     const navigate = useNavigate();
+    const [isEditing, setIsEditing] = useState(false);
+    const [draftName, setDraftName] = useState(task.name);
+    const inputRef = useRef(null);
     
     // Dragging disabled
     const attributes = {};
@@ -35,6 +38,41 @@ const SortableTaskRow = React.memo(({
     const setNodeRef = null;
     const isDragging = false;
     const style = {};
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [isEditing]);
+
+    const handleDoubleClick = (e) => {
+        e.stopPropagation();
+        setIsEditing(true);
+        setDraftName(task.name);
+    };
+
+    const handleSave = async () => {
+        if (!isEditing) return;
+        const trimmed = draftName.trim();
+        if (trimmed && trimmed !== task.name) {
+            try {
+                await backbone.updateNode(task.id, { name: trimmed });
+            } catch (err) {
+                console.error("Failed to rename task:", err);
+            }
+        }
+        setIsEditing(false);
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            handleSave();
+        } else if (e.key === 'Escape') {
+            setDraftName(task.name);
+            setIsEditing(false);
+        }
+    };
 
     const statusInfo = getTaskStatusInfo(task);
     const isDone = task.metadata?.status === TaskStatuses.DONE;
@@ -60,7 +98,12 @@ const SortableTaskRow = React.memo(({
             style={style}
             id={`task-${task.id}`}
             className={`task-row-container ${isExpanded ? 'is-expanded' : ''} ${isDragging ? 'is-dragging-ghost' : ''}`}
-            onClick={(e) => { e.stopPropagation(); onToggleTask(task.id); }}
+            onClick={(e) => { 
+                if (!isEditing) {
+                    e.stopPropagation(); 
+                    onToggleTask(task.id); 
+                }
+            }}
         >
             <div
                 className={`task-row ${contrastClass}`}
@@ -93,7 +136,35 @@ const SortableTaskRow = React.memo(({
                     </span>
                 )}
                 <div className="task-name-text">
-                    <span className="task-main-name">{task.name}</span>
+                    {isEditing ? (
+                        <input
+                            ref={inputRef}
+                            className="task-inline-edit-input"
+                            value={draftName}
+                            onChange={(e) => setDraftName(e.target.value)}
+                            onBlur={handleSave}
+                            onKeyDown={handleKeyDown}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                background: 'transparent',
+                                border: 'none',
+                                borderBottom: '1px solid var(--color-accent)',
+                                color: 'inherit',
+                                fontSize: 'inherit',
+                                fontFamily: 'inherit',
+                                width: '100%',
+                                outline: 'none',
+                                padding: '2px 0'
+                            }}
+                        />
+                    ) : (
+                        <span 
+                            className="task-main-name" 
+                            onDoubleClick={handleDoubleClick}
+                        >
+                            {task.name}
+                        </span>
+                    )}
                     {isChallengeTarget && challengeType === 'MASTERY' && <span className="challenge-badge mastery">Mastery Check</span>}
                     {isChallengeTarget && challengeType === 'NEW_ANGLE' && <span className="challenge-badge new-angle">New Angle</span>}
                     {rewardId && <span className="task-reward-badge-collapsed" title={`Reward: ${reward?.name || 'Unknown'}`}>🍬</span>}

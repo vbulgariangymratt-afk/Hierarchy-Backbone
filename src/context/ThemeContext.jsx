@@ -53,11 +53,6 @@ export const ThemeProvider = ({ children }) => {
 
     const [systemTheme, setSystemTheme] = useState(getSystemTheme);
 
-    const resolvedTheme =
-        themePreference === "system" ? systemTheme : themePreference;
-
-    document.documentElement.dataset.theme = resolvedTheme;
-
     const [backgroundMode, setBackgroundMode] = useState(() => {
         // Migration: Check old localStorage flags
         const savedBg = localStorage.getItem('app-background-mode');
@@ -90,6 +85,18 @@ export const ThemeProvider = ({ children }) => {
         if (legacy) return migrateWallpaperConfig({ light: legacy, dark: legacy });
         return DEFAULT_WALLPAPER_CONFIG;
     });
+    
+    // Derived resolved theme with fallback logic for neutral mode
+    const resolvedTheme = (() => {
+        if (themePreference === 'system') return systemTheme;
+        if (themePreference === 'neutral' && backgroundMode !== 'liquid') return 'dark';
+        return themePreference;
+    })();
+
+    // Update root data attribute
+    useEffect(() => {
+        document.documentElement.dataset.theme = resolvedTheme;
+    }, [resolvedTheme]);
 
     // ─── Auth state ───────────────────────────────────────────────────────────
     const [currentUser, setCurrentUser] = useState(null);
@@ -221,7 +228,7 @@ export const ThemeProvider = ({ children }) => {
     // ─── DOM & localStorage persistence ──────────────────────────────────────
     useEffect(() => {
         const root = document.documentElement;
-        root.classList.remove("light", "dark");
+        root.classList.remove("light", "dark", "neutral");
         root.classList.add(resolvedTheme);
         root.setAttribute("data-theme", resolvedTheme);
     }, [resolvedTheme]);
@@ -229,7 +236,9 @@ export const ThemeProvider = ({ children }) => {
     useEffect(() => {
         // Liquid Mode (Full window transparency)
         if (backgroundMode === 'liquid') {
-            invoke('enable_liquid_glass', { theme: resolvedTheme }).catch(err =>
+            // For neutral mode, we pass null to Rust to allow natural vibrancy
+            const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
+            invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
                 console.error("Failed to enable glass:", err)
             );
         } else {
@@ -275,7 +284,7 @@ export const ThemeProvider = ({ children }) => {
 
     const toggleTheme = () => {
         setThemePreference(prev => {
-            const next = prev === 'light' ? 'dark' : prev === 'dark' ? 'system' : 'light';
+            const next = prev === 'light' ? 'dark' : 'light';
             localStorage.setItem("theme-preference", next);
             return next;
         });

@@ -80,6 +80,37 @@ export const HierarchyService = (repository, auraService) => {
         console.log("DAILY COMPLETION COUNTER UPDATED", { dateKey: todayStr, newValue: dailyCompletions[todayStr] });
     }
 
+    /**
+     * Resets the "isToday" flag on all tasks if a new day has started.
+     * This handles both startup checks and mid-session midnight transitions.
+     */
+    async function checkDailyReset() {
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const rootNode = await repository.getById('ROOT');
+        if (!rootNode) return;
+
+        const lastReset = rootNode.metadata?.lastTodayResetDate;
+        if (lastReset !== todayStr) {
+            console.log(`[Daily Reset] New day detected (${todayStr}). Resetting "Today" tasks...`);
+            
+            const allNodes = await repository.getAll();
+            const todayTasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.isToday);
+            
+            for (const task of todayTasks) {
+                await repository.update(task.id, {
+                    metadata: { ...task.metadata, isToday: false },
+                    updatedAt: Date.now()
+                });
+            }
+
+            await repository.update('ROOT', {
+                metadata: { ...rootNode.metadata, lastTodayResetDate: todayStr },
+                updatedAt: Date.now()
+            });
+            console.log(`[Daily Reset] Successfully reset ${todayTasks.length} tasks.`);
+        }
+    }
+
     const validateRelation = async (type, parentId) => {
         const allowedParents = ValidParentMap[type];
 
@@ -212,6 +243,23 @@ export const HierarchyService = (repository, auraService) => {
         const todayStr = new Date().toLocaleDateString('en-CA');
         const rootNode = await repository.getById('ROOT');
         return rootNode?.metadata?.dailyAreaLog?.[todayStr] || {};
+    }
+
+    /**
+     * Returns repetition task increments for today.
+     * Returns: { [taskId]: { name: string, count: number } }
+     */
+    async function getTodayRepetitionLog() {
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const rootNode = await repository.getById('ROOT');
+        const rawLog = rootNode?.metadata?.dailyRepLog?.[todayStr] || {};
+        // Enrich with task names
+        const result = {};
+        for (const [taskId, count] of Object.entries(rawLog)) {
+            const task = await repository.getById(taskId);
+            result[taskId] = { name: task?.name || taskId, count };
+        }
+        return result;
     }
 
     /**
@@ -1670,6 +1718,10 @@ export const HierarchyService = (repository, auraService) => {
             return await getTodayAreaReinforcement();
         },
 
+        async getTodayRepetitionLog() {
+            return await getTodayRepetitionLog();
+        },
+
         createDailyRestSuggestion,
         approveRest,
         completeRest,
@@ -1978,6 +2030,24 @@ export const HierarchyService = (repository, auraService) => {
                 metadata: { currentUnits: cur }
             });
 
+            // Daily Rep Log: stamp today's increment on ROOT
+            const todayStr = new Date().toLocaleDateString('en-CA');
+            const rootNode = await repository.getById('ROOT');
+            const dailyRepLog = rootNode?.metadata?.dailyRepLog || {};
+            const todayLog = dailyRepLog[todayStr] || {};
+            await repository.update('ROOT', {
+                metadata: {
+                    ...rootNode.metadata,
+                    dailyRepLog: {
+                        ...dailyRepLog,
+                        [todayStr]: {
+                            ...todayLog,
+                            [taskId]: (todayLog[taskId] || 0) + 1
+                        }
+                    }
+                }
+            });
+
             // Accumulation Logic: Reps
             const parentAspect = await findAspectAncestor(taskId);
             const ancestorObjective = await findObjectiveAncestor(taskId);
@@ -2054,6 +2124,13 @@ export const HierarchyService = (repository, auraService) => {
                 await checkExpirations();
 
                 // Run maintenance tasks once during boot
+                await checkDailyReset();
+
+                // Setup daily reset check heartbeat (every 5 minutes for long-running sessions)
+                setInterval(() => {
+                    checkDailyReset();
+                }, 5 * 60 * 1000);
+
                 const allNodes = await repository.getAll();
                 for (const node of allNodes) {
                     const updated = checkAutoLock(node);

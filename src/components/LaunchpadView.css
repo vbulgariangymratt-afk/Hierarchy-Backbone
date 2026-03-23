@@ -122,7 +122,7 @@
     backdrop-filter: blur(30px) saturate(160%);
     -webkit-backdrop-filter: blur(30px) saturate(160%);
     box-shadow:
-        0 10px 40px rgba(0, 0, 0, 0.35),
+        0 10px 40px rgba(0, 0, 0, 0.16),
         inset 0 1px 1px rgba(255, 255, 255, 0.4);
 }
 
@@ -170,7 +170,7 @@
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.35);
     box-shadow:
-        0 20px 56px rgba(0, 0, 0, 0.45),
+        0 20px 56px rgba(0, 0, 0, 0.18),
         inset 0 1px 1px rgba(255, 255, 255, 0.55);
     transform: translateY(-6px) translateZ(0);
 }
@@ -188,7 +188,7 @@
 
 .liquid-mode .area-card.is-motion,
 .wallpaper-mode .area-card.is-motion {
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
 }
 
 .area-aura-badge {
@@ -574,7 +574,7 @@
 .liquid-mode .selection-indicator,
 .wallpaper-mode .selection-indicator {
     background: var(--color-text-main);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
 }
 
 .selection-indicator .check-icon {

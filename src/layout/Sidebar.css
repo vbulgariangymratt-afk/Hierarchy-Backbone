@@ -43,6 +43,16 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
+/* NEUTRAL & DARK SYNC: Pure Vibrancy Look */
+.neutral .sidebar,
+.dark.liquid-mode .sidebar {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16) !important;
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
 .wallpaper-mode .sidebar {
     background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(18px) saturate(160%);
@@ -82,6 +92,15 @@
     pointer-events: none;
     z-index: 0;
 }
+
+/* Disable gloss in Neutral & Dark Modes */
+.neutral .sidebar::before,
+.neutral .sidebar::after,
+.dark.liquid-mode .sidebar::before,
+.dark.liquid-mode .sidebar::after {
+    display: none !important;
+}
+
 
 /* Ensure sidebar children sit above the sheen */
 .sidebar>* {
@@ -256,6 +275,16 @@
 .theme-toggle-sidebar:hover {
     background: rgba(128, 128, 128, 0.1);
     color: var(--text-primary);
+}
+
+.neutral-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ffffff;
+    margin-left: 10px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    display: inline-block;
 }
 
 .settings-btn {
@@ -695,4 +724,25 @@
 
 .popover-actions button:hover {
     opacity: 0.9;
+}
+
+/* Global Sidebar Text & Icon Contrast: Force white for Dark and Neutral modes */
+.dark .sidebar .nav-item,
+.neutral .sidebar .nav-item,
+.dark .sidebar .btn-text,
+.neutral .sidebar .btn-text,
+.dark .sidebar .btn-icon,
+.neutral .sidebar .btn-icon,
+.dark .sidebar .section-title-input,
+.neutral .sidebar .section-title-input,
+.dark .sidebar .hryvnia-display,
+.neutral .sidebar .hryvnia-display {
+    color: #ffffff !important;
+}
+
+/* Specific SVG treatment if currentColor is bypassed */
+.dark .sidebar svg,
+.neutral .sidebar svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
 }

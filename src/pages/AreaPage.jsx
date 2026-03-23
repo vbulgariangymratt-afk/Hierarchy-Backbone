@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { backbone, repository, NodeTypes, IdentityTiers } from '../backbone-v2/index';
 import CreateSkillModal from '../components/CreateSkillModal';
 import NodeIcon from '../components/NodeIcon';
@@ -13,6 +13,7 @@ const SVG_ICONS = {
 
 const AreaPage = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [area, setArea] = useState(null);
     const [skills, setSkills] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -26,9 +27,26 @@ const AreaPage = () => {
 
     const [allNodes, setAllNodes] = useState([]);
     const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+    const [isConfirmSleepModalOpen, setIsConfirmSleepModalOpen] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isSleepingSkillsCollapsed, setIsSleepingSkillsCollapsed] = useState(true);
     const [isEditingArea, setIsEditingArea] = useState(false);
     const [areaEditForm, setAreaEditForm] = useState({ name: '', identityAnchor: '', iconUrl: '' });
+    
+    // Inline rename state for skills and area title
+    const [inlineEditingId, setInlineEditingId] = useState(null);
+    const [inlineDraftName, setInlineDraftName] = useState('');
+    const [editingTierSkillId, setEditingTierSkillId] = useState(null);
+    const inlineInputRef = React.useRef(null);
+    const tierSelectRef = React.useRef(null);
+
+    // Open the tier dropdown immediately after it mounts (fixes two-click issue)
+    useEffect(() => {
+        if (editingTierSkillId && tierSelectRef.current) {
+            tierSelectRef.current.focus();
+            tierSelectRef.current.click();
+        }
+    }, [editingTierSkillId]);
 
     const fetchData = async () => {
         try {
@@ -180,6 +198,77 @@ const AreaPage = () => {
         }
     };
 
+    const handleDeleteArea = async () => {
+        console.log("handleDeleteArea executing for ID:", id);
+        try {
+            await backbone.deleteNode(id);
+            navigate('/launchpad');
+        } catch (error) {
+            console.error("Failed to delete area:", error);
+            setIsDeleteConfirmOpen(false);
+        }
+    };
+
+    const handleDeleteSkill = async (skillId, skillName) => {
+        try {
+            await backbone.deleteNode(skillId);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to delete skill:", error);
+        }
+    };
+
+    const handleTierChange = async (skillId, newTier) => {
+        try {
+            const skill = allNodes.find(n => n.id === skillId);
+            if (!skill) return;
+            await backbone.updateNode(skillId, {
+                metadata: {
+                    ...skill.metadata,
+                    identityTier: newTier
+                }
+            });
+            setEditingTierSkillId(null);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to update tier:", error);
+        }
+    };
+
+    const handleStartInlineEdit = useCallback((nodeId, currentName) => {
+        setInlineEditingId(nodeId);
+        setInlineDraftName(currentName);
+    }, []);
+
+    const handleSaveInlineEdit = async (nodeId) => {
+        if (!inlineEditingId) return;
+        const trimmed = inlineDraftName.trim();
+        if (trimmed && trimmed !== (nodeId === id ? area.name : skills.find(s => s.id === nodeId)?.name)) {
+            try {
+                await backbone.updateNode(nodeId, { name: trimmed });
+                fetchData();
+            } catch (err) {
+                console.error("Failed to rename node:", err);
+            }
+        }
+        setInlineEditingId(null);
+    };
+
+    const handleInlineKeyDown = (e, nodeId) => {
+        if (e.key === 'Enter') {
+            handleSaveInlineEdit(nodeId);
+        } else if (e.key === 'Escape') {
+            setInlineEditingId(null);
+        }
+    };
+
+    useEffect(() => {
+        if (inlineEditingId && inlineInputRef.current) {
+            inlineInputRef.current.focus();
+            inlineInputRef.current.select();
+        }
+    }, [inlineEditingId]);
+
     if (loading) return <div className="area-page-loading">Loading Area...</div>;
     if (!area) return <div className="area-page-error">Area not found.</div>;
 
@@ -228,9 +317,79 @@ const AreaPage = () => {
                                 )}
                             </div>
                         </div>
-                        <div className="edit-actions" style={{ display: 'flex', gap: '12px' }}>
-                            <button onClick={handleSaveAreaEdit} style={{ padding: '8px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
-                            <button onClick={() => setIsEditingArea(false)} style={{ padding: '8px 20px', background: 'var(--alpha-medium)', color: 'var(--color-text)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                        {/* Sleeping Skills — Delete Section */}
+                        {sleepingSkills.length > 0 && (
+                            <div style={{ marginBottom: '20px', borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '12px', opacity: 0.6 }}>Sleeping Skills</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {sleepingSkills.map(skill => (
+                                        <div key={skill.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--alpha-low)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+                                            <span style={{ fontSize: '14px', color: 'var(--color-text)', opacity: 0.8 }}>{skill.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteSkill(skill.id, skill.name)}
+                                                style={{ padding: '4px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                                onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                                                onMouseOut={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className="edit-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button onClick={handleSaveAreaEdit} style={{ padding: '8px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
+                                <button onClick={() => setIsEditingArea(false)} style={{ padding: '8px 20px', background: 'var(--alpha-medium)', color: 'var(--color-text)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                             {isDeleteConfirmOpen ? (
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>Really delete?</span>
+                                    <button 
+                                        type="button"
+                                        onClick={handleDeleteArea}
+                                        style={{ padding: '4px 10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                                    >
+                                        YES, DELETE
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setIsDeleteConfirmOpen(false)}
+                                        style={{ padding: '4px 10px', background: 'var(--alpha-medium)', color: 'var(--color-text)', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                                    >
+                                        CANCEL
+                                    </button>
+                                </div>
+                             ) : (
+                                <button 
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        console.log("DEBUG: Delete button clicked, opening inline confirm");
+                                        setIsDeleteConfirmOpen(true);
+                                    }}
+                                    style={{ 
+                                        padding: '8px 20px', 
+                                        background: 'rgba(239, 68, 68, 0.1)', 
+                                        color: '#ef4444', 
+                                        border: '1px solid rgba(239, 68, 68, 0.2)', 
+                                        borderRadius: '8px', 
+                                        fontWeight: 600, 
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        zIndex: 10001,
+                                        WebkitAppRegion: 'no-drag',
+                                        pointerEvents: 'auto'
+                                    }}
+                                    onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+                                    onMouseOut={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                >
+                                    Delete Area
+                                </button>
+                             )}
                         </div>
                     </div>
                 ) : (
@@ -239,7 +398,18 @@ const AreaPage = () => {
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                                     <NodeIcon iconUrl={area.metadata?.iconUrl} emoji={area.icon} size={32} />
-                                    <h1 className="area-title" style={{ margin: 0 }}>{area.name}</h1>
+                                    {inlineEditingId === area.id ? (
+                                        <input
+                                            ref={inlineInputRef}
+                                            value={inlineDraftName}
+                                            onChange={e => setInlineDraftName(e.target.value)}
+                                            onBlur={() => handleSaveInlineEdit(area.id)}
+                                            onKeyDown={e => handleInlineKeyDown(e, area.id)}
+                                            style={{ background: 'transparent', border: 'none', borderBottom: '2px solid var(--color-accent)', color: 'inherit', fontSize: '32px', fontWeight: 700, outline: 'none', width: 'auto' }}
+                                        />
+                                    ) : (
+                                        <h1 className="area-title" style={{ margin: 0 }} onDoubleClick={() => handleStartInlineEdit(area.id, area.name)}>{area.name}</h1>
+                                    )}
                                 </div>
                                 <p className="area-identity-anchor" style={{ opacity: 0.7, margin: 0 }}>{area.metadata?.identityAnchor}</p>
                             </div>
@@ -275,11 +445,59 @@ const AreaPage = () => {
                                                     <NodeIcon iconUrl={skill.metadata.iconUrl} size={28} />
                                                 </div>
                                             )}
-                                            <h3 className="skill-name">{skill.name}</h3>
+                                            {inlineEditingId === skill.id ? (
+                                                <input
+                                                    ref={inlineInputRef}
+                                                    value={inlineDraftName}
+                                                    onChange={e => setInlineDraftName(e.target.value)}
+                                                    onBlur={() => handleSaveInlineEdit(skill.id)}
+                                                    onKeyDown={e => handleInlineKeyDown(e, skill.id)}
+                                                    onClick={e => e.preventDefault()}
+                                                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-accent)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%' }}
+                                                />
+                                            ) : (
+                                                <h3 className="skill-name" onDoubleClick={(e) => { e.preventDefault(); handleStartInlineEdit(skill.id, skill.name); }}>{skill.name}</h3>
+                                            )}
                                         </div>
-                                        <span className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}>
-                                            {getTierLabel(skill.metadata?.identityTier)}
-                                        </span>
+                                        {editingTierSkillId === skill.id ? (
+                                            <select
+                                                ref={tierSelectRef}
+                                                autoFocus
+                                                value={skill.metadata?.identityTier || 'OPTIONAL'}
+                                                onChange={(e) => handleTierChange(skill.id, e.target.value)}
+                                                onBlur={() => setEditingTierSkillId(null)}
+                                                onKeyDown={(e) => e.key === 'Escape' && setEditingTierSkillId(null)}
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                style={{ 
+                                                    padding: '2px 4px', 
+                                                    fontSize: '10px', 
+                                                    fontWeight: 800, 
+                                                    background: 'var(--alpha-medium)', 
+                                                    color: 'var(--color-text)', 
+                                                    border: '1px solid var(--color-border)', 
+                                                    borderRadius: '4px',
+                                                    outline: 'none',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <option value="CORE">Core Identity</option>
+                                                <option value="EXPLORATION">Explorational</option>
+                                                <option value="OPTIONAL">Optional</option>
+                                            </select>
+                                        ) : (
+                                            <span 
+                                                className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    setEditingTierSkillId(skill.id);
+                                                }}
+                                                style={{ cursor: 'pointer' }}
+                                                title="Click to change tier"
+                                            >
+                                                {getTierLabel(skill.metadata?.identityTier)}
+                                            </span>
+                                        )}
                                     </header>
 
                                     <div className="aura-display-new">
@@ -379,11 +597,59 @@ const AreaPage = () => {
                                 <Link to={`/skill/${skill.id}`} className="skill-card-link">
                                     <header className="skill-card-header">
                                         <div className="skill-title-group">
-                                            <h3 className="skill-name">{skill.name}</h3>
+                                            {inlineEditingId === skill.id ? (
+                                                <input
+                                                    ref={inlineInputRef}
+                                                    value={inlineDraftName}
+                                                    onChange={e => setInlineDraftName(e.target.value)}
+                                                    onBlur={() => handleSaveInlineEdit(skill.id)}
+                                                    onKeyDown={e => handleInlineKeyDown(e, skill.id)}
+                                                    onClick={e => e.preventDefault()}
+                                                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-accent)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%' }}
+                                                />
+                                            ) : (
+                                                <h3 className="skill-name" onDoubleClick={(e) => { e.preventDefault(); handleStartInlineEdit(skill.id, skill.name); }}>{skill.name}</h3>
+                                            )}
                                         </div>
-                                        <span className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}>
-                                            {getTierLabel(skill.metadata?.identityTier)}
-                                        </span>
+                                        {editingTierSkillId === skill.id ? (
+                                            <select
+                                                ref={tierSelectRef}
+                                                autoFocus
+                                                value={skill.metadata?.identityTier || 'OPTIONAL'}
+                                                onChange={(e) => handleTierChange(skill.id, e.target.value)}
+                                                onBlur={() => setEditingTierSkillId(null)}
+                                                onKeyDown={(e) => e.key === 'Escape' && setEditingTierSkillId(null)}
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                style={{ 
+                                                    padding: '2px 4px', 
+                                                    fontSize: '10px', 
+                                                    fontWeight: 800, 
+                                                    background: 'var(--alpha-medium)', 
+                                                    color: 'var(--color-text)', 
+                                                    border: '1px solid var(--color-border)', 
+                                                    borderRadius: '4px',
+                                                    outline: 'none',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <option value="CORE">Core Identity</option>
+                                                <option value="EXPLORATION">Explorational</option>
+                                                <option value="OPTIONAL">Optional</option>
+                                            </select>
+                                        ) : (
+                                            <span 
+                                                className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    setEditingTierSkillId(skill.id);
+                                                }}
+                                                style={{ cursor: 'pointer' }}
+                                                title="Click to change tier"
+                                            >
+                                                {getTierLabel(skill.metadata?.identityTier)}
+                                            </span>
+                                        )}
                                     </header>
 
                                     <div className="aura-display-new">

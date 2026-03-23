@@ -17,6 +17,7 @@ const DroppableAspect = React.memo(({
     isUntouched, 
     isNoveltyHighlighted, 
     isExpanded,
+    isEditing,
     children, 
     onToggleAspect 
 }) => {
@@ -38,6 +39,8 @@ const DroppableAspect = React.memo(({
                 transform: 'translateZ(0)'
             }}
             onClick={(e) => {
+                // Don't toggle if clicking inside the aspect title area (rename interaction)
+                if (e.target.closest('.aspect-title-group')) return;
                 e.stopPropagation();
                 onToggleAspect(aspect.id);
             }}
@@ -57,6 +60,7 @@ const DroppableAspect = React.memo(({
         prev.isUntouched === next.isUntouched &&
         prev.isNoveltyHighlighted === next.isNoveltyHighlighted &&
         prev.isExpanded === next.isExpanded &&
+        prev.isEditing === next.isEditing &&
         prev.aspectTasks.length === next.aspectTasks.length &&
         prev.aspectTasks.every((t, i) => {
             const nt = next.aspectTasks[i];

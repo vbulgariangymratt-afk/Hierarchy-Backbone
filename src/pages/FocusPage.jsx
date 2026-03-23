@@ -25,6 +25,7 @@ const FocusPage = () => {
     const [seconds, setSeconds] = useState(0);
     const [isPaused, setIsPaused] = useState(true);
     const timerRef = useRef(null);
+    const startTimeRef = useRef(null); // Wall-clock anchor — only set on start/resume
     const TARGET_SECONDS = 10 * 60; // always 10-minute sessions
 
     // Safe Mode
@@ -163,52 +164,59 @@ const FocusPage = () => {
         loadNextTask();
     }, [loadNextTask]);
 
-    // Timer Interval
+    // Timer Interval — drift-proof via Date.now()
     useEffect(() => {
         if (!isPaused && activeSessionId) {
+            // Set startTimeRef only if not already anchored (don't reset on re-renders)
+            if (startTimeRef.current === null) {
+                startTimeRef.current = Date.now() - (seconds * 1000);
+            }
+
             timerRef.current = setInterval(() => {
-                setSeconds(prev => {
-                    const next = prev + 1;
+                const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-                    // PASSION/INTEREST Safe Start
-                    if ((isPassionSafeSession || (isInterestMode && !isInterestExploring)) && !wasContinued && next >= TARGET_SECONDS) {
-                        setIsPaused(true);
-                        if (isInterestMode) setShowInterestContinuePrompt(true);
-                        else setShowPassionContinuePrompt(true);
-                        clearInterval(timerRef.current);
-                        return TARGET_SECONDS;
+                setSeconds(elapsed);
+
+                // PASSION/INTEREST Safe Start
+                if ((isPassionSafeSession || (isInterestMode && !isInterestExploring)) && !wasContinued && elapsed >= TARGET_SECONDS) {
+                    setIsPaused(true);
+                    if (isInterestMode) setShowInterestContinuePrompt(true);
+                    else setShowPassionContinuePrompt(true);
+                    clearInterval(timerRef.current);
+                    return;
+                }
+
+                // Layer 2 Core Loop
+                setUninterruptedSeconds(u => {
+                    const newU = u + 1;
+                    if (newU >= 1800) { // 30 minutes trigger
+                        triggerCheckpoint();
+                        return 0;
                     }
-
-                    // Layer 2 Core Loop
-                    setUninterruptedSeconds(u => {
-                        const newU = u + 1;
-                        if (newU >= 1800) { // 30 minutes trigger
-                            triggerCheckpoint();
-                            return 0;
-                        }
-                        return newU;
-                    });
-
-                    // INTEREST Hyperfocus Guard (90 mins = 5400 seconds)
-                    if (isInterestMode && next > 0) {
-                        const secondsRemaining = 5400 - next;
-                        if (secondsRemaining === 600) setHyperfocusWarning("10 minutes remaining");
-                        else if (secondsRemaining === 300) setHyperfocusWarning("5 minutes remaining");
-                        else if (secondsRemaining === 60) setHyperfocusWarning("1 minute remaining");
-                        else if (secondsRemaining === 0) {
-                            setIsPaused(true);
-                            setShowHyperfocusGuard(true);
-                            clearInterval(timerRef.current);
-                        }
-                    }
-
-                    return next;
+                    return newU;
                 });
+
+                // INTEREST Hyperfocus Guard (90 mins = 5400 seconds)
+                if (isInterestMode && elapsed > 0) {
+                    const secondsRemaining = 5400 - elapsed;
+                    if (secondsRemaining === 600) setHyperfocusWarning("10 minutes remaining");
+                    else if (secondsRemaining === 300) setHyperfocusWarning("5 minutes remaining");
+                    else if (secondsRemaining === 60) setHyperfocusWarning("1 minute remaining");
+                    else if (secondsRemaining === 0) {
+                        setIsPaused(true);
+                        setShowHyperfocusGuard(true);
+                        clearInterval(timerRef.current);
+                    }
+                }
             }, 1000);
         } else {
             clearInterval(timerRef.current);
+            timerRef.current = null;
         }
-        return () => clearInterval(timerRef.current);
+        return () => {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        };
     }, [isPaused, activeSessionId]);
 
     const formatTime = (totalSeconds) => {
@@ -219,6 +227,8 @@ const FocusPage = () => {
 
     const handleStartSession = async () => {
         if (activeSessionId) {
+            // Resuming: re-anchor clock based on current elapsed seconds so drift-proof calc is correct
+            startTimeRef.current = Date.now() - (seconds * 1000);
             setIsPaused(false);
             return;
         }
@@ -230,6 +240,9 @@ const FocusPage = () => {
         try {
             const sess = await backbone.startSession(task.id, 10, pleasureValue, 0);
             setActiveSessionId(sess.id);
+            // Anchor the clock — this is the only place we set startTimeRef for a fresh session
+            startTimeRef.current = Date.now();
+            setSeconds(0);
             setIsPaused(false);
             setShowSetup(false);
         } catch (error) {
@@ -250,6 +263,7 @@ const FocusPage = () => {
             // Optimistic update
             setActiveSessionId(null);
             setSeconds(0);
+            startTimeRef.current = null; // Reset anchor for next session
             setShowSummary(false);
 
             await backbone.completeSession(task.id, activeSessionId, actualPleasure, mastery);

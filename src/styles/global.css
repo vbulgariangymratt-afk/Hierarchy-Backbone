@@ -161,7 +161,7 @@ video {
 .hover-trigger:hover {
     transform: translateY(-4px) !important;
     z-index: 10 !important;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.16);
 }
 
 .hover-trigger:hover .action-buttons {
@@ -185,7 +185,7 @@ video {
     transform: translateY(-2px) scale(1.02) !important;
     z-index: 200 !important;
     /* Soft, deep, all-around shadow */
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 10px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), 0 0 10px rgba(0, 0, 0, 0.12);
 }
 
 /* Premium Liquid Glass Effect - Refined for Notion Aesthetic */
@@ -327,7 +327,7 @@ video {
 
 .notion-page-icon {
     font-size: 72px;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.14));
 }
 
 /* Notion block layout */
@@ -420,7 +420,7 @@ video {
     background: rgba(255, 255, 255, 0.05);
     border-top-color: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15);
     color: #fff;
 }
 
@@ -508,7 +508,7 @@ video {
     backdrop-filter: none;
     border: 1px solid rgba(255, 255, 255, 0.05);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .notion-tag:hover {
@@ -625,7 +625,7 @@ video {
     background: white;
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: transform 0.1s ease, background 0.1s ease;
 }
@@ -641,7 +641,7 @@ video {
     background: white;
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border: none;
 }
@@ -664,7 +664,7 @@ video {
 }
 
 .premium-sidebar-shadow {
-    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5), 0 10px 30px -15px rgba(0, 0, 0, 0.3) !important;
+    box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.18), 0 10px 30px -15px rgba(0, 0, 0, 0.12) !important;
 }
 
 /* Flashcard Component Light Mode Enhancements */
@@ -906,4 +906,58 @@ body.dark.liquid-mode .metric {
 .liquid-mode .focus-toggle.active .toggle-track,
 .wallpaper-mode .focus-toggle.active .toggle-track {
     background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* ============================================================
+   NEUTRAL LIQUID MODE: PURE VIBRANCY OVERRIDES
+   ============================================================ */
+
+/* Remove white tint backgrounds */
+.liquid-mode.neutral .glass-card,
+.liquid-mode.neutral .sidebar,
+.liquid-mode.neutral .liquid-glass,
+.liquid-mode.neutral .modal-content,
+.liquid-mode.neutral .area-card,
+.liquid-mode.neutral .page-panel {
+    background: transparent !important;
+}
+
+/* Remove glossy overlays (shiny gradients) */
+.liquid-mode.neutral .glass-card::before,
+.liquid-mode.neutral .glass-card::after,
+.liquid-mode.neutral .sidebar::before,
+.liquid-mode.neutral .area-card::before {
+    display: none !important;
+}
+
+/* Keep depth visibility */
+.liquid-mode.neutral .glass-card,
+.liquid-mode.neutral .area-card,
+.liquid-mode.neutral .sidebar,
+.liquid-mode.neutral .modal-content,
+.liquid-mode.neutral .page-panel {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16) !important;
+}
+
+/* Remove ALL background tint sources (Stepped cleanup) */
+.liquid-mode.neutral .background-gradient {
+    display: none !important;
+}
+
+.liquid-mode.neutral .background-layer {
+    background: transparent !important;
+}
+
+.liquid-mode.neutral *[class*="gradient"] {
+    display: none !important;
+}
+
+html.liquid-mode.neutral,
+body.liquid-mode.neutral {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+.liquid-mode.neutral .glass-card--amber {
+  background: transparent;
 }

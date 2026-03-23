@@ -56,8 +56,8 @@
 
   --color-border: #2f2f2f;
   --shadow-sm: 0 1px 2px rgba(255, 255, 255, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.18);
 
   --alpha-high: rgba(255, 255, 255, 0.1);
   --alpha-med: rgba(255, 255, 255, 0.05);

@@ -30,8 +30,8 @@
     --color-accent-hover: #409cff;
 
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.6);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.14);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.18);
 }
 
 /* Glass & Wallpaper Mode Neutral Accents */

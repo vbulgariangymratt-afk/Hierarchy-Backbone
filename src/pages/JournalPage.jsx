@@ -24,6 +24,7 @@ const JournalPage = () => {
     const [loading, setLoading] = useState(true);
     const [localNotes, setLocalNotes] = useState("");
     const [todayAreaLog, setTodayAreaLog] = useState({});
+    const [todayRepLog, setTodayRepLog] = useState({});
     const [areas, setAreas] = useState({});
     const [sections, setSections] = useState({
         summary: false,
@@ -37,15 +38,17 @@ const JournalPage = () => {
         const initJournal = async () => {
             try {
                 await journalService.ensureTodayEntry();
-                const [data, areaLog, allNodes] = await Promise.all([
+                const [data, areaLog, repLog, allNodes] = await Promise.all([
                     journalService.getEntry(todayStr),
                     backbone.getTodayAreaReinforcement(),
+                    backbone.getTodayRepetitionLog(),
                     repository.getAll()
                 ]);
 
                 setEntry(data);
                 setLocalNotes(data.notes || "");
                 setTodayAreaLog(areaLog);
+                setTodayRepLog(repLog);
 
                 const areaMap = {};
                 allNodes.filter(n => n.type === NodeTypes.LIFE_AREA).forEach(a => {
@@ -210,7 +213,7 @@ const JournalPage = () => {
                         <h2>Identity Reinforced Today</h2>
                     </div>
                     <div className="section-body">
-                        {Object.keys(todayAreaLog).length > 0 ? (
+                        {Object.keys(todayAreaLog).length > 0 || Object.keys(todayRepLog).length > 0 ? (
                             <div className="identity-log-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {Object.entries(todayAreaLog).map(([areaId, count]) => {
                                     const areaName = areas[areaId] || areaId;
@@ -218,6 +221,7 @@ const JournalPage = () => {
                                         <div key={areaId} className="identity-log-item liquid-glass" style={{
                                             display: 'flex',
                                             justifyContent: 'space-between',
+                                            alignItems: 'center',
                                             padding: '12px 16px',
                                             borderRadius: '8px',
                                             fontSize: '14px'
@@ -227,6 +231,32 @@ const JournalPage = () => {
                                         </div>
                                     );
                                 })}
+                                {Object.entries(todayRepLog).map(([taskId, { name, count }]) => (
+                                    <div key={taskId} className="identity-log-item liquid-glass" style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '12px 16px',
+                                        borderRadius: '8px',
+                                        fontSize: '14px'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>• {name}</span>
+                                            <span style={{
+                                                fontSize: '11px',
+                                                fontWeight: '600',
+                                                color: 'var(--color-primary)',
+                                                background: 'color-mix(in srgb, var(--color-primary) 12%, transparent)',
+                                                border: '1px solid color-mix(in srgb, var(--color-primary) 30%, transparent)',
+                                                borderRadius: '4px',
+                                                padding: '2px 6px',
+                                                letterSpacing: '0.04em',
+                                                textTransform: 'uppercase'
+                                            }}>Rep</span>
+                                        </div>
+                                        <span style={{ color: 'var(--color-primary)', fontWeight: '700' }}>× {count}</span>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
                             <div className="no-data-message" style={{ color: 'var(--text-secondary)', fontSize: '14px', opacity: '0.6' }}>

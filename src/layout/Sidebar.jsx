@@ -290,9 +290,14 @@ const Sidebar = () => {
                 {/* Theme Toggle Button */}
                 <button className="nav-item theme-toggle-sidebar" onClick={toggleTheme}>
                     <span className="btn-icon">
-                        <NodeIcon iconUrl={theme === 'dark' ? SVG_ICONS.MOON : SVG_ICONS.SUN} size={18} />
+                        <NodeIcon 
+                            iconUrl={theme === 'dark' ? SVG_ICONS.MOON : SVG_ICONS.SUN} 
+                            size={18} 
+                        />
                     </span>
-                    <span className="btn-text">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+                    <span className="btn-text">
+                        {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                    </span>
                 </button>
 
                 {/* Unified Appearance Segmented Control */}

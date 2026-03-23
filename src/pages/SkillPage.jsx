@@ -112,6 +112,11 @@ const SkillPage = () => {
     const [editingObjectiveId, setEditingObjectiveId] = useState(null);
     const [objectiveEditForm, setObjectiveEditForm] = useState(null);
 
+    // Inline rename state
+    const [inlineEditingNodeId, setInlineEditingNodeId] = useState(null);
+    const [inlineDraftName, setInlineDraftName] = useState('');
+    const inlineInputRef = useRef(null);
+
     const taskNameInputRef = useRef(null);
     
     // Performance Optimized Data Access
@@ -554,7 +559,7 @@ const SkillPage = () => {
     }, [allNodes]);
 
 
-    const handleSuggestionClick = useCallback(async (suggestion) => {
+    const handleSuggestionClick = useCallback((suggestion) => {
         if (suggestion.habit) {
             const el = document.getElementById(`habit-${suggestion.habit.id}`);
             if (el) {
@@ -567,8 +572,23 @@ const SkillPage = () => {
 
         const { task, skillId } = suggestion;
 
-        await backbone.updateNode(task.id, {
+        // Optimistic UI update
+        setAllNodes(prevNodes => prevNodes.map(n => {
+            if (n.id === task.id) {
+                return { 
+                    ...n, 
+                    metadata: { ...n.metadata, isToday: true } 
+                };
+            }
+            return n;
+        }));
+
+        // Fire-and-forget backend update
+        backbone.updateNode(task.id, {
             metadata: { ...task.metadata, isToday: true }
+        }).catch(err => {
+            console.error("Failed to add suggestion to today:", err);
+            fetchData(); // Rollback/Sync on error
         });
 
         if (skillId === id) {
@@ -588,7 +608,7 @@ const SkillPage = () => {
         } else {
             navigate(`/skill/${skillId}?scrollTo=${task.id}&markToday=true`);
         }
-    }, [id, allNodes, navigate]);
+    }, [id, allNodes, navigate, fetchData]);
 
 
     const handleCreateAspect = useCallback(async (e, objId) => {
@@ -725,7 +745,7 @@ const SkillPage = () => {
             });
     }, [allNodes, fetchData]);
 
-    const handleToggleTaskStatus = useCallback(async (task) => {
+    const handleToggleTaskStatus = useCallback((task) => {
         const currentStatus = task.metadata?.status || TaskStatuses.NOT_STARTED;
         const nextStatus = currentStatus === TaskStatuses.DONE ? TaskStatuses.NOT_STARTED : TaskStatuses.DONE;
         const completedAt = nextStatus === TaskStatuses.DONE ? Date.now() : null;
@@ -757,7 +777,7 @@ const SkillPage = () => {
         });
     }, [fetchData]);
 
-    const handleAddToToday = useCallback(async (e, taskId) => {
+    const handleAddToToday = useCallback((e, taskId) => {
         if (e) {
             e.stopPropagation();
             e.preventDefault();
@@ -1195,6 +1215,40 @@ const SkillPage = () => {
         }
     }, [fetchData]);
 
+    const handleStartInlineEdit = useCallback((nodeId, currentName) => {
+        setInlineEditingNodeId(nodeId);
+        setInlineDraftName(currentName);
+    }, []);
+
+    const handleSaveInlineEdit = useCallback(async (nodeId) => {
+        if (!inlineEditingNodeId) return;
+        const trimmed = inlineDraftName.trim();
+        if (trimmed && trimmed !== (nodeId === id ? skill?.name : allNodes.find(n => n.id === nodeId)?.name)) {
+            try {
+                await backbone.updateNode(nodeId, { name: trimmed });
+                fetchData();
+            } catch (err) {
+                console.error("Failed to rename node:", err);
+            }
+        }
+        setInlineEditingNodeId(null);
+    }, [inlineEditingNodeId, inlineDraftName, id, skill, allNodes, fetchData]);
+
+    const handleInlineKeyDown = useCallback((e, nodeId) => {
+        if (e.key === 'Enter') {
+            handleSaveInlineEdit(nodeId);
+        } else if (e.key === 'Escape') {
+            setInlineEditingNodeId(null);
+        }
+    }, [handleSaveInlineEdit]);
+
+    useEffect(() => {
+        if (inlineEditingNodeId && inlineInputRef.current) {
+            inlineInputRef.current.focus();
+            inlineInputRef.current.select();
+        }
+    }, [inlineEditingNodeId]);
+
 
     const handleOpenEvolution = useCallback((habit) => {
         setActiveHabitForEvolution(habit);
@@ -1458,7 +1512,19 @@ const SkillPage = () => {
                             <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`}>
                                 {isSleeping ? '💤' : (obj.metadata?.iconUrl ? <NodeIcon iconUrl={obj.metadata.iconUrl} size={18} /> : '‣')}
                             </span>
-                            <span className="objective-title-static">{obj.name}</span>
+                            {inlineEditingNodeId === obj.id ? (
+                                <input
+                                    ref={inlineInputRef}
+                                    value={inlineDraftName}
+                                    onChange={e => setInlineDraftName(e.target.value)}
+                                    onBlur={() => handleSaveInlineEdit(obj.id)}
+                                    onKeyDown={e => handleInlineKeyDown(e, obj.id)}
+                                    onClick={e => e.stopPropagation()}
+                                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-primary)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none' }}
+                                />
+                            ) : (
+                                <span className="objective-title-static" onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
+                            )}
                             {!isSleeping && <span className="focus-pill">Active Experiment</span>}
                             {timeInfo && (
                                 <div className="objective-time-badge">
@@ -1672,12 +1738,36 @@ const SkillPage = () => {
                                                             isUntouched={isUntouched}
                                                             isNoveltyHighlighted={isNoveltyHighlighted}
                                                             isExpanded={aspectShowMoreIds.includes(aspect.id)}
+                                                            isEditing={inlineEditingNodeId === aspect.id}
                                                             onToggleAspect={toggleAspect}
                                                         >
                                                             <div className="aspect-card-internal">
                                                                 <div className="aspect-header">
                                                                     <div className="aspect-title-group">
-                                                                        <span className="aspect-name">{aspect.name}</span>
+                                                                        {inlineEditingNodeId === aspect.id ? (
+                                                                            <input
+                                                                                ref={inlineInputRef}
+                                                                                autoFocus
+                                                                                value={inlineDraftName}
+                                                                                onChange={e => setInlineDraftName(e.target.value)}
+                                                                                onBlur={() => handleSaveInlineEdit(aspect.id)}
+                                                                                onKeyDown={e => handleInlineKeyDown(e, aspect.id)}
+                                                                                onClick={e => e.stopPropagation()}
+                                                                                style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-accent)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%' }}
+                                                                            />
+                                                                        ) : (
+                                                                            <span 
+                                                                                className="aspect-name" 
+                                                                                onClick={e => e.stopPropagation()}
+                                                                                onDoubleClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    e.preventDefault();
+                                                                                    handleStartInlineEdit(aspect.id, aspect.name);
+                                                                                }}
+                                                                                style={{ cursor: 'text', userSelect: 'none' }}
+                                                                                title="Double-click to rename"
+                                                                            >{aspect.name}</span>
+                                                                        )}
                                                                         <span className="aspect-task-count">
                                                                             {aspect.metadata?.accumulatedMetric || 0} {obj.metadata?.accumulationType} &bull; {aspect.metadata?.taskCount || 0} logs
                                                                         </span>
@@ -1902,7 +1992,18 @@ const SkillPage = () => {
 
             <header className="skill-header">
                 <div className="skill-header-main-row">
-                    <h1 className="skill-title">{skill.name}</h1>
+                    {inlineEditingNodeId === skill.id ? (
+                        <input
+                            ref={inlineInputRef}
+                            value={inlineDraftName}
+                            onChange={e => setInlineDraftName(e.target.value)}
+                            onBlur={() => handleSaveInlineEdit(skill.id)}
+                            onKeyDown={e => handleInlineKeyDown(e, skill.id)}
+                            style={{ background: 'transparent', border: 'none', borderBottom: '2px solid var(--color-primary)', color: 'inherit', fontSize: '32px', fontWeight: 800, outline: 'none' }}
+                        />
+                    ) : (
+                        <h1 className="skill-title" onDoubleClick={() => handleStartInlineEdit(skill.id, skill.name)}>{skill.name}</h1>
+                    )}
                     {skill.metadata?.pinchState === 'PASSION' && (
                         <span className="passion-core-badge">CORE</span>
                     )}
