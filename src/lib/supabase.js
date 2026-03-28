@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { logToFile } from './logger';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -7,16 +8,44 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.warn('Supabase URL or Anon Key is missing. Check your environment variables.')
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '')
+console.log('[DEBUG Supabase] URL:', supabaseUrl, 'Key present:', !!supabaseAnonKey);
+
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+    auth: {
+        flowType: "pkce",
+        detectSessionInUrl: false,
+        persistSession: true,
+        autoRefreshToken: true
+    }
+});
+
+// Diagnostic Startup Logs
+(async () => {
+    console.log('[DEBUG Supabase] Initializing client...');
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+        console.error('[DEBUG Auth] Failed to retrieve initial session:', error.message);
+    } else {
+        console.log('[DEBUG Auth] Startup check - Session exists:', !!session, session ? `User: ${session.user.email}` : 'No session');
+    }
+})();
+
+supabase.auth.onAuthStateChange((event, session) => {
+    console.log('[DEBUG Auth] Global State Change - Event:', event, 'User:', session?.user?.id ? session.user.email : 'None');
+    console.log('[DEBUG Auth] Persistence Check - LocalStorage key:', Object.keys(localStorage).filter(k => k.includes('supabase.auth.token')));
+});
 
 import { openUrl } from '@tauri-apps/plugin-opener';
 
 export const loginWithGoogle = async () => {
     console.log('[AUTH] Starting Google login flow');
+    await logToFile('Starting Google login flow via loginWithGoogle()');
 
-    // Hardcoded for Tauri production environment
-    const redirectTo = 'backbone://auth/callback';
-
+    // Separate dev and prod schemes so both apps can receive deep links on one machine
+    const protocol = import.meta.env.DEV ? 'backbone-dev' : 'backbone';
+    const redirectTo = `${protocol}://auth/callback`;
+ 
+    console.log('[AUTH] Environment:', import.meta.env.DEV ? 'DEV' : 'PROD');
     console.log('[AUTH] Redirect URL configured:', redirectTo);
 
     try {

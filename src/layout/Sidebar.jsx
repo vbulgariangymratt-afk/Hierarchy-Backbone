@@ -157,6 +157,7 @@ const Sidebar = () => {
                                 <span className="btn-text">Launchpad</span>
                             </NavLink>
 
+
                             <NavLink to="/marketplace" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                 <span className="btn-icon">
                                     <NodeIcon iconUrl={SVG_ICONS.MARKETPLACE} size={18} />

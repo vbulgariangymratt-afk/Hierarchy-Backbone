@@ -141,6 +141,12 @@ export const createJournalRepository = () => {
             return initPromise;
         },
 
+        reinitialize: async () => {
+            console.log(`JournalRepo [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
+            initPromise = null;
+            return await this.initialize();
+        },
+
         getMetadata: () => {
             if (!storage.metadata) storage.metadata = { lastAppCloseTime: null, firstAppOpenTime: null };
             return { ...storage.metadata };

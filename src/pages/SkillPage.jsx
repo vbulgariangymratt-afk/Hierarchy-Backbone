@@ -98,6 +98,7 @@ const SkillPage = () => {
 
     // Create Habit State
     const [isCreatingHabit, setIsCreatingHabit] = useState(false);
+    const [planningToast, setPlanningToast] = useState(null);
     const [newHabitTrigger, setNewHabitTrigger] = useState('');
     const [newHabitAction, setNewHabitAction] = useState('');
     
@@ -385,7 +386,7 @@ const SkillPage = () => {
                 setIsSyncingBecoming(true);
                 try {
                     await backbone.updateNode(skill.id, {
-                        metadata: { ...skill.metadata, identityAnchor: val }
+                        metadata: { identityAnchor: val }
                     });
                 } finally {
                     setIsSyncingBecoming(false);
@@ -482,9 +483,9 @@ const SkillPage = () => {
         setInlineEditingWishId(null);
 
         backbone.updateNode(objId, {
-            metadata: { ...obj.metadata, wish: tempWish }
+            metadata: { wish: tempWish }
         }).catch(error => {
-            console.error("Failed to save wish inline:", error);
+            console.error("[DEBUG SkillPage] Failed to save wish inline:", error);
             fetchData();
         });
     }, [allNodes, tempWish]);
@@ -501,9 +502,9 @@ const SkillPage = () => {
         setInlineEditingOutcomeId(null);
 
         backbone.updateNode(objId, {
-            metadata: { ...obj.metadata, outcome: tempOutcome }
+            metadata: { outcome: tempOutcome }
         }).catch(error => {
-            console.error("Failed to save outcome inline:", error);
+            console.error("[DEBUG SkillPage] Failed to save outcome inline:", error);
             fetchData();
         });
     }, [allNodes, tempOutcome]);
@@ -542,7 +543,6 @@ const SkillPage = () => {
         try {
             await backbone.updateNode(aspectId, {
                 metadata: {
-                    ...aspect.metadata,
                     logs: newLogs,
                     accumulatedMetric: Math.max(0, newMetric),
                     taskCount: Math.max(0, newCount)
@@ -584,10 +584,11 @@ const SkillPage = () => {
         }));
 
         // Fire-and-forget backend update
+        console.log(`[DEBUG SkillPage] handleSuggestionClick - patching metadata.isToday for ${task.id}`);
         backbone.updateNode(task.id, {
-            metadata: { ...task.metadata, isToday: true }
+            metadata: { isToday: true }
         }).catch(err => {
-            console.error("Failed to add suggestion to today:", err);
+            console.error("[DEBUG SkillPage] Failed to add suggestion to today:", err);
             fetchData(); // Rollback/Sync on error
         });
 
@@ -765,14 +766,14 @@ const SkillPage = () => {
             return n;
         }));
 
+        console.log(`[DEBUG SkillPage] handleToggleTaskStatus - patching metadata.status to ${nextStatus} for ${task.id}`);
         backbone.updateNode(task.id, {
             metadata: {
-                ...task.metadata,
                 status: nextStatus,
                 completedAt
             }
         }).catch(error => {
-            console.error("Failed to toggle task status:", error);
+            console.error("[DEBUG SkillPage] Failed to toggle task status:", error);
             fetchData();
         });
     }, [fetchData]);
@@ -786,6 +787,18 @@ const SkillPage = () => {
         if (!task) return;
 
         const isToday = !!task.metadata?.isToday;
+        const isTomorrow = !!task.metadata?.tomorrow;
+
+        let nextState = {};
+        if (!isToday && !isTomorrow) {
+            nextState = { isToday: true, tomorrow: false };
+        } else if (isToday && !isTomorrow) {
+            nextState = { isToday: false, tomorrow: true };
+            setPlanningToast("Moved to tomorrow");
+            setTimeout(() => setPlanningToast(null), 2000);
+        } else {
+            nextState = { isToday: false, tomorrow: false };
+        }
 
         setAllNodes(prevNodes => prevNodes.map(n => {
             if (n.id === taskId) {
@@ -793,17 +806,18 @@ const SkillPage = () => {
                     ...n,
                     metadata: {
                         ...n.metadata,
-                        isToday: !isToday
+                        ...nextState
                     }
                 };
             }
             return n;
         }));
 
+        console.log(`[DEBUG SkillPage] handleAddToToday - patching metadata for ${taskId}:`, nextState);
         backbone.updateNode(taskId, {
-            metadata: { isToday: !isToday }
+            metadata: nextState
         }).catch(error => {
-            console.error("Failed to toggle today status:", error);
+            console.error("[DEBUG SkillPage] Failed to toggle planning status:", error);
             fetchData();
         });
     }, [allNodes, fetchData]);
@@ -957,7 +971,6 @@ const SkillPage = () => {
         try {
             await backbone.updateNode(objId, {
                 metadata: {
-                    ...obj.metadata,
                     [field]: value
                 }
             });
@@ -998,7 +1011,6 @@ const SkillPage = () => {
         try {
             await backbone.updateNode(obj.id, {
                 metadata: {
-                    ...obj.metadata,
                     status: nextStatus,
                     isActive: nextStatus === 'ACTIVE',
                     isSleeping: nextStatus === 'SLEEPING',
@@ -1147,7 +1159,7 @@ const SkillPage = () => {
         if (!aspect) return;
         try {
             await backbone.updateNode(aspectId, {
-                metadata: { ...aspect.metadata, notes }
+                metadata: { notes }
             });
             fetchData();
         } catch (error) {
@@ -1171,7 +1183,7 @@ const SkillPage = () => {
         try {
             const task = allNodes.find(n => n.id === taskId);
             await backbone.updateNode(taskId, {
-                metadata: { ...task.metadata, rewardId }
+                metadata: { rewardId }
             });
             setIsSelectingRewardForTaskId(null);
             fetchData();
@@ -1184,7 +1196,7 @@ const SkillPage = () => {
         try {
             const task = allNodes.find(n => n.id === taskId);
             await backbone.updateNode(taskId, {
-                metadata: { ...task.metadata, rewardId: null }
+                metadata: { rewardId: null }
             });
             fetchData();
         } catch (error) {
@@ -1204,7 +1216,7 @@ const SkillPage = () => {
             await Promise.all(newTasks.map((task, index) => {
                 if (task.metadata?.orderIndex !== index) {
                     return backbone.updateNode(task.id, {
-                        metadata: { ...task.metadata, orderIndex: index }
+                        metadata: { orderIndex: index }
                     });
                 }
                 return Promise.resolve();
@@ -1404,6 +1416,33 @@ const SkillPage = () => {
         const isSleeping = obj.metadata?.isSleeping === true;
         const aspects = getChildren(obj.id, NodeTypes.ASPECT);
         const timeInfo = getObjectiveTimeInfo(obj);
+
+        // Dynamic Calculation of Experiment Metric (Accumulated)
+        const allTasksInExperiment = aspects.flatMap(a => getChildren(a.id, NodeTypes.TASK));
+        const totalCompletedInExperiment = allTasksInExperiment.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+        
+        // Final value to display as the experiment metric
+        let accumulationValue = 0;
+        const accType = obj.metadata?.accumulationType;
+        
+        if (accType === 'minutes') {
+            accumulationValue = allTasksInExperiment.reduce((sum, t) => {
+                const sessMin = (t.metadata?.sessions || []).reduce((sSum, s) => {
+                    if (s.status === 'completed' && s.actualDuration) {
+                        return sSum + Math.round(s.actualDuration / 60);
+                    }
+                    return sSum;
+                }, 0);
+                return sum + sessMin;
+            }, 0);
+        } else if (accType === 'reps') {
+            accumulationValue = allTasksInExperiment.reduce((sum, t) => sum + (t.metadata?.currentUnits || 0), 0);
+        } else if (accType === 'sessions') {
+            accumulationValue = allTasksInExperiment.reduce((sum, t) => sum + (t.metadata?.sessions || []).filter(s => s.status === 'completed').length, 0);
+        } else {
+            // THE BUG FIX: Default to count of completed tasks (e.g. for "Fixes")
+            accumulationValue = totalCompletedInExperiment;
+        }
 
         if (isEditing) {
             return (
@@ -1610,7 +1649,7 @@ const SkillPage = () => {
                                                         Show completed
                                                     </label>
                                                     <div className="experiment-main-metric">
-                                                        {obj.metadata?.masterAccumulatedMetric || 0} {obj.metadata?.accumulationType || 'units'}
+                                                        {accumulationValue} {obj.metadata?.accumulationType || 'units'}
                                                         <span style={{ fontSize: '14px', fontWeight: '400', opacity: '0.6', marginLeft: '10px' }}>Accumulated</span>
                                                     </div>
                                                 </div>
@@ -1768,8 +1807,28 @@ const SkillPage = () => {
                                                                                 title="Double-click to rename"
                                                                             >{aspect.name}</span>
                                                                         )}
-                                                                        <span className="aspect-task-count">
-                                                                            {aspect.metadata?.accumulatedMetric || 0} {obj.metadata?.accumulationType} &bull; {aspect.metadata?.taskCount || 0} logs
+                                                                        <span className="aspect-task-count" style={{ display: 'inline-flex', gap: '3px' }}>
+                                                                            {(() => {
+                                                                                const aspectTasksForCount = getChildren(aspect.id, NodeTypes.TASK);
+                                                                                const doneInAspect = aspectTasksForCount.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+                                                                                
+                                                                                let aVal = 0;
+                                                                                if (accType === 'minutes') {
+                                                                                    aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).reduce((sSum, s) => s.status === 'completed' ? sSum + Math.round((s.actualDuration || 0) / 60) : sSum, 0), 0);
+                                                                                } else if (accType === 'reps') {
+                                                                                    aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.currentUnits || 0), 0);
+                                                                                } else if (accType === 'sessions') {
+                                                                                    aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).filter(s => s.status === 'completed').length, 0);
+                                                                                } else {
+                                                                                    aVal = doneInAspect;
+                                                                                }
+                                                                                
+                                                                                return (
+                                                                                    <>
+                                                                                        {aVal} {accType} &bull; {doneInAspect} logs
+                                                                                    </>
+                                                                                );
+                                                                            })()}
                                                                         </span>
                                                                     </div>
                                                                     <div className="aspect-header-right">
@@ -2488,6 +2547,18 @@ const SkillPage = () => {
                 </div>,
                 document.body
             )}
+            <AnimatePresence>
+                {planningToast && (
+                    <motion.div 
+                        className="planning-toast"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                    >
+                        {planningToast}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

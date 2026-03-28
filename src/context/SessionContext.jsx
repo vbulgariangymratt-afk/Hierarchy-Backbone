@@ -6,6 +6,7 @@ export const SessionProvider = ({ children }) => {
     const [activeSessionId, setActiveSessionId] = useState(null);
     const [isSessionActive, setIsSessionActive] = useState(false);
     const [previousRoute, setPreviousRoute] = useState('/launchpad');
+    const [energyLevel, setEnergyLevel] = useState(null);
 
     
     // Refs for handlers defined in page components
@@ -54,9 +55,9 @@ export const SessionProvider = ({ children }) => {
             registerExitHandler,
             unregisterExitHandler,
             previousRoute,
-            setPreviousRoute
-
-
+            setPreviousRoute,
+            energyLevel,
+            setEnergyLevel
         }}>
             {children}
         </SessionContext.Provider>

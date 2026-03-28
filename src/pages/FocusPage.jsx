@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 import './FocusPage.css';
 import GlassPanel from '../components/ui/GlassPanel';
 import { useSession } from '../context/SessionContext';
+import { getAspectStats, scoreLowEnergyTask } from '../utils/taskScoring';
 
 
 const ACKS = ["Good.", "Nice.", "Done."];
 
 const FocusPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [task, setTask] = useState(null);
     const [skill, setSkill] = useState(null);
+    const [allNodes, setAllNodes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isGlowing, setIsGlowing] = useState(false);
     const [ack, setAck] = useState(null);
@@ -53,6 +56,11 @@ const FocusPage = () => {
     const [uninterruptedSeconds, setUninterruptedSeconds] = useState(0);
     const [checkpointToast, setCheckpointToast] = useState(null);
 
+    // Momentum Loop Local State
+    const [showMomentum, setShowMomentum] = useState(false);
+    const [nextSuggestedTask, setNextSuggestedTask] = useState(null);
+    const [hasAutoStarted, setHasAutoStarted] = useState(false);
+
     const triggerCheckpoint = useCallback(() => {
         setCheckpointsCompleted(c => {
             const nextC = c + 1;
@@ -69,7 +77,8 @@ const FocusPage = () => {
         setActiveSessionId: setGlobalSessionId, 
         registerCompleteHandler, 
         unregisterCompleteHandler,
-        previousRoute
+        previousRoute,
+        energyLevel
     } = useSession();
 
 
@@ -77,6 +86,29 @@ const FocusPage = () => {
         setIsSessionActive(!!activeSessionId);
         setGlobalSessionId(activeSessionId);
     }, [activeSessionId, setIsSessionActive, setGlobalSessionId]);
+
+    const aspectStats = React.useMemo(() => getAspectStats(allNodes), [allNodes]);
+
+    // Precompute next suggested task for instant Momentum Loop
+    useEffect(() => {
+        if (energyLevel <= 2 && task && allNodes.length > 0) {
+            const availableTasks = allNodes.filter(n => 
+                n.type === NodeTypes.TASK && 
+                n.metadata?.status !== TaskStatuses.DONE &&
+                n.id !== task.id
+            );
+            if (availableTasks.length > 0) {
+                const sorted = [...availableTasks].sort((a, b) => 
+                    scoreLowEnergyTask(b, aspectStats) - scoreLowEnergyTask(a, aspectStats)
+                );
+                setNextSuggestedTask(sorted[0]);
+            } else {
+                setNextSuggestedTask(null);
+            }
+        } else {
+            setNextSuggestedTask(null);
+        }
+    }, [task, allNodes, aspectStats, energyLevel]);
 
 
     const handleToggleSubStep = async (index) => {
@@ -87,7 +119,7 @@ const FocusPage = () => {
         setSubSteps(updated);
 
         await backbone.updateNode(task.id, {
-            metadata: { ...task.metadata, subSteps: updated }
+            metadata: { subSteps: updated }
         });
 
         if (isNowCompleted) triggerCheckpoint();
@@ -99,7 +131,7 @@ const FocusPage = () => {
             setSubSteps(updated);
             setNewSubStep('');
             await backbone.updateNode(task.id, {
-                metadata: { ...task.metadata, subSteps: updated }
+                metadata: { subSteps: updated }
             });
         }
     };
@@ -112,19 +144,35 @@ const FocusPage = () => {
         setSeconds(0);
         setIsPaused(true);
         try {
-            const nextTask = await backbone.getTodayFocusTask();
+            const fetchedNodes = await backbone.getAllNodes();
+            setAllNodes(fetchedNodes);
+            let nextTask = null;
+
+            // Priority 1: Specifically passed task from LaunchpadFlow
+            const forcedTaskId = location.state?.taskId;
+            if (forcedTaskId) {
+                console.log("FocusPage: Loading forced task ->", forcedTaskId);
+                nextTask = fetchedNodes.find(n => n.id === forcedTaskId);
+                // Clear state so subsequent loads (after task finish) don't loop the same task
+                window.history.replaceState({}, document.title);
+            }
+
+            // Priority 2: Usual Backbone flow
+            if (!nextTask) {
+                nextTask = await backbone.getTodayFocusTask();
+            }
+
             if (nextTask) {
                 setTask(nextTask);
                 // Find parent skill
-                const allNodes = await backbone.getAllNodes();
-                let parent = allNodes.find(n => n.id === nextTask.parentId);
+                let parent = fetchedNodes.find(n => n.id === nextTask.parentId);
                 while (parent && parent.type !== NodeTypes.SKILL) {
                     parent = allNodes.find(n => n.id === parent.parentId);
                 }
                 setSkill(parent);
 
                 // Detect burnout safe mode from ancestor objective
-                let objNode = allNodes.find(n => n.id === nextTask.parentId);
+                let objNode = fetchedNodes.find(n => n.id === nextTask.parentId);
                 while (objNode && objNode.type !== NodeTypes.OBJECTIVE) {
                     objNode = allNodes.find(n => n.id === objNode?.parentId);
                 }
@@ -158,11 +206,12 @@ const FocusPage = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [location.state?.taskId]);
 
     useEffect(() => {
         loadNextTask();
     }, [loadNextTask]);
+
 
     // Timer Interval — drift-proof via Date.now()
     useEffect(() => {
@@ -225,7 +274,8 @@ const FocusPage = () => {
         return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     };
 
-    const handleStartSession = async () => {
+    const handleStartSession = useCallback(async () => {
+        console.log(`[DEBUG FocusPage] handleStartSession called. activeSessionId: ${activeSessionId}, seconds: ${seconds}`);
         if (activeSessionId) {
             // Resuming: re-anchor clock based on current elapsed seconds so drift-proof calc is correct
             startTimeRef.current = Date.now() - (seconds * 1000);
@@ -234,11 +284,13 @@ const FocusPage = () => {
         }
 
         setShowSetup(true);
-    };
+    }, [activeSessionId, seconds]);
 
-    const startBackboneSession = async (pleasureValue) => {
+    const startBackboneSession = useCallback(async (pleasureValue) => {
         try {
+            console.log(`[DEBUG FocusPage] startBackboneSession START for task: ${task.id}`);
             const sess = await backbone.startSession(task.id, 10, pleasureValue, 0);
+            console.log(`[DEBUG FocusPage] startBackboneSession SUCCESS. New session ID: ${sess.id}`);
             setActiveSessionId(sess.id);
             // Anchor the clock — this is the only place we set startTimeRef for a fresh session
             startTimeRef.current = Date.now();
@@ -246,11 +298,21 @@ const FocusPage = () => {
             setIsPaused(false);
             setShowSetup(false);
         } catch (error) {
-            console.error("Failed to start session:", error);
+            console.error("[DEBUG FocusPage] startBackboneSession FAILED:", error);
         }
-    };
+    }, [task?.id, setActiveSessionId]);
+
+    // Auto-start logic
+    useEffect(() => {
+        if (!task || !location.state?.autoStart || hasAutoStarted) return;
+
+        // Automatically trigger the Predicted Pleasure setup modal
+        handleStartSession();
+        setHasAutoStarted(true);
+    }, [task, location.state?.autoStart, hasAutoStarted, handleStartSession]);
 
     const handlePauseSession = () => {
+        console.log(`[DEBUG FocusPage] handlePauseSession called. activeSessionId: ${activeSessionId}`);
         if (!activeSessionId) return;
         setIsPaused(true);
         setUninterruptedSeconds(0);
@@ -260,32 +322,45 @@ const FocusPage = () => {
     const completeBackboneSession = useCallback(async () => {
         console.time("sessionComplete");
         try {
-            // Optimistic update
+            const currentTaskId = task.id;
+            const currentSessionId = activeSessionId;
+
+            console.log(`[DEBUG FocusPage] completeBackboneSession START. Task: ${currentTaskId}, Session: ${currentSessionId}`);
+
+            // Optimistic UI updates
             setActiveSessionId(null);
             setSeconds(0);
             startTimeRef.current = null; // Reset anchor for next session
             setShowSummary(false);
 
-            await backbone.completeSession(task.id, activeSessionId, actualPleasure, mastery);
+            // 1. FIRE-AND-FORGET: Trigger persistence in background without blocking UI
+            console.log(`[DEBUG FocusPage] Background session completion START. sessionId: ${currentSessionId}`);
+            backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery)
+                .then(() => console.log(`[DEBUG FocusPage] Background session completion SUCCESS for ${currentSessionId}`))
+                .catch(err => console.error("[DEBUG FocusPage] completeSession background error:", err));
 
-            // Subtle reinforcement
-            setIsGlowing(true);
-            setTimeout(() => setIsGlowing(false), 300);
+            // 2. INSTANT UI: Trigger Momentum Loop immediately
+            if (energyLevel <= 2 && !isNavigatingAway && nextSuggestedTask) {
+                console.log(`[DEBUG FocusPage] Triggering Momentum Loop`);
+                setShowMomentum(true);
+                return;
+            }
 
+            // Standard flow
             if (isNavigatingAway) {
-                await backbone.trackFocusMode(false);
+                console.log(`[DEBUG FocusPage] Navigating away to ${previousRoute || '/launchpad'}`);
+                backbone.trackFocusMode(false).catch(console.error);
                 navigate(previousRoute || '/launchpad');
+            } else {
+                console.log(`[DEBUG FocusPage] Loading next task`);
+                loadNextTask();
             }
         } catch (error) {
-            console.error("Failed to complete session:", error);
+            console.error("[DEBUG FocusPage] completeBackboneSession critical error:", error);
         } finally {
             console.timeEnd("sessionComplete");
         }
-    }, [task?.id, activeSessionId, actualPleasure, mastery, isNavigatingAway, navigate, previousRoute]);
-
-
-
-
+    }, [task?.id, activeSessionId, actualPleasure, mastery, isNavigatingAway, navigate, previousRoute, energyLevel, loadNextTask, nextSuggestedTask]);
 
     const [pendingTaskComplete, setPendingTaskComplete] = useState(false);
 
@@ -313,11 +388,13 @@ const FocusPage = () => {
                 console.time("taskCompleteTransition");
                 try {
                     // Start async work
+                    console.log("[FOCUS DEBUG] Completing task:", task.name, "ID:", task.id, "Status will be:", TaskStatuses.DONE);
+                    console.log(`[DEBUG FocusPage] Sending PATCH update (no metadata spread) for ${task.id}`);
+                    
                     const taskUpdatePromise = task.metadata?.itemType === 'REPETITION'
                         ? backbone.incrementTaskRepetition(task.id)
                         : backbone.updateNode(task.id, {
                             metadata: {
-                                ...task.metadata,
                                 status: TaskStatuses.DONE,
                                 completedAt: Date.now()
                             }
@@ -412,6 +489,22 @@ const FocusPage = () => {
         navigate(previousRoute || '/launchpad');
     };
 
+    const handleSaveForHighEnergy = async () => {
+        if (!task) return;
+        
+        try {
+            console.log("[HIGH ENERGY SAVE] applying PATCH update taskId:", task.id);
+            const updatedNode = await backbone.updateNode(task.id, { metadata: { highEnergy: true } });
+            
+            // Explicitly sync the local task state so the UI reflects the metadata change
+            setTask(updatedNode);
+        } catch (err) {
+            console.error("[HIGH ENERGY SAVE] ERROR - Failed to save for high energy:", err);
+        }
+    };
+
+    console.log("Current task:", task);
+
 
     if (loading && !task) {
         return (
@@ -488,6 +581,15 @@ const FocusPage = () => {
 
                 <div className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
                     <h1 className="focus-task-name">{task.name}</h1>
+                    
+                    <button 
+                        className={`focus-save-energy-btn ${task.metadata?.highEnergy ? 'saved' : ''}`}
+                        onClick={handleSaveForHighEnergy}
+                        disabled={task.metadata?.highEnergy === true}
+                    >
+                        {task.metadata?.highEnergy ? "Saved for later" : "Save for when I have more energy"}
+                    </button>
+
 
                     {checkpointsCompleted > 0 && (
                         <div className="focus-momentum-bar-container">
@@ -578,6 +680,54 @@ const FocusPage = () => {
                     </div>
                 </div>
             </footer>
+
+            {/* MOMENTUM LOOP OVERLAY */}
+            <AnimatePresence>
+                {showMomentum && (
+                    <motion.div 
+                        className="focus-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <div className="focus-modal-content momentum-card">
+                            <div className="momentum-visual">✨</div>
+                            <h3>Nice. That was a small win.</h3>
+                            <p style={{ opacity: 0.8, fontSize: '15px' }}>Ready for another tiny step?</p>
+                            
+                            {nextSuggestedTask && (
+                                <div className="suggested-task-card">
+                                    <span className="suggested-label">Suggesting:</span>
+                                    <div className="suggested-name">{nextSuggestedTask.name}</div>
+                                </div>
+                            )}
+
+                            <div className="momentum-actions">
+                                <button 
+                                    className="modal-submit-btn" 
+                                    onClick={() => {
+                                        setTask(nextSuggestedTask);
+                                        setSubSteps(nextSuggestedTask.metadata?.subSteps || []);
+                                        setShowMomentum(false);
+                                        setSeconds(0);
+                                        setIsPaused(true);
+                                        // Restore manual confirmation via setup modal
+                                        handleStartSession();
+                                    }}
+                                >
+                                    Start
+                                </button>
+                                <button 
+                                    className="modal-submit-btn secondary"
+                                    onClick={() => navigate(previousRoute || '/launchpad')}
+                                >
+                                    I'm done for now
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* MODALS */}
             {showSetup && (
@@ -774,16 +924,18 @@ const FocusPage = () => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                     >
-                        <motion.div
-                            className="identity-savoring-card"
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
+                        <motion.div 
+                            className="savoring-message"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2 }}
                         >
-                            <p className="identity-savoring-text">{savoringIdentity}</p>
+                            {savoringIdentity}
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
+
         </div>
     );
 };

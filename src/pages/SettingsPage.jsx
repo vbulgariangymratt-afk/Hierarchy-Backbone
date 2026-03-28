@@ -136,6 +136,33 @@ const SettingsPage = () => {
                 </div>
             </section>
 
+            {/* ── Biological Tracking Section ─────────────────────────────── */}
+            <section className="settings-section">
+                <h2 className="settings-section-title">Biological Tracking</h2>
+                <div className="settings-card">
+                    <div className="appearance-row">
+                        <div className="appearance-row-label">Manual Sleep Logging</div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={localStorage.getItem('pref_manual_sleep') === 'true'}
+                                onChange={(e) => {
+                                    localStorage.setItem('pref_manual_sleep', e.target.checked);
+                                    // Force re-render if needed, but since it's a simple toggle, 
+                                    // we can just use local state to track it for immediate feedback.
+                                    window.dispatchEvent(new Event('storage'));
+                                    setUser({ ...user }); // Dummy update to trigger re-render
+                                }}
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <p className="appearance-hint">
+                        Prefer manual sleep log (auto-detection becomes secondary)
+                    </p>
+                </div>
+            </section>
+
             {/* ── Account Section ─────────────────────────────────────────── */}
             <section className="settings-section">
                 <h2 className="settings-section-title">Account</h2>

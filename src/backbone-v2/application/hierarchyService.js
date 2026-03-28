@@ -237,12 +237,35 @@ export const HierarchyService = (repository, auraService) => {
     };
 
     /**
+     * Returns reinforcement counts for all areas for a specific date.
+     */
+    async function getAreaReinforcement(dateStr) {
+        const rootNode = await repository.getById('ROOT');
+        return rootNode?.metadata?.dailyAreaLog?.[dateStr] || {};
+    }
+
+    /**
      * Returns reinforcement counts for all areas for today's date only.
      */
     async function getTodayAreaReinforcement() {
         const todayStr = new Date().toLocaleDateString('en-CA');
+        return await getAreaReinforcement(todayStr);
+    }
+
+    /**
+     * Returns repetition task increments for a specific date.
+     * Returns: { [taskId]: { name: string, count: number } }
+     */
+    async function getRepetitionLog(dateStr) {
         const rootNode = await repository.getById('ROOT');
-        return rootNode?.metadata?.dailyAreaLog?.[todayStr] || {};
+        const rawLog = rootNode?.metadata?.dailyRepLog?.[dateStr] || {};
+        // Enrich with task names
+        const result = {};
+        for (const [taskId, count] of Object.entries(rawLog)) {
+            const task = await repository.getById(taskId);
+            result[taskId] = { name: task?.name || taskId, count };
+        }
+        return result;
     }
 
     /**
@@ -251,15 +274,7 @@ export const HierarchyService = (repository, auraService) => {
      */
     async function getTodayRepetitionLog() {
         const todayStr = new Date().toLocaleDateString('en-CA');
-        const rootNode = await repository.getById('ROOT');
-        const rawLog = rootNode?.metadata?.dailyRepLog?.[todayStr] || {};
-        // Enrich with task names
-        const result = {};
-        for (const [taskId, count] of Object.entries(rawLog)) {
-            const task = await repository.getById(taskId);
-            result[taskId] = { name: task?.name || taskId, count };
-        }
-        return result;
+        return await getRepetitionLog(todayStr);
     }
 
     /**
@@ -1120,6 +1135,9 @@ export const HierarchyService = (repository, auraService) => {
             const existing = await repository.getById(nodeId);
             if (!existing) throw new Error("Node not found");
 
+            // Diagnostic: Store initial session count
+            const initialSessionCount = existing.metadata?.sessions?.length || 0;
+
             // BACKEND PROTECTION: Requirement Escalation
             const ancestorObjective = await findObjectiveAncestor(nodeId);
             if (ancestorObjective?.metadata?.burnoutRisk === true) {
@@ -1137,7 +1155,34 @@ export const HierarchyService = (repository, auraService) => {
 
             const newUpdates = { ...updates };
             if (updates.metadata) {
-                newUpdates.metadata = { ...existing.metadata, ...updates.metadata };
+                // IMPORTANT: Use latest metadata from repository state as base to prevent stale overwrite
+                const existingMetadata = existing.metadata || {};
+                const incomingMetadata = updates.metadata || {};
+
+                // PERMANENT INTEGRITY GUARD: Never let metadata.sessions shrink unless explicitly requested by specific internal services
+                const existingSessions = existingMetadata.sessions || [];
+                const incomingSessions = incomingMetadata.sessions;
+
+                let mergedSessions = existingSessions;
+                if (incomingSessions !== undefined) {
+                    if (incomingSessions.length < existingSessions.length) {
+                        console.warn(`[CRITICAL] Integrity Trigger: Prevented session loss on node ${nodeId}. Existing: ${existingSessions.length}, Incoming: ${incomingSessions.length}`);
+                        mergedSessions = existingSessions; // Restore
+                    } else {
+                        mergedSessions = incomingSessions; // Use new ones (expansion/update)
+                    }
+                }
+
+                newUpdates.metadata = { 
+                    ...existingMetadata, 
+                    ...incomingMetadata,
+                    sessions: mergedSessions
+                };
+
+                // Guard for subSteps too
+                if (existingMetadata.subSteps && !incomingMetadata.subSteps) {
+                    newUpdates.metadata.subSteps = existingMetadata.subSteps;
+                }
             }
 
             // AUTO-COMPLETE REPETITION BLOCKS
@@ -1163,14 +1208,46 @@ export const HierarchyService = (repository, auraService) => {
                 }
             }
 
-            // Task status logic (Part 1: Completed timestamp)
+            // Task status logic (Part 1: Completed timestamp + Auto-close focus sessions)
             if (existing.type === NodeTypes.TASK && newUpdates.metadata?.status === TaskStatuses.DONE && existing.metadata?.status !== TaskStatuses.DONE) {
-                const completedAt = existing.metadata?.completedAt || Date.now();
-                newUpdates.metadata = {
-                    ...newUpdates.metadata,
-                    completedAt
-                };
-                console.log(`DEBUG: Task completedAt set to ${completedAt}`);
+                const now = Date.now();
+                
+                // 1. Ensure completion timestamp
+                newUpdates.metadata.completedAt = existing.metadata?.completedAt || now;
+
+                // 2. AUTO-CLOSE Logic: Find most recent active session
+                const sessions = [...(newUpdates.metadata.sessions || [])];
+                let lastActiveIdx = -1;
+                for (let i = sessions.length - 1; i >= 0; i--) {
+                    if (sessions[i].status === 'active' || (!sessions[i].endTime && sessions[i].startTime)) {
+                        lastActiveIdx = i;
+                        break;
+                    }
+                }
+
+                if (lastActiveIdx !== -1) {
+                    const s = sessions[lastActiveIdx];
+                    const endTime = now;
+                    const startTime = s.startTime || now;
+                    const durationSeconds = Math.round((endTime - startTime) / 1000);
+                    
+                    sessions[lastActiveIdx] = {
+                        ...s,
+                        status: 'completed',
+                        endTime: endTime,
+                        endedAt: new Date(endTime).toISOString(),
+                        actualDuration: Math.max(0, durationSeconds)
+                    };
+                    
+                    newUpdates.metadata.sessions = sessions;
+                    console.log(`[Auto-Close Focus] Recovered ${durationSeconds}s from active session on task "${existing.name}"`);
+                }
+            }
+
+            // Cooldown Logic: Force deactivation if cooldown is enabled
+            if (existing.type === NodeTypes.SKILL && newUpdates.metadata?.cooldownActive) {
+                newUpdates.metadata.isActive = false;
+                delete newUpdates.metadata.activatedAt;
             }
 
             // Active Skill Logic: Max 4
@@ -1205,9 +1282,15 @@ export const HierarchyService = (repository, auraService) => {
             }
 
             // --- PRIMARY UPDATE ---
-            // We save the node itself BEFORE side-effects so reactive refreshes (subscriptions)
-            // see the correct status immediately when rewards/counters update.
             const result = await repository.update(nodeId, newUpdates);
+            
+            // Final verification: Ensure sessions were not lost
+            const finalSessionCount = result.metadata?.sessions?.length || 0;
+            if (initialSessionCount > 0 && finalSessionCount < initialSessionCount) {
+                console.error(`[CRITICAL] Session Loss Detected for ${nodeId}! Initial: ${initialSessionCount}, Final: ${finalSessionCount}`);
+            } else if (initialSessionCount > 0) {
+                console.log(`[PASS] Session integrity verified for ${nodeId}. Sessions: ${finalSessionCount}`);
+            }
 
             // SIDE EFFECTS - OBJECTIVE
             if (existing.type === NodeTypes.OBJECTIVE && newUpdates.metadata?.status === ObjectiveStatuses.ACHIEVED && existing.metadata?.status !== ObjectiveStatuses.ACHIEVED) {
@@ -1254,8 +1337,37 @@ export const HierarchyService = (repository, auraService) => {
                         const metadata = rootNode.metadata || {};
                         const log = { ...(metadata.dailyAreaLog || {}) };
                         if (!log[todayStr]) log[todayStr] = {};
-                        log[todayStr][areaId] = (log[todayStr][areaId] || 0) + 1;
-                        await repository.update('ROOT', { metadata: { ...metadata, dailyAreaLog: log } });
+
+                        const mergedMetadata = { ...(existing.metadata || {}), ...(newUpdates.metadata || {}) };
+                        const oldStatus = existing.metadata?.status;
+                        const newStatus = newUpdates.metadata?.status;
+
+                        console.log("[DEBUG AreaLog] taskId:", nodeId, "taskName:", existing.name);
+                        console.log("[DEBUG AreaLog] status transition:", oldStatus, "->", newStatus);
+                        console.log("[DEBUG AreaLog] todayStr:", todayStr);
+                        console.log("[DEBUG AreaLog] BEFORE:", log[todayStr][areaId] || 0);
+
+                        // Reinforcement units: 1 (task completion) + completed subtasks + focus sessions completed today
+                        const subSteps = mergedMetadata.subSteps || [];
+                        const completedSubStepsCount = subSteps.filter(s => s.isCompleted).length;
+
+                        const sessions = mergedMetadata.sessions || [];
+                        const completedSessionsTodayCount = sessions.filter(s => {
+                            if (s.status !== 'completed' || !s.endTime) return false;
+                            const sessionDate = new Date(s.endTime).toLocaleDateString('en-CA');
+                            return sessionDate === todayStr;
+                        }).length;
+
+                        const reinforcementUnits = 1 + completedSubStepsCount + completedSessionsTodayCount;
+                        
+                        console.log("[DEBUG AreaLog] subSteps found:", subSteps.length, "completed:", completedSubStepsCount);
+                        console.log("[DEBUG AreaLog] sessions found:", sessions.length, "completed today:", completedSessionsTodayCount);
+                        console.log("[DEBUG AreaLog] final reinforcementUnits:", reinforcementUnits);
+
+                        log[todayStr][areaId] = (log[todayStr][areaId] || 0) + reinforcementUnits;
+                        const updatedRoot = await repository.update('ROOT', { metadata: { ...metadata, dailyAreaLog: log } });
+                        
+                        console.log("[DEBUG AreaLog] AFTER:", updatedRoot.metadata.dailyAreaLog?.[todayStr]?.[areaId]);
                     }
                 }
 
@@ -1318,6 +1430,94 @@ export const HierarchyService = (repository, auraService) => {
             });
         },
 
+        sleepSkill: async (skillId, days = null) => {
+            const skill = await repository.getById(skillId);
+            if (!skill || skill.type !== NodeTypes.SKILL) throw new Error("Invalid Skill");
+
+            const metadata = { ...(skill.metadata || {}) };
+            
+            if (days) {
+                const sleepUntil = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+                metadata.sleepUntil = sleepUntil;
+                metadata.isSleeping = false; 
+            } else {
+                // Indefinite sleep
+                metadata.isSleeping = true;
+                metadata.sleepUntil = null;
+            }
+
+            // Sync fallback status fields if needed for other parts of the app
+            metadata.status = 'SLEEPING';
+            metadata.isActive = false;
+
+            console.log(`HierarchyService: Skill ${skill.name} put to sleep. Indefinite: ${!days}, Until: ${metadata.sleepUntil}`);
+
+            // Update skill
+            await repository.update(skillId, {
+                metadata,
+                updatedAt: Date.now()
+            });
+
+            // Cascade to objectives
+            const allNodes = await repository.getAll();
+            const childObjectives = allNodes.filter(n => n.parentId === skillId && n.type === NodeTypes.OBJECTIVE);
+            
+            for (const obj of childObjectives) {
+                await repository.update(obj.id, {
+                    metadata: {
+                        ...(obj.metadata || {}),
+                        status: 'SLEEPING',
+                        isActive: false,
+                        deactivatedAt: Date.now()
+                    },
+                    updatedAt: Date.now()
+                });
+            }
+
+            return true;
+        },
+
+        wakeSkill: async (skillId) => {
+            const skill = await repository.getById(skillId);
+            if (!skill || skill.type !== NodeTypes.SKILL) throw new Error("Invalid Skill");
+
+            console.log(`HierarchyService: Waking up skill ${skill.name}`);
+
+            await repository.update(skillId, {
+                metadata: {
+                    ...skill.metadata,
+                    isSleeping: false,
+                    sleepUntil: null,
+                    status: 'ACTIVE',
+                    isActive: true
+                },
+                updatedAt: Date.now()
+            });
+
+            // Cascade wake to objectives? 
+            // Most systems only wake on manual interaction, but let's keep it simple for now and just wake the skill.
+            // Requirement 7 says "Wake Up button that clears sleep state", nothing about objectives, 
+            // but for balance we might want to wake objectives as ACTIVE if they were not achieved.
+            
+            const allNodes = await repository.getAll();
+            const childObjectives = allNodes.filter(n => n.parentId === skillId && n.type === NodeTypes.OBJECTIVE);
+            
+            for (const obj of childObjectives) {
+                if (obj.metadata?.status === 'SLEEPING') {
+                    await repository.update(obj.id, {
+                        metadata: {
+                            ...(obj.metadata || {}),
+                            status: 'ACTIVE',
+                            isActive: true
+                        },
+                        updatedAt: Date.now()
+                    });
+                }
+            }
+
+            return true;
+        },
+
         deleteNode: async (nodeId) => {
             console.log("HierarchyService: Deleting node", nodeId);
             // We removed the isLocked check here to allow management actions (deleting) 
@@ -1364,6 +1564,8 @@ export const HierarchyService = (repository, auraService) => {
             const task = await repository.getById(taskId);
             if (!task || task.type !== NodeTypes.TASK) throw new Error("Invalid Task");
 
+            console.log(`[DEBUG HierarchyService] startSession START for task: ${taskId}. Current sessions: ${task.metadata.sessions?.length || 0}`);
+
             const sessions = task.metadata.sessions || [];
             const newSession = {
                 id: Math.random().toString(36).substr(2, 9),
@@ -1375,13 +1577,16 @@ export const HierarchyService = (repository, auraService) => {
                 status: 'active'
             };
 
-            await repository.update(taskId, {
+            const updatePayload = {
                 metadata: {
-                    ...task.metadata,
                     status: TaskStatuses.IN_PROGRESS,
                     sessions: [...sessions, newSession]
                 }
-            });
+            };
+            console.log(`[DEBUG HierarchyService] startSession updatePayload:`, JSON.stringify(updatePayload));
+            
+            const result = await repository.update(taskId, updatePayload);
+            console.log(`[DEBUG HierarchyService] startSession PERSISTED. Final sessions: ${result.metadata.sessions.length}`);
 
             // Aura reinforcement: +1 for Session Start
             if (auraService) {
@@ -1401,10 +1606,13 @@ export const HierarchyService = (repository, auraService) => {
             const task = await repository.getById(taskId);
             if (!task) throw new Error("Task not found");
 
-            const sessions = task.metadata.sessions.map(s => {
+            console.log(`[DEBUG HierarchyService] completeSession START for task: ${taskId}, sessionId: ${sessionId}. Current sessions: ${task.metadata.sessions?.length || 0}`);
+
+            const sessions = (task.metadata.sessions || []).map(s => {
                 if (s.id === sessionId) {
                     const now = Date.now();
                     const actualSeconds = Math.round((now - s.startTime) / 1000);
+                    console.log(`[DEBUG HierarchyService] Found session to complete. Duration: ${actualSeconds}s`);
                     return {
                         ...s,
                         status: 'completed',
@@ -1419,12 +1627,15 @@ export const HierarchyService = (repository, auraService) => {
                 return s;
             });
 
-            const result = await repository.update(taskId, {
+            const updatePayload = {
                 metadata: {
-                    ...task.metadata,
                     sessions
                 }
-            });
+            };
+            console.log(`[DEBUG HierarchyService] completeSession updatePayload:`, JSON.stringify(updatePayload));
+
+            const result = await repository.update(taskId, updatePayload);
+            console.log(`[DEBUG HierarchyService] completeSession PERSISTED. Final sessions: ${result.metadata.sessions.length}`);
 
             // Execution Order: Motivational Optimization (PINCH) -> Burnout Protection (Fatigue)
             const completedSession = sessions.find(s => s.id === sessionId);
@@ -1718,8 +1929,16 @@ export const HierarchyService = (repository, auraService) => {
             return await getTodayAreaReinforcement();
         },
 
+        async getAreaReinforcement(dateStr) {
+            return await getAreaReinforcement(dateStr);
+        },
+
         async getTodayRepetitionLog() {
             return await getTodayRepetitionLog();
+        },
+
+        async getRepetitionLog(dateStr) {
+            return await getRepetitionLog(dateStr);
         },
 
         createDailyRestSuggestion,

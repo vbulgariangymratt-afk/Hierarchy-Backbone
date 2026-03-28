@@ -122,10 +122,39 @@
 }
 
 .prompt-text {
-    font-size: 15px;
     font-style: italic;
     color: var(--text-secondary);
     line-height: 1.5;
+}
+
+.focus-save-energy-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-tertiary, #666);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    margin-top: 4px;
+    padding: 4px 8px;
+    opacity: 0.6;
+    transition: all 0.2s ease;
+}
+
+.focus-save-energy-btn:hover:not(:disabled) {
+    opacity: 1;
+    color: var(--color-text-secondary);
+}
+
+.focus-save-energy-btn.saved {
+    color: var(--color-accent, #4CAF50);
+    opacity: 1;
+    font-weight: 700;
+    cursor: default;
+}
+
+.focus-save-energy-btn:disabled {
+    cursor: default;
 }
 
 .focus-footer {

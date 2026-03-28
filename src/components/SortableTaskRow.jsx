@@ -173,10 +173,10 @@ const SortableTaskRow = React.memo(({
                 <div className="task-actions-col">
                     {!isDone && (
                         <span
-                            className={`task-today-badge ${task.metadata?.isToday ? 'active' : ''}`}
+                            className={`task-today-badge ${task.metadata?.isToday ? 'active' : ''} ${task.metadata?.tomorrow ? 'tomorrow' : ''}`}
                             onClick={(e) => onAddToToday(e, task.id)}
                         >
-                            Today
+                            {task.metadata?.tomorrow ? 'Tomorrow' : (task.metadata?.isToday ? 'Today' : 'Add to Today')}
                         </span>
                     )}
                     {task.metadata?.itemType === 'REPETITION' && (
@@ -284,6 +284,7 @@ const SortableTaskRow = React.memo(({
         prev.task.updatedAt === next.task.updatedAt &&
         prev.task.metadata?.status === next.task.metadata?.status &&
         prev.task.metadata?.isToday === next.task.metadata?.isToday &&
+        prev.task.metadata?.tomorrow === next.task.metadata?.tomorrow &&
         prev.task.metadata?.currentUnits === next.task.metadata?.currentUnits &&
         prev.task.metadata?.targetUnits === next.task.metadata?.targetUnits &&
         prev.task.metadata?.rewardId === next.task.metadata?.rewardId &&

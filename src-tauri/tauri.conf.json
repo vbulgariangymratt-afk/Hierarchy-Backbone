@@ -20,7 +20,8 @@
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "devtools": true
       }
     ],
     "security": {
@@ -31,7 +32,8 @@
     "deep-link": {
       "schemes": [
         "com.warhead.backbonehierarchy",
-        "backbone"
+        "backbone",
+        "backbone-dev"
       ]
     }
   },

@@ -40,18 +40,7 @@ const MainLayout = () => {
             <div className="app-drag-region" data-tauri-drag-region />
             <Sidebar />
             <main className="content-area">
-                {showBanner && (
-                    <div className="safe-mode-banner">
-                        <span className="safe-mode-banner-text">Energy Protection Mode Active</span>
-                        <button
-                            className="safe-mode-dismiss-btn"
-                            onClick={() => setBannerDismissed(true)}
-                            aria-label="Dismiss"
-                        >
-                            ×
-                        </button>
-                    </div>
-                )}
+                {/* Banner removed in favor of EnergyModeTag */}
                 
                 <div style={{ height: '100%', width: '100%' }}>
                     {outlet}

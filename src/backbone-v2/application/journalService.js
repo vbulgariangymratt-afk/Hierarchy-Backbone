@@ -38,61 +38,87 @@ export const JournalService = (journalRepository, backbone, habitService) => {
         };
 
         try {
-            const targetDate = new Date(dateStr);
-            const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime();
-            const endOfDay = startOfDay + (24 * 60 * 60 * 1000);
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const startOfDayDate = new Date(y, m - 1, d, 0, 0, 0, 0);
+            const startOfDay = startOfDayDate.getTime();
+            const endOfDayDate = new Date(y, m - 1, d, 23, 59, 59, 999);
+            const endOfDay = endOfDayDate.getTime() + 1;
 
             const allNodes = await backbone.getAllNodes() || [];
             const allHabits = habitService.getAllHabits() || [];
 
-            let totalFocusMinutes = 0;
-            let deepWorkMinutes = 0;
+            console.log("\n--- [DETAILED DIAGNOSTIC] Snapshot Computation ---");
+            console.log(`Window: ${startOfDay} (${startOfDayDate.toLocaleString()}) to ${endOfDay} (${endOfDayDate.toLocaleString()})`);
+
+            let totalFocusSeconds = 0;
+            let taskFocusSeconds = 0;
             let frictionCounts = { light: 0, medium: 0, heavy: 0 };
             let pinchFrequencies = {};
 
-            // 1. Task Sessions
-            allNodes.filter(n => n.type === 'TASK' && n.metadata?.sessions).forEach(task => {
-                const sessionsOnDate = task.metadata.sessions.filter(s =>
-                    s.status === 'completed' &&
-                    s.endTime >= startOfDay &&
-                    s.endTime < endOfDay
-                );
+            // Accumulators
+            let doneTasksTodayCount = 0;
+            let doneTasksTodayWithCompletedSessionsCount = 0;
+            let doneTasksTodayWithZeroSessionsCount = 0;
+            let doneTasksTodayWithOnlyActiveSessionsCount = 0;
+            let zeroSecondTasks = [];
+            let allDoneTasksEver = [];
+            let tasksWithSessionsEver = [];
 
-                sessionsOnDate.forEach(s => {
-                    const durationMins = Math.round((s.actualDuration || 0) / 60);
-                    totalFocusMinutes += durationMins;
-                    if (s.actualDuration > 90 * 60) {
-                        deepWorkMinutes += durationMins;
+            const taskNodes = allNodes.filter(n => n.type === 'TASK');
+
+            console.log(`[Diagnostic] Filtering DONE tasks for window: ${dateStr}`);
+            taskNodes.forEach(task => {
+                const meta = task.metadata || {};
+                const isDone = meta.status === 'DONE';
+                if (!isDone) return;
+
+                const completedAt = meta.completedAt || meta.doneAt || 0;
+                const completedDateStr = completedAt ? new Date(completedAt).toLocaleDateString('en-CA') : 'N/A';
+                const wasDoneInWindow = completedAt >= startOfDay && completedAt < endOfDay;
+
+                console.log(`- Task: "${task.name}" | completedAt: ${completedAt} (${completedDateStr}) | In Window? ${wasDoneInWindow}`);
+
+                const sessions = meta.sessions || [];
+                const completedToday = sessions.filter(s => s.status === 'completed' && s.endTime >= startOfDay && s.endTime < endOfDay);
+                
+                if (wasDoneInWindow) {
+                    doneTasksTodayCount++;
+                    if (completedToday.length > 0) {
+                        doneTasksTodayWithCompletedSessionsCount++;
                     }
+                }
+
+                completedToday.forEach(s => {
+                    const duration = s.actualDuration || 0;
+                    taskFocusSeconds += duration;
+                    totalFocusSeconds += duration;
                 });
             });
 
-            // 2. Habit Completions
+            if (doneTasksTodayCount > 0) {
+                console.log(`[Journal Capture] Tasks Done Today: ${doneTasksTodayCount}, with focus: ${doneTasksTodayWithCompletedSessionsCount}, Deep Work: ${Math.round(taskFocusSeconds/60)}m`);
+            }
+
+            // (Processing habits & drivers)
             allHabits.forEach(habit => {
                 const completionsOnDate = (habit.completions || []).filter(c =>
                     c.timestamp >= startOfDay &&
                     c.timestamp < endOfDay
                 );
-
                 completionsOnDate.forEach(c => {
-                    if (c.duration) {
-                        totalFocusMinutes += Math.round(c.duration / 60);
-                    }
+                    const durationSec = c.duration || 0;
+                    if (durationSec > 0) totalFocusSeconds += durationSec;
                     const friction = c.friction || 'medium';
-                    if (frictionCounts[friction] !== undefined) {
-                        frictionCounts[friction]++;
-                    }
+                    if (frictionCounts[friction] !== undefined) frictionCounts[friction]++;
                 });
             });
 
-            // 3. PINCH Drivers (from Skill nodes)
             allNodes.filter(n => n.type === 'SKILL' && n.metadata?.pinchState?.drivers).forEach(skill => {
                 skill.metadata.pinchState.drivers.forEach(d => {
                     pinchFrequencies[d] = (pinchFrequencies[d] || 0) + 1;
                 });
             });
 
-            // Find dominant driver
             let dominantDriver = "Driver unclear";
             let maxFreq = 0;
             Object.entries(pinchFrequencies).forEach(([driver, freq]) => {
@@ -102,9 +128,11 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                 }
             });
 
+            console.log("\n--- [END DIAGNOSTIC] ---\n");
+
             return {
-                deepWorkMinutes,
-                totalFocusMinutes,
+                deepWorkMinutes: Math.round(taskFocusSeconds / 60),
+                totalFocusMinutes: Math.round(totalFocusSeconds / 60),
                 frictionCounts,
                 dominantDriver
             };
@@ -133,8 +161,16 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                 const todayStr = getLocalDateStr(now);
                 const entry = await journalService.getEntry(todayStr);
 
+                // If manual preference is on and a manual record exists, skip auto-detection
+                const preferManual = localStorage.getItem('pref_manual_sleep') === 'true';
+                const hasManualRecord = entry.biological?.manualOverride || (entry.biological?.sleepStartTime && !entry.biological?.sleepDetectedAutomatically);
+                if (preferManual && hasManualRecord) {
+                    console.log("JournalService: Skipping auto-sleep detection (Manual preference enabled + manual record exists)");
+                    return;
+                }
+
                 // only update if not manually overridden or already detected for today
-                if (!entry.biological.sleepStartTime || entry.biological.sleepDetectedAutomatically) {
+                if (!entry.biological?.sleepStartTime || entry.biological?.sleepDetectedAutomatically) {
                     const sleepDurationMinutes = Math.round(gap / (60 * 1000));
 
                     await journalRepository.update(entry.id, {

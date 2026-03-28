@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { logToFile, logErrorToFile } from './lib/logger';
 
 import MainLayout from './layout/MainLayout';
 import { useWindowState } from './hooks/useWindowState';
@@ -51,8 +52,9 @@ const LegacyApp = () => (
   <StoreProvider>
     <Routes>
       <Route path="/" element={<MainLayout />}>
-        <Route index element={<Launchpad />} />
-        <Route path="launchpad" element={<Launchpad />} />
+        <Route index element={<LaunchpadFlow />} />
+        <Route path="launchpad" element={<LaunchpadFlow />} />
+        <Route path="planning" element={<Navigate to="/launchpad" replace />} />
         <Route path="home" element={<Home />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="marketplace" element={<Marketplace />} />
@@ -177,8 +179,10 @@ const KeyboardShortcuts = () => {
 
 
 import { supabase } from './lib/supabase';
-import { waitForReady } from './backbone-v2';
+import { backbone, waitForReady, NodeTypes, reloadAllData, clearAllData } from './backbone-v2';
 import PremiumLoadingScreen from './components/loading/PremiumLoadingScreen';
+import LaunchpadFlow from './components/LaunchpadFlow';
+import EnergyModeTag from './components/EnergyModeTag';
 
 const LandingLog = () => {
   useEffect(() => { console.log("App: Root /* route matched (LandingLog mounted)"); }, []);
@@ -221,14 +225,14 @@ function App() {
     return () => window.removeEventListener('dblclick', handleGlobalDoubleClick);
   }, []);
 
-  useEffect(() => {
+    useEffect(() => {
     // 1. Initialization
-    console.log('[App Init] Starting initialization flow');
-    console.log('[App Init] Calling supabase.auth.getSession()');
+    console.log('[AUTH] App started');
+    console.log('[AUTH] Calling supabase.auth.getSession() on startup');
 
     supabase.auth.getSession()
       .then(({ data: { session: initialSession } }) => {
-        console.log('[App Init] Session check complete. Result:', initialSession ? `Session for ${initialSession.user.email}` : 'No session');
+        console.log('[AUTH] Initial session check complete. Result:', initialSession ? `Session exists for ${initialSession.user.email}` : 'No initial session found');
 
         setSession(initialSession);
         setLoading(false);
@@ -249,49 +253,80 @@ function App() {
     let unsubscribers = [];
 
     const handleOAuthUrl = async (url) => {
-      console.log('[App Auth] Deep link received:', url);
+      console.log('[AUTH] Deep link received:', url);
+      await logToFile(`Deep link received: ${url}`);
       
-      // Look for our callback path (e.g. backbone://auth/callback) or general auth segments
-      if (typeof url === 'string' && (url.includes('auth/callback') || url.includes('access_token='))) {
-        console.log('[App Auth] Detected OAuth callback segment. Processing session...');
+      try {
+        const urlObj = new URL(url);
         
-        try {
-          // Supabase helper to extract session from the hash fragment
-          const { data, error } = await supabase.auth.getSessionFromUrl({ 
-            url, 
-            storeSession: true 
-          });
+        // 1. Explicitly reject fragment callbacks (#access_token)
+        if (urlObj.hash && urlObj.hash.includes('access_token=')) {
+          console.warn('[AUTH] Unexpected fragment callback detected! Expected PKCE code flow.');
+          await logToFile(`UNEXPECTED: Fragment callback detected (Implicit flow) instead of PKCE: ${url}`);
+          return;
+        }
 
-          if (error) {
-            console.error('[App Auth] Error getting session from URL:', error.message);
-          } else if (data?.session) {
-            console.log('[App Auth] Session retrieved successfully for:', data.session.user.email);
+        // 2. Parse search params for code or error
+        const code = urlObj.searchParams.get('code');
+        const error = urlObj.searchParams.get('error');
+        const errorDescription = urlObj.searchParams.get('error_description');
+
+        if (error) {
+          console.error('[AUTH] OAuth error received in callback:', error, errorDescription);
+          await logToFile(`OAuth Callback Error: ${error} - ${errorDescription}`);
+          return;
+        }
+
+        if (code) {
+          console.log('[AUTH] PKCE code detected:', code);
+          await logToFile(`Parsed code value: ${code.substring(0, 10)}... (length: ${code.length})`);
+          
+          console.log('[AUTH] Exchanging code for session via exchangeCodeForSession...');
+          await logToFile('Starting exchangeCodeForSession...');
+          
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            console.error('[AUTH] exchangeCodeForSession failed:', exchangeError.message);
+            await logErrorToFile('exchangeCodeForSession', exchangeError);
+            return;
+          }
+          
+          if (data?.session) {
+            console.log('[AUTH] exchangeCodeForSession SUCCESSFUL. User:', data.session.user.email);
+            await logToFile(`exchangeCodeForSession SUCCESSFUL. User: ${data.session.user.email}`);
             setSession(data.session);
           } else {
-            console.warn('[App Auth] No session data returned from getSessionFromUrl');
+            console.warn('[AUTH] Session exchange returned null session state.');
+            await logToFile('exchangeCodeForSession returned no session state.');
           }
-        } catch (err) {
-          console.error('[App Auth] Unexpected exception during deep link processing:', err);
+        } else if (url.includes('auth/callback')) {
+          console.warn('[AUTH] Callback URL received but no code parameter present.');
+          await logToFile('WARNING: Auth callback received but no "code" found in search params.');
         }
+      } catch (err) {
+        console.error('[AUTH] Unexpected process error during deep link handling:', err);
+        await logErrorToFile('handleOAuthUrl', err);
       }
     };
 
     // 1. Specialized Deep Link Plugin Listener (Preferred)
     import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
-      console.log('[App Auth] Initializing Deep Link plugin listener');
+      console.log('[AUTH] Deep link listener (plugin) registered');
       onOpenUrl((urls) => {
         urls.forEach(handleOAuthUrl);
       }).then(unsub => { unsubscribers.push(unsub); });
     }).catch(err => {
-      console.warn('[App Auth] Deep link plugin not available:', err.message);
+      console.warn('[AUTH] Deep link plugin not available:', err.message);
     });
 
     // 2. Event System Fallback (tauri://url or app://open-url)
     import('@tauri-apps/api/event').then(({ listen }) => {
+      console.log('[AUTH] Deep link listener (event) registered');
       // Listen for both event names as requested for redundancy
       ['tauri://url', 'app://open-url'].forEach(eventName => {
         listen(eventName, (event) => {
-          console.log(`[App Auth] Event received via ${eventName}:`, event.payload);
+          console.log(`[AUTH] Protocol event received via ${eventName}:`, event.payload);
           const url = typeof event.payload === 'string' ? event.payload : event.payload?.[0];
           if (url) handleOAuthUrl(url);
         }).then(unsub => { unsubscribers.push(unsub); });
@@ -300,23 +335,30 @@ function App() {
 
     // 3. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('[App] Auth Event:', event);
+      console.log('[AUTH] State Change Event:', event, newSession ? `User: ${newSession.user.email}` : 'None');
+      await logToFile(`Auth State Change Event: ${event} | User: ${newSession?.user?.email || 'None'}`);
+      
       setSession(newSession);
 
-      // Requirement: When user signs in, ensure data is refetched and UI state is refreshed
-      if (event === 'SIGNED_IN') {
-        console.log('[App] User signed in, synchronizing repository data...');
-        setRepositoriesReady(false); // Show loading state while fetching user data
-        
+      if (event === 'SIGNED_IN' && newSession) {
+        console.log('[App] User signed in, re-initializing systems...');
+        setRepositoriesReady(false);
         try {
-          // Re-trigger the repository initialization flow
-          const success = await waitForReady(); 
-          console.log('[App] Synchronization complete. Success:', success);
+          await reloadAllData();
         } catch (err) {
-          console.error('[App] Failed to sync data after sign-in:', err);
+          console.error('[App] Failed to reload data after sign-in:', err);
+          await logErrorToFile('reloadAllData (SIGNED_IN)', err);
         } finally {
           setRepositoriesReady(true);
         }
+      }
+
+      if (event === 'SIGNED_OUT') {
+        console.log('[App] User signed out, clearing data...');
+        clearAllData();
+        setRepositoriesReady(false);
+        // Refresh session state (will show empty till login)
+        setRepositoriesReady(true);
       }
 
       if (loading) setLoading(false);
@@ -330,6 +372,52 @@ function App() {
     };
   }, []);
 
+  // Daily Rollover Logic
+  useEffect(() => {
+    if (repositoriesReady) {
+      const runRollover = async () => {
+        const today = new Date().toDateString();
+        const lastRun = localStorage.getItem("lastRolloverDate");
+
+        if (lastRun !== today) {
+          console.log("[Rollover] New day detected. Starting daily rollover...");
+          try {
+            const allNodes = await backbone.getAllNodes();
+            const tomorrowTasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.tomorrow === true);
+
+            if (tomorrowTasks.length > 0) {
+              console.log(`[Rollover] Found ${tomorrowTasks.length} tasks to roll over from tomorrow to today.`);
+              
+              // Process in parallel for speed
+              await Promise.all(tomorrowTasks.map(task => 
+                backbone.updateNode(task.id, {
+                  metadata: {
+                    ...task.metadata,
+                    isToday: true,
+                    tomorrow: false
+                  }
+                })
+              ));
+              
+              console.log("[Rollover] Successfully rolled over tasks.");
+            } else {
+              console.log("[Rollover] No tomorrow tasks found to roll over.");
+            }
+            
+            localStorage.setItem("lastRolloverDate", today);
+            console.log("[Rollover] Last run date updated to:", today);
+          } catch (err) {
+            console.error("[Rollover] Failed to complete daily rollover:", err);
+          }
+        } else {
+          console.log("[Rollover] Rollover already ran today:", today);
+        }
+      };
+      
+      runRollover();
+    }
+  }, [repositoriesReady]);
+
   return (
     <ThemeProvider>
       <Router>
@@ -341,6 +429,7 @@ function App() {
           <SessionProvider>
             <KeyboardShortcuts />
             <BackgroundLayer />
+            <EnergyModeTag />
             <Routes>
               <Route path="/focus" element={<FocusPage />} />
               <Route path="/*" element={<><LandingLog /><LegacyApp /></>} />

@@ -17,7 +17,12 @@ export const createPersistentRepository = () => {
     // Internal helper to save to cloud
     const persist = async (nodes) => {
         const userId = await getUserId();
-        if (!userId) return;
+        if (!userId) {
+            console.error(`Repository [ID:${instanceId}]: Persist FAILED - No user ID`);
+            return;
+        }
+
+        console.log(`Repository [ID:${instanceId}]: Persisting to Supabase. User: ${userId}. Nodes:`, nodes);
 
         try {
             // Transform nodes for Supabase
@@ -95,6 +100,12 @@ export const createPersistentRepository = () => {
             return initPromise;
         },
 
+        reinitialize: async () => {
+            console.log(`Repository [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
+            initPromise = null;
+            return await this.initialize();
+        },
+
         save: async (node) => {
             const index = storage.findIndex(n => n.id === node.id);
             if (index !== -1) {
@@ -114,7 +125,26 @@ export const createPersistentRepository = () => {
         update: async (id, updates) => {
             const index = storage.findIndex(n => n.id === id);
             if (index !== -1) {
-                storage[index] = { ...storage[index], ...updates, updatedAt: Date.now() };
+                const existing = storage[index];
+                
+                // Shallow merge metadata for safety if provided
+                let newMetadata = existing.metadata || {};
+                if (updates.metadata) {
+                    newMetadata = { ...newMetadata, ...updates.metadata };
+                }
+
+                const updatedNode = { 
+                    ...existing, 
+                    ...updates, 
+                    metadata: newMetadata,
+                    updatedAt: Date.now() 
+                };
+                
+                if (id === 'TASK-1774556587495-5ltn0' || updatedNode.type === 'TASK') {
+                    console.log(`[DEBUG Repository] Final merged metadata sessions:`, updatedNode.metadata?.sessions?.length || 0);
+                }
+
+                storage[index] = updatedNode;
                 await persist(storage[index]);
                 notify();
                 return storage[index];

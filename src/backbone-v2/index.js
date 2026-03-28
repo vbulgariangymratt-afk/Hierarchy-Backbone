@@ -99,6 +99,34 @@ const {
     waitForReady
 } = getInstance();
 
+import { logToFile } from '../lib/logger';
+
+export const reloadAllData = async () => {
+    console.log('Backbone V2: RELOADING ALL DATA...');
+    await logToFile('Triggering reloadAllData after SIGNED_IN');
+    
+    await logToFile('Reloading areas and core nodes...');
+    await repository.reinitialize();
+    
+    await logToFile('Reloading journal and habits...');
+    await Promise.all([
+        journalRepo.reinitialize(),
+        habitService.initialize ? habitService.initialize() : Promise.resolve(),
+        backbone.initialize ? backbone.initialize() : Promise.resolve(),
+        journalService.initialize ? journalService.initialize() : Promise.resolve()
+    ]);
+
+    console.log('Backbone V2: RELOAD COMPLETE');
+    await logToFile('Reload complete');
+    return true;
+};
+
+export const clearAllData = () => {
+    console.log('Backbone V2: CLEARING ALL DATA (Signed Out)');
+    // This should ideally reset storage in repos
+    // For now we rely on the fact that repos will re-init with empty if no user
+};
+
 export {
     backbone,
     repository,

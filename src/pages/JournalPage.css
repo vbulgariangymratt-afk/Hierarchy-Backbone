@@ -57,6 +57,50 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+.date-navigator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nav-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: rgba(var(--color-primary-rgb), 0.2);
+    border-color: var(--color-primary);
+}
+
+.nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.date-picker {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--font-family-mono);
+    outline: none;
+}
+
+.liquid-mode.light .date-picker {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
 .section-header {
     padding: 16px 20px;
     display: flex;
@@ -304,4 +348,198 @@
     padding: 40px;
     text-align: center;
     color: var(--text-secondary);
+}
+
+/* Manual Sleep Log */
+.manual-sleep-log {
+    margin-top: 10px;
+}
+
+.sleep-log-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.time-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.time-input-group label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    letter-spacing: 0.5px;
+}
+
+.time-input {
+    background: var(--alpha-low, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text-primary);
+    font-size: 15px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.time-input:focus {
+    border-color: var(--color-primary);
+}
+
+.save-sleep-btn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    width: 100%;
+}
+
+.save-sleep-btn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.save-sleep-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sleep-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-style: italic;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.saved-feedback {
+    font-size: 12px;
+    color: #10b981;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 8px;
+}
+
+.metric-tag.manual {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+/* Identity Log Details */
+.identity-log-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.identity-log-item.active {
+    background: rgba(var(--color-primary-rgb), 0.1);
+    border-color: rgba(var(--color-primary-rgb), 0.3);
+}
+
+.area-details {
+    margin: 0 4px 8px 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 0 0 12px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: slideDown 0.2s ease-out;
+}
+
+.liquid-mode.light .area-details {
+    background: rgba(255, 255, 255, 0.4);
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+.skill-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skill-group-name {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    letter-spacing: 0.1em;
+    opacity: 0.8;
+}
+
+.skill-task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.completed-task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.liquid-mode.light .completed-task-item {
+    border-bottom-color: rgba(0, 0, 0, 0.03);
+}
+
+.completed-task-item:last-child {
+    border-bottom: none;
+}
+
+.task-title {
+    color: var(--text-primary);
+    font-weight: 400;
+}
+
+.task-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.task-session-minutes {
+    font-size: 10px;
+    padding: 2px 6px;
+    background: rgba(var(--color-primary-rgb), 0.1);
+    color: var(--color-primary);
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.task-completion-time {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: var(--font-family-mono);
+    min-width: 50px;
+    text-align: right;
+}
+
+.no-tasks-hint {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-style: italic;
+    text-align: center;
+    padding: 8px;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
 }

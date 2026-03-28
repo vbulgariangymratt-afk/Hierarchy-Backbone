@@ -84,6 +84,24 @@ const AreaPage = () => {
         fetchData();
     }, [id]);
 
+    // Auto-refresh when a skill wakes up
+    useEffect(() => {
+        const soonToWake = skills.find(s => s.metadata?.sleepUntil && new Date(s.metadata.sleepUntil) > new Date());
+        if (soonToWake) {
+            const timers = skills
+                .filter(s => s.metadata?.sleepUntil && new Date(s.metadata.sleepUntil) > new Date())
+                .map(s => {
+                    const delay = new Date(s.metadata.sleepUntil).getTime() - Date.now();
+                    if (delay > 0 && delay < 24 * 60 * 60 * 1000) { // Only set timers for things within 24h for efficiency
+                        return setTimeout(() => fetchData(), delay + 100);
+                    }
+                    return null;
+                }).filter(Boolean);
+            
+            return () => timers.forEach(t => clearTimeout(t));
+        }
+    }, [skills]);
+
     const handleCreateSkill = async (e) => {
         if (e && e.key !== 'Enter' && e.type !== 'click') return;
         if (!newSkillName.trim()) return;
@@ -117,46 +135,24 @@ const AreaPage = () => {
         e.preventDefault();
         e.stopPropagation();
 
-        const currentStatus = skill.metadata?.status || (skill.metadata?.isActive ? 'ACTIVE' : 'SLEEPING');
-        const isCurrentlyActive = currentStatus === 'ACTIVE';
+        const isCurrentlySleeping = isSkillSleeping(skill);
 
-        if (!isCurrentlyActive) {
-            // Check global limit
-            const totalActive = allNodes.filter(n => n.type === NodeTypes.SKILL && (n.metadata?.status === 'ACTIVE' || (n.metadata?.isActive && n.metadata?.status !== 'SLEEPING'))).length;
-            if (totalActive >= 100) {
+        if (isCurrentlySleeping) {
+            // Check global limit before waking
+            const activeCount = allNodes.filter(n => n.type === NodeTypes.SKILL && !isSkillSleeping(n)).length;
+            if (activeCount >= 100) {
                 setIsLimitModalOpen(true);
                 return;
             }
         }
 
-        const nextStatus = isCurrentlyActive ? 'SLEEPING' : 'ACTIVE';
-        const updates = [
-            backbone.updateNode(skill.id, {
-                metadata: {
-                    ...skill.metadata,
-                    status: nextStatus,
-                    isActive: nextStatus === 'ACTIVE'
-                }
-            })
-        ];
-
-        // If putting skill to sleep, cascade to its objectives
-        if (nextStatus === 'SLEEPING') {
-            const skillObjectives = allNodes.filter(n => n.parentId === skill.id && n.type === NodeTypes.OBJECTIVE);
-            skillObjectives.forEach(obj => {
-                updates.push(backbone.updateNode(obj.id, {
-                    metadata: {
-                        ...obj.metadata,
-                        status: 'SLEEPING',
-                        isActive: false,
-                        deactivatedAt: Date.now()
-                    }
-                }));
-            });
-        }
-
         try {
-            await Promise.all(updates);
+            if (isCurrentlySleeping) {
+                await backbone.wakeSkill(skill.id);
+            } else {
+                // Toggle from active to sleeping (indefinite)
+                await backbone.sleepSkill(skill.id);
+            }
             fetchData();
         } catch (error) {
             console.error("Failed to toggle skill:", error);
@@ -186,7 +182,6 @@ const AreaPage = () => {
             await backbone.updateNode(id, {
                 name: areaEditForm.name,
                 metadata: {
-                    ...area.metadata,
                     identityAnchor: areaEditForm.identityAnchor,
                     iconUrl: areaEditForm.iconUrl
                 }
@@ -224,7 +219,6 @@ const AreaPage = () => {
             if (!skill) return;
             await backbone.updateNode(skillId, {
                 metadata: {
-                    ...skill.metadata,
                     identityTier: newTier
                 }
             });
@@ -272,8 +266,18 @@ const AreaPage = () => {
     if (loading) return <div className="area-page-loading">Loading Area...</div>;
     if (!area) return <div className="area-page-error">Area not found.</div>;
 
-    const activeSkills = skills.filter(s => s.metadata?.status === 'ACTIVE' || (s.metadata?.isActive && s.metadata?.status !== 'SLEEPING'));
-    const sleepingSkills = skills.filter(s => !activeSkills.includes(s));
+    const isSkillSleeping = (skill) => {
+        if (skill.metadata?.isSleeping) return true;
+        if (skill.metadata?.sleepUntil) {
+            return new Date(skill.metadata.sleepUntil) > new Date();
+        }
+        // If it was a timed sleep and we are past it, we consider it AWAKE
+        // Only trust status if neither of the dynamic flags are set
+        return skill.metadata?.status === 'SLEEPING';
+    };
+
+    const activeSkills = skills.filter(s => !isSkillSleeping(s));
+    const sleepingSkills = skills.filter(s => isSkillSleeping(s));
 
     return (
         <div className="area-page">
@@ -545,31 +549,26 @@ const AreaPage = () => {
                                     <div className="footer-left">
                                         <button
                                             className="skill-status-btn sleep"
-                                            onClick={(e) => handleToggleSkill(e, skill)}
+                                            onClick={(e) => {
+                                                handleToggleSkill(e, skill);
+                                            }}
                                         >
                                             Put to Sleep
                                         </button>
 
-                                        {!skill.metadata?.cooldownActive ? (
-                                            <button
-                                                className="skill-status-btn rest"
-                                                onClick={async (e) => {
-
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    if (window.confirm(`Start 5-day rest period for ${skill.name}?`)) {
-                                                        await backbone.startManualCooldown(skill.id);
-                                                        fetchData();
-                                                    }
-                                                }}
-                                            >
-                                                Rest 5 Days
-                                            </button>
-                                        ) : (
-                                            <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: '600', padding: '6px 10px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '8px' }}>
-                                                Resting (5d cycle)
-                                            </span>
-                                        )}
+                                        <button
+                                            className="skill-status-btn rest"
+                                            onClick={async (e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (window.confirm(`Start 5-day rest period for ${skill.name}?`)) {
+                                                    await backbone.sleepSkill(skill.id, 5);
+                                                    fetchData();
+                                                }
+                                            }}
+                                        >
+                                            Rest 5 Days
+                                        </button>
                                     </div>
                                     {skill.metadata?.pinchState && (
                                         <div className="pinch-tag">
@@ -676,10 +675,22 @@ const AreaPage = () => {
                                         <button
                                             className="skill-status-btn activate"
                                             onClick={(e) => handleToggleSkill(e, skill)}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
                                         >
                                             <NodeIcon iconUrl={SVG_ICONS.ROCKET} size={14} />
-                                            Activate
+                                            Wake Up
                                         </button>
+                                        
+                                        {skill.metadata?.sleepUntil && (
+                                            <span style={{ fontSize: '11px', opacity: 0.6, fontWeight: 600 }}>
+                                                Sleep until {new Date(skill.metadata.sleepUntil).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            </span>
+                                        )}
+                                        {skill.metadata?.isSleeping && (
+                                            <span style={{ fontSize: '11px', opacity: 0.6, fontWeight: 600 }}>
+                                                Indefinite Sleep
+                                            </span>
+                                        )}
                                     </div>
                                     {skill.metadata?.pinchState && (
                                         <div className="pinch-tag">

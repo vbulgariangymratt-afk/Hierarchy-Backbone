@@ -10,6 +10,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>backbone</string>
+				<string>backbone-dev</string>
 			</array>
 		</dict>
 	</array>
