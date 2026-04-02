@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './LaunchpadView.css';
 import NodeIcon from './NodeIcon';
+import AreaCard from './AreaCard';
+import LaunchpadHabitRow from './LaunchpadHabitRow';
+import { formatDuration } from '../utils/timeUtils';
+
 
 /**
  * LaunchpadView - Presentational with Local Selection State
@@ -12,9 +16,12 @@ const LaunchpadView = ({
     maintenance = null,
     onStartDay,
     onMaintenanceComplete,
-    onMaintenanceReplace
+    onMaintenanceReplace,
+    maintenanceHabitGroups = [],
+    onHabitComplete
 }) => {
     const [selectedAreaIds, setSelectedAreaIds] = useState([]);
+    const [isKeepAliveExpanded, setIsKeepAliveExpanded] = useState(false);
     const isInitialized = useRef(false);
 
     // Initial default selection: Top 3 Areas on first data load
@@ -26,7 +33,7 @@ const LaunchpadView = ({
         }
     }, [areas]);
 
-    const toggleSelection = (areaId) => {
+    const toggleSelection = useCallback((areaId) => {
         setSelectedAreaIds(prev => {
             const isSelected = prev.includes(areaId);
             if (isSelected) {
@@ -37,7 +44,7 @@ const LaunchpadView = ({
                 return [...prev, areaId];
             }
         });
-    };
+    }, []);
     return (
         <div className="launchpad-view">
             {/* 1. FIXED HEADER SECTION */}
@@ -50,91 +57,14 @@ const LaunchpadView = ({
 
             {/* 2. MAIN SECTION - AREA CARDS */}
             <main className="area-cards-container">
-                {areas.map(area => {
-                    const isSelected = selectedAreaIds.includes(area.id);
-                    return (
-                        <div
-                            key={area.id}
-                            className={`area-card ${area.inMotion ? 'is-motion' : ''} ${isSelected ? 'is-selected' : ''}`}
-                            onClick={() => toggleSelection(area.id)}
-                        >
-                            {/* Selection Checkmark Indicator */}
-                            {isSelected && (
-                                <div className="selection-indicator">
-                                    <span className="check-icon">✓</span>
-                                </div>
-                            )}
-
-                            {/* Area Aura Badge (Top-Right) */}
-                            <div className="area-aura-badge">
-                                <span className="aura-badge-value">{area.areaAura}</span>
-                                <span className="aura-badge-label">Aura</span>
-                            </div>
-
-                            <div className="area-card-header">
-                                <div className="area-icon-container">
-                                    <NodeIcon
-                                        iconUrl={area.metadata?.iconUrl}
-                                        defaultIcon="🌐"
-                                        size={24}
-                                    />
-                                </div>
-                                <div className="area-header-badges">
-                                    {area.inMotion && (
-                                        <div className="motion-badge">In Motion</div>
-                                    )}
-                                    {area.activePinch && (
-                                        <div className="pinch-badge">
-                                            PINCH: {area.activePinch}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="area-info">
-                                <h2 className="area-name">
-                                    {area.name}
-                                    {area.hasActiveSkills && <span className="active-marker-dot"></span>}
-                                </h2>
-                                <p className="area-value-statement">
-                                    {area.metadata?.identityAnchor}
-                                </p>
-                            </div>
-
-                            {area.stageInfo && (
-                                <div className="stage-momentum">
-                                    <span className="stage-label">
-                                        Currently starting Stage {area.stageInfo.currentStageIndex} of {area.stageInfo.totalStages}
-                                    </span>
-                                    <div className="stage-pips">
-                                        {Array.from({ length: area.stageInfo.totalStages }).map((_, i) => (
-                                            <div key={i} className="stage-pip">
-                                                <div
-                                                    className={`pip-fill ${i < area.stageInfo.currentStageIndex - 1 ? 'is-complete' : ''} ${i === area.stageInfo.currentStageIndex - 1 ? 'is-current' : ''}`}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {area.nextMinimalStep ? (
-                                <div className="inviting-action-block">
-                                    <div className="action-main-text">
-                                        5 minutes on <span className="task-highlight">{area.nextMinimalStep.label}</span>
-                                    </div>
-                                    <div className="action-reward-text">
-                                        +{area.nextMinimalStep.auraReward} Aura
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="no-task-placeholder">
-                                    No active focus tasks found
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                {areas.map(area => (
+                    <AreaCard 
+                        key={area.id}
+                        area={area}
+                        isSelected={selectedAreaIds.includes(area.id)}
+                        onToggle={toggleSelection}
+                    />
+                ))}
             </main>
 
             {/* 3. MAINTENANCE PANEL */}
@@ -144,7 +74,8 @@ const LaunchpadView = ({
                     <div className="maintenance-card">
                         <div className="maintenance-info">
                             <span className="maintenance-label">{maintenance.metadata?.activityText}</span>
-                            <span className="maintenance-duration">{maintenance.metadata?.durationMinutes} min</span>
+                            <span className="maintenance-duration">{formatDuration(maintenance.metadata?.durationMinutes, 'minutes')}</span>
+
                         </div>
                         <div className="maintenance-actions">
                             <button
@@ -163,6 +94,50 @@ const LaunchpadView = ({
                     </div>
                 </section>
             )}
+            {/* 4. KEEP IT ALIVE (Maintenance Habits) SECTION */}
+            <section className="keep-it-alive-section">
+                <header 
+                    className={`keep-it-alive-header ${isKeepAliveExpanded ? 'is-expanded' : ''}`}
+                    onClick={() => setIsKeepAliveExpanded(!isKeepAliveExpanded)}
+                >
+                    <span className="toggle-chevron">‣</span>
+                    <span className="keep-it-alive-title">Keep It Alive</span>
+                </header>
+                
+                {isKeepAliveExpanded && (
+                    <div className="keep-it-alive-content">
+                        {maintenanceHabitGroups.length > 0 ? (
+                            maintenanceHabitGroups.map(group => (
+                                <div key={group.skill.id} className="keep-it-alive-group">
+                                    <div className="keep-it-alive-skill-name">
+                                        {group.skill.name}
+                                    </div>
+                                    <div className="keep-it-alive-habit-list">
+                                        {!group.hasNoHabits ? (
+                                            group.habits.map(habit => (
+                                                <LaunchpadHabitRow 
+                                                    key={habit.id}
+                                                    habit={habit}
+                                                    onComplete={onHabitComplete}
+                                                />
+                                            ))
+                                        ) : (
+                                            <div className="keep-it-alive-placeholder">
+                                                Open this skill for {formatDuration(2, 'minutes')}
+
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="everything-is-alive-message">
+                                Everything is alive today.
+                            </div>
+                        )}
+                    </div>
+                )}
+            </section>
 
             {/* 4. START MY DAY BUTTON */}
             <div className="start-day-footer">

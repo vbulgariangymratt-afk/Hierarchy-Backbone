@@ -2,52 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useOutlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
+import MiniLaunchpadModal from '../components/modals/MiniLaunchpadModal';
 import { backbone, NodeTypes } from '../backbone-v2/index';
+import { useBackboneStore } from '../store/backboneStore';
 import './MainLayout.css';
 
 const MainLayout = () => {
-    const [safeMode, setSafeMode] = useState(false);
+    // --- ZUSTAND SELECTORS ---
+    const safeMode = useBackboneStore(state => 
+        state.nodes.some(n => n.type === NodeTypes.OBJECTIVE && n.metadata?.burnoutRisk === true)
+    );
+
     const [bannerDismissed, setBannerDismissed] = useState(false);
 
-    useEffect(() => {
-        console.log('[MainLayout] Checking objectives for burnout risk...');
-        const check = async () => {
-            try {
-                const nodes = await backbone.getAllNodes();
-                console.log('[MainLayout] Found', nodes.length, 'nodes total');
-                const hasRisk = nodes.some(
-                    n => n.type === NodeTypes.OBJECTIVE && n.metadata?.burnoutRisk === true
-                );
-                if (hasRisk) console.log('[MainLayout] Burnout risk detected, enabling Energy Protection Mode');
-                setSafeMode(hasRisk);
-            } catch (err) {
-                console.error('[MainLayout] Error checking for risk:', err);
-            }
-        };
-        check();
-        const interval = setInterval(check, 60_000);
-        return () => clearInterval(interval);
-    }, []);
+    // Modal state
+    const [selectedSkill, setSelectedSkill] = useState(null);
+    const [isLaunchpadOpen, setIsLaunchpadOpen] = useState(false);
+
+    const openLaunchpad = (skill) => {
+        setSelectedSkill(skill);
+        setIsLaunchpadOpen(true);
+    };
+
 
     const location = useLocation();
     const outlet = useOutlet();
-    console.log("MainLayout rendering. Location:", location.pathname);
-    console.log("MainLayout outlet exists:", !!outlet);
     const showBanner = safeMode && !bannerDismissed;
 
     return (
         <div className="main-layout">
             <div className="app-drag-region" data-tauri-drag-region />
-            <Sidebar />
+            <Sidebar onSkillClick={openLaunchpad} />
             <main className="content-area">
-                {/* Banner removed in favor of EnergyModeTag */}
-                
                 <div style={{ height: '100%', width: '100%' }}>
                     {outlet}
                 </div>
             </main>
+
+            {/* Global Modals */}
+            <MiniLaunchpadModal 
+                isOpen={isLaunchpadOpen} 
+                onClose={() => setIsLaunchpadOpen(false)} 
+                skill={selectedSkill}
+            />
         </div>
     );
 };
+
 
 export default MainLayout;

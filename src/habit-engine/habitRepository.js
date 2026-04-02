@@ -2,6 +2,9 @@ import { supabase } from '../lib/supabase';
 
 export const createHabitRepository = () => {
     let habits = [];
+    const subscribers = new Set();
+    const notify = () => subscribers.forEach(callback => callback(habits));
+
     const instanceId = Math.random().toString(36).substr(2, 5);
     console.log(`HabitRepo: NEW INSTANCE CREATED [ID:${instanceId}]`);
 
@@ -23,6 +26,8 @@ export const createHabitRepository = () => {
                     user_id: userId,
                     type: habit.type || 'HABIT',
                     if_trigger: habit.ifTrigger,
+                    frequency_type: habit.frequencyType || 'daily',
+                    target_count: habit.targetCount || 1,
                     is_active: habit.isActive !== false,
                     metadata: {
                         linkedSkillIds: habit.linkedSkillIds,
@@ -70,6 +75,8 @@ export const createHabitRepository = () => {
                             id: row.id,
                             type: row.type,
                             ifTrigger: row.if_trigger,
+                            frequencyType: row.frequency_type || 'daily',
+                            targetCount: row.target_count || 1,
                             isActive: row.is_active,
                             ...h,
                             createdAt: row.created_at,
@@ -85,11 +92,17 @@ export const createHabitRepository = () => {
             return initPromise;
         },
 
+        subscribe: (callback) => {
+            subscribers.add(callback);
+            return () => subscribers.delete(callback);
+        },
+
         getAll: () => [...habits],
 
         add: async (habit) => {
             habits.push(habit);
             await persist(habit);
+            notify();
             return habit;
         },
 
@@ -98,6 +111,7 @@ export const createHabitRepository = () => {
             if (index !== -1) {
                 habits[index] = { ...habits[index], ...updates };
                 await persist(habits[index]);
+                notify();
                 return habits[index];
             }
             throw new Error(`Habit with ID ${id} not found`);
@@ -114,6 +128,7 @@ export const createHabitRepository = () => {
 
                 habits = habits.filter(h => h.id !== id);
                 console.log(`HabitRepo: Habit removed from Supabase. New size: ${habits.length}`);
+                notify();
             } catch (e) {
                 console.error('Failed to delete habit from Supabase:', e);
             }

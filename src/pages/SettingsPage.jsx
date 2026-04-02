@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
+import { backbone, NodeTypes } from '../backbone-v2/index';
 import WallpaperInputPair from '../components/WallpaperInputPair';
 import './SettingsPage.css';
 
@@ -18,6 +20,18 @@ const SettingsPage = () => {
         syncError,
     } = useTheme();
 
+    const { 
+        guidedSlotRoles, 
+        updateGuidedSlotRoles,
+        focusSlots,
+        maintenanceSkillIds,
+        maintenanceEnabled,
+        updateMaintenanceSkillIds,
+        toggleMaintenanceEnabled
+    } = useSettings();
+
+    const [allSkills, setAllSkills] = useState([]);
+
     const global = wallpaperConfig.wallpapers.global;
 
     useEffect(() => {
@@ -26,6 +40,9 @@ const SettingsPage = () => {
             console.log('[SettingsPage] Initial user from getUser():', user ? user.email : 'null');
             setUser(user);
         });
+
+        // Load all skills for the Maintenance selector
+        backbone.getNodesByType(NodeTypes.SKILL).then(setAllSkills);
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             console.log('[SettingsPage] Auth state changed event:', event, 'User:', session?.user?.email ?? 'null');
@@ -133,6 +150,89 @@ const SettingsPage = () => {
                             )}
                         </>
                     )}
+                </div>
+            </section>
+
+            {/* ── Focus Set Section ───────────────────────────────────── */}
+            <section className="settings-section">
+                <h2 className="settings-section-title">Focus Set</h2>
+                <div className="settings-card">
+                    <div className="appearance-row">
+                        <div>
+                            <div className="appearance-row-label">Guided Slot Roles</div>
+                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: 0 }}>
+                                Show role labels (Main Quest, Growth, Maintenance, Wildcard, Flex) and helper descriptions in the Focus Center.
+                            </p>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={guidedSlotRoles}
+                                onChange={(e) => updateGuidedSlotRoles(e.target.checked)}
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Keep It Alive Section (Maintenance) ────────────────────── */}
+            <section className="settings-section">
+                <h2 className="settings-section-title">Keep It Alive (Maintenance)</h2>
+                <div className="settings-card">
+                    <div className="appearance-row" style={{ marginBottom: '20px' }}>
+                        <div>
+                            <div className="appearance-row-label">Enable Maintenance Section</div>
+                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: 0 }}>
+                                Display Maintenance skills in their own context-aware drawer.
+                            </p>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={maintenanceEnabled}
+                                onChange={(e) => toggleMaintenanceEnabled(e.target.checked)}
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div className="maintenance-skill-selector-container">
+                        <div className="appearance-row-label" style={{ marginBottom: '12px' }}>Choose Skills to Maintain</div>
+                        <div className="maintenance-skill-list">
+                            {allSkills.map(skill => {
+                                const isActive = focusSlots.includes(skill.id);
+                                const isMaintenance = maintenanceSkillIds.includes(skill.id);
+                                
+                                return (
+                                    <div 
+                                        key={skill.id} 
+                                        className={`maintenance-skill-item ${isActive ? 'disabled' : ''} ${isMaintenance ? 'selected' : ''}`}
+                                        onClick={() => {
+                                            if (isActive) return;
+                                            
+                                            let newIds;
+                                            if (isMaintenance) {
+                                                newIds = maintenanceSkillIds.filter(id => id !== skill.id);
+                                            } else {
+                                                newIds = [...maintenanceSkillIds, skill.id];
+                                            }
+                                            updateMaintenanceSkillIds(newIds);
+                                        }}
+                                    >
+                                        <div className="maintenance-skill-checkbox">
+                                            {isMaintenance && <span className="check-icon">✓</span>}
+                                        </div>
+                                        <div className="maintenance-skill-info">
+                                            <span className="skill-name">{skill.name}</span>
+                                            {isActive && <span className="active-badge">Active Focus</span>}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {allSkills.length === 0 && <p className="appearance-hint">No skills found in your hierarchy.</p>}
+                    </div>
                 </div>
             </section>
 

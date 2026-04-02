@@ -1,0 +1,11 @@
+{
+  "productName": "Backbone Hierarchy Dev",
+  "identifier": "com.warhead.backbonehierarchy.dev",
+  "plugins": {
+    "deep-link": {
+      "schemes": [
+        "backbone-dev"
+      ]
+    }
+  }
+}

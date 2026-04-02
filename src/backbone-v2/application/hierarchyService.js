@@ -1,4 +1,6 @@
 import { createNode, ValidParentMap, NodeTypes, TaskStatuses, ObjectiveStatuses, IdentityTiers } from '../domain/entities';
+import { supabase } from '../../lib/supabase';
+
 
 const LOCK_THRESHOLD_DAYS = 7;
 
@@ -53,14 +55,35 @@ export const HierarchyService = (repository, auraService) => {
         let rootNode = await repository.getById('ROOT');
 
         if (!rootNode) {
-            rootNode = await repository.save({
-                id: 'ROOT',
-                name: 'System Root',
-                type: NodeTypes.LIFE_AREA,
-                metadata: { hryvniaBalance: 0, dailyCompletions: {}, dailyAreaLog: {} },
-                createdAt: Date.now(),
-                updatedAt: Date.now()
-            });
+            // [CRITICAL SAFETY GUARD]: Before creating a new ROOT, verify it doesn't exist in Supabase
+            const { data: existingRoot } = await supabase
+                .from('nodes')
+                .select('*')
+                .eq('id', 'ROOT')
+                .single();
+
+            if (existingRoot) {
+                console.log("[Counter] ROOT found in cloud, restoring to local repository.");
+                rootNode = await repository.save({
+                    id: existingRoot.id,
+                    name: existingRoot.name,
+                    type: existingRoot.type,
+                    parentId: existingRoot.parent_id,
+                    metadata: existingRoot.metadata,
+                    createdAt: existingRoot.created_at,
+                    updatedAt: existingRoot.updated_at
+                });
+            } else {
+                console.log("[Counter] ROOT genuinely missing, creating fresh root.");
+                rootNode = await repository.save({
+                    id: 'ROOT',
+                    name: 'System Root',
+                    type: NodeTypes.LIFE_AREA,
+                    metadata: { hryvniaBalance: 0, dailyCompletions: {}, dailyAreaLog: {} },
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                });
+            }
         }
 
         const metadata = rootNode.metadata || {};
@@ -618,7 +641,23 @@ export const HierarchyService = (repository, auraService) => {
         const val = Number(amount);
         if (isNaN(val) || val <= 0) return { awarded: 0, before: 0, after: 0 };
 
-        let rootNode = await repository.getById('ROOT');
+        // [CRITICAL SAFETY GUARD]: Always fetch latest balance from Supabase directly to prevent stale master overwrites
+        const { data: cloudRoot } = await supabase
+            .from('nodes')
+            .select('*')
+            .eq('id', 'ROOT')
+            .single();
+
+        let rootNode = cloudRoot ? {
+            id: cloudRoot.id,
+            name: cloudRoot.name,
+            type: cloudRoot.type,
+            parentId: cloudRoot.parent_id,
+            metadata: cloudRoot.metadata,
+            createdAt: cloudRoot.created_at,
+            updatedAt: cloudRoot.updated_at
+        } : await repository.getById('ROOT');
+
         const currentBalance = rootNode?.metadata?.hryvniaBalance || 0;
         const newBalance = currentBalance + val;
 
@@ -627,6 +666,7 @@ export const HierarchyService = (repository, auraService) => {
                 metadata: { ...rootNode.metadata, hryvniaBalance: newBalance }
             });
         } else {
+            console.log(`[${label}] ROOT missing during award, creating fresh.`);
             await repository.save({
                 id: 'ROOT',
                 name: 'System Root',
@@ -1016,31 +1056,40 @@ export const HierarchyService = (repository, auraService) => {
     };
 
     const checkExpirations = async () => {
-        const allNodes = await repository.getAll();
-        const objectives = allNodes.filter(n => n.type === NodeTypes.OBJECTIVE && n.metadata?.status === ObjectiveStatuses.ACTIVE);
+        // Disabled auto-archiving as per Step 2 of the new Expiry Flow.
+        // We now handle this via UI prompts in SkillPage.jsx.
+        console.log("[Lifecycle] Expiration check skipped (Handled by UI)");
+    };
 
-        for (const obj of objectives) {
-            if (obj.metadata?.activatedAt && obj.metadata?.durationInDays) {
-                const expiryTime = obj.metadata.activatedAt + (obj.metadata.durationInDays * 24 * 60 * 60 * 1000);
-                if (Date.now() >= expiryTime) {
-                    await repository.update(obj.id, {
-                        metadata: {
-                            ...obj.metadata,
-                            status: ObjectiveStatuses.ARCHIVED,
-                            archivedAt: Date.now(),
-                            isActive: false,
-                            isSleeping: false,
-                            isArchived: true
-                        }
-                    });
-                    console.log(`[Lifecycle] Objective "${obj.name}" (Experiment) expired and moved to Archive.`);
-                }
+    const completeObjective = async (objectiveId) => {
+        const obj = await repository.getById(objectiveId);
+        if (!obj) return null;
+        return await repository.update(objectiveId, {
+            metadata: {
+                ...obj.metadata,
+                status: ObjectiveStatuses.COMPLETED,
+                isActive: false,
+                completedAt: Date.now()
             }
-        }
+        });
+    };
+
+    const extendObjective = async (objectiveId, extraDays = 7) => {
+        const obj = await repository.getById(objectiveId);
+        if (!obj) return null;
+        const currentDays = obj.metadata?.durationInDays || 14;
+        return await repository.update(objectiveId, {
+            metadata: {
+                ...obj.metadata,
+                durationInDays: currentDays + extraDays
+            }
+        });
     };
 
     const service = {
         checkExpirations: async () => await checkExpirations(),
+        completeObjective: async (id) => await completeObjective(id),
+        extendObjective: async (id, days) => await extendObjective(id, days),
         evaluateObjectiveBurnout: async (objectiveId) => await evaluateObjectiveBurnout(objectiveId),
         /**
          * Checks if a node is locked due to manual lock, stage sequence, or ancestor lock.
@@ -2303,22 +2352,43 @@ export const HierarchyService = (repository, auraService) => {
                 // 1. Structural Safeguard: Ensure ROOT exists
                 let rootNode = await repository.getById('ROOT');
                 if (!rootNode) {
-                    await repository.save({
-                        id: 'ROOT',
-                        name: 'System Root',
-                        type: NodeTypes.LIFE_AREA,
-                        metadata: {
-                            hryvniaBalance: 0,
-                            dailyCompletions: {},
-                            dailyAreaLog: {},
-                            activeMarketplace: [],
-                            marketplaceLastRefilledAt: 0,
-                            lastHryvniaSpendDate: null,
-                            unlockedRewardTier: 1
-                        },
-                        createdAt: Date.now(),
-                        updatedAt: Date.now()
-                    });
+                    // [CRITICAL SAFETY GUARD]: Before creating a new ROOT, verify it doesn't exist in Supabase
+                    const { data: existingRoot } = await supabase
+                        .from('nodes')
+                        .select('*')
+                        .eq('id', 'ROOT')
+                        .single();
+
+                    if (existingRoot) {
+                        console.log("HierarchyService [Setup]: ROOT restored from cloud.");
+                        await repository.save({
+                            id: existingRoot.id,
+                            name: existingRoot.name,
+                            type: existingRoot.type,
+                            parentId: existingRoot.parent_id,
+                            metadata: existingRoot.metadata,
+                            createdAt: existingRoot.created_at,
+                            updatedAt: existingRoot.updated_at
+                        });
+                    } else {
+                        console.log("HierarchyService [Setup]: ROOT genuinely missing, initializing fresh.");
+                        await repository.save({
+                            id: 'ROOT',
+                            name: 'System Root',
+                            type: NodeTypes.LIFE_AREA,
+                            metadata: {
+                                hryvniaBalance: 0,
+                                dailyCompletions: {},
+                                dailyAreaLog: {},
+                                activeMarketplace: [],
+                                marketplaceLastRefilledAt: 0,
+                                lastHryvniaSpendDate: null,
+                                unlockedRewardTier: 1
+                            },
+                            createdAt: Date.now(),
+                            updatedAt: Date.now()
+                        });
+                    }
                     console.log("HierarchyService [Setup]: ROOT node confirmed");
                 }
 

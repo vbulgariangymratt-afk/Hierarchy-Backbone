@@ -41,10 +41,12 @@ export const loginWithGoogle = async () => {
     console.log('[AUTH] Starting Google login flow');
     await logToFile('Starting Google login flow via loginWithGoogle()');
 
-    // Separate dev and prod schemes so both apps can receive deep links on one machine
-    const protocol = import.meta.env.DEV ? 'backbone-dev' : 'backbone';
-    const redirectTo = `${protocol}://auth/callback`;
- 
+    // In dev mode, use localhost so the live dev session can catch the callback.
+    // In production, use the deep link protocol.
+    const redirectTo = import.meta.env.DEV
+        ? 'http://localhost:5173/auth/callback'
+        : 'backbone://auth/callback';
+
     console.log('[AUTH] Environment:', import.meta.env.DEV ? 'DEV' : 'PROD');
     console.log('[AUTH] Redirect URL configured:', redirectTo);
 
@@ -53,7 +55,6 @@ export const loginWithGoogle = async () => {
             provider: 'google',
             options: {
                 redirectTo,
-                // ALWAYS skip browser redirect in the Tauri app
                 skipBrowserRedirect: true,
             },
         });
@@ -65,19 +66,16 @@ export const loginWithGoogle = async () => {
             return { data, error };
         }
 
-        console.log('[AUTH] OAuth response data:', data);
-
         if (data?.url) {
             console.log('[AUTH] Manually opening system browser via Tauri Opener:', data.url);
             try {
-                // Using openUrl as required by Tauri v2
                 await openUrl(data.url);
                 console.log('[AUTH] Browser open command sent successfully');
             } catch (openErr) {
                 console.error('[AUTH] Failed to open system browser:', openErr);
             }
         } else {
-             console.warn('[AUTH] No OAuth URL returned even with skipBrowserRedirect: true');
+            console.warn('[AUTH] No OAuth URL returned even with skipBrowserRedirect: true');
         }
 
         return { data, error };
@@ -85,7 +83,7 @@ export const loginWithGoogle = async () => {
         console.error('[AUTH] Unexpected error during OAuth flow:', err);
         return { data: null, error: err };
     }
-}
+};
 
 export const saveItem = async (title, content) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser()

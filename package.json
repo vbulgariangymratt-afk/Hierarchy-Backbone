@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "tauri:dev": "tauri dev -c src-tauri/tauri.dev.conf.json",
+    "tauri:build": "tauri build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { journalService, backbone, repository, NodeTypes, TaskStatuses } from '../backbone-v2';
+import { formatDuration } from '../utils/timeUtils';
 import './JournalPage.css';
 
 const ACTIVATION_LEVELS = ['VERY_LOW', 'LOW', 'NEUTRAL', 'GOOD', 'HIGH'];
@@ -95,41 +96,58 @@ const JournalPage = () => {
 
             setEntry(data);
             setLocalNotes(data.notes || "");
-            setTodayAreaLog(logs.areaLog);
-            setTodayRepLog(logs.repLog);
+            
+            // DYNAMIC MERGE: Combine backbone's static area logs (DONE tasks) 
+            // with detected in-progress sessions from today's scan.
+            const mergedAreas = {};
+            
+            // 1. Add DONE areas from backbone log
+            Object.entries(logs.areaLog).forEach(([areaId, count]) => {
+                mergedAreas[areaId] = { count, status: 'done' };
+            });
 
-            // Compute completed task groups
+            // 2. Compute completed task groups (Session Scan)
             const groups = {};
             allNodes.forEach(node => {
                 if (node.type !== NodeTypes.TASK) return;
                 
+                let isDoneToday = false;
                 let completionTime = 0;
                 let hasActivityToday = false;
-                let sessionMinutes = 0;
 
                 // 1. Task done on selected date?
                 if (node.metadata?.status === TaskStatuses.DONE && node.metadata?.completedAt) {
                     const ct = new Date(node.metadata.completedAt);
                     if (ct.toLocaleDateString('en-CA') === selectedDateStr) {
                         hasActivityToday = true;
+                        isDoneToday = true;
                         completionTime = ct.getTime();
                     }
                 }
 
                 // 2. Sessions on selected date?
                 const sessions = node.metadata?.sessions || [];
-                sessions.forEach(s => {
+                const sessionSeconds = sessions.reduce((sum, s) => {
                     if (s.status === 'completed' && s.endTime) {
                         const st = new Date(s.endTime);
                         if (st.toLocaleDateString('en-CA') === selectedDateStr) {
                             hasActivityToday = true;
                             completionTime = Math.max(completionTime, st.getTime());
-                            sessionMinutes += Math.round((s.actualDuration || 0) / 60);
+                            return sum + (s.actualDuration || 0);
                         }
                     }
-                });
+                    return sum;
+                }, 0);
+
+                // 3. Fallback duration
+                const fallbackSeconds = node.metadata?.totalFocusTime || node.metadata?.focusTime || 0;
+                const totalMinutes = sessionSeconds > 0 
+                    ? Math.round(sessionSeconds / 60)
+                    : Math.round(fallbackSeconds / 60);
 
                 if (hasActivityToday) {
+                    console.log(`[Duration] Task: ${node.name} | sessions: ${sessionSeconds}s | fallback: ${fallbackSeconds}s | total: ${totalMinutes}m`);
+
                     // Find ancestors
                     let skillNode = null;
                     let areaNode = null;
@@ -149,6 +167,14 @@ const JournalPage = () => {
 
                     if (areaNode) {
                         if (!groups[areaNode.id]) groups[areaNode.id] = {};
+                        
+                        // Track in-progress detection for the merged list
+                        // An area is "done" if ANY task in it is done (existing logic)
+                        // OR if it's already in the backbone areaLog.
+                        if (!mergedAreas[areaNode.id]) {
+                            mergedAreas[areaNode.id] = { count: 0, status: 'in_progress' };
+                        }
+
                         const skillId = skillNode ? skillNode.id : 'OTHER';
                         if (!groups[areaNode.id][skillId]) {
                             groups[areaNode.id][skillId] = {
@@ -160,7 +186,8 @@ const JournalPage = () => {
                             id: node.id,
                             name: node.name,
                             completionTime,
-                            sessionMinutes
+                            sessionMinutes: totalMinutes,
+                            status: isDoneToday ? 'done' : 'in_progress'
                         });
                     }
                 }
@@ -172,6 +199,10 @@ const JournalPage = () => {
                     s.tasks.sort((a, b) => b.completionTime - a.completionTime);
                 });
             });
+
+            // 3. Update States
+            setTodayAreaLog(mergedAreas);
+            setTodayRepLog(logs.repLog);
             setCompletedGroups(groups);
 
             const root = allNodes.find(n => n.id === 'ROOT');
@@ -461,7 +492,8 @@ const JournalPage = () => {
                                 <div className="value-group">
                                     <span className="value">
                                         {entry.biological?.sleepDurationMinutes
-                                            ? `${Math.floor(entry.biological.sleepDurationMinutes / 60)}h ${entry.biological.sleepDurationMinutes % 60}m`
+                                            ? formatDuration(entry.biological.sleepDurationMinutes, 'minutes')
+
                                             : "Sleep data not available"}
                                     </span>
                                     {entry.biological?.manualOverride && (
@@ -472,7 +504,16 @@ const JournalPage = () => {
                             <div className="metric">
                                 <span className="label">Deep Work Duration</span>
                                 <div className="value-group">
-                                    <span className="value">{entry.snapshots?.deepWorkMinutes || 0}m</span>
+                                    <span className="value">
+                                        {(() => {
+                                            const mins = entry.snapshots?.deepWorkMinutes || 0;
+                                            if (mins >= 60) {
+                                                return formatDuration(mins, 'minutes');
+
+                                            }
+                                            return `${mins}m`;
+                                        })()}
+                                    </span>
                                     {entry.snapshots?.deepWorkMinutes >= 90 && (
                                         <span className="metric-tag">Deep focus detected</span>
                                     )}
@@ -502,10 +543,11 @@ const JournalPage = () => {
                     <div className="section-body">
                         {Object.keys(todayAreaLog).length > 0 || Object.keys(todayRepLog).length > 0 ? (
                             <div className="identity-log-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {Object.entries(todayAreaLog).map(([areaId, count]) => {
+                                {Object.entries(todayAreaLog).map(([areaId, entry]) => {
                                     const areaName = areas[areaId] || areaId;
                                     const isExpanded = expandedAreas[areaId];
                                     const areaGroups = completedGroups[areaId] || {};
+                                    const isDone = entry.status === 'done';
 
                                     return (
                                         <div key={areaId} className="identity-log-container">
@@ -520,11 +562,14 @@ const JournalPage = () => {
                                                     borderRadius: '8px',
                                                     fontSize: '14px',
                                                     cursor: 'pointer',
-                                                    transition: 'all 0.2s ease'
+                                                    transition: 'all 0.2s ease',
+                                                    opacity: isDone ? 1 : 0.85
                                                 }}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>• {areaName}</span>
+                                                    <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
+                                                        {isDone ? '✓' : '•'} {areaName}
+                                                    </span>
                                                     <span style={{ 
                                                         fontSize: '10px', 
                                                         opacity: 0.5,
@@ -532,7 +577,9 @@ const JournalPage = () => {
                                                         transition: 'transform 0.2s ease'
                                                     }}>▶</span>
                                                 </div>
-                                                <span style={{ color: 'var(--color-primary)', fontWeight: '700' }}>× {count}</span>
+                                                <span style={{ color: 'var(--color-primary)', fontWeight: '700' }}>
+                                                    {isDone ? `× ${entry.count}` : 'Activity'}
+                                                </span>
                                             </div>
 
                                             {isExpanded && (
@@ -545,10 +592,25 @@ const JournalPage = () => {
                                                             <div className="skill-task-list">
                                                                 {skillGroup.tasks.map(task => (
                                                                     <div key={task.id} className="completed-task-item">
-                                                                        <span className="task-title">{task.name}</span>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                            <span className="task-title">{task.name}</span>
+                                                                            {task.status === 'in_progress' && (
+                                                                                <span className="identity-badge-inprogress">In Progress</span>
+                                                                            )}
+                                                                        </div>
                                                                         <div className="task-meta">
                                                                             {task.sessionMinutes > 0 && (
-                                                                                <span className="task-session-minutes">{task.sessionMinutes}m focus</span>
+                                                                                <span className="task-session-minutes">
+                                                                                    {(() => {
+                                                                                        const mins = task.sessionMinutes;
+                                                                                        if (mins >= 60) {
+                                                                                            const h = Math.floor(mins / 60);
+                                                                                            const m = mins % 60;
+                                                                                            return `${h}h ${m}m`;
+                                                                                        }
+                                                                                        return `${mins}m`;
+                                                                                    })()} focus
+                                                                                </span>
                                                                             )}
                                                                             <span className="task-completion-time">
                                                                                 {new Date(task.completionTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

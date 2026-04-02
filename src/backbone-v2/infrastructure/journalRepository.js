@@ -87,6 +87,59 @@ export const createJournalRepository = () => {
     const notify = () => listeners.forEach(l => l());
     let initPromise = null;
 
+    const initialize = async () => {
+        if (initPromise) return initPromise;
+        initPromise = (async () => {
+            console.log(`JournalRepo [ID:${instanceId}]: Initializing from Supabase...`);
+            try {
+                const userId = await getUserId();
+                if (!userId) {
+                    console.warn('JournalRepo: No user authenticated.');
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('journal_entries')
+                    .select('*')
+                    .eq('user_id', userId);
+
+                if (error) throw error;
+
+                const entries = (data || []).map(row => ({
+                    id: row.id,
+                    date: row.date,
+                    biological: row.biological,
+                    activation: row.activation,
+                    regulation: row.regulation,
+                    notes: row.notes,
+                    createdAt: row.created_at,
+                    updatedAt: row.updated_at
+                }));
+
+                // Metadata might be repeated across rows or stored elsewhere. 
+                // For now, take from the first row if available
+                const metadata = data?.[0]?.metadata || storage.metadata;
+
+                storage = {
+                    entries,
+                    metadata
+                };
+
+                notify();
+            } catch (e) {
+                console.error('Failed to load Journal data from Supabase:', e);
+                storage = normalize(null);
+            }
+        })();
+        return initPromise;
+    };
+
+    const reinitialize = async () => {
+        console.log(`JournalRepo [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
+        initPromise = null;
+        return await initialize();
+    };
+
     return {
         instanceId,
         subscribe: (fn) => {
@@ -94,58 +147,9 @@ export const createJournalRepository = () => {
             return () => listeners.delete(fn);
         },
 
-        initialize: async () => {
-            if (initPromise) return initPromise;
-            initPromise = (async () => {
-                console.log(`JournalRepo [ID:${instanceId}]: Initializing from Supabase...`);
-                try {
-                    const userId = await getUserId();
-                    if (!userId) {
-                        console.warn('JournalRepo: No user authenticated.');
-                        return;
-                    }
+        initialize,
+        reinitialize,
 
-                    const { data, error } = await supabase
-                        .from('journal_entries')
-                        .select('*')
-                        .eq('user_id', userId);
-
-                    if (error) throw error;
-
-                    const entries = (data || []).map(row => ({
-                        id: row.id,
-                        date: row.date,
-                        biological: row.biological,
-                        activation: row.activation,
-                        regulation: row.regulation,
-                        notes: row.notes,
-                        createdAt: row.created_at,
-                        updatedAt: row.updated_at
-                    }));
-
-                    // Metadata might be repeated across rows or stored elsewhere. 
-                    // For now, take from the first row if available
-                    const metadata = data?.[0]?.metadata || storage.metadata;
-
-                    storage = {
-                        entries,
-                        metadata
-                    };
-
-                    notify();
-                } catch (e) {
-                    console.error('Failed to load Journal data from Supabase:', e);
-                    storage = normalize(null);
-                }
-            })();
-            return initPromise;
-        },
-
-        reinitialize: async () => {
-            console.log(`JournalRepo [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
-            initPromise = null;
-            return await this.initialize();
-        },
 
         getMetadata: () => {
             if (!storage.metadata) storage.metadata = { lastAppCloseTime: null, firstAppOpenTime: null };

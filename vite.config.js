@@ -167,6 +167,34 @@ export default defineConfig({
               res.statusCode = 500;
               res.end('[]');
             }
+          } else if (req.url && req.url.startsWith('/auth/callback')) {
+            // Store the full callback URL so the Tauri app can poll for it
+            server._pendingOAuthCallback = req.url;
+            // Return a page that closes itself
+            res.setHeader('Content-Type', 'text/html');
+            res.statusCode = 200;
+            res.end(`
+              <html>
+                <body style="background:#111;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+                  <div style="text-align:center;">
+                    <h2>✅ Logged in!</h2>
+                    <p>You can close this tab and return to the app.</p>
+                    <script>window.close();</script>
+                  </div>
+                </body>
+              </html>
+            `);
+          } else if (req.url === '/api/auth/poll-callback' && req.method === 'GET') {
+            // The Tauri app polls this endpoint to get the pending callback URL
+            if (server._pendingOAuthCallback) {
+              const pending = server._pendingOAuthCallback;
+              server._pendingOAuthCallback = null; // Clear it after reading
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ url: pending }));
+            } else {
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ url: null }));
+            }
           } else {
             next();
           }
@@ -177,6 +205,7 @@ export default defineConfig({
 
   ],
   server: {
+    historyApiFallback: true, // Allows /auth/callback to load the React app
     watch: {
       ignored: ['**/v2_data.json', '**/habit_data.json', '**/journal_data.json', '**/local_data/**']
     }

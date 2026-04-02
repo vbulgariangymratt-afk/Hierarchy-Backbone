@@ -7,6 +7,8 @@ import { NodeTypes, ObjectiveStatuses, TaskStatuses, IdentityTiers } from './dom
 
 import { createHabitRepository } from '../habit-engine/habitRepository';
 import { createHabitService } from '../habit-engine/habitService';
+import { TimelineService } from './application/timelineService';
+
 
 /**
  * Hierarchy Backbone V2 - Singleton Environment
@@ -28,12 +30,14 @@ const getInstance = () => {
         const backbone = HierarchyService(repository, auraService);
         const habitService = createHabitService(existing.habitRepo, auraService, backbone);
         const journalService = JournalService(journalRepo, backbone, habitService);
+        const timelineService = TimelineService(backbone, habitService, journalService);
 
         existing.auraService = auraService;
         existing.backbone = backbone;
         existing.habitService = habitService;
         existing.journalRepo = journalRepo;
         existing.journalService = journalService;
+        existing.timelineService = timelineService;
 
         console.log('Backbone V2: Returning existing singleton from globalThis');
         return existing;
@@ -58,6 +62,10 @@ const getInstance = () => {
     // 5. Initialize Journal System
     const journalService = JournalService(journalRepo, backbone, habitService);
 
+    // 6. Initialize Timeline Service
+    const timelineService = TimelineService(backbone, habitService, journalService);
+
+
     // Initial triggers
     const readyPromise = Promise.all([
         repository.initialize(),
@@ -81,8 +89,10 @@ const getInstance = () => {
         habitService,
         journalRepo,
         journalService,
+        timelineService,
         waitForReady: () => readyPromise
     };
+
 
     console.log('Backbone V2: Fresh singleton stored in globalThis');
     return globalThis[key];
@@ -96,30 +106,50 @@ const {
     habitService,
     journalRepo,
     journalService,
+    timelineService,
     waitForReady
 } = getInstance();
+
 
 import { logToFile } from '../lib/logger';
 
 export const reloadAllData = async () => {
-    console.log('Backbone V2: RELOADING ALL DATA...');
-    await logToFile('Triggering reloadAllData after SIGNED_IN');
-    
-    await logToFile('Reloading areas and core nodes...');
-    await repository.reinitialize();
-    
-    await logToFile('Reloading journal and habits...');
-    await Promise.all([
-        journalRepo.reinitialize(),
-        habitService.initialize ? habitService.initialize() : Promise.resolve(),
-        backbone.initialize ? backbone.initialize() : Promise.resolve(),
-        journalService.initialize ? journalService.initialize() : Promise.resolve()
-    ]);
+    try {
+        console.log('Backbone V2: RELOADING ALL DATA...');
+        
+        // Safety check requested by user
+        if (!backbone || typeof backbone.initialize !== 'function') {
+            console.warn('Backbone V2: backbone not initialized, skipping reload');
+            return false;
+        }
 
-    console.log('Backbone V2: RELOAD COMPLETE');
-    await logToFile('Reload complete');
-    return true;
+        await logToFile('Triggering reloadAllData after SIGNED_IN');
+        
+        await logToFile('Reloading areas and core nodes...');
+        if (repository && typeof repository.reinitialize === 'function') {
+            await repository.reinitialize();
+        }
+        
+        await logToFile('Reloading journal and habits...');
+        await Promise.all([
+            journalRepo?.reinitialize ? journalRepo.reinitialize() : Promise.resolve(),
+            habitService?.initialize ? habitService.initialize() : Promise.resolve(),
+            backbone.initialize ? backbone.initialize() : Promise.resolve(),
+            journalService?.initialize ? journalService.initialize() : Promise.resolve()
+        ]);
+
+        console.log('Backbone V2: RELOAD COMPLETE');
+        await logToFile('Reload complete');
+        return true;
+    } catch (err) {
+        console.error('Backbone V2: Critical Error during reloadAllData', err);
+        await logErrorToFile('reloadAllData (SIGNED_IN)', err);
+        // Important: return false instead of crashing to prevent triggering 
+        // fallback node creation logic in other parts of the system.
+        return false;
+    }
 };
+
 
 export const clearAllData = () => {
     console.log('Backbone V2: CLEARING ALL DATA (Signed Out)');
@@ -135,7 +165,9 @@ export {
     auraService,
     journalRepo,
     journalService,
+    timelineService,
     waitForReady,
+
     NodeTypes,
     ObjectiveStatuses,
     TaskStatuses,

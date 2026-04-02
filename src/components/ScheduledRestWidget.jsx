@@ -74,7 +74,7 @@ const ScheduledRestWidget = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
                         <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--color-text-main)', marginBottom: '4px' }}>{name}</div>
-                        <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)', fontWeight: '500' }}>Duration: {durationMinutes} minutes</div>
+                        <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)', fontWeight: '500' }}>Duration: {formatDuration(durationMinutes, 'minutes')}</div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>

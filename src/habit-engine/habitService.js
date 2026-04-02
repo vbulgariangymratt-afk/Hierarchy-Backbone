@@ -89,8 +89,8 @@ export const createHabitService = (repository, auraService, backbone) => {
             );
         },
 
-        createHabit: async (linkedSkillId, ifTrigger, mveAction) => {
-            console.log(`HabitService: createHabit called with skillId: ${linkedSkillId}`);
+        createHabit: async (linkedSkillId, ifTrigger, mveAction, frequencyType = 'daily', targetCount = 1) => {
+            console.log(`HabitService: createHabit called for ${linkedSkillId} | Freq: ${frequencyType} ${targetCount}x`);
 
             const defaultEvolutionConfig = {
                 thresholds: [12, 30, 60, 100, 150],
@@ -117,15 +117,9 @@ export const createHabitService = (repository, auraService, backbone) => {
                 currentPhaseLevel: 0,
                 totalCompletions: 0,
                 completions: [],
-                evolutionConfig: {
-                    thresholds: [12, 30, 60, 100, 150],
-                    postCapIncrement: 50,
-                    rollingWindowDays: 12,
-                    requiredDaysInWindow: 8,
-                    frictionWindow: 8,
-                    heavyBlockWindow: 3,
-                    sizeCapPhase: 5
-                },
+                frequencyType,
+                targetCount,
+                evolutionConfig: defaultEvolutionConfig,
                 isActive: true,
                 createdAt: new Date().toISOString(),
                 auraPerSkill: { [linkedSkillId]: 0 },
@@ -386,6 +380,50 @@ export const createHabitService = (repository, auraService, backbone) => {
 
         updateHabit: async (id, updates) => {
             return await repository.update(id, updates);
+        },
+
+        getHabitProgress: (habit) => {
+            const todayStr = new Date().toLocaleDateString('en-CA');
+            const completions = habit.completions || [];
+            
+            // 1. Calculate Today's Count
+            const todayCount = completions.filter(c => 
+                new Date(c.timestamp).toLocaleDateString('en-CA') === todayStr
+            ).length;
+
+            // 2. Calculate Weekly Count (Monday start)
+            const now = new Date();
+            const day = now.getDay(); 
+            const diffFromMon = day === 0 ? 6 : day - 1; 
+            const mondayStart = new Date(now);
+            mondayStart.setDate(now.getDate() - diffFromMon);
+            mondayStart.setHours(0,0,0,0);
+            
+            const weeklyCount = completions.filter(c => c.timestamp >= mondayStart.getTime()).length;
+
+            // 3. Status determination
+            const freq = habit.frequencyType || 'daily';
+            const target = habit.targetCount || 1;
+            
+            let isDone = false;
+            let displayProgress = "";
+
+            if (freq === 'daily') {
+                isDone = todayCount >= target;
+                displayProgress = target > 1 ? `${Math.min(todayCount, target)}/${target} Today` : "Goal Reached";
+            } else {
+                isDone = weeklyCount >= target;
+                displayProgress = `${Math.min(weeklyCount, target)}/${target} Week`;
+            }
+
+            return {
+                todayCount,
+                weeklyCount,
+                isDone,
+                displayProgress,
+                freq,
+                target
+            };
         },
 
         getAllNodes: async () => backbone ? backbone.getAllNodes() : [],

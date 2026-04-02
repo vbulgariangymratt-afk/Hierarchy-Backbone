@@ -1,31 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { backbone } from '../backbone-v2/index';
+import React, { useState, useEffect, useCallback } from 'react';
+import { backbone, habitService, repository, habitRepo } from '../backbone-v2/index';
+import { useSettings } from '../context/SettingsContext';
 import LaunchpadView from '../components/LaunchpadView';
 
 /**
  * Launchpad Controller - Enriched to support Maintenance and Stage Pips
  */
 const Launchpad = () => {
+    const { maintenanceSkillIds, maintenanceEnabled } = useSettings();
     const [data, setData] = useState({
         auraPoints: 0,
         hryvniaBalance: 0,
         areas: [],
         maintenance: null,
+        maintenanceHabits: [],
         loading: true
     });
 
     const fetchData = async () => {
         try {
-            const auraPoints = await backbone.getTotalAuraPoints();
-            const hryvniaBalance = await backbone.getHryvniaBalance();
-            const areas = await backbone.getTopPriorityAreas();
-            const maintenance = await backbone.getTodayRest();
+            const [auraPoints, hryvniaBalance, areas, maintenance, nodes] = await Promise.all([
+                backbone.getTotalAuraPoints(),
+                backbone.getHryvniaBalance(),
+                backbone.getTopPriorityAreas(),
+                backbone.getTodayRest(),
+                repository.getAll()
+            ]);
+
+            // Calculate Maintenance Data
+            let mHabitData = [];
+            if (maintenanceEnabled && Array.isArray(maintenanceSkillIds) && maintenanceSkillIds.length > 0) {
+                mHabitData = maintenanceSkillIds.map(sid => {
+                    const skill = nodes.find(n => n.id === sid);
+                    const allSkillHabits = habitService.getHabitsBySkill(sid) || [];
+                    const dueHabits = allSkillHabits.filter(h => !habitService.getHabitProgress(h).isDone);
+                    
+                    // Only return skill in mHabitData if it has habits (due or not) OR needs placeholder
+                    // We filter out skills that have habits but they are all done
+                    if (dueHabits.length > 0 || allSkillHabits.length === 0) {
+                        return { 
+                            skill, 
+                            habits: dueHabits,
+                            hasNoHabits: allSkillHabits.length === 0
+                        };
+                    }
+                    return null;
+                }).filter(group => group && group.skill);
+            }
 
             setData({
                 auraPoints,
                 hryvniaBalance,
                 areas,
                 maintenance,
+                maintenanceHabits: mHabitData,
                 loading: false
             });
         } catch (error) {
@@ -36,24 +64,37 @@ const Launchpad = () => {
 
     useEffect(() => {
         fetchData();
-        // Removed interval to prevent state-override bugs during planning
-    }, []);
+        
+        let unsubNodes, unsubHabits;
+        if (repository && repository.subscribe) unsubNodes = repository.subscribe(fetchData);
+        if (habitRepo && habitRepo.subscribe) unsubHabits = habitRepo.subscribe(fetchData);
 
-    const handleStartDay = async (selectedAreaIds) => {
+        return () => {
+            if (unsubNodes) unsubNodes();
+            if (unsubHabits) unsubHabits();
+        };
+    }, [maintenanceSkillIds, maintenanceEnabled]);
+
+    const handleStartDay = useCallback(async (selectedAreaIds) => {
         console.log("Launchpad (Controller): Starting day with selected areas:", selectedAreaIds);
         await backbone.saveSelectedAreas(selectedAreaIds);
         await backbone.trackFocusMode(true);
-    };
+    }, [backbone]);
 
-    const handleMaintenanceComplete = async (restId) => {
+    const handleMaintenanceComplete = useCallback(async (restId) => {
         await backbone.completeRest(restId);
         fetchData();
-    };
+    }, [backbone]); // fetchData is currently not a callback but defined in same scope
 
-    const handleMaintenanceReplace = async (restId) => {
+    const handleMaintenanceReplace = useCallback(async (restId) => {
         await backbone.createDailyRestSuggestion();
         fetchData();
-    };
+    }, [backbone]);
+
+    const handleHabitComplete = useCallback(async (habitId) => {
+        await habitService.completeHabit(habitId);
+        // fetchData will be called via repository subscription
+    }, [habitService]);
 
     if (data.loading) {
         return (
@@ -69,9 +110,11 @@ const Launchpad = () => {
             hryvniaBalance={data.hryvniaBalance}
             areas={data.areas}
             maintenance={data.maintenance}
+            maintenanceHabitGroups={data.maintenanceHabits}
             onStartDay={handleStartDay}
             onMaintenanceComplete={handleMaintenanceComplete}
             onMaintenanceReplace={handleMaintenanceReplace}
+            onHabitComplete={handleHabitComplete}
         />
     );
 };

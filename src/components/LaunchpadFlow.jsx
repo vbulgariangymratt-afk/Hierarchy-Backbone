@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 import { useSession } from '../context/SessionContext';
+import { useSettings } from '../context/SettingsContext';
+import { useBackboneStore } from '../store/backboneStore';
+import { useShallow } from 'zustand/react/shallow';
 import { getAspectStats, scoreLowEnergyTask } from '../utils/taskScoring';
 import './LaunchpadFlow.css';
 
@@ -13,27 +16,21 @@ const LaunchpadFlow = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState('energy'); // 'energy' | 'action'
     const [energy, setEnergy] = useState(3);
-    const [tasks, setTasks] = useState([]);
-    const [allNodes, setAllNodes] = useState([]);
-    const { setEnergyLevel } = useSession();
+    // --- ZUSTAND SELECTORS ---
+    const { allNodes, storeLoading } = useBackboneStore(useShallow(state => ({
+        allNodes: state.nodes,
+        storeLoading: state.loading
+    })));
 
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const nodes = await backbone.getAllNodes();
-                setAllNodes(nodes);
-                
-                const filteredTasks = nodes.filter(n => 
-                    n.type === NodeTypes.TASK && 
-                    n.metadata?.status !== TaskStatuses.DONE
-                );
-                setTasks(filteredTasks);
-            } catch (error) {
-                console.error("LaunchpadFlow: Failed to fetch tasks", error);
-            }
-        };
-        fetchTasks();
-    }, []);
+    const tasks = useBackboneStore(useShallow(state => 
+        state.nodes.filter(n => 
+            n.type === NodeTypes.TASK && 
+            n.metadata?.status !== TaskStatuses.DONE
+        )
+    ));
+
+    const { setEnergyLevel } = useSession();
+    const { focusSlots, loading: settingsLoading } = useSettings();
 
     // 1. Build HEURISTICS
     const nodeMap = useMemo(() => {

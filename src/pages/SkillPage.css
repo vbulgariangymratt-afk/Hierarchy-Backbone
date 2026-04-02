@@ -3348,3 +3348,118 @@
     background: rgba(59, 130, 246, 0.15);
     color: var(--color-accent);
 }
+/* PINCH Analysis Station */
+.pinch-analysis-station {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.wallpaper-mode .pinch-analysis-station {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+.pinch-status-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.pinch-icon {
+    font-size: 20px;
+}
+
+.pinch-status-header h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-accent);
+}
+
+.pinch-explanation {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    max-width: 800px;
+}
+
+.pinch-action-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border-left: 3px solid var(--color-accent);
+}
+
+.pinch-action-hint strong {
+    color: var(--text-primary);
+}
+
+/* Energy Gating Styles */
+.woop-item.disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.edit-experiment-btn:disabled, .obj-status-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* EXPIRY DECISION CARD */
+.expiry-decision-card {
+    background: rgba(255, 230, 0, 0.05);
+    border: 1px solid rgba(255, 230, 0, 0.2);
+    border-left: 4px solid #ffcc00;
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    margin-top: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    width: 100%;
+}
+
+.expiry-tag {
+    font-size: 0.7rem;
+    background: #ffcc00;
+    color: #1a1a1a;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+.expiry-title { margin: 12px 0 8px 0; color: #fff; font-size: 1.4rem; }
+.expiry-description { color: rgba(255, 255, 255, 0.7); font-size: 0.95rem; line-height: 1.5; }
+
+.expiry-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+
+.btn-decision-exp {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-decision-exp:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.btn-decision-exp:active { transform: scale(0.96); }
+
+.btn-decision-exp.complete { background: #00ff88; color: #003311; }
+.btn-decision-exp.extend { background: #00d2ff; color: #003344; }
+.btn-decision-exp.archive { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.2); }

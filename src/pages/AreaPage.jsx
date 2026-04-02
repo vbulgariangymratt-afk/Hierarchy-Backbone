@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { backbone, repository, NodeTypes, IdentityTiers } from '../backbone-v2/index';
 import CreateSkillModal from '../components/CreateSkillModal';
 import NodeIcon from '../components/NodeIcon';
+import SkillCard from '../components/SkillCard';
 import './AreaPage.css';
 
 const SVG_ICONS = {
@@ -131,7 +132,7 @@ const AreaPage = () => {
         }
     };
 
-    const handleToggleSkill = async (e, skill) => {
+    const handleToggleSkill = useCallback(async (e, skill) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -157,7 +158,20 @@ const AreaPage = () => {
         } catch (error) {
             console.error("Failed to toggle skill:", error);
         }
-    };
+    }, [allNodes, backbone, fetchData]);
+
+    const handleSleepSkill = useCallback(async (e, skill) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.confirm(`Start 5-day rest period for ${skill.name}?`)) {
+            try {
+                await backbone.sleepSkill(skill.id, 5);
+                fetchData();
+            } catch (error) {
+                console.error("Failed to sleep skill:", error);
+            }
+        }
+    }, [backbone, fetchData]);
 
     const getTierLabel = (tier) => {
         switch (tier) {
@@ -213,7 +227,7 @@ const AreaPage = () => {
         }
     };
 
-    const handleTierChange = async (skillId, newTier) => {
+    const handleTierChange = useCallback(async (skillId, newTier) => {
         try {
             const skill = allNodes.find(n => n.id === skillId);
             if (!skill) return;
@@ -227,14 +241,14 @@ const AreaPage = () => {
         } catch (error) {
             console.error("Failed to update tier:", error);
         }
-    };
+    }, [allNodes, backbone, fetchData]);
 
     const handleStartInlineEdit = useCallback((nodeId, currentName) => {
         setInlineEditingId(nodeId);
         setInlineDraftName(currentName);
     }, []);
 
-    const handleSaveInlineEdit = async (nodeId) => {
+    const handleSaveInlineEdit = useCallback(async (nodeId) => {
         if (!inlineEditingId) return;
         const trimmed = inlineDraftName.trim();
         if (trimmed && trimmed !== (nodeId === id ? area.name : skills.find(s => s.id === nodeId)?.name)) {
@@ -246,15 +260,15 @@ const AreaPage = () => {
             }
         }
         setInlineEditingId(null);
-    };
+    }, [inlineEditingId, inlineDraftName, id, area, skills, backbone, fetchData]);
 
-    const handleInlineKeyDown = (e, nodeId) => {
+    const handleInlineKeyDown = useCallback((e, nodeId) => {
         if (e.key === 'Enter') {
             handleSaveInlineEdit(nodeId);
         } else if (e.key === 'Escape') {
             setInlineEditingId(null);
         }
-    };
+    }, [handleSaveInlineEdit]);
 
     useEffect(() => {
         if (inlineEditingId && inlineInputRef.current) {
@@ -437,148 +451,29 @@ const AreaPage = () => {
                     {activeSkills.length === 0 && (
                         <div className="no-skills-message">No active skills. Select one from below to focus.</div>
                     )}
-                    {activeSkills.map(skill => {
-                        const skillObjectives = allNodes.filter(n => n.parentId === skill.id && n.type === NodeTypes.OBJECTIVE);
-                        return (
-                            <div key={skill.id} className="skill-card is-active">
-                                <Link to={`/skill/${skill.id}`} className="skill-card-link">
-                                    <header className="skill-card-header">
-                                        <div className="skill-title-group">
-                                            {skill.metadata?.iconUrl && (
-                                                <div className="skill-icon-container" style={{ marginRight: '12px', display: 'flex', alignItems: 'center' }}>
-                                                    <NodeIcon iconUrl={skill.metadata.iconUrl} size={28} />
-                                                </div>
-                                            )}
-                                            {inlineEditingId === skill.id ? (
-                                                <input
-                                                    ref={inlineInputRef}
-                                                    value={inlineDraftName}
-                                                    onChange={e => setInlineDraftName(e.target.value)}
-                                                    onBlur={() => handleSaveInlineEdit(skill.id)}
-                                                    onKeyDown={e => handleInlineKeyDown(e, skill.id)}
-                                                    onClick={e => e.preventDefault()}
-                                                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-accent)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%' }}
-                                                />
-                                            ) : (
-                                                <h3 className="skill-name" onDoubleClick={(e) => { e.preventDefault(); handleStartInlineEdit(skill.id, skill.name); }}>{skill.name}</h3>
-                                            )}
-                                        </div>
-                                        {editingTierSkillId === skill.id ? (
-                                            <select
-                                                ref={tierSelectRef}
-                                                autoFocus
-                                                value={skill.metadata?.identityTier || 'OPTIONAL'}
-                                                onChange={(e) => handleTierChange(skill.id, e.target.value)}
-                                                onBlur={() => setEditingTierSkillId(null)}
-                                                onKeyDown={(e) => e.key === 'Escape' && setEditingTierSkillId(null)}
-                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                                style={{ 
-                                                    padding: '2px 4px', 
-                                                    fontSize: '10px', 
-                                                    fontWeight: 800, 
-                                                    background: 'var(--alpha-medium)', 
-                                                    color: 'var(--color-text)', 
-                                                    border: '1px solid var(--color-border)', 
-                                                    borderRadius: '4px',
-                                                    outline: 'none',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <option value="CORE">Core Identity</option>
-                                                <option value="EXPLORATION">Explorational</option>
-                                                <option value="OPTIONAL">Optional</option>
-                                            </select>
-                                        ) : (
-                                            <span 
-                                                className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    setEditingTierSkillId(skill.id);
-                                                }}
-                                                style={{ cursor: 'pointer' }}
-                                                title="Click to change tier"
-                                            >
-                                                {getTierLabel(skill.metadata?.identityTier)}
-                                            </span>
-                                        )}
-                                    </header>
-
-                                    <div className="aura-display-new">
-                                        <div className="aura-header-row">
-                                            <div className="aura-badge-insignia">L{skill.metadata?.auraLevel || 1}</div>
-                                            <div className="aura-stat-container">
-                                                <span className="aura-current-val">{(skill.metadata?.auraTotal || 0) % 12}</span>
-                                                <span className="aura-max-val">/ 12</span>
-                                            </div>
-                                        </div>
-                                        <div className="aura-bar-container">
-                                            <div
-                                                className="aura-bar-fill"
-                                                style={{
-                                                    width: `${(((skill.metadata?.auraTotal || 0) % 12) / 12) * 100}%`
-                                                }}
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="skill-objectives-preview">
-                                        {skillObjectives.length > 0 ? (
-                                            <ul className="mini-objective-list">
-                                                {skillObjectives.slice(0, 3).map(obj => (
-                                                    <li key={obj.id} className="mini-objective-item">
-                                                        {obj.metadata?.iconUrl ? (
-                                                            <div className="mini-icon" style={{ marginRight: '6px', display: 'inline-flex' }}>
-                                                                <NodeIcon iconUrl={obj.metadata.iconUrl} size={14} />
-                                                            </div>
-                                                        ) : (
-                                                            <span className="dot"></span>
-                                                        )}
-                                                        {obj.name}
-                                                    </li>
-                                                ))}
-                                                {skillObjectives.length > 3 && <li className="mini-objective-more">+{skillObjectives.length - 3} more</li>}
-                                            </ul>
-                                        ) : (
-                                            <div className="no-objectives-hint">No objectives set</div>
-                                        )}
-                                    </div>
-                                </Link>
-
-                                <footer className="skill-card-footer">
-                                    <div className="footer-left">
-                                        <button
-                                            className="skill-status-btn sleep"
-                                            onClick={(e) => {
-                                                handleToggleSkill(e, skill);
-                                            }}
-                                        >
-                                            Put to Sleep
-                                        </button>
-
-                                        <button
-                                            className="skill-status-btn rest"
-                                            onClick={async (e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                if (window.confirm(`Start 5-day rest period for ${skill.name}?`)) {
-                                                    await backbone.sleepSkill(skill.id, 5);
-                                                    fetchData();
-                                                }
-                                            }}
-                                        >
-                                            Rest 5 Days
-                                        </button>
-                                    </div>
-                                    {skill.metadata?.pinchState && (
-                                        <div className="pinch-tag">
-                                            {skill.metadata.pinchState}
-                                        </div>
-                                    )}
-                                </footer>
-                            </div>
-                        );
-                    })}
+                    {activeSkills.map(skill => (
+                        <SkillCard 
+                            key={skill.id}
+                            skill={skill}
+                            allNodes={allNodes}
+                            isSleeping={false}
+                            inlineEditingId={inlineEditingId}
+                            inlineDraftName={inlineDraftName}
+                            editingTierSkillId={editingTierSkillId}
+                            onStartInlineEdit={handleStartInlineEdit}
+                            onSaveInlineEdit={handleSaveInlineEdit}
+                            onInlineKeyDown={handleInlineKeyDown}
+                            onSetInlineDraftName={setInlineDraftName}
+                            onTierChange={handleTierChange}
+                            onSetEditingTierSkillId={setEditingTierSkillId}
+                            onToggleSkill={handleToggleSkill}
+                            onSleepSkill={handleSleepSkill}
+                            getTierLabel={getTierLabel}
+                            inlineInputRef={inlineInputRef}
+                            tierSelectRef={tierSelectRef}
+                            SVG_ICONS={SVG_ICONS}
+                        />
+                    ))}
                 </div>
             </section>
 
@@ -592,113 +487,27 @@ const AreaPage = () => {
                 {!isSleepingSkillsCollapsed && (
                     <div className="skills-grid sleeping-grid">
                         {sleepingSkills.map(skill => (
-                            <div key={skill.id} className="skill-card is-sleeping">
-                                <Link to={`/skill/${skill.id}`} className="skill-card-link">
-                                    <header className="skill-card-header">
-                                        <div className="skill-title-group">
-                                            {inlineEditingId === skill.id ? (
-                                                <input
-                                                    ref={inlineInputRef}
-                                                    value={inlineDraftName}
-                                                    onChange={e => setInlineDraftName(e.target.value)}
-                                                    onBlur={() => handleSaveInlineEdit(skill.id)}
-                                                    onKeyDown={e => handleInlineKeyDown(e, skill.id)}
-                                                    onClick={e => e.preventDefault()}
-                                                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-accent)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%' }}
-                                                />
-                                            ) : (
-                                                <h3 className="skill-name" onDoubleClick={(e) => { e.preventDefault(); handleStartInlineEdit(skill.id, skill.name); }}>{skill.name}</h3>
-                                            )}
-                                        </div>
-                                        {editingTierSkillId === skill.id ? (
-                                            <select
-                                                ref={tierSelectRef}
-                                                autoFocus
-                                                value={skill.metadata?.identityTier || 'OPTIONAL'}
-                                                onChange={(e) => handleTierChange(skill.id, e.target.value)}
-                                                onBlur={() => setEditingTierSkillId(null)}
-                                                onKeyDown={(e) => e.key === 'Escape' && setEditingTierSkillId(null)}
-                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                                                style={{ 
-                                                    padding: '2px 4px', 
-                                                    fontSize: '10px', 
-                                                    fontWeight: 800, 
-                                                    background: 'var(--alpha-medium)', 
-                                                    color: 'var(--color-text)', 
-                                                    border: '1px solid var(--color-border)', 
-                                                    borderRadius: '4px',
-                                                    outline: 'none',
-                                                    cursor: 'pointer'
-                                                }}
-                                            >
-                                                <option value="CORE">Core Identity</option>
-                                                <option value="EXPLORATION">Explorational</option>
-                                                <option value="OPTIONAL">Optional</option>
-                                            </select>
-                                        ) : (
-                                            <span 
-                                                className={`tier-badge ${skill.metadata?.identityTier?.toLowerCase() || 'optional'}`}
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    setEditingTierSkillId(skill.id);
-                                                }}
-                                                style={{ cursor: 'pointer' }}
-                                                title="Click to change tier"
-                                            >
-                                                {getTierLabel(skill.metadata?.identityTier)}
-                                            </span>
-                                        )}
-                                    </header>
-
-                                    <div className="aura-display-new">
-                                        <div className="aura-header-row">
-                                            <div className="aura-badge-insignia">L{skill.metadata?.auraLevel || 1}</div>
-                                            <div className="aura-stat-container">
-                                                <span className="aura-current-val">{(skill.metadata?.auraTotal || 0) % 12}</span>
-                                                <span className="aura-max-val">/ 12</span>
-                                            </div>
-                                        </div>
-                                        <div className="aura-bar-container">
-                                            <div
-                                                className="aura-bar-fill"
-                                                style={{
-                                                    width: `${(((skill.metadata?.auraTotal || 0) % 12) / 12) * 100}%`
-                                                }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                </Link>
-
-                                <footer className="skill-card-footer">
-                                    <div className="footer-left">
-                                        <button
-                                            className="skill-status-btn activate"
-                                            onClick={(e) => handleToggleSkill(e, skill)}
-                                            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                                        >
-                                            <NodeIcon iconUrl={SVG_ICONS.ROCKET} size={14} />
-                                            Wake Up
-                                        </button>
-                                        
-                                        {skill.metadata?.sleepUntil && (
-                                            <span style={{ fontSize: '11px', opacity: 0.6, fontWeight: 600 }}>
-                                                Sleep until {new Date(skill.metadata.sleepUntil).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                            </span>
-                                        )}
-                                        {skill.metadata?.isSleeping && (
-                                            <span style={{ fontSize: '11px', opacity: 0.6, fontWeight: 600 }}>
-                                                Indefinite Sleep
-                                            </span>
-                                        )}
-                                    </div>
-                                    {skill.metadata?.pinchState && (
-                                        <div className="pinch-tag">
-                                            {skill.metadata.pinchState}
-                                        </div>
-                                    )}
-                                </footer>
-                            </div>
+                            <SkillCard 
+                                key={skill.id}
+                                skill={skill}
+                                allNodes={allNodes}
+                                isSleeping={true}
+                                inlineEditingId={inlineEditingId}
+                                inlineDraftName={inlineDraftName}
+                                editingTierSkillId={editingTierSkillId}
+                                onStartInlineEdit={handleStartInlineEdit}
+                                onSaveInlineEdit={handleSaveInlineEdit}
+                                onInlineKeyDown={handleInlineKeyDown}
+                                onSetInlineDraftName={setInlineDraftName}
+                                onTierChange={handleTierChange}
+                                onSetEditingTierSkillId={setEditingTierSkillId}
+                                onToggleSkill={handleToggleSkill}
+                                onSleepSkill={handleSleepSkill}
+                                getTierLabel={getTierLabel}
+                                inlineInputRef={inlineInputRef}
+                                tierSelectRef={tierSelectRef}
+                                SVG_ICONS={SVG_ICONS}
+                            />
                         ))}
 
                         {isCreatingSkill ? (

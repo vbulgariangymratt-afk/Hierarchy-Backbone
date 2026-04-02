@@ -38,7 +38,8 @@ export const ObjectiveStatuses = {
     SLEEPING: 'SLEEPING',
     ROTATING: 'ROTATING',
     ACHIEVED: 'ACHIEVED',
-    ARCHIVED: 'ARCHIVED'
+    ARCHIVED: 'ARCHIVED',
+    COMPLETED: 'COMPLETED'
 };
 
 // AspectStatuses removed as Aspects are non-linear.

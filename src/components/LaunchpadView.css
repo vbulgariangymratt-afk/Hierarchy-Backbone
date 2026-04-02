@@ -702,3 +702,161 @@
         padding: 40px;
     }
 }
+/* ============================
+   KEEP IT ALIVE SECTION
+   ============================ */
+
+.keep-it-alive-section {
+    margin-top: 40px;
+    padding-top: 40px;
+    border-top: 1px solid var(--color-border);
+}
+
+.keep-it-alive-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    padding: 8px 0;
+    transition: var(--transition-premium);
+}
+
+.keep-it-alive-header:hover {
+    opacity: 0.8;
+}
+
+.toggle-chevron {
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+}
+
+.keep-it-alive-header.is-expanded .toggle-chevron {
+    transform: rotate(90deg);
+}
+
+.keep-it-alive-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    color: var(--text-muted);
+}
+
+.keep-it-alive-content {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.keep-it-alive-group {
+    background: var(--alpha-low);
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid var(--color-border);
+}
+
+.wallpaper-mode .keep-it-alive-group {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.keep-it-alive-skill-name {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+    opacity: 0.7;
+}
+
+.keep-it-alive-habit-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.keep-it-alive-habit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--alpha-high);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.keep-it-alive-habit-row .habit-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.keep-it-alive-habit-row .habit-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.keep-it-alive-habit-row .habit-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.habit-complete-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--alpha-high);
+    border: 1px solid var(--color-border);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.habit-complete-btn:hover {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+    transform: scale(1.05);
+}
+
+.keep-it-alive-placeholder {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 8px 0;
+    opacity: 0.6;
+}
+
+.everything-is-alive-message {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-style: italic;
+    background: var(--alpha-low);
+    border-radius: 20px;
+    border: 1px dashed var(--color-border);
+}

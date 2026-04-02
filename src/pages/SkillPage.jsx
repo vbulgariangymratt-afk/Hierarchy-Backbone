@@ -25,7 +25,9 @@ import {
     TaskStatuses
 } from '../backbone-v2/index';
 import { useTheme } from '../context/ThemeContext';
+import { useSettings } from '../context/SettingsContext';
 import './SkillPage.css';
+
 import NodeIcon from '../components/NodeIcon';
 import SortableTaskRow from '../components/SortableTaskRow';
 import DroppableAspect from '../components/DroppableAspect';
@@ -46,7 +48,9 @@ const SkillPage = () => {
     const { id } = useParams();
     const location = useLocation();
     const { showCompletedTasks, setShowCompletedTasks } = useTheme();
+    const { energyLevel } = useSettings();
     const [skill, setSkill] = useState(null);
+
     const [objectives, setObjectives] = useState([]);
     const [allNodes, setAllNodes] = useState([]);
     const [habits, setHabits] = useState([]);
@@ -101,6 +105,8 @@ const SkillPage = () => {
     const [planningToast, setPlanningToast] = useState(null);
     const [newHabitTrigger, setNewHabitTrigger] = useState('');
     const [newHabitAction, setNewHabitAction] = useState('');
+    const [newHabitFreqType, setNewHabitFreqType] = useState('daily');
+    const [newHabitTarget, setNewHabitTarget] = useState(1);
     
     // Drag Reorder Lock
     const isReorderingRef = useRef(false);
@@ -1279,16 +1285,20 @@ const SkillPage = () => {
             await habitService.createHabit(
                 id,
                 newHabitTrigger.trim(),
-                newHabitAction.trim()
+                newHabitAction.trim(),
+                newHabitFreqType,
+                parseInt(newHabitTarget)
             );
             setNewHabitTrigger('');
             setNewHabitAction('');
+            setNewHabitFreqType('daily');
+            setNewHabitTarget(1);
             setIsCreatingHabit(false);
             fetchData();
         } catch (error) {
             console.error("Failed to create habit:", error);
         }
-    }, [newHabitTrigger, newHabitAction, id, fetchData]);
+    }, [newHabitTrigger, newHabitAction, newHabitFreqType, newHabitTarget, id, fetchData]);
 
     const getObjectiveTimeInfo = useCallback((obj) => {
         const m = obj.metadata || {};
@@ -1310,6 +1320,41 @@ const SkillPage = () => {
 
         return { days: displayDays, rawDays: days, phase, hint };
     }, []);
+
+    // --- EXPIRY DECISION FLOW ---
+    const expiringObjective = useMemo(() => {
+        return (activeObjectives || []).find(obj => {
+            if (!obj.metadata?.activatedAt || !obj.metadata?.durationInDays) return false;
+            const expiry = obj.metadata.activatedAt + (obj.metadata.durationInDays * 24 * 60 * 60 * 1000);
+            return Date.now() >= expiry;
+        });
+    }, [activeObjectives]);
+
+    const handleCompleteExpiry = async (id) => {
+        await backbone.completeObjective(id);
+        fetchData(); // Sync local state
+    };
+
+    const handleExtendExpiry = async (id, days = 7) => {
+        await backbone.extendObjective(id, days);
+        fetchData();
+    };
+
+    const handleArchiveExpiry = async (id) => {
+        const obj = activeObjectives.find(o => o.id === id);
+        if (!obj) return;
+        await backbone.updateNode(id, {
+            metadata: {
+                ...obj.metadata,
+                status: ObjectiveStatuses.ARCHIVED,
+                isActive: false,
+                isArchived: true,
+                archivedAt: Date.now()
+            }
+        });
+        fetchData();
+    };
+    // ----------------------------
 
     // Effects
     useEffect(() => {
@@ -1410,7 +1455,35 @@ const SkillPage = () => {
     }
 
 
+    const PinchAnalysis = ({ skill, energyLevel }) => {
+        if (energyLevel < 4) return null;
+        const pinch = skill.metadata?.pinchState;
+        if (!pinch || pinch === 'NONE') return null;
+
+        return (
+            <div className="pinch-analysis-station">
+                <div className="pinch-status-header">
+                    <span className="pinch-icon">🧭</span>
+                    <h3>Planning Station: {pinch}</h3>
+                </div>
+                <div className="pinch-body">
+                    <p className="pinch-explanation">
+                        {pinch === 'NOVELTY' && "Attention is decaying. The current experiment structure has become predictable. Consider a 'Micro-Pivot' or adding a fresh Aspect."}
+                        {pinch === 'CHALLENGE' && "Mastery has plateaued. You are going through the motions without growth. Increase the difficulty or move to a more complex stage."}
+                        {pinch === 'PASSION' && "High value, high resistance. Your 'Becoming' statement is strong, but initiation is blocked. Break the next task into a 2-minute MVE."}
+                        {pinch === 'INTEREST' && "Low intrinsic fuel. This skill needs more 'Play' or 'Novelty' to sustain momentum. Look for an unorthodox angle."}
+                        {pinch === 'HURRY' && "Execution lag detected. You are over-planning. Pick any task and start for 5 minutes now."}
+                    </p>
+                    <div className="pinch-action-hint">
+                        <strong>Planning Suggestion:</strong> {pinch === 'NOVELTY' ? "Swap the Active Experiment for a fresh one." : "Refine your 'Wish' or 'MVE' below."}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const renderObjective = (obj) => {
+
         const isEditing = editingObjectiveId === obj.id;
         const isExpanded = expandedObjectiveIds.includes(obj.id);
         const isSleeping = obj.metadata?.isSleeping === true;
@@ -1576,7 +1649,7 @@ const SkillPage = () => {
                         </div>
 
                         <div className="objective-status-actions">
-                            {!isSleeping && (
+                            {!isSleeping && energyLevel >= 4 && (
                                 <>
                                     <button
                                         className="edit-experiment-btn"
@@ -1587,34 +1660,25 @@ const SkillPage = () => {
                                         }}
                                         style={{ marginRight: '10px' }}
                                     >
-                                        Edit Experiment
-                                    </button>
-                                    <button
-                                        className="delete-experiment-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            handleDeleteObjective(obj);
-                                        }}
-                                        style={{ marginRight: '10px' }}
-                                    >
-                                        Delete
+                                        Edit
                                     </button>
                                 </>
                             )}
-                            <button
-                                className={`obj-status-btn ${isSleeping ? 'activate' : 'sleep'}`}
-                                onClick={(e) => {
-                                    console.log("Experiment close clicked:", obj.id);
-                                    console.log("Experiment node:", obj);
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    handleToggleObjectiveStatus(e, obj);
-                                }}
-                            >
-                                {isSleeping ? 'Activate' : 'Put to Sleep'}
-                            </button>
+                            {energyLevel >= 4 && (
+                                <button
+                                    className={`obj-status-btn ${isSleeping ? 'activate' : 'sleep'}`}
+                                    onClick={(e) => {
+                                        console.log("Experiment close clicked:", obj.id);
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        handleToggleObjectiveStatus(e, obj);
+                                    }}
+                                >
+                                    {isSleeping ? 'Activate' : 'Rotate'}
+                                </button>
+                            )}
                         </div>
+
                     </div>
                         <AnimatePresence>
                             {isExpanded && !isSleeping && (
@@ -1629,7 +1693,9 @@ const SkillPage = () => {
                                         <div className="experiment-display-card">
                                             <div className="experiment-display-header">
                                                 <div className="experiment-display-info">
-                                                    <span className="experiment-theme-badge">{obj.metadata?.theme || 'General'}</span>
+                                                    {energyLevel >= 3 && (
+                                                        <span className="experiment-theme-badge">{obj.metadata?.theme || 'General'}</span>
+                                                    )}
                                                     <label className="show-completed-toggle-inline" style={{ 
                                                         marginLeft: '12px', 
                                                         fontSize: '11px', 
@@ -1658,9 +1724,10 @@ const SkillPage = () => {
                                                     <div className="mve-text">{obj.metadata?.mve || 'No MVE defined.'}</div>
                                                 </div>
                                             </div>
-                                            {(!obj.metadata?.isArchived) && (
+                                            {(!obj.metadata?.isArchived) && energyLevel >= 3 && (
                                                 <div className="woop-box">
                                                     <div className="woop-item" onClick={(e) => {
+                                                        if (energyLevel < 4) return;
                                                         e.stopPropagation();
                                                         if (inlineEditingWishId !== obj.id) {
                                                             setInlineEditingWishId(obj.id);
@@ -1691,7 +1758,7 @@ const SkillPage = () => {
                                                             <div style={{
                                                                 fontSize: '14px',
                                                                 color: obj.metadata?.wish ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                                                cursor: 'pointer',
+                                                                cursor: energyLevel >= 4 ? 'pointer' : 'default',
                                                                 minHeight: '20px',
                                                                 fontStyle: obj.metadata?.wish ? 'normal' : 'italic'
                                                             }}>
@@ -1700,6 +1767,7 @@ const SkillPage = () => {
                                                         )}
                                                     </div>
                                                     <div className="woop-item" onClick={(e) => {
+                                                        if (energyLevel < 4) return;
                                                         e.stopPropagation();
                                                         if (inlineEditingOutcomeId !== obj.id) {
                                                             setInlineEditingOutcomeId(obj.id);
@@ -1730,7 +1798,7 @@ const SkillPage = () => {
                                                             <div style={{
                                                                 fontSize: '14px',
                                                                 color: obj.metadata?.outcome ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                                                cursor: 'pointer',
+                                                                cursor: energyLevel >= 4 ? 'pointer' : 'default',
                                                                 minHeight: '20px',
                                                                 fontStyle: obj.metadata?.outcome ? 'normal' : 'italic'
                                                             }}>
@@ -1740,6 +1808,7 @@ const SkillPage = () => {
                                                     </div>
                                                 </div>
                                             )}
+
                                         </div>
         
                                         <div className="aspects-section-header">
@@ -2082,7 +2151,9 @@ const SkillPage = () => {
                     {isSyncingBecoming && <span className="sync-indicator" style={{ fontSize: '10px', opacity: 0.5, marginLeft: '8px' }}>Saving...</span>}
                 </div>
                 <p className="skill-subtitle">Planning Mode &bull; Structural Map</p>
+                <PinchAnalysis skill={skill} energyLevel={energyLevel} />
             </header>
+
 
             {/* INTEREST Mode: Suggested Experiments Placeholder */}
             {skill.metadata?.pinchState === 'INTEREST' && (
@@ -2143,6 +2214,35 @@ const SkillPage = () => {
                                 onKeyDown={handleCreateHabit}
                             />
                         </div>
+                        <div className="creation-row frequency-row" style={{ marginTop: '8px', display: 'flex', gap: '12px', alignItems: 'center', background: 'var(--alpha-low)', padding: '8px', borderRadius: '6px' }}>
+                            <div className="input-group-minimal">
+                                <label style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.6 }}>Frequency</label>
+                                <select 
+                                    className="minimal-select"
+                                    value={newHabitFreqType}
+                                    onChange={e => {
+                                        setNewHabitFreqType(e.target.value);
+                                        setNewHabitTarget(e.target.value === 'daily' ? 1 : 1);
+                                    }}
+                                >
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                </select>
+                            </div>
+                            <div className="input-group-minimal">
+                                <label style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.6 }}>
+                                    {newHabitFreqType === 'daily' ? 'Times per Day' : 'Times per Week'}
+                                </label>
+                                <input 
+                                    type="number"
+                                    className="minimal-num-input"
+                                    min="1"
+                                    max={newHabitFreqType === 'daily' ? 10 : 7}
+                                    value={newHabitTarget}
+                                    onChange={e => setNewHabitTarget(e.target.value)}
+                                />
+                            </div>
+                        </div>
                         <div className="creation-actions">
                             <button className="confirm-btn" onClick={() => handleCreateHabit(null)}>Add Habit (MVE)</button>
                             <button className="cancel-btn" onClick={() => setIsCreatingHabit(false)}>Cancel</button>
@@ -2176,6 +2276,41 @@ const SkillPage = () => {
                 />
             )}
 
+            {/* Expiry Decision Prompt */}
+            <AnimatePresence>
+                {expiringObjective && (
+                    <motion.div 
+                        className="expiry-decision-card"
+                        initial={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, height: 'auto', marginBottom: 24, scale: 1 }}
+                        exit={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    >
+                        <div className="card-content">
+                            <div className="card-header-row">
+                                <span className="expiry-tag">DURATION LIMIT REACHED</span>
+                            </div>
+                            <h3 className="expiry-title">Experiment Expiry: {expiringObjective.name}</h3>
+                            <p className="expiry-description">
+                                This experiment has completed its intended {expiringObjective.metadata?.durationInDays}-day cycle. 
+                                What is the next phase for this experiment?
+                            </p>
+                            <div className="expiry-actions">
+                                <button className="btn-decision-exp complete" onClick={() => handleCompleteExpiry(expiringObjective.id)}>
+                                    Complete & Log
+                                </button>
+                                <button className="btn-decision-exp extend" onClick={() => handleExtendExpiry(expiringObjective.id)}>
+                                    Extend +7 Days
+                                </button>
+                                <button className="btn-decision-exp archive" onClick={() => handleArchiveExpiry(expiringObjective.id)}>
+                                    Archive (Retired)
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {activeObjectives.length > 0 && (
                 <section className="skill-section active-experiments-section">
                     <span className="section-label">Active Experiments</span>
@@ -2187,7 +2322,7 @@ const SkillPage = () => {
                 </section>
             )}
 
-            {sleepingObjectives.length > 0 && (
+            {sleepingObjectives.length > 0 && energyLevel >= 3 && (
                 <section className="skill-section sleeping-section">
                     <header
                         className="section-header-row collapsible"
@@ -2211,101 +2346,105 @@ const SkillPage = () => {
                 </section>
             )}
 
+
             {/* Experiment Creation Zone */}
-            <section className="skill-section creation-section">
-                {isCreatingObjective ? (
-                    <div className="objective-creation-form">
-                        <div className="creation-row">
-                            <input
-                                autoFocus
-                                placeholder="Experiment Title..."
-                                value={newObjectiveName}
-                                onChange={e => setNewObjectiveName(e.target.value)}
-                                className="form-input title-input"
-                            />
-                        </div>
-                        <div className="creation-row">
-                            <input
-                                placeholder="Theme (e.g. Speed, Quality, Joy)..."
-                                value={newObjectiveTheme}
-                                onChange={e => setNewObjectiveTheme(e.target.value)}
-                                className="form-input"
-                            />
-                        </div>
-                        <div className="creation-row meta-row">
-                            <div className="input-group">
-                                <label>Duration (Days)</label>
+            {energyLevel >= 4 && (
+                <section className="skill-section creation-section">
+                    {isCreatingObjective ? (
+                        <div className="objective-creation-form">
+                            <div className="creation-row">
                                 <input
-                                    type="number"
-                                    min="14" max="60"
-                                    value={newObjectiveDuration}
-                                    onChange={e => setNewObjectiveDuration(e.target.value)}
-                                    className="form-input num-input"
+                                    autoFocus
+                                    placeholder="Experiment Title..."
+                                    value={newObjectiveName}
+                                    onChange={e => setNewObjectiveName(e.target.value)}
+                                    className="form-input title-input"
                                 />
                             </div>
-                            <div className="input-group">
-                                <label>Accumulation Unit</label>
+                            <div className="creation-row">
                                 <input
-                                    type="text"
-                                    placeholder="e.g. reps, minutes, pages..."
-                                    value={newObjectiveAccType}
-                                    onChange={e => setNewObjectiveAccType(e.target.value)}
+                                    placeholder="Theme (e.g. Speed, Quality, Joy)..."
+                                    value={newObjectiveTheme}
+                                    onChange={e => setNewObjectiveTheme(e.target.value)}
                                     className="form-input"
                                 />
                             </div>
-                        </div>
-                        <div className="creation-row">
-                            <textarea
-                                placeholder="Minimum Viable Effort (MVE)..."
-                                value={newObjectiveMVE}
-                                onChange={e => setNewObjectiveMVE(e.target.value)}
-                                className="form-input text-area"
-                            />
-                        </div>
-                        <div className="creation-row">
-                            <input
-                                placeholder="Wish (What do I want?)"
-                                value={newObjectiveWish}
-                                onChange={e => setNewObjectiveWish(e.target.value)}
-                                className="form-input"
-                            />
-                        </div>
-                        <div className="creation-row">
-                            <input
-                                placeholder="Outcome (What does success look like?)"
-                                value={newObjectiveOutcome}
-                                onChange={e => setNewObjectiveOutcome(e.target.value)}
-                                className="form-input"
-                            />
-                        </div>
-                        <div className="creation-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <input
-                                placeholder="Icon URL (e.g. notionicons.so)"
-                                value={newObjectiveIconUrl}
-                                onChange={e => setNewObjectiveIconUrl(e.target.value)}
-                                className="form-input"
-                                style={{ flex: 1 }}
-                            />
-                            {newObjectiveIconUrl && (
-                                <div className="icon-preview" style={{ width: '36px', height: '36px', background: 'var(--alpha-low)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
-                                    <img src={newObjectiveIconUrl} alt="preview" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                            <div className="creation-row meta-row">
+                                <div className="input-group">
+                                    <label>Duration (Days)</label>
+                                    <input
+                                        type="number"
+                                        min="14" max="60"
+                                        value={newObjectiveDuration}
+                                        onChange={e => setNewObjectiveDuration(e.target.value)}
+                                        className="form-input num-input"
+                                    />
                                 </div>
-                            )}
+                                <div className="input-group">
+                                    <label>Accumulation Unit</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. reps, minutes, pages..."
+                                        value={newObjectiveAccType}
+                                        onChange={e => setNewObjectiveAccType(e.target.value)}
+                                        className="form-input"
+                                    />
+                                </div>
+                            </div>
+                            <div className="creation-row">
+                                <textarea
+                                    placeholder="Minimum Viable Effort (MVE)..."
+                                    value={newObjectiveMVE}
+                                    onChange={e => setNewObjectiveMVE(e.target.value)}
+                                    className="form-input text-area"
+                                />
+                            </div>
+                            <div className="creation-row">
+                                <input
+                                    placeholder="Wish (What do I want?)"
+                                    value={newObjectiveWish}
+                                    onChange={e => setNewObjectiveWish(e.target.value)}
+                                    className="form-input"
+                                />
+                            </div>
+                            <div className="creation-row">
+                                <input
+                                    placeholder="Outcome (What does success look like?)"
+                                    value={newObjectiveOutcome}
+                                    onChange={e => setNewObjectiveOutcome(e.target.value)}
+                                    className="form-input"
+                                />
+                            </div>
+                            <div className="creation-row" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <input
+                                    placeholder="Icon URL (e.g. notionicons.so)"
+                                    value={newObjectiveIconUrl}
+                                    onChange={e => setNewObjectiveIconUrl(e.target.value)}
+                                    className="form-input"
+                                    style={{ flex: 1 }}
+                                />
+                                {newObjectiveIconUrl && (
+                                    <div className="icon-preview" style={{ width: '36px', height: '36px', background: 'var(--alpha-low)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
+                                        <img src={newObjectiveIconUrl} alt="preview" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="creation-actions">
+                                <button className="confirm-btn" onClick={() => handleCreateObjective(null)}>Launch Experiment</button>
+                                <button className="cancel-btn" onClick={() => setIsCreatingObjective(false)}>Discard</button>
+                            </div>
                         </div>
-                        <div className="creation-actions">
-                            <button className="confirm-btn" onClick={() => handleCreateObjective(null)}>Launch Experiment</button>
-                            <button className="cancel-btn" onClick={() => setIsCreatingObjective(false)}>Discard</button>
-                        </div>
-                    </div>
-                ) : (
-                    <button className="add-objective-btn" onClick={() => setIsCreatingObjective(true)}>
-                        + New Experiment
-                    </button>
-                )}
-            </section>
+                    ) : (
+                        <button className="add-objective-btn" onClick={() => setIsCreatingObjective(true)}>
+                            + New Experiment
+                        </button>
+                    )}
+                </section>
+            )}
+
 
             {/* Experiment Archive */}
-            {archivedObjectives.length > 0 && (
+            {archivedObjectives.length > 0 && energyLevel >= 3 && (
                 <section className="skill-section archived-section">
                     <span className="section-label">Experiment Archive</span>
                     <div className="archived-list">
@@ -2313,6 +2452,7 @@ const SkillPage = () => {
                     </div>
                 </section>
             )}
+
 
             {/* LIMIT MODAL */}
             {isLimitModalOpen && (

@@ -6,6 +6,9 @@ import './FocusPage.css';
 import GlassPanel from '../components/ui/GlassPanel';
 import { useSession } from '../context/SessionContext';
 import { getAspectStats, scoreLowEnergyTask } from '../utils/taskScoring';
+import { formatDuration, formatTimer } from '../utils/timeUtils';
+import RewardAnimation from '../components/RewardAnimation';
+
 
 
 const ACKS = ["Good.", "Nice.", "Done."];
@@ -13,6 +16,7 @@ const ACKS = ["Good.", "Nice.", "Done."];
 const FocusPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const TIMER_PERSISTENCE_KEY = 'backbone_active_timer';
     const [task, setTask] = useState(null);
     const [skill, setSkill] = useState(null);
     const [allNodes, setAllNodes] = useState([]);
@@ -60,6 +64,13 @@ const FocusPage = () => {
     const [showMomentum, setShowMomentum] = useState(false);
     const [nextSuggestedTask, setNextSuggestedTask] = useState(null);
     const [hasAutoStarted, setHasAutoStarted] = useState(false);
+
+    // Reward Animation Ref
+    const rewardRef = useRef(null);
+
+
+    // Snapshot / Locking State
+    const lockedTaskIdsRef = useRef(null);
 
     const triggerCheckpoint = useCallback(() => {
         setCheckpointsCompleted(c => {
@@ -140,15 +151,74 @@ const FocusPage = () => {
         setLoading(true);
         setIsToggled(false);
         setIsToggling(false);
-        setActiveSessionId(null);
-        setSeconds(0);
-        setIsPaused(true);
+        
+        // Note: we don't immediately clear activeSessionId/seconds here 
+        // to avoid transient 'null' wiping the persisted state before we check it.
         try {
             const fetchedNodes = await backbone.getAllNodes();
             setAllNodes(fetchedNodes);
-            let nextTask = null;
+            // 1. Initial Snapshot Capture (only once per session)
+            if (lockedTaskIdsRef.current === null) {
+                const todayTasks = fetchedNodes.filter(n => 
+                    n.type === NodeTypes.TASK && 
+                    n.metadata?.isToday === true
+                );
+                const ids = todayTasks.map(t => t.id);
+                lockedTaskIdsRef.current = ids;
+                console.log(`[Focus Mode] Entered Focus Mode with ${todayTasks.length} tasks:`, ids);
+            }
 
-            // Priority 1: Specifically passed task from LaunchpadFlow
+            // 1.5. Restore Persisted Session if it exists
+            const savedTimerStr = localStorage.getItem(TIMER_PERSISTENCE_KEY);
+            let restoredTimer = null;
+            if (savedTimerStr) {
+                try {
+                    restoredTimer = JSON.parse(savedTimerStr);
+                    console.log("[Focus Mode] Found saved session in localStorage for taskId:", restoredTimer.taskId);
+                } catch (e) {
+                    console.error("[Focus Mode] Failed to parse saved timer:", e);
+                }
+            }
+
+            // 2. Select Next Task
+            let nextTask = null;
+            let didRestore = false;
+
+            // Priority 0: Persisted session
+            if (restoredTimer) {
+                nextTask = fetchedNodes.find(n => n.id === restoredTimer.taskId);
+                if (nextTask) {
+                    console.log("[Focus Mode] RESTORING task from persisted state:", nextTask.name);
+                    setActiveSessionId(restoredTimer.activeSessionId);
+                    setIsPaused(restoredTimer.isPaused);
+                    didRestore = true;
+                    
+                    // If it was running, calculate current seconds immediately
+                    if (!restoredTimer.isPaused && restoredTimer.startTime) {
+                        startTimeRef.current = restoredTimer.startTime;
+                        const elapsed = Math.floor((Date.now() - restoredTimer.startTime) / 1000);
+                        setSeconds(elapsed);
+                        console.log(`[Focus Mode] Restored RUNNING timer. StartTime: ${restoredTimer.startTime}, Current seconds: ${elapsed}`);
+                    } else {
+                        setSeconds(restoredTimer.seconds || 0);
+                        startTimeRef.current = restoredTimer.startTime || null;
+                        console.log(`[Focus Mode] Restored PAUSED timer. Seconds: ${restoredTimer.seconds}`);
+                    }
+                } else {
+                    console.warn("[Focus Mode] Persisted task ID no longer exists. Clearing saved state.");
+                    localStorage.removeItem(TIMER_PERSISTENCE_KEY);
+                }
+            }
+
+            if (!didRestore) {
+                setActiveSessionId(prev => prev ?? null);
+                if (!startTimeRef.current) {
+                    setSeconds(0);
+                    setIsPaused(true);
+                }
+            }
+
+            // Priority A: Specifically passed task from LaunchpadFlow
             const forcedTaskId = location.state?.taskId;
             if (forcedTaskId) {
                 console.log("FocusPage: Loading forced task ->", forcedTaskId);
@@ -157,9 +227,17 @@ const FocusPage = () => {
                 window.history.replaceState({}, document.title);
             }
 
-            // Priority 2: Usual Backbone flow
+            // Priority B: Snapshot-aware Backbone flow
             if (!nextTask) {
-                nextTask = await backbone.getTodayFocusTask();
+                // Subsequent loads in the same session - follow the locked list
+                console.log("[Focus Mode] Loading next task from locked snapshot...");
+                for (const id of lockedTaskIdsRef.current) {
+                    const t = fetchedNodes.find(n => n.id === id);
+                    if (t && t.metadata?.status !== TaskStatuses.DONE) {
+                        nextTask = t;
+                        break;
+                    }
+                }
             }
 
             if (nextTask) {
@@ -209,22 +287,45 @@ const FocusPage = () => {
     }, [location.state?.taskId]);
 
     useEffect(() => {
+        if (startTimeRef.current !== null) {
+            console.log("[Focus Mode] Skipping loadNextTask \u2014 timer is already running");
+            return;
+        }
         loadNextTask();
     }, [loadNextTask]);
 
 
     // Timer Interval — drift-proof via Date.now()
     useEffect(() => {
+        console.log(`[DEBUG TIMER] useEffect for timer triggered. isPaused: ${isPaused}, activeSessionId: ${activeSessionId}`);
         if (!isPaused && activeSessionId) {
             // Set startTimeRef only if not already anchored (don't reset on re-renders)
             if (startTimeRef.current === null) {
+                console.log(`[DEBUG TIMER] Anchoring startTimeRef.current. current seconds: ${seconds}`);
                 startTimeRef.current = Date.now() - (seconds * 1000);
             }
 
+            // Persistence: save periodically when running
+            const persistTimer = (currentSeconds) => {
+                if (task?.id && activeSessionId) {
+                    localStorage.setItem(TIMER_PERSISTENCE_KEY, JSON.stringify({
+                        activeSessionId,
+                        taskId: task.id,
+                        isPaused: false,
+                        seconds: currentSeconds,
+                        startTime: startTimeRef.current
+                    }));
+                }
+            };
+
+            console.log(`[DEBUG TIMER] Creating interval. startTimeRef: ${startTimeRef.current}`);
             timerRef.current = setInterval(() => {
                 const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
                 setSeconds(elapsed);
+                
+                // Save state every few seconds to keep it fresh
+                if (elapsed % 5 === 0) persistTimer(elapsed);
 
                 // PASSION/INTEREST Safe Start
                 if ((isPassionSafeSession || (isInterestMode && !isInterestExploring)) && !wasContinued && elapsed >= TARGET_SECONDS) {
@@ -248,9 +349,10 @@ const FocusPage = () => {
                 // INTEREST Hyperfocus Guard (90 mins = 5400 seconds)
                 if (isInterestMode && elapsed > 0) {
                     const secondsRemaining = 5400 - elapsed;
-                    if (secondsRemaining === 600) setHyperfocusWarning("10 minutes remaining");
-                    else if (secondsRemaining === 300) setHyperfocusWarning("5 minutes remaining");
-                    else if (secondsRemaining === 60) setHyperfocusWarning("1 minute remaining");
+                    if (secondsRemaining === 600) setHyperfocusWarning(`${formatDuration(10, 'minutes')} remaining`);
+                    else if (secondsRemaining === 300) setHyperfocusWarning(`${formatDuration(5, 'minutes')} remaining`);
+                    else if (secondsRemaining === 60) setHyperfocusWarning(`${formatDuration(1, 'minutes')} remaining`);
+
                     else if (secondsRemaining === 0) {
                         setIsPaused(true);
                         setShowHyperfocusGuard(true);
@@ -259,20 +361,37 @@ const FocusPage = () => {
                 }
             }, 1000);
         } else {
+            if (timerRef.current) console.log(`[DEBUG TIMER] Clearing interval (isPaused or no activeSessionId)`);
             clearInterval(timerRef.current);
             timerRef.current = null;
         }
         return () => {
+            if (timerRef.current) console.log(`[DEBUG TIMER] Cleaning up interval on unmount/dep change`);
             clearInterval(timerRef.current);
             timerRef.current = null;
         };
-    }, [isPaused, activeSessionId]);
+    }, [isPaused, activeSessionId, task?.id]);
 
-    const formatTime = (totalSeconds) => {
-        const mins = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
-        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    };
+    // Save state on pause/stop or when session details change
+    useEffect(() => {
+        if (activeSessionId && task?.id) {
+            localStorage.setItem(TIMER_PERSISTENCE_KEY, JSON.stringify({
+                activeSessionId,
+                taskId: task.id,
+                isPaused,
+                seconds,
+                startTime: startTimeRef.current
+            }));
+        }
+    }, [isPaused, activeSessionId, task?.id]);
+
+    useEffect(() => {
+        console.log('[DEBUG LIFESTYLE] FocusPage mounted');
+        return () => console.log('[DEBUG LIFESTYLE] FocusPage UNmounted');
+    }, []);
+
+    const formatTime = (totalSeconds) => formatTimer(totalSeconds);
+
 
     const handleStartSession = useCallback(async () => {
         console.log(`[DEBUG FocusPage] handleStartSession called. activeSessionId: ${activeSessionId}, seconds: ${seconds}`);
@@ -297,7 +416,13 @@ const FocusPage = () => {
             setSeconds(0);
             setIsPaused(false);
             setShowSetup(false);
+
+            // Trigger Reward Animation: +1 Aura awarded for session start
+            if (rewardRef.current) {
+                rewardRef.current.showReward([{ type: 'aura', amount: 1 }]);
+            }
         } catch (error) {
+
             console.error("[DEBUG FocusPage] startBackboneSession FAILED:", error);
         }
     }, [task?.id, setActiveSessionId]);
@@ -319,7 +444,7 @@ const FocusPage = () => {
         setShowSummary(true);
     };
 
-    const completeBackboneSession = useCallback(async () => {
+    const completeBackboneSession = useCallback(async (preventLoad = false) => {
         console.time("sessionComplete");
         try {
             const currentTaskId = task.id;
@@ -332,28 +457,37 @@ const FocusPage = () => {
             setSeconds(0);
             startTimeRef.current = null; // Reset anchor for next session
             setShowSummary(false);
+            localStorage.removeItem(TIMER_PERSISTENCE_KEY);
 
-            // 1. FIRE-AND-FORGET: Trigger persistence in background without blocking UI
-            console.log(`[DEBUG FocusPage] Background session completion START. sessionId: ${currentSessionId}`);
-            backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery)
-                .then(() => console.log(`[DEBUG FocusPage] Background session completion SUCCESS for ${currentSessionId}`))
-                .catch(err => console.error("[DEBUG FocusPage] completeSession background error:", err));
-
-            // 2. INSTANT UI: Trigger Momentum Loop immediately
-            if (energyLevel <= 2 && !isNavigatingAway && nextSuggestedTask) {
-                console.log(`[DEBUG FocusPage] Triggering Momentum Loop`);
-                setShowMomentum(true);
-                return;
-            }
-
-            // Standard flow
-            if (isNavigatingAway) {
-                console.log(`[DEBUG FocusPage] Navigating away to ${previousRoute || '/launchpad'}`);
-                backbone.trackFocusMode(false).catch(console.error);
-                navigate(previousRoute || '/launchpad');
+            if (preventLoad) {
+                // When completing a task, WAIT for the session save to finish
+                // so it doesn't race with proceedWithTaskCompletion
+                console.log(`[DEBUG FocusPage] Awaiting session completion for taskId: ${currentTaskId}`);
+                await backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery);
+                console.log(`[DEBUG FocusPage] Session completion AWAITED successfully`);
             } else {
-                console.log(`[DEBUG FocusPage] Loading next task`);
-                loadNextTask();
+                // Normal pause/stop — fire and forget is fine
+                console.log(`[DEBUG FocusPage] Background session completion START. sessionId: ${currentSessionId}`);
+                backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery)
+                    .then(() => console.log(`[DEBUG FocusPage] Background session completion SUCCESS for ${currentSessionId}`))
+                    .catch(err => console.error("[DEBUG FocusPage] completeSession background error:", err));
+
+                // 2. INSTANT UI: Trigger Momentum Loop immediately
+                if (energyLevel <= 2 && !isNavigatingAway && nextSuggestedTask) {
+                    console.log(`[DEBUG FocusPage] Triggering Momentum Loop`);
+                    setShowMomentum(true);
+                    return;
+                }
+
+                // Standard flow
+                if (isNavigatingAway) {
+                    console.log(`[DEBUG FocusPage] Navigating away to ${previousRoute || '/launchpad'}`);
+                    backbone.trackFocusMode(false).catch(console.error);
+                    navigate(previousRoute || '/launchpad');
+                } else {
+                    console.log(`[DEBUG FocusPage] Loading next task`);
+                    loadNextTask();
+                }
             }
         } catch (error) {
             console.error("[DEBUG FocusPage] completeBackboneSession critical error:", error);
@@ -403,7 +537,23 @@ const FocusPage = () => {
                     // Fetch allNodes needed for identity savoring BEFORE the timeout finishes
                     const allNodes = await backbone.getAllNodes();
 
+                    console.log(`[Focus Mode] Task Completed: ${task.name} (${task.id})`);
                     await taskUpdatePromise;
+                    
+                    console.log('[DEBUG COMPLETE] updateNode called for:', task.id);
+                    const verifyByGrep = await backbone.getAllNodes();
+                    const verify = verifyByGrep.find(n => n.id === task.id);
+                    console.log('[DEBUG COMPLETE] Status immediately after update:', verify?.metadata?.status);
+                    console.log('[DEBUG COMPLETE] Full metadata after update:', JSON.stringify(verify?.metadata));
+
+                    // Trigger Reward Animation: +1 Aura & +1 Hryvnia for Task Completion
+                    if (rewardRef.current) {
+                        rewardRef.current.showReward([
+                            { type: 'aura', amount: 1 },
+                            { type: 'hryvnia', amount: 1 }
+                        ]);
+                    }
+
 
                     // Load next task after a brief pause for neurological closure
                     setTimeout(() => {
@@ -439,9 +589,12 @@ const FocusPage = () => {
 
 
     const handleSummarySubmit = useCallback(async () => {
-        await completeBackboneSession();
+        // Step 1: Fully await the session save to prevent race conditions
+        await completeBackboneSession(pendingTaskComplete);
+        
+        // Step 2: Only then proceed to mark the task as complete/increment repetition
         if (pendingTaskComplete) {
-            proceedWithTaskCompletion();
+            await proceedWithTaskCompletion();
         }
     }, [completeBackboneSession, pendingTaskComplete, proceedWithTaskCompletion]);
 
@@ -482,6 +635,7 @@ const FocusPage = () => {
             return;
         }
         try {
+            console.log("[Focus Mode] Exited Focus Mode session.");
             await backbone.trackFocusMode(false);
         } catch (error) {
             console.error("Failed to exit focus mode:", error);
@@ -535,6 +689,7 @@ const FocusPage = () => {
         <div className="focus-container">
             <button className="focus-exit-btn" onClick={handleExit}>Back to Planning</button>
 
+
             <header className="focus-header">
                 {isNoveltySprint && <span className="focus-novelty-session-label">⚡ Experiment Session</span>}
                 {skill && <span className="focus-skill-label">{skill.name}</span>}
@@ -544,7 +699,8 @@ const FocusPage = () => {
                 {/* Safe Mode / Interest Mode on-ramp framing */}
                 {(safeMode || (isInterestMode && !isInterestExploring)) && !activeSessionId && isPaused && (
                     <div className="focus-safe-onramp">
-                        {isInterestMode ? "Just 10 minutes of exploration." : "Let\u2019s just do 10 minutes."}
+                        {isInterestMode ? `Just ${formatDuration(10, 'minutes')} of exploration.` : `Let’s just do ${formatDuration(10, 'minutes')}.`}
+
                     </div>
                 )}
 
@@ -563,8 +719,9 @@ const FocusPage = () => {
                                 />
                             </svg>
                             <span className="focus-ring-label">
-                                {Math.ceil((TARGET_SECONDS - seconds) / 60)}m
+                                {formatDuration(TARGET_SECONDS - seconds)}
                             </span>
+
                         </div>
                     ) : (
                         <div className={`focus-timer-display ${!isPaused ? 'active' : ''}`}>
@@ -652,7 +809,10 @@ const FocusPage = () => {
                         onKeyDown={handleAddSubStep}
                     />
                 </div>
+                {/* Reward Toast layer */}
+                <RewardAnimation ref={rewardRef} />
             </main>
+
 
             <footer className="focus-footer">
                 <div

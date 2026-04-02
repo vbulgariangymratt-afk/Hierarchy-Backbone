@@ -1,0 +1,86 @@
+.habit-evolution-gauge {
+    width: 100%;
+}
+
+.habit-evolution-gauge.full {
+    margin-top: 12px;
+    padding: 8px 12px 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.habit-evolution-gauge.compact {
+    margin-top: 4px;
+}
+
+.gauge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.gauge-count {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-tertiary, #8e8e93);
+}
+
+.gauge-status {
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.gauge-status.ready {
+    color: #32d74b; /* iOS Green */
+}
+
+.gauge-status.capped {
+    color: #ffd60a; /* iOS Gold */
+}
+
+.gauge-bar-container {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.gauge-bar-fill {
+    height: 100%;
+    background: var(--color-accent, #60a5fa);
+    opacity: 0.8;
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.gauge-bar-fill.ready {
+    background: #32d74b;
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(50, 215, 75, 0.3);
+}
+
+.gauge-details-hint {
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+/* Compact overrides */
+.compact .gauge-header {
+    margin-bottom: 4px;
+}
+
+.compact .gauge-count {
+    font-size: 9px;
+    opacity: 0.8;
+}
+
+.compact .gauge-bar-container {
+    height: 2px;
+}
+

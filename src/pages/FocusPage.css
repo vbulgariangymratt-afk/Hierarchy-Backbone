@@ -59,7 +59,10 @@
     justify-content: center;
     width: 100%;
     max-width: 600px;
+    position: relative;
+    z-index: 10;
 }
+
 
 .focus-action-card {
     margin-bottom: 24px;

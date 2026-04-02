@@ -31,9 +31,7 @@
   "plugins": {
     "deep-link": {
       "schemes": [
-        "com.warhead.backbonehierarchy",
-        "backbone",
-        "backbone-dev"
+        "backbone"
       ]
     }
   },

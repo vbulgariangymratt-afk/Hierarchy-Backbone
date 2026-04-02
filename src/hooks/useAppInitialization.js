@@ -1,0 +1,143 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { 
+  backbone, 
+  repository, 
+  habitRepo, 
+  NodeTypes, 
+  reloadAllData, 
+  clearAllData 
+} from '../backbone-v2';
+import { getSkillEngagementStatus } from '../utils/engagementUtils';
+import { useBackboneStore } from '../store/backboneStore';
+
+// Module-level tracker to prevent redundant reloads on macOS desktop switching (token refresh)
+let _lastKnownUid = null;
+
+/**
+ * The core "Brain" hook that bootstraps the entire Backbone V2 system.
+ * Handles initialization, authentication lifecycle, and real-time synchronization.
+ *
+ * @param {Function} setSession - Callback to update the session in App.jsx
+ * @returns {Object} { loading, repositoriesReady }
+ */
+export const useAppInitialization = (setSession) => {
+  const initializeNodes = useBackboneStore(state => state.initializeNodes);
+  const setEngagementMap = useBackboneStore(state => state.setEngagementMap);
+
+  const [loading, setLoading] = useState(true);
+  const [repositoriesReady, setRepositoriesReady] = useState(false);
+
+  useEffect(() => {
+    console.log('[App Init] Core lifecycle starting...');
+
+    const initApp = async () => {
+      // ENSURE backbone is ready before anything else
+      if (!backbone || typeof backbone.initialize !== 'function') {
+        console.warn('[App Init] Backbone not ready or missing initialize method — bootstrapping...');
+      }
+
+      try {
+        console.log('[App Init] Waiting for backbone.initialize()...');
+        await backbone.initialize();
+        
+        // --- STEP 1: Initial hydration from cache/database ---
+        const allNodes = await backbone.getAllNodes();
+        initializeNodes(allNodes);
+
+        console.log('[App Init] Backbone READY');
+        
+        // --- STEP 2: Client-side session recovery ---
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        console.log('[AUTH] Initial session:', initialSession ? initialSession.user.email : 'None');
+        
+        if (initialSession?.user?.id) {
+          _lastKnownUid = initialSession.user.id;
+        }
+
+        setSession(initialSession);
+        setLoading(false);
+        setRepositoriesReady(true);
+
+        // --- STEP 3: Listen for system-level auth state changes ---
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+          console.log('[AUTH] Event:', event, newSession ? `User: ${newSession.user.email}` : 'None');
+          
+          setSession(newSession);
+
+          if (event === 'SIGNED_IN' && newSession) {
+            // macOS Performance Fix: Skip re-load if it's just a token refresh
+            const isNewUser = newSession.user.id !== _lastKnownUid;
+            
+            if (isNewUser) {
+              console.log('[App] SIGNED_IN (New User) — Reloading all data...');
+              _lastKnownUid = newSession.user.id;
+              setRepositoriesReady(false);
+              try {
+                await reloadAllData();
+                initializeNodes(await backbone.getAllNodes());
+              } catch (err) {
+                console.error('[App] Reload failed after sign-in:', err);
+              } finally {
+                setRepositoriesReady(true);
+              }
+            } else {
+              console.log('[App] SIGNED_IN (Token Refresh) — skipping redundant reload across desktop spaces.');
+            }
+          }
+
+          if (event === 'SIGNED_OUT') {
+            console.log('[App] SIGNED_OUT — clearing all local caches...');
+            _lastKnownUid = null;
+            clearAllData();
+            initializeNodes([]); // Clear the Zustand store
+            setRepositoriesReady(false);
+            setRepositoriesReady(true); // Force re-render of providers
+          }
+        });
+        
+        // --- STEP 4: Real-time Reactive Sync Loop ---
+        const syncStore = async () => {
+          const nodes = await backbone.getAllNodes();
+          const habits = habitRepo ? habitRepo.getAll() : [];
+          
+          // Recompute global engagement map for O(1) Lookups
+          const newMap = {};
+          nodes.filter(n => n.type === NodeTypes.SKILL).forEach(skill => {
+            newMap[skill.id] = getSkillEngagementStatus(skill.id, nodes, habits);
+          });
+          
+          setEngagementMap(newMap);
+          initializeNodes(nodes);
+        };
+
+        // Subscribe to any/all low-level repository changes
+        const unsubNodes = repository.subscribe(syncStore);
+        const unsubHabits = habitRepo.subscribe(syncStore);
+
+        // Perform initial sync immediately to bridge any latency
+        await syncStore();
+
+        return () => {
+          subscription.unsubscribe?.();
+          unsubNodes();
+          unsubHabits();
+        };
+      } catch (error) {
+        console.error('[App Init] CRITICAL FAILURE during bootstrap:', error);
+        setLoading(false);
+        setRepositoriesReady(true);
+      }
+    };
+
+    const authPromise = initApp();
+
+    return () => {
+      authPromise.then(cleanup => {
+        if (typeof cleanup === 'function') cleanup();
+      });
+    };
+  }, [initializeNodes, setEngagementMap, setSession]);
+
+  return { loading, repositoriesReady };
+};

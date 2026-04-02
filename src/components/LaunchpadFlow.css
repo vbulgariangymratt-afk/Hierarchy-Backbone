@@ -125,3 +125,39 @@
 .flow-secondary-btn.small-subtle:hover {
     opacity: 1;
 }
+
+/* Empty Slots View */
+.empty-slots-view .launchpad-flow-container {
+    max-width: 600px;
+    padding: 80px 40px;
+}
+
+.launchpad-flow-header h1 {
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+}
+
+.launchpad-flow-header p {
+    font-size: 18px;
+    color: #888;
+    margin-bottom: 40px;
+}
+
+.primary-btn {
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 18px 48px;
+    border-radius: 99px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.primary-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(255,255,255,0.15);
+}

@@ -26,15 +26,18 @@ export const createPersistentRepository = () => {
 
         try {
             // Transform nodes for Supabase
-            const nodesToUpsert = (Array.isArray(nodes) ? nodes : [nodes]).map(node => ({
-                id: node.id,
-                user_id: userId,
-                name: node.name || 'Untitled',
-                type: node.type || 'NODE',
-                parent_id: node.parentId,
-                metadata: node.metadata || {},
-                updated_at: new Date().toISOString()
-            }));
+            const nodesToUpsert = (Array.isArray(nodes) ? nodes : [nodes]).map(node => {
+                console.log('[DEBUG REPO] Upserting node:', node.id, 'metadata.status:', node.metadata?.status);
+                return {
+                    id: node.id,
+                    user_id: userId,
+                    name: node.name || 'Untitled',
+                    type: node.type || 'NODE',
+                    parent_id: node.parentId,
+                    metadata: node.metadata || {},
+                    updated_at: new Date().toISOString()
+                };
+            });
 
             const { error } = await supabase
                 .from('nodes')
@@ -51,6 +54,54 @@ export const createPersistentRepository = () => {
     const notify = () => listeners.forEach(l => l());
     let initPromise = null;
 
+    const initialize = async () => {
+        if (initPromise) return initPromise;
+
+        initPromise = (async () => {
+            console.log(`Repository [ID:${instanceId}]: Loading from Supabase...`);
+            try {
+                const userId = await getUserId();
+                if (!userId) {
+                    console.warn('Repository: No user authenticated. Initializing empty storage.');
+                    storage = [];
+                    return;
+                }
+
+                const { data, error } = await supabase
+                    .from('nodes')
+                    .select('*')
+                    .eq('user_id', userId);
+
+                if (error) throw error;
+
+                // Transform back to application format
+                storage = (data || []).map(row => ({
+                    id: row.id,
+                    name: row.name,
+                    type: row.type,
+                    parentId: row.parent_id,
+                    metadata: row.metadata,
+                    createdAt: row.created_at,
+                    updatedAt: row.updated_at
+                }));
+
+                console.log(`Repository [ID:${instanceId}]: Loaded ${storage.length} nodes from Supabase`);
+                notify();
+            } catch (e) {
+                console.error('Failed to load V2 data from Supabase:', e);
+                storage = [];
+            }
+        })();
+
+        return initPromise;
+    };
+
+    const reinitialize = async () => {
+        console.log(`Repository [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
+        initPromise = null;
+        return await initialize();
+    };
+
     return {
         instanceId,
         subscribe: (fn) => {
@@ -58,53 +109,9 @@ export const createPersistentRepository = () => {
             return () => listeners.delete(fn);
         },
 
-        initialize: async () => {
-            if (initPromise) return initPromise;
+        initialize,
+        reinitialize,
 
-            initPromise = (async () => {
-                console.log(`Repository [ID:${instanceId}]: Loading from Supabase...`);
-                try {
-                    const userId = await getUserId();
-                    if (!userId) {
-                        console.warn('Repository: No user authenticated. Initializing empty storage.');
-                        storage = [];
-                        return;
-                    }
-
-                    const { data, error } = await supabase
-                        .from('nodes')
-                        .select('*')
-                        .eq('user_id', userId);
-
-                    if (error) throw error;
-
-                    // Transform back to application format
-                    storage = (data || []).map(row => ({
-                        id: row.id,
-                        name: row.name,
-                        type: row.type,
-                        parentId: row.parent_id,
-                        metadata: row.metadata,
-                        createdAt: row.created_at,
-                        updatedAt: row.updated_at
-                    }));
-
-                    console.log(`Repository [ID:${instanceId}]: Loaded ${storage.length} nodes from Supabase`);
-                    notify();
-                } catch (e) {
-                    console.error('Failed to load V2 data from Supabase:', e);
-                    storage = [];
-                }
-            })();
-
-            return initPromise;
-        },
-
-        reinitialize: async () => {
-            console.log(`Repository [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
-            initPromise = null;
-            return await this.initialize();
-        },
 
         save: async (node) => {
             const index = storage.findIndex(n => n.id === node.id);

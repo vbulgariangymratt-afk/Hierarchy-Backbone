@@ -228,6 +228,69 @@
     box-shadow: 0 0 8px rgba(148, 163, 184, 0.15);
 }
 
+/* Energy Level Selector */
+.energy-selector-container {
+    padding: 2px 16px 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.energy-label {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+}
+
+.energy-pills {
+    display: flex;
+    gap: 4px;
+    background: var(--alpha-low);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--sidebar-border);
+}
+
+.energy-pill {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 6px 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.energy-pill:hover {
+    background: var(--alpha-med);
+    color: var(--text-primary);
+}
+
+.energy-pill.active {
+    background: var(--color-accent);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.liquid-mode .energy-pill.active,
+.wallpaper-mode .energy-pill.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .sidebar .energy-pill.active,
+.neutral .sidebar .energy-pill.active {
+    color: #ffffff !important;
+}
+
 /* Bottom Section */
 .sidebar-bottom {
     padding-top: 8px;
@@ -409,6 +472,26 @@
     cursor: text;
     border-radius: 4px;
     transition: var(--transition-smooth);
+}
+
+.section-title-static {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 2px 4px;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+}
+
+.section-title-static {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 2px 4px;
+    color: var(--text-tertiary);
+    opacity: 0.8;
 }
 
 .section-title-input:focus {
@@ -745,4 +828,381 @@
 .neutral .sidebar svg {
     color: #ffffff !important;
     stroke: #ffffff !important;
+}
+/* Guided role short label in empty sidebar slots */
+.slot-role-inline {
+    font-style: italic;
+    opacity: 0.55;
+    font-size: 12px;
+}
+
+/* ============================
+   MAINTENANCE / KEEP IT ALIVE — PILOT LIGHT DRAWER
+   ============================ */
+
+.maintenance-section {
+    margin-top: 12px;
+}
+
+/* ── Drawer wrapper ── */
+.pilot-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+/* ── Spotlight list ── */
+.pilot-spotlight-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ── Spotlight card ── */
+.spotlight-card {
+    background: var(--alpha-low);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.spotlight-card:hover {
+    border-color: rgba(148, 163, 184, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Done state — muted, no heavy emphasis */
+.spotlight-card.done {
+    opacity: 0.55;
+    border-color: transparent;
+}
+
+/* Completion pulse — subtle, not flashy */
+@keyframes spotlightCompletePulse {
+    0%   { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0); }
+    40%  { box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.25); }
+    100% { box-shadow: 0 0 0 0 rgba(148, 163, 184, 0); }
+}
+
+.spotlight-card.completing {
+    animation: spotlightCompletePulse 0.7s ease-out;
+}
+
+/* ── Spotlight card: top meta row ── */
+.spotlight-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.spotlight-skill-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    opacity: 0.75;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 110px;
+}
+
+.spotlight-skill-label:hover {
+    opacity: 1;
+}
+
+.spotlight-progress {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Spotlight card: habit name ── */
+.spotlight-habit-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+/* ── Spotlight card: action button ── */
+.spotlight-action-btn {
+    align-self: flex-start;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: transparent;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    letter-spacing: 0.02em;
+}
+
+.spotlight-action-btn:hover:not(:disabled) {
+    background: var(--alpha-med);
+    color: var(--text-primary);
+    border-color: rgba(148, 163, 184, 0.4);
+}
+
+.spotlight-action-btn.btn-done {
+    color: var(--text-muted);
+    border-color: transparent;
+    background: transparent;
+    cursor: default;
+    opacity: 0.6;
+}
+
+.spotlight-action-btn:disabled {
+    cursor: default;
+}
+
+/* ── Pilot skill group ── */
+.pilot-skill-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0 2px;
+}
+
+/* ── Pilot skill label (clickable, navigates to skill) ── */
+.pilot-skill-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    opacity: 0.65;
+    cursor: pointer;
+    transition: opacity 0.15s ease, background 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pilot-skill-label:hover {
+    opacity: 1;
+    background: var(--alpha-low);
+}
+
+/* ── Pilot chip container ── */
+.pilot-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 6px 4px 6px;
+}
+
+/* ── Individual pilot chip ── */
+.pilot-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: transparent;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    opacity: 0.65;
+    max-width: 200px;
+    text-align: left;
+}
+
+
+.pilot-chip:hover {
+    opacity: 1;
+    background: var(--alpha-low);
+    color: var(--text-secondary);
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+/* Done chip — even more muted */
+.pilot-chip.done {
+    opacity: 0.35;
+    text-decoration: line-through;
+    cursor: default;
+}
+
+.pilot-chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pilot-chip-check {
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+/* ── Fallback: no habits for this skill ── */
+.pilot-fallback {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 2px 6px 4px 6px;
+    opacity: 0.6;
+}
+
+/* ── All done state ── */
+.maintenance-all-done {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 12px 16px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+/* ── Liquid / wallpaper mode overrides ── */
+.liquid-mode .spotlight-card,
+.wallpaper-mode .spotlight-card {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode .spotlight-card:hover,
+.wallpaper-mode .spotlight-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.liquid-mode .spotlight-action-btn,
+.wallpaper-mode .spotlight-action-btn {
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.liquid-mode .spotlight-action-btn:hover:not(:disabled),
+.wallpaper-mode .spotlight-action-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.liquid-mode .pilot-chip,
+.wallpaper-mode .pilot-chip {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode .pilot-chip:hover,
+.wallpaper-mode .pilot-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ============================
+   LIFE AREA HEALTH DOTS
+   ============================ */
+
+.health-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-left: 8px;
+    flex-shrink: 0;
+    transition: var(--transition-smooth);
+    cursor: help;
+}
+
+.health-dot.blue {
+    background-color: #3b82f6; /* Blue 500 */
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
+    animation: healthDotPulse 4s infinite ease-in-out;
+}
+
+.health-dot.orange {
+    background-color: #f97316; /* Orange 500 */
+    box-shadow: 0 0 4px rgba(249, 115, 22, 0.4);
+}
+
+.health-dot.grey {
+    background-color: #94a3b8; /* Slate 400 */
+    opacity: 0.4;
+}
+
+/* Theme / Mode specific overrides for dot visibility */
+.liquid-mode .health-dot.blue,
+.wallpaper-mode .health-dot.blue {
+    background-color: #60a5fa;
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
+}
+
+.liquid-mode .health-dot.orange,
+.wallpaper-mode .health-dot.orange {
+    background-color: #fb923c;
+    box-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
+}
+
+@keyframes healthDotPulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+/* ============================
+   HEALTH DOTS (Engagement)
+   ============================ */
+
+.health-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 4px;
+    transition: var(--transition-smooth);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.health-dot.blue {
+    background-color: #3b82f6; /* recently engaged */
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+.health-dot.orange {
+    background-color: #f59e0b; /* cooling down */
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
+}
+
+.health-dot.grey {
+    background-color: #6b7280; /* neglected */
+    opacity: 0.5;
+}
+
+.liquid-mode .health-dot.grey,
+.wallpaper-mode .health-dot.grey {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Tooltip on dots if needed */
+.health-dot:hover {
+    transform: scale(1.2);
 }
