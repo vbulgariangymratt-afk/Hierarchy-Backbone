@@ -4,10 +4,18 @@
     --sidebar-border: var(--color-border);
     --accent-focus: var(--color-accent);
     --accent-planning: #f59e0b;
-    --text-primary: var(--text-primary);
-    --text-secondary: var(--text-secondary);
-    --text-tertiary: var(--text-tertiary);
-    --text-muted: var(--text-muted);
+    
+    /* Craft Hierarchy Color System */
+    --text-craft-primary: rgba(255, 255, 255, 0.9);
+    --text-craft-secondary: rgba(255, 255, 255, 0.5);
+    --text-craft-tertiary: rgba(255, 255, 255, 0.3);
+    
+    /* Mathematical Spacing & Alignment */
+    --divider-gap: 6px; 
+    --sidebar-h-padding: 12px;
+    --section-gap: 12px; /* Unified Vertical Gap: 2 x --divider-gap */
+    --item-column-inset: 8px; /* Corrected for symmetry with item margins (4px each side) */
+    
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -19,7 +27,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 32px 16px 24px 16px;
+    padding: 48px 12px 20px 12px;
     /* Increased top padding for macOS traffic lights (24px-32px) */
     position: fixed;
     top: 0;
@@ -109,17 +117,16 @@
 }
 
 .sidebar-top {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    /* Removed flex/gap for manual spacing control */
+    margin-bottom: var(--section-gap);
 }
 
 .mode-toggle-btn {
     appearance: none;
     background: var(--alpha-med);
     border: 1px solid var(--sidebar-border);
-    border-radius: 14px;
-    padding: 14px 16px;
+    border-radius: 12px;
+    padding: 6px 12px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -127,8 +134,10 @@
     transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
-    width: 100%;
+    width: calc(100% - var(--item-column-inset));
+    margin: 0 auto 12px auto; /* Explicit 12px margin-bottom for rhythm */
     text-align: left;
+    box-sizing: border-box;
 }
 
 .mode-toggle-btn:hover {
@@ -155,10 +164,15 @@
 
 .btn-text {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 500;
-    color: var(--text-primary);
+    color: inherit;
     flex-grow: 1;
+    line-height: 1; /* Collapsing invisible space */
+}
+
+.mode-toggle-btn .btn-text {
+    font-size: 12px;
 }
 
 .btn-status-indicator {
@@ -230,19 +244,25 @@
 
 /* Energy Level Selector */
 .energy-selector-container {
-    padding: 2px 16px 8px 16px;
+    padding: 0 4px 6px 4px; /* Standardized to align label at 20px rail (16px margin-offset + 4px padding) */
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    margin: 0 auto;
+    width: calc(100% - var(--item-column-inset)); /* Unified Column Width */
+    box-sizing: border-box;
 }
 
 .energy-label {
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text-tertiary);
-    opacity: 0.8;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff; /* Force header white */
+    opacity: 1;
+    margin-top: 0 !important; /* Nuclear Override */
+    margin-bottom: 2px;
+    padding-left: 0; /* Aligned with other section title text rail */
+    margin-left: 0;
+    line-height: 1; /* Collapsing invisible space */
 }
 
 .energy-pills {
@@ -252,6 +272,8 @@
     padding: 4px;
     border-radius: 12px;
     border: 1px solid var(--sidebar-border);
+    width: calc(100% - var(--item-column-inset));
+    margin: 0 auto;
 }
 
 .energy-pill {
@@ -420,54 +442,72 @@
 .sidebar-nav {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin-top: 6px;
+    gap: 1px;
+    padding-top: var(--divider-gap);
+    margin-top: var(--divider-gap);
 }
 
 /* Sidebar Sections */
 .sidebar-section {
     display: flex;
     flex-direction: column;
-    margin-top: 8px;
+}
+
+.focus-slots-section, 
+.maintenance-section,
+.life-areas-section {
+    padding-top: var(--divider-gap);
+    margin-top: var(--divider-gap); /* Combined 12px visual gap */
 }
 
 .section-title-container {
-    padding: 6px 16px;
+    padding: 6px var(--sidebar-h-padding); /* Standardized Inset */
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between; /* Push Gear icon to the right */
+    gap: 0;
     cursor: pointer;
     border-radius: 8px;
     transition: var(--transition-smooth);
-    color: var(--text-secondary);
+    color: #ffffff !important; 
+    padding-left: 8px; /* Aligned with icons */
+}
+
+.header-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.3);
+    transition: var(--transition-smooth);
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.header-action-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.section-title-static,
+.section-title-input {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
 }
 
 .section-title-container:hover {
     background: var(--alpha-low);
-    color: var(--text-primary);
+    color: #ffffff !important;
 }
 
-.section-toggle-icon {
-    font-size: 14px;
-    transition: transform 0.2s ease;
-    width: 14px;
-    display: flex;
-    justify-content: center;
-}
-
-.section-toggle-icon.expanded {
-    transform: rotate(90deg);
-}
+/* Section toggle icon removed in favor of text-only toggle as requested */
 
 .section-title-input {
     background: transparent;
     border: none;
     color: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 2px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 6px;
     width: 100%;
     cursor: text;
     border-radius: 4px;
@@ -475,23 +515,12 @@
 }
 
 .section-title-static {
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    padding: 2px 4px;
-    color: var(--text-tertiary);
-    opacity: 0.8;
-}
-
-.section-title-static {
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    padding: 2px 4px;
-    color: var(--text-tertiary);
-    opacity: 0.8;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 4px 0; /* Remove horizontal padding */
+    color: #ffffff; /* Pure white header as requested */
+    opacity: 1;
+    text-transform: capitalize; /* Ensure Title Case */
 }
 
 .section-title-input:focus {
@@ -504,13 +533,13 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
-    margin-top: 2px;
 }
 
 .area-item {
-    padding: 8px 16px 8px 32px;
-    /* Density improvement: matched to 8px-10px range */
-    font-size: 14px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.2;
+    color: rgba(255, 255, 255, 0.5) !important; /* Force grey hierarchy */
     display: flex;
     align-items: center;
 }
@@ -547,7 +576,7 @@
 }
 
 .new-area-btn {
-    padding: 6px 16px 6px 32px;
+    padding: 6px 12px 6px 24px;
     font-size: 13px;
     opacity: 0.5;
     border: none;
@@ -562,7 +591,7 @@
 
 .new-area-input {
     width: 100%;
-    padding: 6px 12px 6px 32px;
+    padding: 6px 10px 6px 24px;
     font-size: 13px;
     background: var(--alpha-high);
     border: 1px solid var(--color-border);
@@ -575,24 +604,49 @@
 
 .nav-item {
     text-decoration: none;
-    padding: 8px 16px;
+    padding: 3px 8px; /* Alignment Rail: Sidebar(12) + Margin(4) + Padding(8) = 24px */
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    border-radius: 12px;
+    border-radius: 8px;
     transition: var(--transition-smooth);
-    color: var(--text-secondary);
+    color: rgba(255, 255, 255, 0.5) !important; /* Force Soft Grey Master */
+    position: relative;
+    border-left: 2px solid transparent;
+    width: calc(100% - var(--item-column-inset));
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+.nav-item .node-icon-wrapper,
+.nav-item .btn-icon {
+    opacity: 0.65;
 }
 
 .nav-item:hover {
-    background: var(--alpha-med);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+.nav-item:hover .node-icon-wrapper,
+.nav-item:hover .btn-icon {
+    opacity: 1;
 }
 
 .nav-item.active {
-    background: var(--alpha-high);
-    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff !important;
+    border-left-color: #ffffff;
+}
+
+.nav-item.active .node-icon-wrapper,
+.nav-item.active .btn-icon {
+    opacity: 1;
+}
+
+.nav-item.active .btn-icon {
+    opacity: 1;
 }
 
 .nav-item .btn-icon {
@@ -602,6 +656,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.nav-item .btn-icon img,
+.nav-item .btn-icon svg,
+.nav-item .btn-icon span {
+    max-width: 14px;
+    max-height: 14px;
 }
 
 /* Animations */
@@ -810,18 +873,7 @@
 }
 
 /* Global Sidebar Text & Icon Contrast: Force white for Dark and Neutral modes */
-.dark .sidebar .nav-item,
-.neutral .sidebar .nav-item,
-.dark .sidebar .btn-text,
-.neutral .sidebar .btn-text,
-.dark .sidebar .btn-icon,
-.neutral .sidebar .btn-icon,
-.dark .sidebar .section-title-input,
-.neutral .sidebar .section-title-input,
-.dark .sidebar .hryvnia-display,
-.neutral .sidebar .hryvnia-display {
-    color: #ffffff !important;
-}
+/* Legacy theme overrides purged */
 
 /* Specific SVG treatment if currentColor is bypassed */
 .dark .sidebar svg,
@@ -848,8 +900,9 @@
 .pilot-drawer {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    margin-top: 4px;
+    gap: 1px;
+    margin-top: var(--divider-gap);
+    padding-top: var(--divider-gap);
 }
 
 /* ── Spotlight list ── */
@@ -983,21 +1036,35 @@
 .pilot-skill-label {
     display: flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 6px;
-    border-radius: 5px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-tertiary);
-    opacity: 0.65;
+    gap: 10px;
+    padding: 3px 8px; /* Standard internal padding */
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: none;
+    color: rgba(255, 255, 255, 0.5) !important; /* Force soft hierarchy */
+    opacity: 1;
     cursor: pointer;
-    transition: opacity 0.15s ease, background 0.15s ease;
+    transition: var(--transition-smooth);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    border-radius: 8px;
+    width: calc(100% - var(--item-column-inset));
+    margin: 0 auto;
+    box-sizing: border-box;
 }
+
+.pilot-skill-label .btn-icon {
+    width: 20px !important; /* Matches nav-item rail */
+    height: 20px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-width: 20px;
+}
+
 
 .pilot-skill-label:hover {
     opacity: 1;
@@ -1061,10 +1128,10 @@
 /* ── Fallback: no habits for this skill ── */
 .pilot-fallback {
     font-size: 11px;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.3);
     font-style: italic;
-    padding: 2px 6px 4px 6px;
-    opacity: 0.6;
+    padding: 2px 6px 4px 50px; /* Locked to 69px text rail */
+    opacity: 1;
 }
 
 /* ── All done state ── */
@@ -1114,37 +1181,35 @@
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* ============================
-   LIFE AREA HEALTH DOTS
-   ============================ */
-
+/* Unified Health Dots (Engagement) */
 .health-dot {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    margin-left: 8px;
     flex-shrink: 0;
+    margin: 0; /* Clear margins, spacing handled by parent container's gap */
     transition: var(--transition-smooth);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     cursor: help;
 }
 
 .health-dot.blue {
-    background-color: #3b82f6; /* Blue 500 */
-    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
+    background-color: #3b82f6; /* recently engaged */
+    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
     animation: healthDotPulse 4s infinite ease-in-out;
 }
 
 .health-dot.orange {
-    background-color: #f97316; /* Orange 500 */
-    box-shadow: 0 0 4px rgba(249, 115, 22, 0.4);
+    background-color: #f59e0b; /* cooling down */
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
 }
 
 .health-dot.grey {
-    background-color: #94a3b8; /* Slate 400 */
-    opacity: 0.4;
+    background-color: #6b7280; /* neglected */
+    opacity: 0.5;
 }
 
-/* Theme / Mode specific overrides for dot visibility */
+/* Theme / Mode overrides */
 .liquid-mode .health-dot.blue,
 .wallpaper-mode .health-dot.blue {
     background-color: #60a5fa;
@@ -1155,6 +1220,11 @@
 .wallpaper-mode .health-dot.orange {
     background-color: #fb923c;
     box-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
+}
+
+.liquid-mode .health-dot.grey,
+.wallpaper-mode .health-dot.grey {
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
 @keyframes healthDotPulse {
@@ -1168,41 +1238,159 @@
     }
 }
 
-/* ============================
-   HEALTH DOTS (Engagement)
-   ============================ */
 
-.health-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    margin-right: 4px;
+/* NUCLEAR ALIGNMENT OVERRIDES — MAX SPECIFICITY REFORM */
+.sidebar-top {
+   display: flex !important; 
+   flex-direction: column !important; 
+   gap: 0 !important; 
+}
+
+.sidebar-top .mode-toggle-btn { 
+   margin-bottom: 12px !important; /* Universal Beat: Timeline-to-Focus matching */
+   line-height: 1 !important; 
+}
+
+.sidebar-top .energy-label, 
+.sidebar-top .energy-selector-container { 
+   margin-top: 0 !important; 
+   padding-top: 0 !important;
+   line-height: 1 !important;
+}
+
+/* ── LIGHT MODE THEME OVERRIDES ── */
+.light .sidebar {
+    --text-craft-primary: var(--text-primary);
+    --text-craft-secondary: var(--text-secondary);
+    --text-craft-tertiary: var(--text-tertiary);
+}
+
+.light .energy-label,
+.light .section-title-static,
+.light .section-title-container,
+.light .segmented-control-label {
+    color: var(--text-primary) !important;
+    font-weight: 700;
+}
+
+.light .nav-item,
+.light .area-item,
+.light .pilot-skill-label,
+.light .btn-text,
+.light .placeholder-hint,
+.light .hryvnia-display {
+    color: var(--text-secondary) !important;
+}
+
+.light .nav-item:hover,
+.light .pilot-skill-label:hover {
+    color: var(--text-primary) !important;
+    background: var(--alpha-med);
+}
+
+.light .nav-item.active {
+    color: var(--text-primary) !important;
+    background: var(--alpha-high);
+    border-left-color: var(--color-accent);
+}
+
+.light .energy-pills {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.light .btn-icon {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.light .nav-item.active .btn-icon {
+    background: var(--alpha-low);
+}
+
+.light .area-dot {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.1));
+}
+
+.light .hryvnia-icon {
+    color: #059669; /* Slightly darker emerald for light mode */
+}
+
+
+/* --- ENERGY 1-2 'GHOST TOWN' STYLES --- */
+.sidebar.low-energy-ghosting .nav-item:not(.active),
+.sidebar.low-energy-ghosting .section-title-container,
+.sidebar.low-energy-ghosting .hryvnia-display,
+.sidebar.low-energy-ghosting .segmented-control-container,
+.sidebar.low-energy-ghosting .settings-btn,
+.sidebar.low-energy-ghosting .theme-toggle-sidebar {
+    opacity: 0.2;
+    filter: grayscale(1);
+    pointer-events: none; /* Make them feel 'archived' */
+    transition: opacity 0.5s ease, filter 0.5s ease;
+}
+
+/* Exceptions: Keep Launchpad and Energy Selector high contrast */
+.sidebar.low-energy-ghosting .nav-item[href="/launchpad"],
+.sidebar.low-energy-ghosting .energy-selector-container,
+.sidebar.low-energy-ghosting .mode-toggle-btn,
+.sidebar.low-energy-ghosting .journal-nav,
+.sidebar.low-energy-ghosting .timeline-nav {
+    opacity: 1 !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+/* Maintenance habits in Spotlight stay focused */
+.sidebar.low-energy-ghosting .maintenance-section {
+    opacity: 1;
+    filter: none;
+}
+
+.sidebar.low-energy-ghosting .pilot-spotlight-list {
+    opacity: 1;
+    filter: none;
+}
+
+/* Mute the background of habits that aren't the top 2 if they somehow appear */
+.sidebar.low-energy-ghosting .pilot-skill-group {
+    opacity: 0.3;
+    filter: grayscale(0.8);
+}
+
+/* Journal and Timeline are now exceptions above */
+
+/* Energy 1 logic (survival) */
+.sidebar.energy-level-1 .focus-slots-section {
+    display: none !important;
+}
+
+/* Energy 2 logic (controlled momentum) */
+.sidebar.energy-level-2 .ghosted-focus {
+    opacity: 0.35;
+    filter: grayscale(0.8) saturate(0.4);
+    pointer-events: auto; 
     transition: var(--transition-smooth);
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.health-dot.blue {
-    background-color: #3b82f6; /* recently engaged */
-    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+.sidebar.energy-level-2 .ghosted-focus:hover {
+    opacity: 0.7;
+    filter: none;
 }
 
-.health-dot.orange {
-    background-color: #f59e0b; /* cooling down */
-    box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
+.sidebar.energy-level-1 .nav-item[href="/marketplace"],
+.sidebar.energy-level-2 .nav-item[href="/marketplace"] {
+    display: none !important;
 }
 
-.health-dot.grey {
-    background-color: #6b7280; /* neglected */
-    opacity: 0.5;
+/* Allow clickable ghosted nav items */
+.sidebar.low-energy-ghosting .marketplace-nav {
+    display: flex !important;
+    opacity: 0.25;
+    filter: grayscale(1);
+    pointer-events: auto !important;
+    cursor: pointer;
 }
 
-.liquid-mode .health-dot.grey,
-.wallpaper-mode .health-dot.grey {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Tooltip on dots if needed */
-.health-dot:hover {
-    transform: scale(1.2);
+.sidebar.low-energy-ghosting .marketplace-nav:hover {
+    opacity: 0.6;
+    filter: none;
 }

@@ -55,11 +55,15 @@
     gap: 20px;
 }
 
-.wallpaper-mode .settings-card {
+.liquid-mode .settings-card {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.dark .settings-card {
+    background: transparent !important;
 }
 
 /* ============================
@@ -443,10 +447,25 @@ input:checked + .toggle-slider:before {
     user-select: none;
 }
 
+.liquid-mode .maintenance-skill-item {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.dark .maintenance-skill-item {
+    background: transparent !important;
+}
+
 .maintenance-skill-item:hover:not(.disabled) {
     background: var(--alpha-medium, rgba(255, 255, 255, 0.08));
     border-color: var(--color-border, rgba(255, 255, 255, 0.15));
     transform: translateY(-1px);
+}
+
+.liquid-mode.dark .maintenance-skill-item:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .maintenance-skill-item.selected {

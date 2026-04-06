@@ -64,9 +64,25 @@ const SkillCard = React.memo(({
                                 }}
                             />
                         ) : (
-                            <h3 className="skill-name" onDoubleClick={(e) => { e.preventDefault(); onStartInlineEdit(skill.id, skill.name); }}>
-                                {skill.name}
-                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <h3 className="skill-name" onDoubleClick={(e) => { e.preventDefault(); onStartInlineEdit(skill.id, skill.name); }}>
+                                    {skill.name}
+                                </h3>
+                                {isSleeping && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                        {skill.metadata?.sleepUntil && (
+                                            <span style={{ fontSize: '11px', opacity: 0.5, fontWeight: 600 }}>
+                                                Sleep until {new Date(skill.metadata.sleepUntil).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                            </span>
+                                        )}
+                                        {skill.metadata?.isSleeping && (
+                                            <span style={{ fontSize: '11px', opacity: 0.5, fontWeight: 600 }}>
+                                                Indefinite Sleep
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                     
@@ -153,16 +169,6 @@ const SkillCard = React.memo(({
                                 <NodeIcon iconUrl={SVG_ICONS.ROCKET} size={14} />
                                 Wake Up
                             </button>
-                            {skill.metadata?.sleepUntil && (
-                                <span style={{ fontSize: '11px', opacity: 0.6, fontWeight: 600 }}>
-                                    Sleep until {new Date(skill.metadata.sleepUntil).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                </span>
-                            )}
-                            {skill.metadata?.isSleeping && (
-                                <span style={{ fontSize: '11px', opacity: 0.6, fontWeight: 600 }}>
-                                    Indefinite Sleep
-                                </span>
-                            )}
                         </>
                     ) : (
                         <>

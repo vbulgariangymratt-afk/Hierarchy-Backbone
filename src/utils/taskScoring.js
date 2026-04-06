@@ -62,3 +62,41 @@ export const scoreLowEnergyTask = (task, aspectStats) => {
 
     return score;
 };
+
+/**
+ * Selects the best low energy task by prioritizing:
+ * 1. Speed (historical average duration of the aspect, faster is better)
+ * 2. Schedule pressure (non-today tasks preferred over today tasks)
+ * 3. Fallbacks to tasks with no session history last
+ */
+export const selectBestLowEnergyTask = (pool, aspectStats) => {
+    if (!pool || pool.length === 0) return null;
+
+    const sortedPool = [...pool].sort((a, b) => {
+        const avgTimeA = getAspectAvgTime(a.parentId, aspectStats);
+        const avgTimeB = getAspectAvgTime(b.parentId, aspectStats);
+
+        const hasHistoryA = avgTimeA !== Infinity;
+        const hasHistoryB = avgTimeB !== Infinity;
+
+        if (hasHistoryA && !hasHistoryB) return -1;
+        if (!hasHistoryA && hasHistoryB) return 1;
+
+        if (hasHistoryA && hasHistoryB) {
+            if (avgTimeA !== avgTimeB) {
+                return avgTimeA - avgTimeB;
+            }
+        }
+
+        const isTodayA = a.metadata?.isToday === true;
+        const isTodayB = b.metadata?.isToday === true;
+
+        if (!isTodayA && isTodayB) return -1;
+        if (isTodayA && !isTodayB) return 1;
+
+        return 0;
+    });
+
+    console.log("Newly Selected Low Energy Task:", sortedPool[0]?.name);
+    return sortedPool[0];
+};

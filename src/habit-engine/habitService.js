@@ -93,7 +93,7 @@ export const createHabitService = (repository, auraService, backbone) => {
             console.log(`HabitService: createHabit called for ${linkedSkillId} | Freq: ${frequencyType} ${targetCount}x`);
 
             const defaultEvolutionConfig = {
-                thresholds: [12, 30, 60, 100, 150],
+                thresholds: [8, 30, 60, 100, 150],
                 postCapIncrement: 50,
                 rollingWindowDays: 12,
                 requiredDaysInWindow: 8,
@@ -136,6 +136,12 @@ export const createHabitService = (repository, auraService, backbone) => {
             if (!habit) throw new Error("Habit not found");
 
             const config = habit.evolutionConfig;
+            
+            // Hot-patch Phase 1 shift for legacy configs
+            if (config.thresholds && config.thresholds[0] === 12) {
+                config.thresholds[0] = 8;
+            }
+
             const completions = habit.completions || [];
             const currentPhaseLevel = habit.currentPhaseLevel || 0;
 
@@ -402,13 +408,13 @@ export const createHabitService = (repository, auraService, backbone) => {
             const weeklyCount = completions.filter(c => c.timestamp >= mondayStart.getTime()).length;
 
             // 3. Status determination
-            const freq = habit.frequencyType || 'daily';
+            const period = habit.targetPeriod || habit.frequencyType || 'day';
             const target = habit.targetCount || 1;
             
             let isDone = false;
             let displayProgress = "";
 
-            if (freq === 'daily') {
+            if (period === 'day' || period === 'daily') {
                 isDone = todayCount >= target;
                 displayProgress = target > 1 ? `${Math.min(todayCount, target)}/${target} Today` : "Goal Reached";
             } else {
@@ -421,8 +427,8 @@ export const createHabitService = (repository, auraService, backbone) => {
                 weeklyCount,
                 isDone,
                 displayProgress,
-                freq,
-                target
+                targetPeriod: period,
+                targetCount: target
             };
         },
 

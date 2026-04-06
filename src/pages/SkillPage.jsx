@@ -27,6 +27,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import './SkillPage.css';
+import { Pencil } from 'lucide-react';
 
 import NodeIcon from '../components/NodeIcon';
 import SortableTaskRow from '../components/SortableTaskRow';
@@ -50,10 +51,7 @@ const SkillPage = () => {
     const { showCompletedTasks, setShowCompletedTasks } = useTheme();
     const { energyLevel } = useSettings();
     const [skill, setSkill] = useState(null);
-
-    const [objectives, setObjectives] = useState([]);
     const [allNodes, setAllNodes] = useState([]);
-    const [habits, setHabits] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // UI State for expansion
@@ -105,8 +103,9 @@ const SkillPage = () => {
     const [planningToast, setPlanningToast] = useState(null);
     const [newHabitTrigger, setNewHabitTrigger] = useState('');
     const [newHabitAction, setNewHabitAction] = useState('');
-    const [newHabitFreqType, setNewHabitFreqType] = useState('daily');
-    const [newHabitTarget, setNewHabitTarget] = useState(1);
+    const [newHabitPeriod, setNewHabitPeriod] = useState('day');
+    const [newHabitCount, setNewHabitCount] = useState(1);
+    const [skillHabits, setSkillHabits] = useState([]);
     
     // Drag Reorder Lock
     const isReorderingRef = useRef(false);
@@ -140,6 +139,12 @@ const SkillPage = () => {
         return map;
     }, [allNodes]);
 
+    const objectives = useMemo(() => 
+        (allNodes || []).filter(n => n.type === NodeTypes.OBJECTIVE && n.parentId === id),
+    [allNodes, id]);
+
+    const habits = useMemo(() => skillHabits, [skillHabits]);
+
     const getChildren = useCallback((parentId, type) => {
         if (!nodesByParent) return [];
         const parentKey = parentId || "root";
@@ -156,18 +161,42 @@ const SkillPage = () => {
     }, [nodesByParent]);
 
     // Derived State
-    const activeObjectives = useMemo(() => 
-        (objectives || []).filter(o => o.metadata?.isActive === true || (!o.metadata?.isActive && !o.metadata?.isSleeping && !o.metadata?.isArchived)), 
-    [objectives]);
-    const sleepingObjectives = useMemo(() => 
-        (objectives || []).filter(o => o.metadata?.isSleeping === true), 
-    [objectives]);
+    const activeObjectives = useMemo(() => {
+        console.log('[FILTER] objectives coming in:', objectives.length);
+        console.log('[OBJECTIVE RAW]', objectives.map(o => ({
+            id: o.id,
+            name: o.name,
+            status: o.metadata?.status,
+            childCount: allNodes.filter(n => n.parentId === o.id).length,
+            children: allNodes.filter(n => n.parentId === o.id).map(n => ({
+              id: n.id,
+              name: n.name,
+              type: n.type,
+              status: n.metadata?.status
+            }))
+        })));
+        return objectives.filter(o => {
+            const keep = !o.metadata?.isArchived && !o.metadata?.isSleeping && o.metadata?.status !== 'COMPLETED' && o.metadata?.status !== 'ACHIEVED';
+            console.log('[FILTER] node:', o.id, 'status:', o.metadata?.status, 'keep:', keep);
+            return keep;
+        });
+    }, [objectives]);
+
     const archivedObjectives = useMemo(() => 
-        (objectives || []).filter(o => o.metadata?.isArchived === true), 
+        objectives.filter(o => 
+            o.metadata?.status === ObjectiveStatuses.COMPLETED || 
+            o.metadata?.status === ObjectiveStatuses.ACHIEVED || 
+            o.metadata?.isArchived === true
+        ), 
     [objectives]);
+
+    const sleepingObjectives = useMemo(() => 
+        objectives.filter(o => o.metadata?.status === ObjectiveStatuses.SLEEPING || o.metadata?.isSleeping === true), 
+    [objectives]);
+
     const anyBurnoutRisk = useMemo(() => 
-        (objectives || []).some(o => o.metadata?.burnoutRisk === true), 
-    [objectives]);
+        activeObjectives.some(o => o.metadata?.burnoutRisk === true), 
+    [activeObjectives]);
 
     const [activeId, setActiveId] = useState(null);
     const [challengeDismissed, setChallengeDismissed] = useState(false);
@@ -244,8 +273,17 @@ const SkillPage = () => {
 
     const suggestions = useMemo(() => {
         if (!allNodes.length) return [];
-        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK);
-        if (!tasks.length) return [];
+
+        const belongsToSkill = (nodeId) => {
+            let curr = allNodes.find(n => n.id === nodeId);
+            while (curr) {
+                if (curr.id === id) return true;
+                curr = allNodes.find(n => n.id === curr.parentId);
+            }
+            return false;
+        };
+
+        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK && belongsToSkill(n.id));
 
         const nextTasks = [];
         let latestSessionTime = 0;
@@ -285,7 +323,7 @@ const SkillPage = () => {
             }
         }
 
-        const aspects = allNodes.filter(n => n.type === NodeTypes.ASPECT);
+        const aspects = allNodes.filter(n => n.type === NodeTypes.ASPECT && belongsToSkill(n.id));
         const aspectProgress = aspects.map(a => {
             const aspectTasks = allNodes.filter(n => n.parentId === a.id && n.type === NodeTypes.TASK);
             if (aspectTasks.length === 0) return { aspect: a, progress: 0, nextTask: null };
@@ -316,7 +354,7 @@ const SkillPage = () => {
             }
         }
 
-        habits.filter(h => h.isActive).forEach(h => {
+        habits.filter(h => h.isActive && h.skillId === id).forEach(h => {
             const isCompletedToday = h.lastCompletedAt &&
                 new Date(h.lastCompletedAt).toDateString() === new Date().toDateString();
 
@@ -334,43 +372,21 @@ const SkillPage = () => {
     }, [allNodes, habits, id]);
 
     const fetchSkills = useCallback(async () => {
-        const nodes = await repository.getAll();
-        console.log("SkillPage fetch - allNodes count:", nodes?.length);
-        const sortedNodes = [...(nodes || [])].sort((a, b) => (a.metadata?.orderIndex || 0) - (b.metadata?.orderIndex || 0));
-        setAllNodes(sortedNodes);
-
-        const skillNode = sortedNodes.find(n => n.id === id);
-        if (skillNode) {
-            setSkill(skillNode);
-            const skillObjectives = sortedNodes.filter(n => n.parentId === id && n.type === NodeTypes.OBJECTIVE);
-            setObjectives(skillObjectives);
-
-            const inProgress = skillObjectives.find(obj => obj.metadata?.isActive === true);
-            if (inProgress && expandedObjectiveIds.length === 0 && !loading) {
-                console.log("Auto-expanding active experiment:", inProgress.id);
-                setExpandedObjectiveIds([inProgress.id]);
+        const [nodes, habitsData] = await Promise.all([
+            repository.getAll(),
+            habitService.getHabitsBySkill(id)
+        ]);
+            setAllNodes(nodes);
+            setSkillHabits(habitsData || []);
+            
+            const skillNode = nodes.find(n => n.id === id);
+            if (skillNode) {
+                setSkill(skillNode);
+                setTempBecoming(skillNode.metadata?.identityAnchor || '');
+            } else {
+                console.log("SkillPage fetch - Skill node not found for ID:", id);
+                setSkill(null);
             }
-
-            const allRepoHabits = habitService.getAllHabits();
-            const todayStr = new Date().toDateString();
-
-            const matchedHabits = allRepoHabits.filter(h =>
-                (h.linkedSkillIds && h.linkedSkillIds.includes(id)) ||
-                h.linkedSkillId === id
-            ).sort((a, b) => {
-                const aCompleted = a.lastCompletedAt && new Date(a.lastCompletedAt).toDateString() === todayStr;
-                const bCompleted = b.lastCompletedAt && new Date(b.lastCompletedAt).toDateString() === todayStr;
-                if (aCompleted && !bCompleted) return 1;
-                if (!aCompleted && bCompleted) return -1;
-                return 0;
-            });
-            setHabits(matchedHabits);
-        } else {
-            console.log("SkillPage fetch - Skill node not found for ID:", id);
-            setSkill(null);
-            setObjectives([]);
-            setHabits([]);
-        }
     }, [id, expandedObjectiveIds, loading]);
 
     const fetchData = useCallback(async () => {
@@ -400,6 +416,80 @@ const SkillPage = () => {
             }, 800); 
         };
     }, [skill?.id, skill?.metadata]);
+
+    const handleLogPulse = useCallback(async (obj) => {
+        console.log(`[PULSE] Logging MVE for objective: ${obj.id}`);
+        try {
+            await backbone.awardHryvnia(1, "MVE Pulse");
+            await backbone.incrementDailyCompletionCount();
+            
+            const now = Date.now();
+            await backbone.updateNode(obj.id, {
+                metadata: {
+                    ...obj.metadata,
+                    mveCompletedAt: now
+                }
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Failed to log MVE pulse:", error);
+        }
+    }, [fetchData]);
+
+    const handleStatusUpdate = useCallback(async (obj, newStatus) => {
+        const now = Date.now();
+        const metadata = { ...obj.metadata };
+        const oldStatus = obj.metadata?.status || (obj.metadata?.isSleeping ? 'SLEEPING' : (obj.metadata?.isArchived ? 'COMPLETED' : 'ACTIVE'));
+        
+        // Timer Logic: If we were paused/sleeping and are now resuming, shift activatedAt forward
+        if (newStatus === 'ACTIVE' && (oldStatus === 'SLEEPING' || oldStatus === 'ROTATING')) {
+            if (metadata.deactivatedAt && metadata.activatedAt) {
+                const pauseDuration = now - metadata.deactivatedAt;
+                metadata.activatedAt = metadata.activatedAt + pauseDuration;
+            }
+        }
+
+        if (newStatus === 'ACTIVE') {
+            const activeInSkill = objectives.filter(o => o.metadata?.isActive === true).length;
+            if (activeInSkill >= 1 && !obj.metadata?.isActive) {
+                setIsLimitModalOpen(true);
+                return;
+            }
+            metadata.status = 'ACTIVE';
+            metadata.isActive = true;
+            metadata.isSleeping = false;
+            metadata.isArchived = false;
+            if (!metadata.activatedAt) metadata.activatedAt = now;
+            metadata.deactivatedAt = null;
+        } else if (newStatus === 'SLEEPING') {
+            metadata.status = 'SLEEPING';
+            metadata.isActive = false;
+            metadata.isSleeping = true;
+            metadata.isArchived = false;
+            metadata.deactivatedAt = now;
+        } else if (newStatus === 'COMPLETED') {
+            metadata.status = 'COMPLETED';
+            metadata.isActive = false;
+            metadata.isSleeping = false;
+            metadata.isArchived = true;
+            metadata.completedAt = now;
+            metadata.deactivatedAt = now;
+        } else if (newStatus === 'ROTATING') {
+            // Paused state
+            metadata.status = 'ROTATING';
+            metadata.isActive = false;
+            metadata.isSleeping = false;
+            metadata.isArchived = false;
+            metadata.deactivatedAt = now;
+        }
+
+        try {
+            await backbone.updateNode(obj.id, { metadata });
+            fetchData();
+        } catch (error) {
+            console.error("Failed to update objective status:", error);
+        }
+    }, [objectives, fetchData]);
 
     const handleCreateObjective = useCallback(async (e) => {
         if (e && e.key !== 'Enter' && e.type !== 'click') return;
@@ -757,6 +847,37 @@ const SkillPage = () => {
         const nextStatus = currentStatus === TaskStatuses.DONE ? TaskStatuses.NOT_STARTED : TaskStatuses.DONE;
         const completedAt = nextStatus === TaskStatuses.DONE ? Date.now() : null;
 
+        // MVE Repeating Task Logic: In Energy 1-2, MVE tasks are 'Indestructible' pulses
+        const isMVETask = task.name.toLowerCase().includes('minimum viable effort') || 
+                          task.metadata?.isMVETask ||
+                          (task.name.toLowerCase() === (allNodes.find(n => n.id === (allNodes.find(a => a.id === task.parentId)?.parentId))?.metadata?.mve || '').toLowerCase()) ||
+                          (energyLevel <= 2); // In low energy mode, any interaction on this page is a pulse pulse reset
+
+        if (isMVETask && nextStatus === TaskStatuses.DONE) {
+            console.log(`[MVE] Pulse detected for task: ${task.name}. Resetting to uncompleted state.`);
+            
+            // 1. Find parent experiment to trigger the MVE Portal
+            const parentAspect = allNodes.find(n => n.id === task.parentId);
+            const parentExperiment = allNodes.find(n => n.id === parentAspect?.parentId);
+            if (parentExperiment) {
+                handleLogPulse(parentExperiment);
+            }
+
+            // 2. Persist completion log but reset the UI state to 0%/Not Started
+            backbone.updateNode(task.id, {
+                metadata: {
+                    ...task.metadata,
+                    status: TaskStatuses.NOT_STARTED,
+                    completedAt: null,
+                    lastPulseAt: Date.now()
+                }
+            }).catch(console.error);
+
+            // Optimistic reset in UI
+            setAllNodes(prev => prev.map(n => n.id === task.id ? { ...n, metadata: { ...n.metadata, status: TaskStatuses.NOT_STARTED, completedAt: null } } : n));
+            return;
+        }
+
         setAllNodes(prevNodes => prevNodes.map(n => {
             if (n.id === task.id) {
                 return {
@@ -782,7 +903,7 @@ const SkillPage = () => {
             console.error("[DEBUG SkillPage] Failed to toggle task status:", error);
             fetchData();
         });
-    }, [fetchData]);
+    }, [fetchData, allNodes, handleLogPulse]);
 
     const handleAddToToday = useCallback((e, taskId) => {
         if (e) {
@@ -1286,27 +1407,30 @@ const SkillPage = () => {
                 id,
                 newHabitTrigger.trim(),
                 newHabitAction.trim(),
-                newHabitFreqType,
-                parseInt(newHabitTarget)
+                newHabitPeriod,
+                parseInt(newHabitCount)
             );
             setNewHabitTrigger('');
             setNewHabitAction('');
-            setNewHabitFreqType('daily');
-            setNewHabitTarget(1);
+            setNewHabitPeriod('day');
+            setNewHabitCount(1);
             setIsCreatingHabit(false);
             fetchData();
         } catch (error) {
             console.error("Failed to create habit:", error);
         }
-    }, [newHabitTrigger, newHabitAction, newHabitFreqType, newHabitTarget, id, fetchData]);
+    }, [newHabitTrigger, newHabitAction, newHabitPeriod, newHabitCount, id, fetchData]);
 
     const getObjectiveTimeInfo = useCallback((obj) => {
         const m = obj.metadata || {};
         const isActive = m.isActive === true || (!m.isActive && !m.isSleeping && !m.isArchived);
-        if (!isActive || !m.activatedAt) return null;
+        const isPaused = m.status === 'ROTATING' || m.status === 'SLEEPING' || m.isSleeping;
+        
+        if ((!isActive && !isPaused) || !m.activatedAt) return null;
 
         const now = Date.now();
-        const diff = now - obj.metadata.activatedAt;
+        const endTime = (isPaused && m.deactivatedAt) ? m.deactivatedAt : now;
+        const diff = endTime - m.activatedAt;
         const days = Math.floor(diff / (24 * 60 * 60 * 1000));
         const displayDays = days + 1;
 
@@ -1420,6 +1544,18 @@ const SkillPage = () => {
         window.unexploredAspectIds = unexploredAspectIds;
     }, [unexploredAspectIds]);
 
+    // Auto-expand active experiments in Energy 3-5 on entry
+    useEffect(() => {
+        if (!loading && energyLevel >= 3 && activeObjectives.length > 0) {
+            setExpandedObjectiveIds(prev => {
+                const activeIds = activeObjectives.map(o => o.id);
+                const missingIds = activeIds.filter(id => !prev.includes(id));
+                if (missingIds.length === 0) return prev;
+                return [...prev, ...missingIds];
+            });
+        }
+    }, [loading, energyLevel, skill?.id]);
+
     // DIAGNOSTIC LOGGING - Moved to useEffect for performance
     useEffect(() => {
         if (process.env.NODE_ENV === "development") {
@@ -1454,29 +1590,131 @@ const SkillPage = () => {
         return <div className="skill-page-error">Skill not found.</div>;
     }
 
+    // --- ENERGY 1-2 GATING: SURVIVAL VIEW ---
+    if (energyLevel <= 2) {
+        const mveTask = allNodes.find(n => 
+            n.type === NodeTypes.TASK && 
+            n.metadata?.status !== TaskStatuses.DONE &&
+            n.metadata?.isLowEnergySafe !== false &&
+            getChildren(n.parentId, NodeTypes.TASK).some(t => {
+                const aspect = allNodes.find(a => a.id === n.parentId);
+                const obj = allNodes.find(o => o.id === aspect?.parentId);
+                return obj?.parentId === skill.id;
+            })
+        );
+
+        let displayedHabits = habits;
+        if (energyLevel === 1) {
+            const getHabitScore = (habit) => {
+                const completions = habit.completions || [];
+                const frictionScores = { light: 1, medium: 2, heavy: 3 };
+                const last8 = completions.slice(-8);
+                const avgFriction = last8.length > 0 
+                    ? last8.reduce((sum, c) => sum + frictionScores[c.friction], 0) / last8.length 
+                    : 3;
+                const twelveDaysAgo = Date.now() - (12 * 24 * 60 * 60 * 1000);
+                const uniqueDays = new Set(completions.filter(c => c.timestamp >= twelveDaysAgo).map(c => new Date(c.timestamp).toLocaleDateString('en-CA'))).size;
+                const stability = uniqueDays / 12;
+                return avgFriction - (stability * 2); 
+            };
+            displayedHabits = [...habits].sort((a, b) => getHabitScore(a) - getHabitScore(b)).slice(0, 2);
+        }
+
+        return (
+            <div className="skill-page energy-survival-mode" style={{ background: 'var(--bg-app)', minHeight: '100vh', padding: '40px' }}>
+                <button className="back-button" onClick={() => navigate(-1)} style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '40px' }}>
+                    <span>&larr;</span> Back
+                </button>
+                
+                <div style={{ maxWidth: '440px', margin: '60px auto 0 auto', textAlign: 'center' }}>
+                    <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '8px', fontWeight: 800, letterSpacing: '-0.03em' }}>Fuel: {skill.name}</h1>
+                    <p style={{ color: '#444', fontSize: '15px', marginBottom: '48px', fontWeight: 500 }}>Just a tiny win for your future self.</p>
+
+                    <div className="mini-launchpad-card" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '28px', padding: '48px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                        <h2 style={{ fontSize: '22px', color: '#fff', marginBottom: '12px', fontWeight: 600, lineHeight: 1.3 }}>{mveTask?.name || "Ready to focus?"}</h2>
+                        <p style={{ color: '#444', fontSize: '13px', marginBottom: '40px', fontWeight: 700, letterSpacing: '0.05em' }}>⏱️ 2 MIN SPRINT</p>
+
+                        <button 
+                            className="start-focus-btn"
+                            onClick={() => mveTask && navigate('/focus', { state: { taskId: mveTask.id, autoStart: true } })}
+                            style={{ width: '100%', padding: '20px', borderRadius: '18px', background: '#fff', color: '#000', fontSize: '18px', fontWeight: 800, border: 'none', cursor: 'pointer', transition: 'transform 0.2s ease' }}
+                            onMouseEnter={e => e.target.style.transform = 'scale(1.02)'}
+                            onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                        >
+                            Start Focus Session
+                        </button>
+                    </div>
+
+                    {displayedHabits.length > 0 && (
+                        <div style={{ marginTop: '48px', textAlign: 'left' }}>
+                            <div style={{ fontSize: '11px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.05)' }}></div>
+                                Maintenance
+                                <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.05)' }}></div>
+                            </div>
+                            <div className="survival-habits-grid" style={{ display: 'grid', gap: '12px' }}>
+                                {displayedHabits.map(habit => (
+                                    <div 
+                                        key={habit.id} 
+                                        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.03)', borderRadius: '14px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                                    >
+                                        <div>
+                                            <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{habit.ifTrigger} &rarr; {habit.phases[habit.currentPhaseLevel || 0]?.description}</div>
+                                            <div style={{ color: '#444', fontSize: '11px', fontWeight: 500, marginTop: '2px' }}>{habitService.getHabitProgress(habit).displayProgress}</div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleHabitComplete(habit.id)}
+                                            style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                                        >
+                                            Done
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <button 
+                         onClick={() => navigate('/launchpad')}
+                         style={{ marginTop: '32px', background: 'transparent', border: 'none', color: '#333', fontSize: '12px', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500 }}
+                    >
+                        Go back to Launchpad
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
 
     const PinchAnalysis = ({ skill, energyLevel }) => {
         if (energyLevel < 4) return null;
         const pinch = skill.metadata?.pinchState;
         if (!pinch || pinch === 'NONE') return null;
 
+        const driverMapping = {
+            'NOVELTY': 'Novelty',
+            'CHALLENGE': 'Challenge',
+            'PASSION': 'Passion',
+            'INTEREST': 'Flow',
+            'HURRY': 'Hurry'
+        };
+        const driverName = driverMapping[pinch] || pinch;
+
         return (
-            <div className="pinch-analysis-station">
-                <div className="pinch-status-header">
-                    <span className="pinch-icon">🧭</span>
-                    <h3>Planning Station: {pinch}</h3>
+            <div className="pinch-analysis-station" style={{ marginTop: '48px', background: 'transparent', border: 'none', padding: '0' }}>
+                <div className="pinch-status-header" style={{ marginBottom: '4px' }}>
+                    <p style={{ color: '#a1a1aa', fontSize: '14px', fontWeight: '400', letterSpacing: '-0.01em', margin: 0, padding: '2px 0' }}>
+                        • Your brain needs to feel "{driverName}" right now to reach peak performance.
+                    </p>
                 </div>
                 <div className="pinch-body">
-                    <p className="pinch-explanation">
-                        {pinch === 'NOVELTY' && "Attention is decaying. The current experiment structure has become predictable. Consider a 'Micro-Pivot' or adding a fresh Aspect."}
+                    <p className="pinch-explanation" style={{ color: '#a1a1aa', fontSize: '14px', lineHeight: '1.6', maxWidth: '600px', margin: 0, padding: '2px 0' }}>
+                        • {pinch === 'NOVELTY' && "Attention is decaying. The current experiment structure has become predictable. Consider a 'Micro-Pivot' or adding a fresh Aspect."}
                         {pinch === 'CHALLENGE' && "Mastery has plateaued. You are going through the motions without growth. Increase the difficulty or move to a more complex stage."}
-                        {pinch === 'PASSION' && "High value, high resistance. Your 'Becoming' statement is strong, but initiation is blocked. Break the next task into a 2-minute MVE."}
+                        {pinch === 'PASSION' && "High value, high resistance. Your 'Becoming' statement is strong, but initiation is blocked. Break the next task into a 2-minute Minimum Viable Effort."}
                         {pinch === 'INTEREST' && "Low intrinsic fuel. This skill needs more 'Play' or 'Novelty' to sustain momentum. Look for an unorthodox angle."}
                         {pinch === 'HURRY' && "Execution lag detected. You are over-planning. Pick any task and start for 5 minutes now."}
                     </p>
-                    <div className="pinch-action-hint">
-                        <strong>Planning Suggestion:</strong> {pinch === 'NOVELTY' ? "Swap the Active Experiment for a fresh one." : "Refine your 'Wish' or 'MVE' below."}
-                    </div>
                 </div>
             </div>
         );
@@ -1493,6 +1731,10 @@ const SkillPage = () => {
         // Dynamic Calculation of Experiment Metric (Accumulated)
         const allTasksInExperiment = aspects.flatMap(a => getChildren(a.id, NodeTypes.TASK));
         const totalCompletedInExperiment = allTasksInExperiment.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+        const mveFocusTask = allTasksInExperiment.find(t => t.metadata?.status !== TaskStatuses.DONE);
+        const todayStr = new Date().toDateString();
+        const isMVECompletedToday = obj.metadata?.mveCompletedAt && 
+            new Date(obj.metadata.mveCompletedAt).toDateString() === todayStr;
         
         // Final value to display as the experiment metric
         let accumulationValue = 0;
@@ -1556,7 +1798,7 @@ const SkillPage = () => {
                             />
                         </div>
                         <div className="edit-field full-width">
-                            <label>Minimum Viable Effort (MVE)</label>
+                            <label>Minimum Viable Effort</label>
                             <textarea
                                 className="edit-textarea"
                                 value={objectiveEditForm?.mve}
@@ -1612,333 +1854,494 @@ const SkillPage = () => {
 
         return (
                 <motion.div 
-                    layout="position"
+                    layout={energyLevel > 2 ? "position" : false}
                     key={obj.id}
                     transition={macOSSpring}
                 >
                     <div 
                         className={`objective-container ${isSleeping ? 'is-sleeping' : 'is-focused'} ${obj.metadata?.burnoutRisk ? 'burnout-risk-border' : ''}`}
                     >
-                    <div className="objective-header" onClick={() => !isSleeping && toggleObjective(obj.id)}>
-                        <div className="objective-header-left">
-                            <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`}>
+                    {energyLevel >= 3 && (
+                        <div 
+                            className="objective-header" 
+                            onClick={() => !isSleeping && toggleObjective(obj.id)}
+                            style={{
+                                paddingBottom: energyLevel >= 5 ? '12px' : '24px',
+                                borderBottom: energyLevel >= 5 ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                                position: 'relative'
+                            }}
+                        >
+                        <div className="objective-header-left" style={{ display: 'flex', alignItems: 'flex-start', marginLeft: '-38px' }}>
+                            <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`} style={{ marginTop: '2px', marginRight: '8px' }}>
                                 {isSleeping ? '💤' : (obj.metadata?.iconUrl ? <NodeIcon iconUrl={obj.metadata.iconUrl} size={18} /> : '‣')}
                             </span>
-                            {inlineEditingNodeId === obj.id ? (
-                                <input
-                                    ref={inlineInputRef}
-                                    value={inlineDraftName}
-                                    onChange={e => setInlineDraftName(e.target.value)}
-                                    onBlur={() => handleSaveInlineEdit(obj.id)}
-                                    onKeyDown={e => handleInlineKeyDown(e, obj.id)}
-                                    onClick={e => e.stopPropagation()}
-                                    style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-primary)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none' }}
-                                />
-                            ) : (
-                                <span className="objective-title-static" onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
-                            )}
-                            {!isSleeping && <span className="focus-pill">Active Experiment</span>}
-                            {timeInfo && (
-                                <div className="objective-time-badge">
-                                    <span className="day-count">Day {timeInfo.days}</span>
-                                    {obj.metadata?.durationInDays && (
-                                        <span className="time-remaining"> / {obj.metadata.durationInDays}d</span>
-                                    )}
-                                </div>
-                            )}
+                            <div className="objective-title-stack" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                {inlineEditingNodeId === obj.id ? (
+                                    <input
+                                        ref={inlineInputRef}
+                                        value={inlineDraftName}
+                                        onChange={e => setInlineDraftName(e.target.value)}
+                                        onBlur={() => handleSaveInlineEdit(obj.id)}
+                                        onKeyDown={e => handleInlineKeyDown(e, obj.id)}
+                                        onClick={e => e.stopPropagation()}
+                                        style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-primary)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none' }}
+                                    />
+                                ) : (
+                                    <span className="objective-title-static" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
+                                )}
+                                {energyLevel >= 4 && (
+                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', opacity: 0.8, lineHeight: '1.4', maxWidth: '500px' }}>
+                                        {obj.metadata?.wish || "Something worth doing."}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
-                        <div className="objective-status-actions">
-                            {!isSleeping && energyLevel >= 4 && (
-                                <>
-                                    <button
-                                        className="edit-experiment-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            handleStartEditObjective(obj);
-                                        }}
-                                        style={{ marginRight: '10px' }}
-                                    >
-                                        Edit
-                                    </button>
-                                </>
-                            )}
-                            {energyLevel >= 4 && (
-                                <button
-                                    className={`obj-status-btn ${isSleeping ? 'activate' : 'sleep'}`}
+                        <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                                 {energyLevel >= 4 && (
+                                     <button
+                                         onClick={() => handleStartEditObjective(obj)}
+                                         style={{
+                                             display: 'flex',
+                                             alignItems: 'center',
+                                             justifyContent: 'center',
+                                             width: '28px',
+                                             height: '28px',
+                                             borderRadius: '6px',
+                                             background: 'rgba(255, 255, 255, 0.03)',
+                                             border: '1px solid rgba(255, 255, 255, 0.04)',
+                                             color: 'var(--text-secondary)',
+                                             cursor: 'pointer',
+                                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                             flexShrink: 0
+                                         }}
+                                         className="experiment-edit-pill"
+                                         onMouseEnter={(e) => {
+                                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                                             e.currentTarget.style.color = 'white';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                                             e.currentTarget.style.color = 'var(--text-secondary)';
+                                         }}
+                                     >
+                                         <Pencil size={11} strokeWidth={2.5} />
+                                     </button>
+                                 )}
+                             <div className="experiment-progress-strip" style={{ 
+                                 display: 'flex', 
+                                 alignItems: 'center', 
+                                 gap: '10px', 
+                                 background: 'rgba(255, 255, 255, 0.03)', 
+                                 boxSizing: 'border-box',
+                                 height: '28px',
+                                 padding: '0 12px', 
+                                 lineHeight: '1',
+                                 borderRadius: '6px', 
+                                 fontSize: '11px', 
+                                 fontWeight: '600', 
+                                 color: 'var(--text-secondary)',
+                                 border: '1px solid rgba(255, 255, 255, 0.04)',
+                                 backdropFilter: 'blur(8px)',
+                                 WebkitBackdropFilter: 'blur(8px)'
+                             }}>
+                                {timeInfo && (
+                                    <span className="day-info" style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
+                                        Day {timeInfo.days}{obj.metadata?.durationInDays ? `/${obj.metadata.durationInDays}d` : ''}
+                                    </span>
+                                )}
+                                <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
+                                <span className="metric-info" style={{ opacity: 0.8 }}>
+                                    {accumulationValue} {obj.metadata?.accumulationType || 'units'}
+                                </span>
+                                {energyLevel >= 3 && obj.metadata?.mve && (
+                                    <>
+                                        <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
+                                        <div className="mve-stealth-anchor">
+                                            <span className="mve-stealth-icon" style={{ opacity: 0.8, cursor: 'help', display: 'flex', alignItems: 'center' }}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-tertiary)' }}>
+                                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                                </svg>
+                                            </span>
+                                            <div className="mve-stealth-tooltip">
+                                                <div className="tooltip-label">Minimum Viable Effort</div>
+                                                {obj.metadata.mve}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="objective-status-actions">
+                                <select 
+                                    className="objective-status-selector"
+                                    value={obj.metadata?.status || (obj.metadata?.isSleeping ? 'SLEEPING' : (obj.metadata?.isArchived ? 'COMPLETED' : 'ACTIVE'))}
+                                    onChange={(e) => handleStatusUpdate(obj, e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="SLEEPING">Sleeping</option>
+                                    <option value="COMPLETED">Completed</option>
+                                    <option value="ROTATING">Paused</option>
+                                </select>
+                                
+                                <button 
+                                    className="trash-experiment-btn"
+                                    title="Delete Experiment"
                                     onClick={(e) => {
-                                        console.log("Experiment close clicked:", obj.id);
                                         e.stopPropagation();
-                                        e.preventDefault();
-                                        handleToggleObjectiveStatus(e, obj);
+                                        handleDeleteObjective(obj);
                                     }}
                                 >
-                                    {isSleeping ? 'Activate' : 'Rotate'}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
                                 </button>
-                            )}
+                            </div>
                         </div>
 
-                    </div>
-                        <AnimatePresence>
+                        </div>
+                    )}
+                    {energyLevel <= 2 && (
+                        <div 
+                            key="mve-portal-always-on"
+                            className="objective-content mve-portal-active"
+                            style={{ overflow: 'visible', padding: '0 24px 24px' }}
+                        >
+                                         <motion.div 
+                                                initial={{ opacity: 0, scale: 0.98 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                className="mve-hero-portal-combined"
+                                                style={{
+                                                    textAlign: 'center',
+                                                    padding: '48px 32px',
+                                                    margin: '12px 0 32px',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: '20px',
+                                                    background: 'rgba(255, 255, 255, 0.03)',
+                                                    backdropFilter: 'blur(32px) saturate(140%)',
+                                                    WebkitBackdropFilter: 'blur(32px) saturate(140%)',
+                                                    borderRadius: '28px',
+                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                    boxShadow: '0 24px 60px rgba(0,0,0,0.25)',
+                                                    position: 'relative',
+                                                    overflow: 'hidden'
+                                                }}
+                                            >
+                                                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                                                
+                                                {isMVECompletedToday && (
+                                                    <div style={{ position: 'relative', zIndex: 3, marginBottom: '16px' }}>
+                                                        <div style={{ color: 'var(--color-primary)', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' }}>MVE Unlocked</div>
+                                                        <div style={{ color: 'white', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em' }}>Great Work. The rest is bonus.</div>
+                                                    </div>
+                                                )}
+
+                                                <div className="mve-intro" style={{ color: '#a1a1aa', fontSize: '15px', fontWeight: '500', opacity: 0.9, letterSpacing: '-0.01em' }}>
+                                                    Since you're feeling low energy, why don't you
+                                                </div>
+                                                <h2 className="mve-task" style={{ color: '#ffffff', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.03em', maxWidth: '580px', lineHeight: '1.25', margin: 0 }}>
+                                                    {obj.metadata?.mve || 'Just reflect back on what is working'}
+                                                </h2>
+                                                
+                                                <div className="mve-actions" style={{ marginTop: '12px', display: 'flex', gap: '14px', zIndex: 2 }}>
+                                                    <button 
+                                                        className="pulse-log-btn"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleLogPulse(obj);
+                                                        }}
+                                                        style={{
+                                                            padding: '12px 28px',
+                                                            borderRadius: '14px',
+                                                            background: isMVECompletedToday ? 'rgba(255, 255, 255, 0.1)' : 'var(--color-primary)',
+                                                            color: 'white',
+                                                            border: isMVECompletedToday ? '1px solid rgba(255, 255, 255, 0.2)' : 'none',
+                                                            fontSize: '14px',
+                                                            fontWeight: '700',
+                                                            cursor: 'pointer',
+                                                            boxShadow: isMVECompletedToday ? 'none' : '0 8px 20px rgba(var(--color-primary-rgb), 0.3)',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                    >
+                                                        {isMVECompletedToday ? 'Pulse Logged' : 'Log Pulse'}
+                                                    </button>
+                                                    {mveFocusTask && (
+                                                        <button 
+                                                            className="focus-session-btn"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                navigate('/focus', { state: { taskId: mveFocusTask.id, autoStart: true } });
+                                                            }}
+                                                            style={{
+                                                                padding: '12px 28px',
+                                                                borderRadius: '14px',
+                                                                background: 'rgba(255, 255, 255, 0.08)',
+                                                                color: 'white',
+                                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                                fontSize: '14px',
+                                                                fontWeight: '600',
+                                                                cursor: 'pointer',
+                                                                backdropFilter: 'blur(10px)'
+                                                            }}
+                                                        >
+                                                            Start Focus Session
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                
+                                                <button 
+                                                    className="goto-launchpad-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate('/launchpad');
+                                                    }}
+                                                    style={{
+                                                        fontSize: '13px',
+                                                        color: 'rgba(255,255,255,0.4)',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        marginTop: '8px',
+                                                        textDecoration: 'underline'
+                                                    }}
+                                                >
+                                                    Go to {skill?.name} Launchpad
+                                                </button>
+                                            </motion.div>
+                        </div>
+                    )}
+                    {energyLevel > 2 && (
+                        <AnimatePresence mode="wait">
                             {isExpanded && !isSleeping && (
                                 <motion.div 
+                                    key="experiment-content-expanded"
                                     className="objective-content"
                                     initial={{ height: 0, opacity: 0 }}
                                     animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={macOSSpring}
-                                    style={{ overflow: 'visible' }}
-                                >
-                                        <div className="experiment-display-card">
-                                            <div className="experiment-display-header">
-                                                <div className="experiment-display-info">
-                                                    {energyLevel >= 3 && (
-                                                        <span className="experiment-theme-badge">{obj.metadata?.theme || 'General'}</span>
-                                                    )}
-                                                    <label className="show-completed-toggle-inline" style={{ 
-                                                        marginLeft: '12px', 
-                                                        fontSize: '11px', 
-                                                        opacity: 0.6, 
-                                                        cursor: 'pointer', 
-                                                        display: 'inline-flex', 
-                                                        alignItems: 'center', 
-                                                        gap: '4px',
-                                                        userSelect: 'none'
-                                                    }}>
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={showCompletedTasks} 
-                                                            onChange={(e) => setShowCompletedTasks(e.target.checked)}
-                                                            onClick={e => e.stopPropagation()}
-                                                        />
-                                                        Show completed
-                                                    </label>
-                                                    <div className="experiment-main-metric">
-                                                        {accumulationValue} {obj.metadata?.accumulationType || 'units'}
-                                                        <span style={{ fontSize: '14px', fontWeight: '400', opacity: '0.6', marginLeft: '10px' }}>Accumulated</span>
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={macOSSpring}
+                                        style={{ overflow: 'visible' }}
+                                    >
+                                        <div style={{ overflow: 'visible' }}>
+                                            {isMVECompletedToday && (
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: -10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    className="mve-success-portal"
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)',
+                                                        borderRadius: '20px',
+                                                        padding: '24px',
+                                                        marginBottom: '32px',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center'
+                                                        ,backdropFilter: 'blur(10px)'
+                                                    }}
+                                                >
+                                                    <div>
+                                                        <div style={{ color: 'var(--color-primary)', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' }}>MVE Unlocked</div>
+                                                        <div style={{ color: 'white', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em' }}>Great Work. The rest is bonus.</div>
                                                     </div>
-                                                </div>
-                                                <div className="experiment-mve-preview">
-                                                    <label className="mve-label">Minimum Viable Effort</label>
-                                                    <div className="mve-text">{obj.metadata?.mve || 'No MVE defined.'}</div>
-                                                </div>
-                                            </div>
-                                            {(!obj.metadata?.isArchived) && energyLevel >= 3 && (
-                                                <div className="woop-box">
-                                                    <div className="woop-item" onClick={(e) => {
-                                                        if (energyLevel < 4) return;
-                                                        e.stopPropagation();
-                                                        if (inlineEditingWishId !== obj.id) {
-                                                            setInlineEditingWishId(obj.id);
-                                                            setTempWish(obj.metadata?.wish || '');
-                                                        }
-                                                    }}>
-                                                        <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>Wish</label>
-                                                        {inlineEditingWishId === obj.id ? (
-                                                            <input
-                                                                autoFocus
-                                                                className="inline-edit-input"
-                                                                style={{
-                                                                    width: '100%',
-                                                                    background: 'transparent',
-                                                                    border: 'none',
-                                                                    borderBottom: '1px solid var(--color-primary)',
-                                                                    color: 'var(--text-primary)',
-                                                                    fontSize: '14px',
-                                                                    outline: 'none',
-                                                                    padding: '2px 0'
-                                                                }}
-                                                                value={tempWish}
-                                                                onChange={(e) => setTempWish(e.target.value)}
-                                                                onBlur={() => handleInlineSaveWish(obj.id)}
-                                                                onKeyDown={(e) => e.key === 'Enter' && handleInlineSaveWish(obj.id)}
-                                                            />
-                                                        ) : (
-                                                            <div style={{
-                                                                fontSize: '14px',
-                                                                color: obj.metadata?.wish ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                                                cursor: energyLevel >= 4 ? 'pointer' : 'default',
-                                                                minHeight: '20px',
-                                                                fontStyle: obj.metadata?.wish ? 'normal' : 'italic'
-                                                            }}>
-                                                                {obj.metadata?.wish || "What do I want?"}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="woop-item" onClick={(e) => {
-                                                        if (energyLevel < 4) return;
-                                                        e.stopPropagation();
-                                                        if (inlineEditingOutcomeId !== obj.id) {
-                                                            setInlineEditingOutcomeId(obj.id);
-                                                            setTempOutcome(obj.metadata?.outcome || '');
-                                                        }
-                                                    }}>
-                                                        <label style={{ display: 'block', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', marginBottom: '4px' }}>Outcome</label>
-                                                        {inlineEditingOutcomeId === obj.id ? (
-                                                            <input
-                                                                autoFocus
-                                                                className="inline-edit-input"
-                                                                style={{
-                                                                    width: '100%',
-                                                                    background: 'transparent',
-                                                                    border: 'none',
-                                                                    borderBottom: '1px solid var(--color-primary)',
-                                                                    color: 'var(--text-primary)',
-                                                                    fontSize: '14px',
-                                                                    outline: 'none',
-                                                                    padding: '2px 0'
-                                                                }}
-                                                                value={tempOutcome}
-                                                                onChange={(e) => setTempOutcome(e.target.value)}
-                                                                onBlur={() => handleInlineSaveOutcome(obj.id)}
-                                                                onKeyDown={(e) => e.key === 'Enter' && handleInlineSaveOutcome(obj.id)}
-                                                            />
-                                                        ) : (
-                                                            <div style={{
-                                                                fontSize: '14px',
-                                                                color: obj.metadata?.outcome ? 'var(--text-primary)' : 'var(--text-secondary)',
-                                                                cursor: energyLevel >= 4 ? 'pointer' : 'default',
-                                                                minHeight: '20px',
-                                                                fontStyle: obj.metadata?.outcome ? 'normal' : 'italic'
-                                                            }}>
-                                                                {obj.metadata?.outcome || "What does success look like?"}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                        </div>
-        
-                                        <div className="aspects-section-header">
-                                            <span className="section-subtitle">Engagement Aspects</span>
-                                            <p className="aspects-helper-text">Aspects are parallel lenses of engagement inside this experiment.</p>
-                                        </div>
-                                        <div className="masonry-columns-wrapper" style={{ display: 'flex', gap: '24px', padding: '32px' }}>
-                                            {(() => {
-                                                const leftColumn = [];
-                                                const rightColumn = [];
-                                                let leftHeight = 0;
-                                                let rightHeight = 0;
-        
-                                                aspects.forEach(aspect => {
-                                                    const rawAspectTasks = getChildren(aspect.id, NodeTypes.TASK);
-                                                    const aspectTasks = showCompletedTasks 
-                                                        ? rawAspectTasks 
-                                                        : rawAspectTasks.filter(t => t.metadata?.status !== TaskStatuses.DONE);
-                                                        
-                                                    const isUntouched = skill.metadata?.pinchState === 'INTEREST' &&
-                                                        aspectTasks.length > 0 &&
-                                                        !aspectTasks.some(t => t.metadata?.status === TaskStatuses.DONE);
-        
-                                                    const isNoveltyHighlighted = window.unexploredAspectIds?.includes(aspect.id);
-                                                    const firstIncompleteTask = aspectTasks.find(t => t.metadata?.status !== TaskStatuses.DONE);
-        
-                                                    const visibleTasksCount = aspectShowMoreIds.includes(aspect.id) ? aspectTasks.length : Math.min(aspectTasks.length, 5);
-                                                    const estimatedHeight = 110 + (visibleTasksCount * 45) + 30;
-        
-                                                    const aspectElement = (
-                                                        <DroppableAspect
-                                                            key={aspect.id}
-                                                            aspect={aspect}
-                                                            aspectTasks={aspectTasks}
-                                                            isUntouched={isUntouched}
-                                                            isNoveltyHighlighted={isNoveltyHighlighted}
-                                                            isExpanded={aspectShowMoreIds.includes(aspect.id)}
-                                                            isEditing={inlineEditingNodeId === aspect.id}
-                                                            onToggleAspect={toggleAspect}
+                                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                                        <button 
+                                                            onClick={() => navigate('/launchpad')}
+                                                            style={{ padding: '8px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '12px', fontWeight: '600' }}
                                                         >
-                                                            <div className="aspect-card-internal">
-                                                                <div className="aspect-header">
-                                                                    <div className="aspect-title-group">
-                                                                        {inlineEditingNodeId === aspect.id ? (
-                                                                            <input
-                                                                                ref={inlineInputRef}
-                                                                                autoFocus
-                                                                                value={inlineDraftName}
-                                                                                onChange={e => setInlineDraftName(e.target.value)}
-                                                                                onBlur={() => handleSaveInlineEdit(aspect.id)}
-                                                                                onKeyDown={e => handleInlineKeyDown(e, aspect.id)}
-                                                                                onClick={e => e.stopPropagation()}
-                                                                                style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-accent)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%' }}
-                                                                            />
-                                                                        ) : (
-                                                                            <span 
-                                                                                className="aspect-name" 
-                                                                                onClick={e => e.stopPropagation()}
-                                                                                onDoubleClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    e.preventDefault();
-                                                                                    handleStartInlineEdit(aspect.id, aspect.name);
-                                                                                }}
-                                                                                style={{ cursor: 'text', userSelect: 'none' }}
-                                                                                title="Double-click to rename"
-                                                                            >{aspect.name}</span>
-                                                                        )}
-                                                                        <span className="aspect-task-count" style={{ display: 'inline-flex', gap: '3px' }}>
-                                                                            {(() => {
-                                                                                const aspectTasksForCount = getChildren(aspect.id, NodeTypes.TASK);
-                                                                                const doneInAspect = aspectTasksForCount.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
-                                                                                
-                                                                                let aVal = 0;
-                                                                                if (accType === 'minutes') {
-                                                                                    aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).reduce((sSum, s) => s.status === 'completed' ? sSum + Math.round((s.actualDuration || 0) / 60) : sSum, 0), 0);
-                                                                                } else if (accType === 'reps') {
-                                                                                    aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.currentUnits || 0), 0);
-                                                                                } else if (accType === 'sessions') {
-                                                                                    aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).filter(s => s.status === 'completed').length, 0);
-                                                                                } else {
-                                                                                    aVal = doneInAspect;
-                                                                                }
-                                                                                
-                                                                                return (
-                                                                                    <>
-                                                                                        {aVal} {accType} &bull; {doneInAspect} logs
-                                                                                    </>
-                                                                                );
-                                                                            })()}
-                                                                        </span>
+                                                            Go to Launchpad
+                                                        </button>
+                                                        {mveFocusTask && (
+                                                            <button 
+                                                                onClick={() => navigate('/focus', { state: { taskId: mveFocusTask.id, autoStart: true } })}
+                                                                style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--color-primary)', color: 'white', border: 'none', fontSize: '12px', fontWeight: '600', boxShadow: '0 4px 12px rgba(var(--color-primary-rgb), 0.2)' }}
+                                                            >
+                                                                Start Focus Session
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                            {energyLevel >= 5 && (
+                                                <div className="experiment-display-card">
+                                                    <AnimatePresence mode="wait">
+                                                        <motion.div 
+                                                            key="analytical-box"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: 'auto' }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="woop-box"
+                                                            style={{ overflow: 'hidden' }}
+                                                        >
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '40px', padding: '12px 0 24px 0' }}>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                                    <div style={{ fontSize: '15px', color: 'white', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                                                                        <span style={{ fontWeight: '700', whiteSpace: 'nowrap' }}>Your wish:</span>
+                                                                        <span style={{ color: '#a1a1aa', lineHeight: '1.5' }}>{obj.metadata?.wish || "the wish goes here"}</span>
                                                                     </div>
-                                                                    <div className="aspect-header-right">
-                                                                        {isNoveltyHighlighted && firstIncompleteTask && (
-                                                                            <button
-                                                                                className="novelty-sprint-btn"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    e.preventDefault();
-                                                                                    navigate(`/focus?taskId=${firstIncompleteTask.id}&safeSession=true`);
-                                                                                }}
-                                                                            >
-                                                                                Start 10-minute experiment
-                                                                            </button>
-                                                                        )}
-                                                                        <button
-                                                                            className="aspect-delete-btn"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                e.preventDefault();
-                                                                                setAspectToDelete(aspect);
-                                                                            }}
-                                                                            title="Delete Aspect"
-                                                                        >
-                                                                            🗑️
-                                                                        </button>
+
+                                                                    <div style={{ fontSize: '15px', color: 'white', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                                                                        <span style={{ fontWeight: '700', whiteSpace: 'nowrap' }}>Core outcome:</span>
+                                                                        <span style={{ color: '#a1a1aa', lineHeight: '1.5' }}>{obj.metadata?.outcome || "outcome goes here"}</span>
                                                                     </div>
                                                                 </div>
-                                                                <div className="aspect-tasks" onClick={e => e.stopPropagation()}>
-                                                                    {(() => {
-                                                                        const visibleTasks = aspectShowMoreIds.includes(aspect.id) 
-                                                                            ? aspectTasks 
-                                                                            : aspectTasks.slice(0, 5);
-                                                                            
-                                                                        return (
+
+                                                                <span style={{ 
+                                                                    background: 'rgba(255, 255, 255, 0.05)', 
+                                                                    padding: '4px 10px', 
+                                                                    borderRadius: '6px', 
+                                                                    fontFamily: 'monospace', 
+                                                                    fontSize: '12px', 
+                                                                    color: 'var(--text-secondary)',
+                                                                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}>Feedback and adjustment</span>
+                                                            </div>
+                                                        </motion.div>
+                                                    </AnimatePresence>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {(energyLevel >= 3 || (obj.metadata?.mveCompletedAt && new Date(obj.metadata.mveCompletedAt).toDateString() === new Date().toDateString())) && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: 20 }}
+                                                    transition={macOSSpring}
+                                                >
+                                                    <div className="masonry-columns-wrapper" style={{ display: 'flex', gap: '24px', paddingTop: '8px' }}>
+                                                        {(() => {
+                                                            const leftColumn = [];
+                                                            const rightColumn = [];
+                                                            let leftHeight = 0;
+                                                            let rightHeight = 0;
+
+                                                            const sortedAspects = [...aspects].sort((a, b) => {
+                                                                const aTasks = getChildren(a.id, NodeTypes.TASK);
+                                                                const bTasks = getChildren(b.id, NodeTypes.TASK);
+                                                                
+                                                                const aToday = aTasks.some(t => t.metadata?.isToday);
+                                                                const bToday = bTasks.some(t => t.metadata?.isToday);
+                                                                
+                                                                if (aToday && !bToday) return -1;
+                                                                if (!aToday && bToday) return 1;
+                                                                
+                                                                const aFixes = aTasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+                                                                const bFixes = bTasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+                                                                
+                                                                return bFixes - aFixes;
+                                                            });
+
+                                                            const aspectsToRender = energyLevel === 3 ? sortedAspects.slice(0, 2) : aspects;
+                                    
+                                                            aspectsToRender.forEach(aspect => {
+                                                                const rawAspectTasks = getChildren(aspect.id, NodeTypes.TASK);
+                                                                const aspectTasks = showCompletedTasks 
+                                                                    ? rawAspectTasks 
+                                                                    : rawAspectTasks.filter(t => t.metadata?.status !== TaskStatuses.DONE);
+                                                                    
+                                                                const isUntouched = skill.metadata?.pinchState === 'INTEREST' &&
+                                                                    aspectTasks.length > 0 &&
+                                                                    !aspectTasks.some(t => t.metadata?.status === TaskStatuses.DONE);
+                                    
+                                                                const isNoveltyHighlighted = window.unexploredAspectIds?.includes(aspect.id);
+                                                                const firstIncompleteTask = aspectTasks.find(t => t.metadata?.status !== TaskStatuses.DONE);
+                                    
+                                                                const visibleTasksCount = aspectShowMoreIds.includes(aspect.id) ? aspectTasks.length : Math.min(aspectTasks.length, 5);
+                                                                const estimatedHeight = 110 + (visibleTasksCount * 45) + 30;
+                                    
+                                                                const aspectElement = (
+                                                                    <DroppableAspect
+                                                                        key={aspect.id}
+                                                                        aspect={aspect}
+                                                                        aspectTasks={aspectTasks}
+                                                                        isUntouched={isUntouched}
+                                                                        isNoveltyHighlighted={isNoveltyHighlighted}
+                                                                        isExpanded={aspectShowMoreIds.includes(aspect.id)}
+                                                                        isEditing={inlineEditingNodeId === aspect.id}
+                                                                        onToggleAspect={toggleAspect}
+                                                                    >
+                                                                        <div className="aspect-card-internal">
+                                                                            <div className="aspect-header">
+                                                                                <div className="aspect-title-group">
+                                                                                    {inlineEditingNodeId === aspect.id ? (
+                                                                                        <input
+                                                                                            ref={inlineInputRef}
+                                                                                            autoFocus
+                                                                                            value={inlineDraftName}
+                                                                                            onChange={e => setInlineDraftName(e.target.value)}
+                                                                                            onBlur={() => handleSaveInlineEdit(aspect.id)}
+                                                                                            onKeyDown={e => handleInlineKeyDown(e, aspect.id)}
+                                                                                            onClick={e => e.stopPropagation()}
+                                                                                            style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-accent)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none', width: '100%' }}
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <span 
+                                                                                            className="aspect-name text-white font-semibold" 
+                                                                                            onClick={e => e.stopPropagation()}
+                                                                                            onDoubleClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                e.preventDefault();
+                                                                                                handleStartInlineEdit(aspect.id, aspect.name);
+                                                                                            }}
+                                                                                            style={{ cursor: 'text', userSelect: 'none', color: 'white', fontWeight: 600 }}
+                                                                                            title="Double-click to rename"
+                                                                                        >{aspect.name}</span>
+                                                                                    )}
+                                                                                    <span className="aspect-task-count text-zinc-500" style={{ display: 'inline-flex', gap: '3px', color: '#71717a' }}>
+                                                                                        {(() => {
+                                                                                            const aspectTasksForCount = getChildren(aspect.id, NodeTypes.TASK);
+                                                                                            const doneInAspect = aspectTasksForCount.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+                                                                                            
+                                                                                            let aVal = 0;
+                                                                                            if (accType === 'minutes') {
+                                                                                                aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).reduce((sSum, s) => s.status === 'completed' ? sSum + Math.round((s.actualDuration || 0) / 60) : sSum, 0), 0);
+                                                                                            } else if (accType === 'reps') {
+                                                                                                aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.currentUnits || 0), 0);
+                                                                                            } else if (accType === 'sessions') {
+                                                                                                aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).filter(s => s.status === 'completed').length, 0);
+                                                                                            } else {
+                                                                                                aVal = doneInAspect;
+                                                                                            }
+                                                                                            
+                                                                                            return (
+                                                                                                <>
+                                                                                                    {aVal} {accType} &bull; {doneInAspect} logs
+                                                                                                </>
+                                                                                            );
+                                                                                        })()}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="aspect-header-right">
+                                                                                    {isNoveltyHighlighted && firstIncompleteTask && (
+                                                                                        <button
+                                                                                            className="novelty-sprint-btn"
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleAddToToday(firstIncompleteTask);
+                                                                                            }}
+                                                                                        >
+                                                                                            Sprint
+                                                                                        </button>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                            
+                                                                            <div className="aspect-tasks">
                                                                                 <AnimatePresence>
-                                                                                    {(visibleTasks || []).map(task => (
+                                                                                    {aspectTasks.slice(0, visibleTasksCount).map(task => (
                                                                                         <SortableTaskRow 
-                                                                                            key={task.id} 
-                                                                                            task={task} 
-                                                                                            allNodes={allNodes}
+                                                                                            key={task.id}
+                                                                                            task={task}
+                                                                                            isExpanded={expandedTaskIds.includes(task.id)}
                                                                                             expandedTaskIds={expandedTaskIds}
                                                                                             activeChallengeHighlight={activeChallengeHighlight}
                                                                                             skill={skill}
@@ -1954,121 +2357,123 @@ const SkillPage = () => {
                                                                                             />
                                                                                         ))}
                                                                                 </AnimatePresence>
-                                                                        );
-                                                                    })()}
-        
-                                                                    {aspectTasks.length > 5 && (
-                                                                        <div style={{ textAlign: 'center', marginTop: '4px' }}>
-                                                                            <button
-                                                                                className="show-all-tasks-btn"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setAspectShowMoreIds(prev => 
-                                                                                        prev.includes(aspect.id) 
-                                                                                            ? prev.filter(id => id !== aspect.id)
-                                                                                            : [...prev, aspect.id]
-                                                                                    );
-                                                                                }}
-                                                                                style={{
-                                                                                    background: 'transparent',
-                                                                                    border: 'none',
-                                                                                    color: 'var(--text-secondary)',
-                                                                                    fontSize: '11px',
-                                                                                    fontWeight: '600',
-                                                                                    cursor: 'pointer',
-                                                                                    opacity: 0.7,
-                                                                                    padding: '4px 8px',
-                                                                                    transition: 'opacity 0.2s',
-                                                                                }}
-                                                                                onMouseEnter={e => e.target.style.opacity = 1}
-                                                                                onMouseLeave={e => e.target.style.opacity = 0.7}
-                                                                            >
-                                                                                {aspectShowMoreIds.includes(aspect.id) ? 'Show fewer tasks' : 'Show all tasks'}
-                                                                            </button>
                                                                         </div>
-                                                                    )}
-        
-                                                                    <button
-                                                                        className="add-task-btn"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setCreatingTaskForAspectId(aspect.id);
-                                                                            setNewTaskItemType('FINITE');
-                                                                        }}
+                                            
+                                                                        {aspectTasks.length > 5 && (
+                                                                            <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                                                                                <button
+                                                                                    className="show-all-tasks-btn"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setAspectShowMoreIds(prev => 
+                                                                                            prev.includes(aspect.id) 
+                                                                                                ? prev.filter(id => id !== aspect.id)
+                                                                                                : [...prev, aspect.id]
+                                                                                        );
+                                                                                    }}
+                                                                                    style={{
+                                                                                        background: 'transparent',
+                                                                                        border: 'none',
+                                                                                        color: 'var(--text-secondary)',
+                                                                                        fontSize: '11px',
+                                                                                        fontWeight: '600',
+                                                                                        cursor: 'pointer',
+                                                                                        opacity: 0.7,
+                                                                                        padding: '4px 8px',
+                                                                                        transition: 'opacity 0.2s',
+                                                                                    }}
+                                                                                    onMouseEnter={e => e.target.style.opacity = 1}
+                                                                                    onMouseLeave={e => e.target.style.opacity = 0.7}
+                                                                                >
+                                                                                    {aspectShowMoreIds.includes(aspect.id) ? 'Show fewer tasks' : 'Show all tasks'}
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                            
+                                                                        <button
+                                                                            className="add-task-btn"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setCreatingTaskForAspectId(aspect.id);
+                                                                                setNewTaskItemType('FINITE');
+                                                                            }}
+                                                                        >
+                                                                            + Add Task
+                                                                        </button>
+                                                                    </div>
+                                                                </DroppableAspect>
+                                                            );
+                                    
+                                                            if (leftHeight <= rightHeight) {
+                                                                leftColumn.push(aspectElement);
+                                                                leftHeight += estimatedHeight;
+                                                            } else {
+                                                                rightColumn.push(aspectElement);
+                                                                rightHeight += estimatedHeight;
+                                                            }
+                                                        });
+                                    
+                                                        const addAspectElement = creatingAspectForObjId === obj.id ? (
+                                                            <motion.div layout="position" key="add-aspect-btn" className="aspect-card creation-card" onClick={(e) => e.stopPropagation()}>
+                                                                <input
+                                                                    autoFocus
+                                                                    className="inline-creation-input"
+                                                                    placeholder="Aspect name..."
+                                                                    value={newAspectName}
+                                                                    onChange={(e) => setNewAspectName(e.target.value)}
+                                                                    onKeyDown={(e) => handleCreateAspect(e, obj.id)}
+                                                                    onBlur={() => setCreatingAspectForObjId(null)}
+                                                                />
+                                                            </motion.div>
+                                                        ) : (
+                                                            <motion.button
+                                                                layout="position"
+                                                                key="add-aspect-btn"
+                                                                className="add-aspect-btn"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setCreatingAspectForObjId(obj.id);
+                                                                }}
+                                                                transition={macOSSpring}
+                                                            >
+                                                                + Add Aspect
+                                                            </motion.button>
+                                                        );
+                                    
+                                                        const addAspectHeight = 60;
+                                                        if (leftHeight <= rightHeight) {
+                                                            leftColumn.push(addAspectElement);
+                                                            leftHeight += addAspectHeight;
+                                                        } else {
+                                                            rightColumn.push(addAspectElement);
+                                                            rightHeight += addAspectHeight;
+                                                        }
+                                    
+                                                            return (
+                                                                <>
+                                                                    <div 
+                                                                        className="masonry-column" 
+                                                                        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
                                                                     >
-                                                                        + Add Task
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </DroppableAspect>
-                                                    );
-        
-                                                    if (leftHeight <= rightHeight) {
-                                                        leftColumn.push(aspectElement);
-                                                        leftHeight += estimatedHeight;
-                                                    } else {
-                                                        rightColumn.push(aspectElement);
-                                                        rightHeight += estimatedHeight;
-                                                    }
-                                                });
-        
-                                                const addAspectElement = creatingAspectForObjId === obj.id ? (
-                                                    <motion.div layout="position" key="add-aspect-btn" className="aspect-card creation-card" onClick={(e) => e.stopPropagation()}>
-                                                        <input
-                                                            autoFocus
-                                                            className="inline-creation-input"
-                                                            placeholder="Aspect name..."
-                                                            value={newAspectName}
-                                                            onChange={(e) => setNewAspectName(e.target.value)}
-                                                            onKeyDown={(e) => handleCreateAspect(e, obj.id)}
-                                                            onBlur={() => setCreatingAspectForObjId(null)}
-                                                        />
-                                                    </motion.div>
-                                                ) : (
-                                                    <motion.button
-                                                        layout="position"
-                                                        key="add-aspect-btn"
-                                                        className="add-aspect-btn"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setCreatingAspectForObjId(obj.id);
-                                                        }}
-                                                        transition={macOSSpring}
-                                                    >
-                                                        + Add Aspect
-                                                    </motion.button>
-                                                );
-        
-                                                const addAspectHeight = 60;
-                                                if (leftHeight <= rightHeight) {
-                                                    leftColumn.push(addAspectElement);
-                                                    leftHeight += addAspectHeight;
-                                                } else {
-                                                    rightColumn.push(addAspectElement);
-                                                    rightHeight += addAspectHeight;
-                                                }
-        
-                                                return (
-                                                    <>
-                                                        <div 
-                                                            className="masonry-column" 
-                                                            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
-                                                        >
-                                                            {leftColumn}
-                                                        </div>
-                                                        <div 
-                                                            className="masonry-column" 
-                                                            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
-                                                        >
-                                                            {rightColumn}
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                </motion.div>
-                            )}
+                                                                        {leftColumn}
+                                                                    </div>
+                                                                    <div 
+                                                                        className="masonry-column" 
+                                                                        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
+                                                                    >
+                                                                        {rightColumn}
+                                                                    </div>
+                                                                </>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </motion.div>
+                                )}
                         </AnimatePresence>
+                    )}
                     </div>
                 </motion.div>
         );
@@ -2150,7 +2555,7 @@ const SkillPage = () => {
                     />
                     {isSyncingBecoming && <span className="sync-indicator" style={{ fontSize: '10px', opacity: 0.5, marginLeft: '8px' }}>Saving...</span>}
                 </div>
-                <p className="skill-subtitle">Planning Mode &bull; Structural Map</p>
+
                 <PinchAnalysis skill={skill} energyLevel={energyLevel} />
             </header>
 
@@ -2166,29 +2571,10 @@ const SkillPage = () => {
             )}
 
 
-            {/* Suggested Focus — hidden during Safe Mode */}
-            {!anyBurnoutRisk && suggestions.length > 0 && (
-                <div className="suggested-focus-section">
-                    <span className="suggestions-label">Suggested Focus</span>
-                    <div className="suggestions-list">
-                        {(suggestions || []).map((s) => (
-                            <button
-                                key={s.task?.id || s.habit?.id}
-                                className={`suggestion-chip ${s.type.toLowerCase()}`}
-                                onClick={() => handleSuggestionClick(s)}
-                            >
-                                <span className="chip-icon">
-                                    {s.type === 'MOMENTUM' ? '⚡' : s.type === 'HABIT' ? '🔄' : '🏁'}
-                                </span>
-                                <span className="chip-text">{s.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
 
-            {/* HABITS SECTION */}
-            <section className="skill-section habits-skill-wrapper">
+
+            {/* HABITS SECTION (Always Show) */}
+            <section className="skill-section habits-skill-wrapper" style={{ marginTop: '32px' }}>
                 <header className="section-header-row">
                     <span className="section-label">Habits</span>
                     {!isCreatingHabit && (
@@ -2197,54 +2583,48 @@ const SkillPage = () => {
                 </header>
 
                 {isCreatingHabit && (
-                    <div className="habit-creation-inline">
+                    <div className="habit-creation-inline glass-card">
                         <div className="creation-row">
                             <span className="creation-prefix">If</span>
                             <input
                                 autoFocus
-                                placeholder="Trigger event..."
+                                placeholder="I sit down to work..."
                                 value={newHabitTrigger}
                                 onChange={e => setNewHabitTrigger(e.target.value)}
+                                className="habit-creation-input"
                             />
                             <span className="creation-prefix">Then</span>
                             <input
-                                placeholder="MVE Action..."
+                                placeholder="I open the hierarchy..."
                                 value={newHabitAction}
                                 onChange={e => setNewHabitAction(e.target.value)}
-                                onKeyDown={handleCreateHabit}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateHabit()}
+                                className="habit-creation-input"
                             />
                         </div>
-                        <div className="creation-row frequency-row" style={{ marginTop: '8px', display: 'flex', gap: '12px', alignItems: 'center', background: 'var(--alpha-low)', padding: '8px', borderRadius: '6px' }}>
-                            <div className="input-group-minimal">
-                                <label style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.6 }}>Frequency</label>
-                                <select 
-                                    className="minimal-select"
-                                    value={newHabitFreqType}
-                                    onChange={e => {
-                                        setNewHabitFreqType(e.target.value);
-                                        setNewHabitTarget(e.target.value === 'daily' ? 1 : 1);
-                                    }}
-                                >
-                                    <option value="daily">Daily</option>
-                                    <option value="weekly">Weekly</option>
-                                </select>
-                            </div>
-                            <div className="input-group-minimal">
-                                <label style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.6 }}>
-                                    {newHabitFreqType === 'daily' ? 'Times per Day' : 'Times per Week'}
-                                </label>
+                        <div className="creation-row frequency-config-row">
+                            <div className="frequency-input-group">
                                 <input 
                                     type="number"
-                                    className="minimal-num-input"
                                     min="1"
-                                    max={newHabitFreqType === 'daily' ? 10 : 7}
-                                    value={newHabitTarget}
-                                    onChange={e => setNewHabitTarget(e.target.value)}
+                                    max="100"
+                                    value={newHabitCount}
+                                    onChange={e => setNewHabitCount(parseInt(e.target.value) || 1)}
+                                    className="minimal-num-input"
                                 />
+                                <span className="frequency-sep">times per</span>
+                                <select 
+                                    className="minimal-select"
+                                    value={newHabitPeriod}
+                                    onChange={e => setNewHabitPeriod(e.target.value)}
+                                >
+                                    <option value="day">day</option>
+                                    <option value="week">week</option>
+                                </select>
                             </div>
                         </div>
                         <div className="creation-actions">
-                            <button className="confirm-btn" onClick={() => handleCreateHabit(null)}>Add Habit (MVE)</button>
+                            <button className="confirm-btn" onClick={() => handleCreateHabit()}>Establish Habit</button>
                             <button className="cancel-btn" onClick={() => setIsCreatingHabit(false)}>Cancel</button>
                         </div>
                     </div>
@@ -2258,6 +2638,7 @@ const SkillPage = () => {
                                 habit={habit}
                                 onOpenEvolution={handleOpenEvolution}
                                 onToggleActive={handleToggleHabitActive}
+                                onUpdate={fetchSkills}
                             />
                         ))
                     ) : !isCreatingHabit && (
@@ -2316,7 +2697,12 @@ const SkillPage = () => {
                     <span className="section-label">Active Experiments</span>
                     <LayoutGroup id="active-objectives">
                         <div className="active-experiments-list">
-                            {(activeObjectives || []).map(obj => renderObjective(obj))}
+                            {(activeObjectives || []).map(obj => (
+                                <div key={obj.id}>
+                                    {console.log('[RENDER CHECK]', obj.id, 'energy:', energyLevel, 'expanded:', expandedObjectiveIds.includes(obj.id))}
+                                    {renderObjective(obj)}
+                                </div>
+                            ))}
                         </div>
                     </LayoutGroup>
                 </section>
@@ -2393,7 +2779,7 @@ const SkillPage = () => {
                             </div>
                             <div className="creation-row">
                                 <textarea
-                                    placeholder="Minimum Viable Effort (MVE)..."
+                                    placeholder="Minimum Viable Effort..."
                                     value={newObjectiveMVE}
                                     onChange={e => setNewObjectiveMVE(e.target.value)}
                                     className="form-input text-area"

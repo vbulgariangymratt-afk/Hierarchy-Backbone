@@ -159,8 +159,9 @@ const SortableTaskRow = React.memo(({
                         />
                     ) : (
                         <span 
-                            className="task-main-name" 
+                            className="task-main-name text-zinc-400" 
                             onDoubleClick={handleDoubleClick}
+                            style={{ color: '#a1a1aa' }}
                         >
                             {task.name}
                         </span>

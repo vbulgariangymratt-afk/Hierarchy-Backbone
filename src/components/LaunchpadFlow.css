@@ -14,7 +14,7 @@
 .launchpad-flow-container {
     text-align: center;
     padding: 40px;
-    max-width: 400px;
+    max-width: 500px;
     width: 100%;
 }
 
@@ -44,46 +44,93 @@
 }
 
 .energy-btn {
-    background: #222;
-    border: 1px solid #444;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #fff;
-    width: 50px;
-    height: 50px;
-    border-radius: 25px;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: 50%;
     font-size: 18px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.liquid-mode .energy-btn {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.dark .energy-btn {
+    background: transparent !important;
 }
 
 .energy-btn:hover {
-    background: #333;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.liquid-mode.dark .energy-btn:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .energy-btn.selected {
     background: #fff;
     color: #000;
     border-color: #fff;
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.liquid-mode.dark .energy-btn.selected {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.light .energy-btn.selected {
+    background: #000;
+    color: #fff;
+    border-color: #000;
 }
 
 /* Common Primary Button Styling */
 .flow-primary-btn {
     background: #fff;
     color: #000;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 16px 32px;
     border-radius: 12px;
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-mode.dark .flow-primary-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .flow-primary-btn:hover {
-    transform: scale(1.02);
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.95);
 }
 
-.flow-primary-btn:active {
-    transform: scale(0.98);
+.liquid-mode.dark .flow-primary-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
 }
 
 /* Subtle Secondary Button */
@@ -103,61 +150,106 @@
 }
 
 /* Action Card - Phase 1 is basic */
-.golden-action-card {
+.hero-skill-card, .initiation-card, .golden-action-card, .hero-execution-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 32px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-mode .hero-skill-card, 
+.liquid-mode .initiation-card, 
+.liquid-mode .golden-action-card,
+.liquid-mode .hero-execution-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.dark .hero-skill-card, 
+.liquid-mode.dark .initiation-card, 
+.liquid-mode.dark .golden-action-card,
+.liquid-mode.dark .hero-execution-card {
+    background: transparent !important;
+}
+
+/* Skill Chips */
+.flow-skill-chip {
+    padding: 12px;
+    border-radius: 12px;
     display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.secondary-options {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.flow-secondary-btn.small-subtle {
-    text-decoration: none;
-    font-size: 13px;
-    opacity: 0.7;
-}
-
-.flow-secondary-btn.small-subtle:hover {
-    opacity: 1;
-}
-
-/* Empty Slots View */
-.empty-slots-view .launchpad-flow-container {
-    max-width: 600px;
-    padding: 80px 40px;
-}
-
-.launchpad-flow-header h1 {
-    font-size: 48px;
-    font-weight: 800;
-    margin-bottom: 16px;
-    letter-spacing: -0.02em;
-}
-
-.launchpad-flow-header p {
-    font-size: 18px;
-    color: #888;
-    margin-bottom: 40px;
-}
-
-.primary-btn {
-    background: #fff;
-    color: #000;
-    border: none;
-    padding: 18px 48px;
-    border-radius: 99px;
-    font-size: 18px;
-    font-weight: 700;
+    justify-content: space-between;
+    align-items: center;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
 }
 
-.primary-btn:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(255,255,255,0.15);
+.liquid-mode .flow-skill-chip {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.dark .flow-skill-chip {
+    background: transparent !important;
+}
+
+.flow-skill-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.liquid-mode.dark .flow-skill-chip:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.flow-skill-chip.is-selected {
+    border-color: #fff !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.liquid-mode.dark .flow-skill-chip.is-selected {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Task Buttons */
+.flow-task-btn {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px;
+    color: #888;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.liquid-mode .flow-task-btn {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.dark .flow-task-btn {
+    background: transparent !important;
+}
+
+.flow-task-btn:hover {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+}
+
+.liquid-mode.dark .flow-task-btn:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
 }

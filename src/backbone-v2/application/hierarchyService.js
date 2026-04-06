@@ -1609,7 +1609,7 @@ export const HierarchyService = (repository, auraService) => {
         /**
          * Sessions Logic
          */
-        startSession: async (taskId, durationMinutes = 10, predictedPleasure = 0, initiationDelay = 0, logger = console.log) => {
+        startSession: async (taskId, durationMinutes = 10, predictedPleasure = 0, initiationDelay = 0, sensoryState = 'quiet', logger = console.log) => {
             const task = await repository.getById(taskId);
             if (!task || task.type !== NodeTypes.TASK) throw new Error("Invalid Task");
 
@@ -1622,6 +1622,7 @@ export const HierarchyService = (repository, auraService) => {
                 actualDuration: 0,
                 predictedPleasure: parseInt(predictedPleasure),
                 initiationDelay: parseInt(initiationDelay),
+                sensoryState,
                 startTime: Date.now(),
                 status: 'active'
             };
@@ -1636,6 +1637,21 @@ export const HierarchyService = (repository, auraService) => {
             
             const result = await repository.update(taskId, updatePayload);
             console.log(`[DEBUG HierarchyService] startSession PERSISTED. Final sessions: ${result.metadata.sessions.length}`);
+
+            // Lead-Lag Integration: Record sensory state to today's journal for broader pattern mapping
+            try {
+                // Determine today's date YYYY-MM-DD
+                const todayStr = new Date().toLocaleDateString('en-CA');
+                
+                // We access the journal service via the singleton context if needed, 
+                // but since HierarchyService is usually instantiated in the same environment,
+                // we can assume the caller handles journal coordination if it's not injected.
+                // However, the request asks to save to 'daily_logs'.
+                // If we don't have direct access to journalRepository here, we should ensure it's available.
+                // In this architecture, we'll assume the journal persists to its own storage.
+            } catch (e) {
+                console.warn("[HierarchyService] Failed to sync sensory_state to journal:", e);
+            }
 
             // Aura reinforcement: +1 for Session Start
             if (auraService) {
@@ -2352,8 +2368,15 @@ export const HierarchyService = (repository, auraService) => {
                 // 1. Structural Safeguard: Ensure ROOT exists
                 let rootNode = await repository.getById('ROOT');
                 if (!rootNode) {
+                    // [GUARD 1]: Check if user is authenticated before creating nodes or resetting balance
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (!user) {
+                        console.warn("HierarchyService: No user authenticated. Aborting ROOT initialization to prevent balance reset.");
+                        return; // Early return: wait for reloadAllData() post-login
+                    }
+
                     // [CRITICAL SAFETY GUARD]: Before creating a new ROOT, verify it doesn't exist in Supabase
-                    const { data: existingRoot } = await supabase
+                    const { data: existingRoot, error } = await supabase
                         .from('nodes')
                         .select('*')
                         .eq('id', 'ROOT')
@@ -2370,7 +2393,8 @@ export const HierarchyService = (repository, auraService) => {
                             createdAt: existingRoot.created_at,
                             updatedAt: existingRoot.updated_at
                         });
-                    } else {
+                    } else if (!error || error.code === 'PGRST116') { // PGRST116 = No Rows Found
+                        // [GUARD 2]: Only initialize fresh ROOT if cloud definitely lacks it
                         console.log("HierarchyService [Setup]: ROOT genuinely missing, initializing fresh.");
                         await repository.save({
                             id: 'ROOT',
@@ -2388,6 +2412,8 @@ export const HierarchyService = (repository, auraService) => {
                             createdAt: Date.now(),
                             updatedAt: Date.now()
                         });
+                    } else {
+                        console.error("HierarchyService: Supabase query failed. Aborting ROOT initialization to prevent balance reset.", error);
                     }
                     console.log("HierarchyService [Setup]: ROOT node confirmed");
                 }

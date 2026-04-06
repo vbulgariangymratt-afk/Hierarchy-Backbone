@@ -43,13 +43,16 @@
 .create-reward-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 10px 20px;
+    padding: 0 20px;
+    height: 39px;
     border-radius: 12px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    min-width: 130px;
 }
 
 .solid-mode .create-reward-btn {
@@ -60,12 +63,16 @@
 
 .liquid-mode .create-reward-btn,
 .wallpaper-mode .create-reward-btn {
-    background: var(--alpha-high);
+    background: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.liquid-mode.dark .create-reward-btn {
+    background: transparent !important;
 }
 
 .liquid-mode.light .create-reward-btn {
@@ -105,7 +112,12 @@
 
 .liquid-mode .hryvnia-card {
     /* liquid-glass in global.css handles background/blur/shadow */
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.liquid-mode.dark .hryvnia-card {
+    background: transparent !important;
 }
 
 .hryvnia-icon {
@@ -160,8 +172,12 @@
 }
 
 .liquid-mode .reward-card {
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     /* liquid-glass in global.css handles the rest */
+}
+
+.liquid-mode.dark .reward-card {
+    background: transparent !important;
 }
 
 .wallpaper-mode .reward-card {
@@ -251,7 +267,11 @@
 .wallpaper-mode .buy-button {
     background: transparent;
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.liquid-mode.dark .buy-button {
+    background: transparent !important;
 }
 
 .liquid-mode.light .buy-button {
@@ -288,11 +308,6 @@
     color: var(--color-danger);
 }
 
-.marketplace-footer {
-    display: flex;
-    justify-content: center;
-    padding-bottom: 40px;
-}
 
 .refill-button {
     display: flex;
@@ -314,18 +329,104 @@
 
 .liquid-mode .refill-button,
 .wallpaper-mode .refill-button {
-    background: var(--alpha-high);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+.liquid-mode.dark .refill-button {
+    background: transparent !important;
+}
+
 .refill-button:hover {
     background: var(--alpha-high);
     color: var(--text-primary);
     border-color: var(--color-primary);
+}
+
+/* Info tooltip next to Refill button */
+.marketplace-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: 40px;
+}
+
+.refill-info-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.refill-info-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.refill-info-wrapper:hover .refill-info-icon {
+    border-color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.refill-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 280px;
+    background: rgba(20, 20, 30, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.55;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.refill-tooltip strong {
+    display: block;
+    color: white;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.refill-tooltip p {
+    margin: 0 0 8px;
+}
+
+.refill-tooltip p:last-child {
+    margin-bottom: 0;
+}
+
+.refill-tooltip em {
+    color: white;
+    font-style: normal;
+    font-weight: 600;
+}
+
+.refill-info-wrapper:hover .refill-tooltip {
+    display: block;
 }
 
 .marketplace-loading {

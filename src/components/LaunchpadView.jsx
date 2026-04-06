@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSettings } from '../context/SettingsContext';
 import './LaunchpadView.css';
 import NodeIcon from './NodeIcon';
 import AreaCard from './AreaCard';
-import LaunchpadHabitRow from './LaunchpadHabitRow';
+import HabitCard from './HabitCard';
 import { formatDuration } from '../utils/timeUtils';
 
 
@@ -20,9 +21,15 @@ const LaunchpadView = ({
     maintenanceHabitGroups = [],
     onHabitComplete
 }) => {
+    const { energyLevel } = useSettings();
     const [selectedAreaIds, setSelectedAreaIds] = useState([]);
     const [isKeepAliveExpanded, setIsKeepAliveExpanded] = useState(false);
     const isInitialized = useRef(false);
+
+    // Force expanded in low energy
+    useEffect(() => {
+        if (energyLevel <= 2) setIsKeepAliveExpanded(true);
+    }, [energyLevel]);
 
     // Initial default selection: Top 3 Areas on first data load
     useEffect(() => {
@@ -55,17 +62,19 @@ const LaunchpadView = ({
                 </div>
             </header>
 
-            {/* 2. MAIN SECTION - AREA CARDS */}
-            <main className="area-cards-container">
-                {areas.map(area => (
-                    <AreaCard 
-                        key={area.id}
-                        area={area}
-                        isSelected={selectedAreaIds.includes(area.id)}
-                        onToggle={toggleSelection}
-                    />
-                ))}
-            </main>
+            {/* 2. MAIN SECTION - AREA CARDS (Hidden in low energy) */}
+            {energyLevel >= 3 && (
+                <main className="area-cards-container">
+                    {areas.map(area => (
+                        <AreaCard 
+                            key={area.id}
+                            area={area}
+                            isSelected={selectedAreaIds.includes(area.id)}
+                            onToggle={toggleSelection}
+                        />
+                    ))}
+                </main>
+            )}
 
             {/* 3. MAINTENANCE PANEL */}
             {maintenance && (
@@ -115,10 +124,12 @@ const LaunchpadView = ({
                                     <div className="keep-it-alive-habit-list">
                                         {!group.hasNoHabits ? (
                                             group.habits.map(habit => (
-                                                <LaunchpadHabitRow 
+                                                <HabitCard 
                                                     key={habit.id}
                                                     habit={habit}
                                                     onComplete={onHabitComplete}
+                                                    onToggleActive={() => {}} // Non-functional in Launchpad
+                                                    onOpenEvolution={() => {}} // Non-functional in Launchpad
                                                 />
                                             ))
                                         ) : (
@@ -132,7 +143,14 @@ const LaunchpadView = ({
                             ))
                         ) : (
                             <div className="everything-is-alive-message">
-                                Everything is alive today.
+                                {energyLevel <= 2 && maintenanceHabitGroups.length > 0 ? (
+                                    <div className="low-energy-instruction">
+                                        <div style={{ fontWeight: 700, fontSize: '18px', color: '#fff', marginBottom: '8px' }}>Open: {maintenanceHabitGroups[0].skill.name}</div>
+                                        <div style={{ fontSize: '14px', opacity: 0.6 }}>Just 2 minutes of focus.</div>
+                                    </div>
+                                ) : (
+                                    "Everything is alive today."
+                                )}
                             </div>
                         )}
                     </div>

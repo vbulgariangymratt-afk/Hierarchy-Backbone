@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Droplets, Apple, Zap, Sun, Pill, HelpCircle, Plus, Trash2, Clock } from 'lucide-react';
 import { journalService, backbone, repository, NodeTypes, TaskStatuses } from '../backbone-v2';
 import { formatDuration } from '../utils/timeUtils';
+import { useSettings } from '../context/SettingsContext';
 import './JournalPage.css';
 
 const ACTIVATION_LEVELS = ['VERY_LOW', 'LOW', 'NEUTRAL', 'GOOD', 'HIGH'];
@@ -11,6 +13,14 @@ const DEFAULT_ENTRY = {
     activation: { morningActivationLevel: null },
     regulation: { rsdTrigger: false },
     biological: { sleepDurationMinutes: 0 },
+    medication_taken: false,
+    med_taken_at: null,
+    hydration_level: 2,
+    nutrition_level: 2,
+    sugar_level: 2,
+    morning_activity_done: false,
+    morning_activity_at: null,
+    medications: [], 
     notes: "",
     snapshots: {
         deepWorkMinutes: 0,
@@ -21,6 +31,9 @@ const DEFAULT_ENTRY = {
 };
 
 const JournalPage = () => {
+    const { energyLevel } = useSettings();
+    const isSimplified = energyLevel === 1;
+    
     const [entry, setEntry] = useState(DEFAULT_ENTRY);
     const [loading, setLoading] = useState(true);
     const [localNotes, setLocalNotes] = useState("");
@@ -38,6 +51,8 @@ const JournalPage = () => {
     const [preferManualSleep, setPreferManualSleep] = useState(localStorage.getItem('pref_manual_sleep') === 'true');
     const [expandedAreas, setExpandedAreas] = useState({});
     const [completedGroups, setCompletedGroups] = useState({});
+    const [medications, setMedications] = useState([]);
+    const [medAdding, setMedAdding] = useState(false);
     const getTodayDateStr = () => {
         const d = new Date();
         return d.getFullYear() + '-' +
@@ -96,6 +111,7 @@ const JournalPage = () => {
 
             setEntry(data);
             setLocalNotes(data.notes || "");
+            setMedications(data.medications || []);
             
             // DYNAMIC MERGE: Combine backbone's static area logs (DONE tasks) 
             // with detected in-progress sessions from today's scan.
@@ -329,6 +345,66 @@ const JournalPage = () => {
         }
     };
 
+    const handleLogMedication = async (id) => {
+        const now = new Date().toISOString();
+        const med = medications.find(m => m.id === id);
+        if (!med) return;
+
+        // Update local state
+        const updated = medications.map(m => m.id === id ? { ...m, last_taken: now } : m);
+        setMedications(updated);
+        
+        // Persist to Supabase via Log table (REAL LOGGING)
+        try {
+            const userId = await backbone.getUserId?.() || (await repository.getUserId?.());
+            if (userId) {
+                const { error } = await backbone.supabase
+                    .from('medication_logs')
+                    .insert({ 
+                        user_id: userId,
+                        med_name: med.name,
+                        taken_at: now 
+                    });
+                if (error) throw error;
+                console.log(`[PULSE] ${med.name} successfully logged to Supabase.`);
+            }
+            
+            // Also sync the medication list to the journal entry for the monospaced timestamp preview
+            await handleUpdate({ medications: updated });
+        } catch (e) {
+            console.error("Failed to pulse medication to Supabase:", e);
+        }
+    };
+
+    const handleAddMedication = () => {
+        const newMed = {
+            id: Math.random().toString(36).substr(2, 9),
+            name: "New Pill",
+            scheduled_time: "08:00",
+            last_taken: null
+        };
+        const updated = [...medications, newMed];
+        setMedications(updated);
+        handleUpdate({ medications: updated });
+    };
+
+    const handleRemoveMedication = (id) => {
+        const updated = medications.filter(m => m.id !== id);
+        setMedications(updated);
+        handleUpdate({ medications: updated });
+    };
+
+    const handleUpdateMedName = (id, newName) => {
+        const updated = medications.map(m => m.id === id ? { ...m, name: newName } : m);
+        setMedications(updated);
+        // We debounced this in a real app, for now just local
+    };
+
+    const handleUpdateMedTime = (id, newTime) => {
+        const updated = medications.map(m => m.id === id ? { ...m, scheduled_time: newTime } : m);
+        setMedications(updated);
+    };
+
     const toggleSection = (section) => {
         setSections(prev => ({ ...prev, [section]: !prev[section] }));
     };
@@ -386,15 +462,14 @@ const JournalPage = () => {
             </header>
 
             <main className="journal-content">
-                {/* SECTION 1: QUICK CHECK-IN */}
-                <section className="journal-section liquid-glass open">
+                {/* SECTION 1: MORNING ACTIVATION RE-RESTORED */}
+                <section className="journal-section liquid-glass open" style={{ marginBottom: '24px' }}>
                     <div className="section-header">
-                        <h2>Quick Check-In</h2>
+                        <h2>Morning Activation Check-in</h2>
                     </div>
                     <div className="section-body">
-                        {/* Morning Activation */}
                         <div className="input-group">
-                            <label>Morning Activation</label>
+                            <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '8px', display: 'block' }}>Initial Propulsion Level</label>
                             <div className="activation-selector">
                                 {ACTIVATION_LEVELS.map(level => (
                                     <button
@@ -408,124 +483,262 @@ const JournalPage = () => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </section>
 
-                        {/* RSD Trigger */}
-                        <div className="input-group row">
-                            <label className="toggle-label">
-                                <input
-                                    type="checkbox"
-                                    disabled={isLocked || loading}
-                                    checked={entry.regulation?.rsdTrigger || false}
-                                    onChange={(e) => handleUpdate({ regulation: { rsdTrigger: e.target.checked } })}
-                                />
-                                RSD Trigger Today
-                            </label>
+                {/* SECTION: MORNING CHECK-IN (MERGED) */}
+                <section className="journal-section liquid-glass morning-checkin-block" style={{ marginBottom: '24px', border: '1px solid rgba(var(--color-primary-rgb), 0.2)' }}>
+                    <div className="section-header" style={{ padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <h2 style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', margin: 0 }}>
+                            <Sun size={18} /> Morning Check-in
+                        </h2>
+                    </div>
+
+                    <div className="morning-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', padding: '20px' }}>
+                        
+                        {/* MANUAL SLEEP LOG RESTORED */}
+                        <div className="morning-activity-card" style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                                <Clock size={16} /> <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Manual Sleep Log</span>
+                            </div>
+                            
+                            <div className="sleep-log-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                                <div className="time-input-group">
+                                    <label style={{ fontSize: '10px', opacity: 0.6, marginBottom: '4px', display: 'block' }}>Sleep</label>
+                                    <input 
+                                        type="time" 
+                                        className="time-input"
+                                        value={sleepTime}
+                                        onChange={(e) => { setSleepTime(e.target.value); setSleepSaved(false); }}
+                                        disabled={isLocked || loading}
+                                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '8px', borderRadius: '4px' }}
+                                    />
+                                </div>
+                                <div className="time-input-group">
+                                    <label style={{ fontSize: '10px', opacity: 0.6, marginBottom: '4px', display: 'block' }}>Wake</label>
+                                    <input 
+                                        type="time" 
+                                        className="time-input"
+                                        value={wakeTime}
+                                        onChange={(e) => { setWakeTime(e.target.value); setSleepSaved(false); }}
+                                        disabled={isLocked || loading}
+                                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '8px', borderRadius: '4px' }}
+                                    />
+                                </div>
+                            </div>
+                            
+                            <button 
+                                className="save-sleep-btn"
+                                onClick={handleSaveSleepManual}
+                                disabled={!sleepTime || !wakeTime || isLocked || loading || sleepSaved}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px',
+                                    borderRadius: '6px',
+                                    background: sleepSaved ? 'rgba(255,255,255,0.05)' : 'var(--color-primary)',
+                                    color: 'white',
+                                    border: 'none',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    opacity: sleepSaved ? 0.6 : 1
+                                }}
+                            >
+                                {sleepSaved ? 'Sleep Logged ✓' : 'Save Sleep Log'}
+                            </button>
                         </div>
 
-                        {/* Notes */}
-                        <div className="input-group">
-                            <label>Notes</label>
-                            <textarea
-                                className="notes-textarea"
-                                disabled={isLocked || loading}
-                                value={localNotes}
-                                placeholder={loading ? "Loading..." : "Write your thoughts..."}
-                                onChange={(e) => setLocalNotes(e.target.value)}
-                            />
-                        </div>
-                        {/* Manual Sleep Log */}
-                        {preferManualSleep && (
-                            <div className="manual-sleep-log" style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--color-border)' }}>
-                                <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '16px', color: 'var(--text-primary)' }}>Manual Sleep Log</h3>
-                                <div className="sleep-log-grid">
-                                    <div className="time-input-group">
-                                        <label>Sleep Time</label>
-                                        <input 
-                                            type="time" 
-                                            className="time-input"
-                                            value={sleepTime}
-                                            onChange={(e) => {
-                                                setSleepTime(e.target.value);
-                                                setSleepSaved(false);
-                                            }}
-                                            disabled={isLocked || loading}
-                                        />
+                        {/* BIO-TRIAD */}
+                        <div className="bio-triad-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {[
+                                { key: 'hydration_level', label: 'Hydration', icon: <Droplets size={14} />, color: '#60A5FA' },
+                                { key: 'nutrition_level', label: 'Nutrition', icon: <Apple size={14} />, color: '#34D399' },
+                                { key: 'sugar_level', label: 'Blood Sugar/Energy', icon: <Zap size={14} />, color: '#FBBF24' }
+                            ].map(metric => (
+                                <div key={metric.key} className="bio-metric-row">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '12px', fontWeight: 500, opacity: 0.8 }}>
+                                        {metric.icon} {metric.label}
                                     </div>
-                                    <div className="time-input-group">
-                                        <label>Wake Time</label>
+                                    <div className="segmented-toggle" style={{ display: 'flex', gap: '6px' }}>
+                                        {['Low', 'Med', 'Full'].map((label, idx) => (
+                                            <button
+                                                key={label}
+                                                className={`segment-btn ${entry[metric.key] === idx + 1 ? 'active' : ''}`}
+                                                onClick={() => handleUpdate({ [metric.key]: idx + 1 })}
+                                                style={{
+                                                    flex: 1,
+                                                    fontSize: '11px',
+                                                    padding: '8px',
+                                                    borderRadius: '6px',
+                                                    background: entry[metric.key] === idx + 1 ? metric.color : 'rgba(255,255,255,0.03)',
+                                                    border: '1px solid rgba(255,255,255,0.05)',
+                                                    color: entry[metric.key] === idx + 1 ? '#000' : '#fff',
+                                                    fontWeight: entry[metric.key] === idx + 1 ? 700 : 400,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* LIGHT MORNING ACTIVITY (MOVED TO GRID) */}
+                        <div className="morning-activity-card" style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Light Morning Activity</span>
+                                <div className="habit-tooltip-wrapper">
+                                    <HelpCircle size={14} style={{ opacity: 0.4, cursor: 'help' }} />
+                                    <span className="habit-custom-tooltip">10 mins of sunlight or a quick stretch/walk/workout.</span>
+                                </div>
+                            </div>
+                            <button 
+                                 className={`activity-pulse-btn ${entry.morning_activity_done ? 'active' : ''}`}
+                                 onClick={() => handleUpdate({ 
+                                     morning_activity_done: !entry.morning_activity_done,
+                                     morning_activity_at: !entry.morning_activity_done ? new Date().toISOString() : null
+                                 })}
+                                style={{
+                                    width: '100%',
+                                    padding: '14px',
+                                    borderRadius: '10px',
+                                    background: entry.morning_activity_done ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: entry.morning_activity_done ? 'white' : 'var(--text-secondary)',
+                                    fontWeight: 600,
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
+                                }}
+                            >
+                                {entry.morning_activity_done ? 'Activity Completed' : 'Log Activity'}
+                            </button>
+                            {entry.morning_activity_at && (
+                                <div style={{ fontSize: '10px', opacity: 0.5, marginTop: '8px', textAlign: 'center', fontFamily: 'monospace' }}>
+                                    Logged at: {new Date(entry.morning_activity_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+
+                {/* DYNAMIC MEDICATION TRACKER */}
+                <section className="journal-section liquid-glass medication-tracker" style={{ marginBottom: '24px' }}>
+                    <div className="section-header" style={{ padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', margin: 0 }}>
+                            <Pill size={18} /> Medication Tracker
+                        </h2>
+                        <button 
+                            className="add-med-btn" 
+                            onClick={handleAddMedication}
+                            style={{ background: 'transparent', border: '1px solid var(--color-primary)', color: 'var(--color-primary)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
+                        >
+                            <Plus size={14} /> Add Med
+                        </button>
+                    </div>
+                    <div className="medication-list" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {medications.map(med => (
+                            <div key={med.id} className="med-row" style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'space-between',
+                                padding: '16px',
+                                background: 'rgba(255,255,255,0.02)',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                                <div style={{ flex: 1, marginRight: '16px' }}>
+                                    <input 
+                                        type="text" 
+                                        value={med.name} 
+                                        onChange={(e) => handleUpdateMedName(med.id, e.target.value)}
+                                        onBlur={() => handleUpdate({ medications })} // Sync on blur
+                                        className="med-name-input"
+                                        style={{ background: 'transparent', border: 'none', borderBottom: '1px solid transparent', color: 'white', fontSize: '14px', fontWeight: 600, width: '100%', outline: 'none' }}
+                                        placeholder="Pill Name..."
+                                    />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                                        <Clock size={10} style={{ opacity: 0.5 }} />
                                         <input 
                                             type="time" 
-                                            className="time-input"
-                                            value={wakeTime}
-                                            onChange={(e) => {
-                                                setWakeTime(e.target.value);
-                                                setSleepSaved(false);
-                                            }}
-                                            disabled={isLocked || loading}
+                                            value={med.scheduled_time} 
+                                            onChange={(e) => handleUpdateMedTime(med.id, e.target.value)}
+                                            onBlur={() => handleUpdate({ medications })}
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '11px', outline: 'none' }}
                                         />
                                     </div>
                                 </div>
-                                <button 
-                                    className="save-sleep-btn"
-                                    onClick={handleSaveSleepManual}
-                                    style={sleepSaved ? { opacity: 0.6 } : {}}
-                                    disabled={!sleepTime || !wakeTime || isLocked || loading || sleepSaved}
-                                >
-                                    {sleepSaved ? 'Sleep Log Saved ✓' : 'Save Sleep Log'}
-                                </button>
-                                <p className="sleep-hint">This will override auto sleep detection if enabled in Settings.</p>
+                                
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ textAlign: 'right' }}>
+                                        {med.last_taken ? (
+                                            <span style={{ fontSize: '11px', fontFamily: 'monospace', opacity: 0.6, color: 'var(--color-primary)', display: 'block' }}>
+                                                Taken: {new Date(med.last_taken).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        ) : (
+                                            <span style={{ fontSize: '10px', opacity: 0.3, display: 'block' }}>Pending Pulse</span>
+                                        )}
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={() => handleLogMedication(med.id)}
+                                        className="pulse-log-btn"
+                                        style={{
+                                            padding: '8px 16px',
+                                            fontSize: '12px',
+                                            borderRadius: '8px',
+                                            background: 'var(--color-primary)',
+                                            border: 'none',
+                                            color: 'white',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            boxShadow: '0 2px 8px rgba(var(--color-primary-rgb), 0.3)'
+                                        }}
+                                    >
+                                        Log Pulse
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => handleRemoveMedication(med.id)}
+                                        style={{ background: 'transparent', border: 'none', color: '#ff4d4d', opacity: 0.4, cursor: 'pointer', padding: '4px' }}
+                                        title="Remove medication"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {medications.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '20px', opacity: 0.3, fontSize: '13px', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '10px' }}>
+                                No medications registered. Add one to start tracking.
                             </div>
                         )}
                     </div>
                 </section>
 
-                {/* SECTION 2: TODAY'S SIGNALS (AUTO) */}
+                {/* SECTION 2: AUTO LOGS (FORMERLY TODAY'S SIGNALS) */}
                 <section className={`journal-section liquid-glass ${sections.summary ? 'open' : 'collapsed'}`}>
                     <div className="section-header" onClick={() => toggleSection('summary')}>
-                        <h2>Today's Signals ({entry.biological?.manualOverride ? 'Manual' : 'Auto'})</h2>
+                        <h2>Daily Metabolism (Auto)</h2>
                         <span className="toggle-arrow">{sections.summary ? '▼' : '▶'}</span>
                     </div>
-                    {sections.summary && (
+                    {/* HIDE BY DEFAULT IN ENERGY 1 */}
+                    {sections.summary && !isSimplified && (
                         <div className="section-body summary-grid">
                             <div className="metric">
-                                <span className="label">Estimated Sleep</span>
-                                <div className="value-group">
-                                    <span className="value">
-                                        {entry.biological?.sleepDurationMinutes
-                                            ? formatDuration(entry.biological.sleepDurationMinutes, 'minutes')
-
-                                            : "Sleep data not available"}
-                                    </span>
-                                    {entry.biological?.manualOverride && (
-                                        <span className="metric-tag manual">Manual</span>
-                                    )}
-                                </div>
+                                <span className="label">Focus Efficiency</span>
+                                <span className="value">{entry.snapshots?.avgFriction || "Calculating..."}</span>
                             </div>
                             <div className="metric">
-                                <span className="label">Deep Work Duration</span>
-                                <div className="value-group">
-                                    <span className="value">
-                                        {(() => {
-                                            const mins = entry.snapshots?.deepWorkMinutes || 0;
-                                            if (mins >= 60) {
-                                                return formatDuration(mins, 'minutes');
-
-                                            }
-                                            return `${mins}m`;
-                                        })()}
-                                    </span>
-                                    {entry.snapshots?.deepWorkMinutes >= 90 && (
-                                        <span className="metric-tag">Deep focus detected</span>
-                                    )}
-                                </div>
+                                <span className="label">Focus Volume</span>
+                                <span className="value">{entry.snapshots?.totalFocusMinutes || 0} min</span>
                             </div>
                             <div className="metric">
-                                <span className="label">Habit Friction Summary</span>
-                                <div className="friction-counts">
-                                    <span className="count-item">Light: {entry.snapshots?.frictionCounts?.light || 0}</span>
-                                    <span className="count-item">Medium: {entry.snapshots?.frictionCounts?.medium || 0}</span>
-                                    <span className="count-item">Heavy: {entry.snapshots?.frictionCounts?.heavy || 0}</span>
-                                </div>
+                                <span className="label">Deep Work</span>
+                                <span className="value">{entry.snapshots?.deepWorkMinutes || 0} min</span>
                             </div>
                             <div className="metric">
                                 <span className="label">Dominant PINCH Driver</span>
@@ -540,7 +753,9 @@ const JournalPage = () => {
                     <div className="section-header">
                         <h2>Identity Reinforced Today</h2>
                     </div>
-                    <div className="section-body">
+                    {/* HIDE BY DEFAULT IN ENERGY 1 */}
+                    {!isSimplified && (
+                        <div className="section-body">
                         {Object.keys(todayAreaLog).length > 0 || Object.keys(todayRepLog).length > 0 ? (
                             <div className="identity-log-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {Object.entries(todayAreaLog).map(([areaId, entry]) => {
@@ -662,6 +877,7 @@ const JournalPage = () => {
                             </div>
                         )}
                     </div>
+                    )}
                 </section>
 
 

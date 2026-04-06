@@ -186,19 +186,19 @@ export const createPersistentRepository = () => {
         },
 
         delete: async (id) => {
-            try {
-                const { error } = await supabase
-                    .from('nodes')
-                    .delete()
-                    .eq('id', id);
+            const userId = await getUserId();
+            if (!userId) throw new Error('Not authenticated');
 
-                if (error) throw error;
+            const { error } = await supabase
+                .from('nodes')
+                .delete()
+                .eq('id', id)
+                .eq('user_id', userId);
 
-                storage = storage.filter(n => n.id !== id);
-                notify();
-            } catch (e) {
-                console.error('Failed to delete node from Supabase:', e);
-            }
+            if (error) throw error;
+
+            storage = storage.filter(n => n.id !== id);
+            notify();
         },
 
         clear: async () => {

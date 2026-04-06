@@ -47,7 +47,14 @@
 }
 
 .liquid-mode .journal-section {
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.liquid-mode.dark .journal-section {
+    background: transparent !important;
 }
 
 .wallpaper-mode .journal-section {
@@ -86,14 +93,18 @@
 }
 
 .date-picker {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 13px;
     font-family: var(--font-family-mono);
     outline: none;
+}
+
+.liquid-mode.dark .date-picker {
+    background: transparent !important;
 }
 
 .liquid-mode.light .date-picker {
@@ -168,6 +179,10 @@
     border-color: rgba(255, 255, 255, 0.1);
 }
 
+.liquid-mode.dark .activation-btn {
+    background: transparent !important;
+}
+
 .liquid-mode.light .activation-btn {
     background: rgba(0, 0, 0, 0.04);
     color: var(--text-primary);
@@ -180,9 +195,9 @@
 }
 
 .activation-btn.active {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-    color: var(--color-text-inverse);
+    background: var(--text-primary) !important;
+    border-color: var(--text-primary) !important;
+    color: var(--color-bg-main) !important;
 }
 
 
@@ -232,9 +247,13 @@
 }
 
 .liquid-mode .notes-textarea {
-    background: rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
+}
+
+.liquid-mode.dark .notes-textarea {
+    background: transparent !important;
 }
 
 .liquid-mode.light .notes-textarea {
@@ -336,8 +355,12 @@
 }
 
 .liquid-mode .reflection-placeholder {
-    background: rgba(0, 0, 0, 0.1);
-    border: 1px dashed rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.liquid-mode.dark .reflection-placeholder {
+    background: transparent !important;
 }
 
 .liquid-mode.light .reflection-placeholder {
@@ -377,8 +400,8 @@
 }
 
 .time-input {
-    background: var(--alpha-low, rgba(0, 0, 0, 0.1));
-    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     padding: 10px;
     color: var(--text-primary);
@@ -388,13 +411,17 @@
     box-sizing: border-box;
 }
 
+.liquid-mode.dark .time-input {
+    background: transparent !important;
+}
+
 .time-input:focus {
     border-color: var(--color-primary);
 }
 
 .save-sleep-btn {
-    background: var(--color-primary);
-    color: white;
+    background: var(--text-primary);
+    color: var(--color-bg-main);
     border: none;
     border-radius: 8px;
     padding: 12px;
@@ -450,14 +477,18 @@
 .area-details {
     margin: 0 4px 8px 12px;
     padding: 16px;
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 0 0 12px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-top: none;
     display: flex;
     flex-direction: column;
     gap: 16px;
     animation: slideDown 0.2s ease-out;
+}
+
+.liquid-mode.dark .area-details {
+    background: transparent !important;
 }
 
 .liquid-mode.light .area-details {

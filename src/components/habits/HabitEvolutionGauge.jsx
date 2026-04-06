@@ -5,7 +5,10 @@ import './HabitEvolutionGauge.css';
 const CACHE_TTL = 10000; // 10s caching for sidebar rerenders
 const eligibilityCache = new Map();
 
-const HabitEvolutionGauge = ({ habitId, compact = false }) => {
+const HabitEvolutionGauge = ({ habit, compact = false, todayCount = 0 }) => {
+    if (!habit) return null;
+    
+    const habitId = habit.id;
     const [eligibility, setEligibility] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -52,34 +55,37 @@ const HabitEvolutionGauge = ({ habitId, compact = false }) => {
     const stabilityPass = gateStatus.stability.completedDays >= gateStatus.stability.required;
     const frictionPass = !gateStatus.friction.blockedByRecentHeavy && gateStatus.friction.average <= 2.0;
 
-    const passedCount = [lifetimePass, stabilityPass, frictionPass].filter(Boolean).length;
+    const validCompletions = (habit?.completions || []).filter(c => c.friction !== 'heavy' && c.friction !== 'high').length;
+    const requiredCompletions = gateStatus.lifetime.required || 1;
+    const completionsRemaining = Math.max(0, requiredCompletions - validCompletions);
+    const barPercentage = Math.min(100, (validCompletions / requiredCompletions) * 100);
+    const loadPercentage = Math.min(100, Math.max(0, Math.round(((gateStatus.friction.average - 1) / 2) * 100)));
 
     // Simplified Layout for both views
     return (
         <div className={`habit-evolution-gauge ${compact ? 'compact' : 'full'}`}>
-            <div className="gauge-header">
-                <span className="gauge-count">Evolution: {passedCount}/3 gates</span>
-                {isCapped ? (
-                    <span className="gauge-status capped">Max Phase Reached</span>
-                ) : evolutionReady ? (
-                    <span className="gauge-status ready">Ready to evolve → Phase {nextPhaseLevel}</span>
-                ) : null}
-            </div>
-            
-            <div className="gauge-bar-container">
-                <div 
-                    className={`gauge-bar-fill ${evolutionReady ? 'ready' : ''}`} 
-                    style={{ width: `${(passedCount / 3) * 100}%` }} 
-                />
-            </div>
-            
-            {!evolutionReady && !isCapped && !compact && (
-                <div className="gauge-details-hint" style={{ fontSize: '9px', opacity: 0.5, marginTop: '4px' }}>
-                    Lifetime: {gateStatus.lifetime.current}/{gateStatus.lifetime.required} &bull; 
-                    Stability: {gateStatus.stability.completedDays}/{gateStatus.stability.required}d &bull;
-                    Friction: {gateStatus.friction.average.toFixed(1)}
+            <div className={`mastery-bar-container ${todayCount > 0 ? 'shimmer' : ''}`} style={{ marginTop: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <div className="phase-badge">Phase {habit.currentPhaseLevel + 1}</div>
+                    <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                        · {completionsRemaining > 0 ? `${completionsRemaining} more to level up` : 'In Progress'}
+                    </div>
                 </div>
-            )}
+                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
+                    <div 
+                        className={todayCount > 0 ? 'shimmer-fill' : ''}
+                        style={{ width: `${barPercentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--color-accent) 0%, rgba(96, 165, 250, 0.8) 100%)', borderRadius: '3px', transition: 'width 0.4s ease' }} 
+                    />
+                </div>
+            </div>
+            
+            <div className="system-spec-row" style={{ fontFamily: 'SFMono-Regular, Consolas, monospace', fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '10px', display: 'flex', gap: '16px', alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                    Stability: {gateStatus.stability.completedDays}/{gateStatus.stability.required}
+                    <span title="Stabilize by hitting 8 of the last 12 days." style={{ cursor: 'help', opacity: 0.5, marginLeft: '4px', borderBottom: '1px dotted rgba(255,255,255,0.3)', lineHeight: '1' }}>(?)</span>
+                </span>
+                <span>Friction Index: {gateStatus.friction.average.toFixed(1)}</span>
+            </div>
         </div>
     );
 };

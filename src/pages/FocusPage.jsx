@@ -64,6 +64,8 @@ const FocusPage = () => {
     const [showMomentum, setShowMomentum] = useState(false);
     const [nextSuggestedTask, setNextSuggestedTask] = useState(null);
     const [hasAutoStarted, setHasAutoStarted] = useState(false);
+    const [sensoryState, setSensoryState] = useState('quiet'); // 'quiet' or 'cluttered'
+
 
     // Reward Animation Ref
     const rewardRef = useRef(null);
@@ -75,8 +77,8 @@ const FocusPage = () => {
     const triggerCheckpoint = useCallback(() => {
         setCheckpointsCompleted(c => {
             const nextC = c + 1;
-            if (nextC % 2 === 0) setCheckpointToast("Nice work — momentum rising 🚀");
-            else setCheckpointToast("Checkpoint reached ⚡ Momentum building");
+            if (nextC % 2 === 0) setCheckpointToast("Nice work — momentum rising");
+            else setCheckpointToast("Checkpoint reached — momentum building");
             setTimeout(() => setCheckpointToast(null), 3000);
             return nextC;
         });
@@ -407,8 +409,8 @@ const FocusPage = () => {
 
     const startBackboneSession = useCallback(async (pleasureValue) => {
         try {
-            console.log(`[DEBUG FocusPage] startBackboneSession START for task: ${task.id}`);
-            const sess = await backbone.startSession(task.id, 10, pleasureValue, 0);
+            console.log(`[DEBUG FocusPage] startBackboneSession START for task: ${task.id} | Sensory: ${sensoryState}`);
+            const sess = await backbone.startSession(task.id, 10, pleasureValue, 0, sensoryState);
             console.log(`[DEBUG FocusPage] startBackboneSession SUCCESS. New session ID: ${sess.id}`);
             setActiveSessionId(sess.id);
             // Anchor the clock — this is the only place we set startTimeRef for a fresh session
@@ -451,6 +453,24 @@ const FocusPage = () => {
             const currentSessionId = activeSessionId;
 
             console.log(`[DEBUG FocusPage] completeBackboneSession START. Task: ${currentTaskId}, Session: ${currentSessionId}`);
+
+            // 1. SOFT RELOAD Logic: Mark MVE completed on the parent objective if in low energy
+            if (energyLevel <= 2 && currentTaskId) {
+                const parentAspect = allNodes.find(n => n.id === task.parentId);
+                if (parentAspect && parentAspect.type === NodeTypes.ASPECT) {
+                    const parentExperiment = allNodes.find(n => n.id === parentAspect.parentId);
+                    if (parentExperiment && parentExperiment.type === NodeTypes.OBJECTIVE) {
+                        console.log(`[Soft Reload] Marking MVE reached for experiment: ${parentExperiment.name}`);
+                        const now = Date.now();
+                        await backbone.updateNode(parentExperiment.id, {
+                            metadata: {
+                                ...parentExperiment.metadata,
+                                mveCompletedAt: now
+                            }
+                        });
+                    }
+                }
+            }
 
             // Optimistic UI updates
             setActiveSessionId(null);
@@ -691,7 +711,7 @@ const FocusPage = () => {
 
 
             <header className="focus-header">
-                {isNoveltySprint && <span className="focus-novelty-session-label">⚡ Experiment Session</span>}
+                {isNoveltySprint && <span className="focus-novelty-session-label">Experiment Session</span>}
                 {skill && <span className="focus-skill-label">{skill.name}</span>}
             </header>
 
@@ -851,7 +871,7 @@ const FocusPage = () => {
                         exit={{ opacity: 0 }}
                     >
                         <div className="focus-modal-content momentum-card">
-                            <div className="momentum-visual">✨</div>
+                            <div className="momentum-visual"></div>
                             <h3>Nice. That was a small win.</h3>
                             <p style={{ opacity: 0.8, fontSize: '15px' }}>Ready for another tiny step?</p>
                             
@@ -907,6 +927,25 @@ const FocusPage = () => {
                                         {val}
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+                        <div className="focus-modal-group">
+                            <span className="focus-modal-label">Workspace Environment</span>
+                            <div className="focus-scale-picker sensory-toggle" style={{ display: 'flex', gap: '8px' }}>
+                                <button 
+                                    className={`scale-btn ${sensoryState === 'quiet' ? 'selected' : ''}`}
+                                    onClick={() => setSensoryState('quiet')}
+                                    style={{ flex: 1, padding: '12px' }}
+                                >
+                                    Quiet
+                                </button>
+                                <button 
+                                    className={`scale-btn ${sensoryState === 'cluttered' ? 'selected' : ''}`}
+                                    onClick={() => setSensoryState('cluttered')}
+                                    style={{ flex: 1, padding: '12px' }}
+                                >
+                                    Cluttered
+                                </button>
                             </div>
                         </div>
                         <button className="modal-submit-btn" onClick={() => startBackboneSession(predictedPleasure)}>
@@ -1070,7 +1109,7 @@ const FocusPage = () => {
                             setTimeout(() => setHyperfocusWarning(null), 5000);
                         }}
                     >
-                        ⚠️ {hyperfocusWarning}
+                        {hyperfocusWarning}
                     </motion.div>
                 )}
             </AnimatePresence>

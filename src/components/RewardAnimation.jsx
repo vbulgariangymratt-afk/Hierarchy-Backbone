@@ -38,9 +38,6 @@ const RewardAnimation = forwardRef((props, ref) => {
                         exit={{ opacity: 0, y: -80, scale: 0.8 }}
                         transition={{ duration: 1.2, ease: "easeOut" }}
                     >
-                        <span className="reward-icon">
-                            {toast.type === 'aura' ? '✨' : '🪙'}
-                        </span>
                         <span className="reward-amount">+{toast.amount} {toast.type.charAt(0).toUpperCase() + toast.type.slice(1)}</span>
                     </motion.div>
                 ))}

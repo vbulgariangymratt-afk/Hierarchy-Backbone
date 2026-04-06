@@ -15,6 +15,7 @@ export const NodeTypes = {
     OBJECTIVE: 'OBJECTIVE',
     ASPECT: 'ASPECT',
     TASK: 'TASK',
+    HABIT: 'HABIT',
     REWARD: 'REWARD',
     REWARD_VAULT: 'REWARD_VAULT',
     SCHEDULED_REST: 'SCHEDULED_REST'

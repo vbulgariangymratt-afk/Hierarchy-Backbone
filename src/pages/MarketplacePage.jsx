@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { backbone, repository, NodeTypes } from '../backbone-v2/index';
 import CreateRewardModal from '../components/CreateRewardModal';
+import EditRewardsModal from '../components/EditRewardsModal';
 import NodeIcon from '../components/NodeIcon';
 import './MarketplacePage.css';
 
 const SVG_ICONS = {
     COIN: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8'/%3E%3Cpath d='M12 18V6'/%3E%3C/svg%3E",
     REFILL: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8'/%3E%3Cpath d='M21 3v5h-5'/%3E%3Cpath d='M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16'/%3E%3Cpath d='M3 21v-5h5'/%3E%3C/svg%3E",
-    PLUS: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E"
+    PLUS: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E",
+    BANKNOTE: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='12' x='2' y='6' rx='2'/%3E%3Cpath d='M6 12h.01M18 12h.01'/%3E%3C/svg%3E"
 };
 
 const MarketplacePage = () => {
     const [balance, setBalance] = useState(0);
     const [marketplaceRewards, setMarketplaceRewards] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [purchaseLoading, setPurchaseLoading] = useState(null); // ID of reward being purchased
+    const [purchaseLoading, setPurchaseLoading] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -104,6 +107,12 @@ const MarketplacePage = () => {
                             <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
                             Create Reward
                         </button>
+                        <button
+                            className="create-reward-btn"
+                            onClick={() => setIsEditModalOpen(true)}
+                        >
+                            Edit Rewards
+                        </button>
                     </div>
 
                     <div className="hryvnia-card liquid-glass">
@@ -155,12 +164,25 @@ const MarketplacePage = () => {
                         <NodeIcon iconUrl={SVG_ICONS.REFILL} size={16} />
                         Refill Marketplace
                     </button>
+                    <div className="refill-info-wrapper">
+                        <span className="refill-info-icon">?</span>
+                        <div className="refill-tooltip">
+                            <strong>How the Marketplace works</strong>
+                            <p>The marketplace displays up to <em>8 randomly selected rewards</em> from your reward bank at a time. This keeps the shop feeling fresh and curated. This format has multiple neurological purposes for ADHD and MDD brains.</p>
+                            <p>When you create a new reward it goes into the bank but won't appear until the next refill. Hit <em>Refill Marketplace</em> to shuffle in a new selection — including your latest rewards.</p>
+                        </div>
+                    </div>
                 </div>
             </main>
 
             <CreateRewardModal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => fetchData()}
+            />
+            <EditRewardsModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
                 onSuccess={() => fetchData()}
             />
         </div>

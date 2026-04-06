@@ -116,9 +116,6 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
                     onClick={(e) => e.stopPropagation()}
                 >
                     <header className="modal-header">
-                        <div className="skill-badge">
-                            {skill?.metadata?.icon || '⭐'}
-                        </div>
                         <div className="title-group">
                             <h2>{skill?.name}</h2>
                             {skill?.metadata?.identityAnchor && (
@@ -129,15 +126,6 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
                             )}
                         </div>
                         <div className="modal-actions-header">
-                            {energyLevel >= 3 && (
-                                <button 
-                                    className={`guidance-nudge ${showGuidance ? 'active' : ''}`}
-                                    onClick={() => setShowGuidance(!showGuidance)}
-                                    title="Show Guidance"
-                                >
-                                    {skill.metadata?.pinchState && skill.metadata.pinchState !== 'NONE' ? '🧭' : '✨'}
-                                </button>
-                            )}
                             <button className="close-btn" onClick={onClose}>×</button>
                         </div>
                     </header>

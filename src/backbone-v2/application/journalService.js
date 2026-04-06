@@ -229,6 +229,13 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                         hadDeepLockOver90Min: false,
                         rsdTrigger: false
                     },
+                    medication_taken: false,
+                    med_taken_at: null,
+                    hydration_level: 2,
+                    nutrition_level: 2,
+                    sugar_level: 2,
+                    morning_activity_done: false,
+                    morning_activity_at: null,
                     notes: ""
                 };
                 await journalRepository.save(entry);

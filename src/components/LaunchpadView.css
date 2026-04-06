@@ -40,11 +40,15 @@
     border: 1px solid var(--color-border);
 }
 
-.wallpaper-mode .launchpad-loading {
+.wallpaper-mode .launchpad-loading, .liquid-mode .launchpad-loading {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.dark .launchpad-loading {
+    background: transparent !important;
 }
 
 /* 1. FIXED HEADER SECTION */
@@ -119,17 +123,21 @@
 .liquid-mode .area-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(30px) saturate(160%);
-    -webkit-backdrop-filter: blur(30px) saturate(160%);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
     box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.16),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.liquid-mode.dark .area-card {
+    background: transparent !important;
 }
 
 .wallpaper-mode .area-card {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -171,8 +179,12 @@
     border-color: rgba(255, 255, 255, 0.35);
     box-shadow:
         0 20px 56px rgba(0, 0, 0, 0.18),
-        inset 0 1px 1px rgba(255, 255, 255, 0.55);
+        inset 0 1px 1px rgba(255, 255, 255, 0.45);
     transform: translateY(-6px) translateZ(0);
+}
+
+.liquid-mode.dark .area-card:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .solid-mode .area-card:hover {
@@ -240,12 +252,16 @@
     font-size: 32px;
     width: 64px;
     height: 64px;
-    background: var(--alpha-low);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.dark .area-icon-container {
+    background: transparent !important;
 }
 
 .area-info {
@@ -408,8 +424,12 @@
 
 .liquid-mode .area-card:hover .inviting-action-block,
 .wallpaper-mode .area-card:hover .inviting-action-block {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+.liquid-mode.dark .area-card:hover .inviting-action-block {
+    background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .action-main-text {
@@ -425,7 +445,7 @@
 
 .task-highlight {
     font-weight: 700;
-    color: var(--color-secondary);
+    color: #fff;
 }
 
 .liquid-mode .task-highlight,
@@ -451,9 +471,13 @@
     color: var(--text-muted);
     font-size: 13px;
     font-style: italic;
-    background: var(--alpha-low);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 28px;
-    border: 1px dashed var(--color-border);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.dark .no-task-placeholder {
+    background: transparent !important;
 }
 
 /* 3. MAINTENANCE PANEL */
@@ -482,11 +506,15 @@
     border: 1px solid var(--color-border);
 }
 
-.wallpaper-mode .maintenance-card {
+.wallpaper-mode .maintenance-card, .liquid-mode .maintenance-card {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.dark .maintenance-card {
+    background: transparent !important;
 }
 
 .maintenance-info {
@@ -525,29 +553,40 @@
 }
 
 .maint-btn.complete {
-    background: var(--alpha-high);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--color-text-main);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.dark .maint-btn.complete {
+    background: transparent !important;
 }
 
 .maint-btn.complete:hover {
-    background: var(--alpha-med);
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .maint-btn.replace {
     background: transparent;
     color: var(--text-muted);
-    border-color: var(--color-border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .maint-btn.replace:hover {
     color: var(--color-text-main);
-    border-color: var(--color-border);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .area-card.is-selected {
     border-color: var(--accent-blue);
     background: rgba(96, 165, 250, 0.05);
     box-shadow: 0 0 30px rgba(96, 165, 250, 0.1);
+}
+
+.liquid-mode.dark .area-card.is-selected {
+    background: transparent !important;
 }
 
 .liquid-mode .area-card.is-selected,
@@ -637,12 +676,16 @@
 }
 
 .liquid-mode .start-day-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.liquid-mode.dark .start-day-btn {
+    background: transparent !important;
 }
 
 .liquid-mode.light .start-day-btn {
@@ -665,6 +708,10 @@
     border-color: rgba(255, 255, 255, 0.3);
 }
 
+.liquid-mode.dark .start-day-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
 .start-day-btn:active:not(:disabled) {
     transform: translateY(0) scale(0.98);
 }
@@ -675,6 +722,11 @@
     cursor: not-allowed;
     box-shadow: none;
     opacity: 0.5;
+}
+
+.liquid-mode.dark .start-day-btn:disabled {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.05);
 }
 
 .selection-summary {
@@ -774,10 +826,15 @@
     border: 1px solid var(--color-border);
 }
 
-.wallpaper-mode .keep-it-alive-group {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.wallpaper-mode .keep-it-alive-group, .liquid-mode .keep-it-alive-group {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.liquid-mode.dark .keep-it-alive-group {
+    background: transparent !important;
 }
 
 .keep-it-alive-skill-name {
@@ -801,9 +858,15 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: var(--alpha-high);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    border: 1px solid var(--color-border);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.liquid-mode.dark .keep-it-alive-habit-row {
+    background: transparent !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .keep-it-alive-habit-row .habit-info {
@@ -828,18 +891,22 @@
     border-radius: 10px;
     font-size: 12px;
     font-weight: 700;
-    background: var(--alpha-high);
-    border: 1px solid var(--color-border);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.liquid-mode.dark .habit-complete-btn {
+    background: transparent !important;
+}
+
 .habit-complete-btn:hover {
-    background: var(--color-accent);
+    background: rgba(255, 255, 255, 0.1) !important;
     color: white;
-    border-color: var(--color-accent);
-    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
 }
 
 .keep-it-alive-placeholder {
@@ -856,7 +923,11 @@
     color: var(--text-muted);
     font-size: 14px;
     font-style: italic;
-    background: var(--alpha-low);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 20px;
-    border: 1px dashed var(--color-border);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.liquid-mode.dark .everything-is-alive-message {
+    background: transparent !important;
 }
