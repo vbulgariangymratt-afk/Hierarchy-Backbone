@@ -183,7 +183,7 @@ const SortableTaskRow = React.memo(({
                     {task.metadata?.itemType === 'REPETITION' && (
                         <div className="task-repetition-ui">
                             <span className="task-repetition-progress">
-                                {task.metadata.currentUnits || 0} / {task.metadata.targetUnits || 0} {task.metadata.unitName || 'units'}
+                                {task.metadata.currentUnits || 0}{task.metadata.targetUnits > 0 ? ` / ${task.metadata.targetUnits}` : ''} {task.metadata.unitName || 'units'}
                             </span>
                             <button
                                 onClick={(e) => {

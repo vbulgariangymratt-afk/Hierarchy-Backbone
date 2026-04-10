@@ -113,48 +113,54 @@ const {
 
 import { logToFile } from '../lib/logger';
 
+const _doReload = async () => {
+    console.log('Backbone V2: RELOADING ALL DATA...');
+    
+    if (!backbone || typeof backbone.initialize !== 'function') {
+        console.warn('Backbone V2: backbone not initialized, skipping reload');
+        return false;
+    }
+
+    await logToFile('Triggering reloadAllData after SIGNED_IN');
+    
+    await logToFile('Reloading areas and core nodes...');
+    if (repository && typeof repository.reinitialize === 'function') {
+        await repository.reinitialize();
+    }
+    
+    await logToFile('Reloading journal and habits...');
+    await Promise.all([
+        journalRepo?.reinitialize ? journalRepo.reinitialize() : Promise.resolve(),
+        habitRepo?.reinitialize ? habitRepo.reinitialize() : Promise.resolve(),
+        backbone.initialize ? backbone.initialize() : Promise.resolve(),
+        journalService?.initialize ? journalService.initialize() : Promise.resolve()
+    ]);
+
+    console.log('Backbone V2: RELOAD COMPLETE');
+    await logToFile('Reload complete');
+    return true;
+};
+
 export const reloadAllData = async () => {
+    const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('reloadAllData timed out after 15s')), 15000)
+    );
     try {
-        console.log('Backbone V2: RELOADING ALL DATA...');
-        
-        // Safety check requested by user
-        if (!backbone || typeof backbone.initialize !== 'function') {
-            console.warn('Backbone V2: backbone not initialized, skipping reload');
-            return false;
-        }
-
-        await logToFile('Triggering reloadAllData after SIGNED_IN');
-        
-        await logToFile('Reloading areas and core nodes...');
-        if (repository && typeof repository.reinitialize === 'function') {
-            await repository.reinitialize();
-        }
-        
-        await logToFile('Reloading journal and habits...');
-        await Promise.all([
-            journalRepo?.reinitialize ? journalRepo.reinitialize() : Promise.resolve(),
-            habitService?.initialize ? habitService.initialize() : Promise.resolve(),
-            backbone.initialize ? backbone.initialize() : Promise.resolve(),
-            journalService?.initialize ? journalService.initialize() : Promise.resolve()
-        ]);
-
-        console.log('Backbone V2: RELOAD COMPLETE');
-        await logToFile('Reload complete');
-        return true;
+        return await Promise.race([_doReload(), timeout]);
     } catch (err) {
-        console.error('Backbone V2: Critical Error during reloadAllData', err);
+        console.error('Backbone V2: reloadAllData failed or timed out:', err);
         await logErrorToFile('reloadAllData (SIGNED_IN)', err);
-        // Important: return false instead of crashing to prevent triggering 
-        // fallback node creation logic in other parts of the system.
         return false;
     }
 };
 
 
+
 export const clearAllData = () => {
     console.log('Backbone V2: CLEARING ALL DATA (Signed Out)');
-    // This should ideally reset storage in repos
-    // For now we rely on the fact that repos will re-init with empty if no user
+    habitRepo?.reset?.();
+    repository?.reset?.();
+    journalRepo?.reset?.(); // Added journalRepo for completeness if available
 };
 
 export {

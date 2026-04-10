@@ -87,7 +87,7 @@ const SkillPage = () => {
     const [newTaskDependencyId, setNewTaskDependencyId] = useState('');
     const [newTaskItemType, setNewTaskItemType] = useState('FINITE'); // 'FINITE' or 'REPETITION'
     const [newTaskUnitName, setNewTaskUnitName] = useState('units');
-    const [newTaskTargetUnits, setNewTaskTargetUnits] = useState(1);
+    const [newTaskTargetUnits, setNewTaskTargetUnits] = useState(0);
     const [expandedTaskIds, setExpandedTaskIds] = useState([]);
     const [isSelectingRewardForTaskId, setIsSelectingRewardForTaskId] = useState(null);
     const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
@@ -497,10 +497,10 @@ const SkillPage = () => {
         const name = newObjectiveName.trim();
         const theme = newObjectiveTheme.trim();
         const mve = newObjectiveMVE.trim();
-        const duration = parseInt(newObjectiveDuration);
+        const duration = newObjectiveDuration === '' ? null : parseInt(newObjectiveDuration);
         const accType = newObjectiveAccType;
 
-        if (!name || !theme || !mve || isNaN(duration) || !accType) {
+        if (!name || !theme || !mve || !accType) {
             return;
         }
 
@@ -542,7 +542,7 @@ const SkillPage = () => {
         setEditingObjectiveId(obj.id);
         setObjectiveEditForm({
             theme: obj.metadata?.theme || '',
-            durationInDays: obj.metadata?.durationInDays || 30,
+            durationInDays: obj.metadata?.durationInDays ?? '',
             accumulationType: obj.metadata?.accumulationType || 'minutes',
             mve: obj.metadata?.mve || '',
             wish: obj.metadata?.wish || '',
@@ -554,10 +554,16 @@ const SkillPage = () => {
     const handleSaveObjectiveEdit = useCallback(async (objId) => {
         if (!objectiveEditForm) return;
         try {
+            const sanitizedForm = {
+                ...objectiveEditForm,
+                durationInDays: (objectiveEditForm.durationInDays === '' || objectiveEditForm.durationInDays === null) 
+                    ? null 
+                    : parseInt(objectiveEditForm.durationInDays)
+            };
             await backbone.updateNode(objId, {
                 metadata: {
                     ...allNodes.find(n => n.id === objId)?.metadata,
-                    ...objectiveEditForm
+                    ...sanitizedForm
                 }
             });
             setEditingObjectiveId(null);
@@ -740,7 +746,7 @@ const SkillPage = () => {
 
         if (newTaskItemType === 'REPETITION') {
             metadata.unitName = newTaskUnitName;
-            metadata.targetUnits = parseInt(newTaskTargetUnits) || 1;
+            metadata.targetUnits = (newTaskTargetUnits === '' || parseInt(newTaskTargetUnits) === 0) ? 0 : parseInt(newTaskTargetUnits);
             metadata.currentUnits = 0;
         }
 
@@ -748,7 +754,7 @@ const SkillPage = () => {
         setNewTaskDependencyId('');
         setNewTaskItemType('FINITE');
         setNewTaskUnitName('units');
-        setNewTaskTargetUnits(1);
+        setNewTaskTargetUnits(0);
         setCreatingTaskForAspectId(null);
 
         backbone.addNode({
@@ -1428,11 +1434,50 @@ const SkillPage = () => {
         
         if ((!isActive && !isPaused) || !m.activatedAt) return null;
 
-        const now = Date.now();
-        const endTime = (isPaused && m.deactivatedAt) ? m.deactivatedAt : now;
-        const diff = endTime - m.activatedAt;
-        const days = Math.floor(diff / (24 * 60 * 60 * 1000));
-        const displayDays = days + 1;
+        const aspects = getChildren(obj.id, NodeTypes.ASPECT);
+        const tasks = aspects.flatMap(a => getChildren(a.id, NodeTypes.TASK));
+        const rootNode = (allNodes || []).find(n => n.id === 'ROOT');
+        const dailyRepLog = rootNode?.metadata?.dailyRepLog || {};
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        
+        const activityDates = new Set();
+
+        // 1. Task completions & sessions
+        tasks.forEach(t => {
+            if (t.metadata?.completedAt) {
+                activityDates.add(new Date(t.metadata.completedAt).toLocaleDateString('en-CA'));
+            }
+            (t.metadata?.sessions || []).forEach(s => {
+                if (s.endTime) {
+                    activityDates.add(new Date(s.endTime).toLocaleDateString('en-CA'));
+                }
+            });
+        });
+
+        // 2. Repetitions from daily log
+        Object.entries(dailyRepLog).forEach(([dateStr, logs]) => {
+            if (tasks.some(t => logs[t.id])) {
+                activityDates.add(dateStr);
+            }
+        });
+
+        // 3. MVE Pulse
+        if (m.mveCompletedAt) {
+            activityDates.add(new Date(m.mveCompletedAt).toLocaleDateString('en-CA'));
+        }
+
+        // 4. Manual logs
+        aspects.forEach(a => {
+            (a.metadata?.logs || []).forEach(l => {
+                if (l.timestamp) {
+                    activityDates.add(new Date(l.timestamp).toLocaleDateString('en-CA'));
+                }
+            });
+        });
+
+        // The day counter is count of past active days + 1 (today)
+        const activeDaysBeforeToday = Array.from(activityDates).filter(d => d !== todayStr);
+        const displayDays = activeDaysBeforeToday.length + 1;
 
         let phase = '';
         let hint = '';
@@ -1442,8 +1487,8 @@ const SkillPage = () => {
         else if (displayDays <= 60) phase = 'Late Phase';
         else hint = 'Consider rotating or refreshing this Objective.';
 
-        return { days: displayDays, rawDays: days, phase, hint };
-    }, []);
+        return { days: displayDays, phase, hint };
+    }, [allNodes, getChildren]);
 
     // --- EXPIRY DECISION FLOW ---
     const expiringObjective = useMemo(() => {
@@ -1730,7 +1775,12 @@ const SkillPage = () => {
 
         // Dynamic Calculation of Experiment Metric (Accumulated)
         const allTasksInExperiment = aspects.flatMap(a => getChildren(a.id, NodeTypes.TASK));
-        const totalCompletedInExperiment = allTasksInExperiment.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+        const totalCompletedInExperiment = allTasksInExperiment.reduce((sum, t) => {
+            if (t.metadata?.type === 'REPETITION') {
+                return sum + (t.metadata?.currentUnits || 0);
+            }
+            return sum + (t.metadata?.status === TaskStatuses.DONE ? 1 : 0);
+        }, 0);
         const mveFocusTask = allTasksInExperiment.find(t => t.metadata?.status !== TaskStatuses.DONE);
         const todayStr = new Date().toDateString();
         const isMVECompletedToday = obj.metadata?.mveCompletedAt && 
@@ -1785,7 +1835,7 @@ const SkillPage = () => {
                                 type="number"
                                 className="edit-input"
                                 value={objectiveEditForm?.durationInDays}
-                                onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, durationInDays: parseInt(e.target.value) })}
+                                onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, durationInDays: e.target.value })}
                             />
                         </div>
                         <div className="edit-field">
@@ -1840,6 +1890,49 @@ const SkillPage = () => {
                                 )}
                             </div>
                         </div>
+                        {aspects.length > 0 && (
+                            <div className="edit-field full-width" style={{ marginTop: '20px', borderTop: '1px solid var(--color-border)', paddingTop: '16px', gridColumn: 'span 2' }}>
+                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', marginBottom: '12px', opacity: 0.6, letterSpacing: '0.05em', color: 'var(--text-secondary)' }}>Experiment Aspects</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {aspects.map(aspect => {
+                                        const aspectTasks = getChildren(aspect.id, NodeTypes.TASK);
+                                        return (
+                                            <div key={aspect.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'var(--alpha-low)', borderRadius: '10px', border: '1px solid var(--color-border)' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>{aspect.name}</span>
+                                                    <span style={{ fontSize: '10px', fontWeight: '800', opacity: 0.5, background: 'var(--alpha-med)', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{aspectTasks.length} {aspectTasks.length === 1 ? 'task' : 'tasks'}</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setAspectToDelete(aspect)}
+                                                    style={{ 
+                                                        padding: '6px 14px', 
+                                                        background: 'rgba(239, 68, 68, 0.08)', 
+                                                        color: '#ef4444', 
+                                                        border: '1px solid rgba(239, 68, 68, 0.12)', 
+                                                        borderRadius: '8px', 
+                                                        fontSize: '11px', 
+                                                        fontWeight: '700', 
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                                                    }}
+                                                    onMouseEnter={e => {
+                                                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+                                                    }}
+                                                    onMouseLeave={e => {
+                                                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+                                                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.12)';
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="edit-actions">
                         <div className="edit-left">
@@ -2760,7 +2853,7 @@ const SkillPage = () => {
                                     <label>Duration (Days)</label>
                                     <input
                                         type="number"
-                                        min="14" max="60"
+                                        placeholder="Indefinite"
                                         value={newObjectiveDuration}
                                         onChange={e => setNewObjectiveDuration(e.target.value)}
                                         className="form-input num-input"

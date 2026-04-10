@@ -44,8 +44,17 @@ export const createJournalRepository = () => {
     };
 
     const persist = async (entry) => {
-        const userId = await getUserId();
-        if (!userId) return;
+        let userId = await getUserId();
+        if (!userId) {
+            // Wait briefly for token refresh and retry once
+            await new Promise(r => setTimeout(r, 1500));
+            userId = await getUserId();
+        }
+
+        if (!userId) {
+            console.error(`JournalRepo [ID:${instanceId}]: persist() FAILED — No authenticated user after retry`);
+            return;
+        }
 
         try {
             const { error } = await supabase
@@ -203,7 +212,8 @@ export const createJournalRepository = () => {
                     updatedAt: Date.now()
                 });
             }
-            await persist(entry);
+            const snapshot = JSON.parse(JSON.stringify(entry));
+            await persist(snapshot);
             notify();
             return entry;
         },
@@ -213,7 +223,8 @@ export const createJournalRepository = () => {
             const index = storage.entries.findIndex(e => e.id === id);
             if (index !== -1) {
                 storage.entries[index] = { ...storage.entries[index], ...updates, updatedAt: Date.now() };
-                await persist(storage.entries[index]);
+                const snapshot = JSON.parse(JSON.stringify(storage.entries[index]));
+                await persist(snapshot);
                 notify();
                 return { ...storage.entries[index] };
             }
@@ -222,6 +233,19 @@ export const createJournalRepository = () => {
 
         getAll: async () => {
             return storage.entries.map(e => ({ ...e }));
+        },
+
+        reset: () => {
+            console.log(`JournalRepo [ID:${instanceId}]: RESETTING Repository State`);
+            initPromise = null;
+            storage = {
+                entries: [],
+                metadata: {
+                    lastAppCloseTime: null,
+                    firstAppOpenTime: null
+                }
+            };
+            notify();
         }
     };
 };

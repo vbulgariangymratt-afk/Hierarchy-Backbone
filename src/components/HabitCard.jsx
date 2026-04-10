@@ -157,9 +157,9 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
             {/* 1. Header (Top Row) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div className="habit-intention" style={{ fontSize: '13.5px', display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '6px', overflow: 'hidden', color: 'var(--text-primary)' }}>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>IF</span> 
+                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>IF</span> 
                     <span style={{ fontWeight: 700, textOverflow: 'ellipsis', overflow: 'hidden' }}>{habit.ifTrigger}</span>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.4)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>THEN</span>
+                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>THEN</span>
                     <span style={{ fontWeight: 700, textOverflow: 'ellipsis', overflow: 'hidden' }}>{currentPhase.description}</span>
                 </div>
                 
@@ -248,11 +248,11 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                     <div className={`mastery-bar-container ${progress.todayCount > 0 ? 'shimmer' : ''}`} style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                             <div className="phase-badge">Phase {habit.currentPhaseLevel + 1}</div>
-                            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
                                 · {validCompletions >= 6 ? `${compsRemaining} more to level up` : 'In Progress'}
                             </span>
                         </div>
-                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ width: '100%', height: '6px', background: 'var(--alpha-high)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
                             <div className={progress.todayCount > 0 ? 'shimmer-fill' : ''} style={{ width: `${barPercentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--color-accent) 0%, rgba(96, 165, 250, 0.8) 100%)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
                         </div>
                     </div>

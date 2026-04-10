@@ -462,14 +462,19 @@ const JournalPage = () => {
             </header>
 
             <main className="journal-content">
-                {/* SECTION 1: MORNING ACTIVATION RE-RESTORED */}
-                <section className="journal-section liquid-glass open" style={{ marginBottom: '24px' }}>
-                    <div className="section-header">
-                        <h2>Morning Activation Check-in</h2>
+
+
+                {/* SECTION: MORNING CHECK-IN (MERGED) */}
+                <section className="journal-section liquid-glass morning-checkin-block">
+                    <div className="section-header" style={{ padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <h2 className="section-title-themed">
+                            <Sun size={18} /> Morning Check-in
+                        </h2>
                     </div>
-                    <div className="section-body">
-                        <div className="input-group">
-                            <label style={{ fontSize: '12px', opacity: 0.7, marginBottom: '8px', display: 'block' }}>Initial Propulsion Level</label>
+
+                    <div className="section-body" style={{ padding: '20px' }}>
+                        <div className="input-group" style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <label className="input-label-themed">Initial Propulsion Level</label>
                             <div className="activation-selector">
                                 {ACTIVATION_LEVELS.map(level => (
                                     <button
@@ -483,23 +488,13 @@ const JournalPage = () => {
                                 ))}
                             </div>
                         </div>
-                    </div>
-                </section>
 
-                {/* SECTION: MORNING CHECK-IN (MERGED) */}
-                <section className="journal-section liquid-glass morning-checkin-block" style={{ marginBottom: '24px', border: '1px solid rgba(var(--color-primary-rgb), 0.2)' }}>
-                    <div className="section-header" style={{ padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <h2 style={{ color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', margin: 0 }}>
-                            <Sun size={18} /> Morning Check-in
-                        </h2>
-                    </div>
-
-                    <div className="morning-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', padding: '20px' }}>
+                        <div className="morning-grid">
                         
                         {/* MANUAL SLEEP LOG RESTORED */}
-                        <div className="morning-activity-card" style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="morning-activity-card">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                <Clock size={16} /> <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Manual Sleep Log</span>
+                                <Clock size={16} /> <span className="sub-header-themed">Manual Sleep Log</span>
                             </div>
                             
                             <div className="sleep-log-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
@@ -511,7 +506,7 @@ const JournalPage = () => {
                                         value={sleepTime}
                                         onChange={(e) => { setSleepTime(e.target.value); setSleepSaved(false); }}
                                         disabled={isLocked || loading}
-                                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '8px', borderRadius: '4px' }}
+                                        className="time-input themed-input"
                                     />
                                 </div>
                                 <div className="time-input-group">
@@ -522,27 +517,15 @@ const JournalPage = () => {
                                         value={wakeTime}
                                         onChange={(e) => { setWakeTime(e.target.value); setSleepSaved(false); }}
                                         disabled={isLocked || loading}
-                                        style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '8px', borderRadius: '4px' }}
+                                        className="time-input themed-input"
                                     />
                                 </div>
                             </div>
                             
                             <button 
-                                className="save-sleep-btn"
+                                className={`glass-cta ${sleepSaved ? 'confirmed' : ''}`}
                                 onClick={handleSaveSleepManual}
                                 disabled={!sleepTime || !wakeTime || isLocked || loading || sleepSaved}
-                                style={{
-                                    width: '100%',
-                                    padding: '10px',
-                                    borderRadius: '6px',
-                                    background: sleepSaved ? 'rgba(255,255,255,0.05)' : 'var(--color-primary)',
-                                    color: 'white',
-                                    border: 'none',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    opacity: sleepSaved ? 0.6 : 1
-                                }}
                             >
                                 {sleepSaved ? 'Sleep Logged ✓' : 'Save Sleep Log'}
                             </button>
@@ -551,32 +534,19 @@ const JournalPage = () => {
                         {/* BIO-TRIAD */}
                         <div className="bio-triad-container" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {[
-                                { key: 'hydration_level', label: 'Hydration', icon: <Droplets size={14} />, color: '#60A5FA' },
-                                { key: 'nutrition_level', label: 'Nutrition', icon: <Apple size={14} />, color: '#34D399' },
-                                { key: 'sugar_level', label: 'Blood Sugar/Energy', icon: <Zap size={14} />, color: '#FBBF24' }
+                                { key: 'hydration_level', label: 'Hydration', icon: <Droplets size={14} /> },
+                                { key: 'nutrition_level', label: 'Nutrition', icon: <Apple size={14} /> }
                             ].map(metric => (
                                 <div key={metric.key} className="bio-metric-row">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '12px', fontWeight: 500, opacity: 0.8 }}>
-                                        {metric.icon} {metric.label}
-                                    </div>
-                                    <div className="segmented-toggle" style={{ display: 'flex', gap: '6px' }}>
+                                        <div className="bio-label-themed">
+                                            {metric.icon} {metric.label}
+                                        </div>
+                                    <div className="segmented-toggle">
                                         {['Low', 'Med', 'Full'].map((label, idx) => (
                                             <button
                                                 key={label}
                                                 className={`segment-btn ${entry[metric.key] === idx + 1 ? 'active' : ''}`}
                                                 onClick={() => handleUpdate({ [metric.key]: idx + 1 })}
-                                                style={{
-                                                    flex: 1,
-                                                    fontSize: '11px',
-                                                    padding: '8px',
-                                                    borderRadius: '6px',
-                                                    background: entry[metric.key] === idx + 1 ? metric.color : 'rgba(255,255,255,0.03)',
-                                                    border: '1px solid rgba(255,255,255,0.05)',
-                                                    color: entry[metric.key] === idx + 1 ? '#000' : '#fff',
-                                                    fontWeight: entry[metric.key] === idx + 1 ? 700 : 400,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s'
-                                                }}
                                             >
                                                 {label}
                                             </button>
@@ -587,32 +557,20 @@ const JournalPage = () => {
                         </div>
 
                         {/* LIGHT MORNING ACTIVITY (MOVED TO GRID) */}
-                        <div className="morning-activity-card" style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div className="morning-activity-card">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.9 }}>Light Morning Activity</span>
+                                <span className="sub-header-themed">Light Morning Activity</span>
                                 <div className="habit-tooltip-wrapper">
                                     <HelpCircle size={14} style={{ opacity: 0.4, cursor: 'help' }} />
                                     <span className="habit-custom-tooltip">10 mins of sunlight or a quick stretch/walk/workout.</span>
                                 </div>
                             </div>
                             <button 
-                                 className={`activity-pulse-btn ${entry.morning_activity_done ? 'active' : ''}`}
+                                 className={`glass-cta ${entry.morning_activity_done ? 'confirmed' : ''}`}
                                  onClick={() => handleUpdate({ 
                                      morning_activity_done: !entry.morning_activity_done,
                                      morning_activity_at: !entry.morning_activity_done ? new Date().toISOString() : null
                                  })}
-                                style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    borderRadius: '10px',
-                                    background: entry.morning_activity_done ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    color: entry.morning_activity_done ? 'white' : 'var(--text-secondary)',
-                                    fontWeight: 600,
-                                    fontSize: '13px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease'
-                                }}
                             >
                                 {entry.morning_activity_done ? 'Activity Completed' : 'Log Activity'}
                             </button>
@@ -623,33 +581,25 @@ const JournalPage = () => {
                             )}
                         </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
                 {/* DYNAMIC MEDICATION TRACKER */}
                 <section className="journal-section liquid-glass medication-tracker" style={{ marginBottom: '24px' }}>
                     <div className="section-header" style={{ padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '16px', margin: 0 }}>
+                        <h2 className="section-title-themed">
                             <Pill size={18} /> Medication Tracker
                         </h2>
                         <button 
                             className="add-med-btn" 
                             onClick={handleAddMedication}
-                            style={{ background: 'transparent', border: '1px solid var(--color-primary)', color: 'var(--color-primary)', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
                         >
                             <Plus size={14} /> Add Med
                         </button>
                     </div>
                     <div className="medication-list" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {medications.map(med => (
-                            <div key={med.id} className="med-row" style={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'space-between',
-                                padding: '16px',
-                                background: 'rgba(255,255,255,0.02)',
-                                borderRadius: '10px',
-                                border: '1px solid rgba(255,255,255,0.05)'
-                            }}>
+                            <div key={med.id} className="med-row themed-med-row">
                                 <div style={{ flex: 1, marginRight: '16px' }}>
                                     <input 
                                         type="text" 
@@ -657,7 +607,7 @@ const JournalPage = () => {
                                         onChange={(e) => handleUpdateMedName(med.id, e.target.value)}
                                         onBlur={() => handleUpdate({ medications })} // Sync on blur
                                         className="med-name-input"
-                                        style={{ background: 'transparent', border: 'none', borderBottom: '1px solid transparent', color: 'white', fontSize: '14px', fontWeight: 600, width: '100%', outline: 'none' }}
+                                        className="med-name-input themed-text-input"
                                         placeholder="Pill Name..."
                                     />
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
@@ -717,184 +667,6 @@ const JournalPage = () => {
                             </div>
                         )}
                     </div>
-                </section>
-
-                {/* SECTION 2: AUTO LOGS (FORMERLY TODAY'S SIGNALS) */}
-                <section className={`journal-section liquid-glass ${sections.summary ? 'open' : 'collapsed'}`}>
-                    <div className="section-header" onClick={() => toggleSection('summary')}>
-                        <h2>Daily Metabolism (Auto)</h2>
-                        <span className="toggle-arrow">{sections.summary ? '▼' : '▶'}</span>
-                    </div>
-                    {/* HIDE BY DEFAULT IN ENERGY 1 */}
-                    {sections.summary && !isSimplified && (
-                        <div className="section-body summary-grid">
-                            <div className="metric">
-                                <span className="label">Focus Efficiency</span>
-                                <span className="value">{entry.snapshots?.avgFriction || "Calculating..."}</span>
-                            </div>
-                            <div className="metric">
-                                <span className="label">Focus Volume</span>
-                                <span className="value">{entry.snapshots?.totalFocusMinutes || 0} min</span>
-                            </div>
-                            <div className="metric">
-                                <span className="label">Deep Work</span>
-                                <span className="value">{entry.snapshots?.deepWorkMinutes || 0} min</span>
-                            </div>
-                            <div className="metric">
-                                <span className="label">Dominant PINCH Driver</span>
-                                <span className="value">{entry.snapshots?.dominantDriver || "Driver unclear"}</span>
-                            </div>
-                        </div>
-                    )}
-                </section>
-
-                {/* IDENTITY REINFORCED TODAY */}
-                <section className="journal-section liquid-glass open">
-                    <div className="section-header">
-                        <h2>Identity Reinforced Today</h2>
-                    </div>
-                    {/* HIDE BY DEFAULT IN ENERGY 1 */}
-                    {!isSimplified && (
-                        <div className="section-body">
-                        {Object.keys(todayAreaLog).length > 0 || Object.keys(todayRepLog).length > 0 ? (
-                            <div className="identity-log-list" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {Object.entries(todayAreaLog).map(([areaId, entry]) => {
-                                    const areaName = areas[areaId] || areaId;
-                                    const isExpanded = expandedAreas[areaId];
-                                    const areaGroups = completedGroups[areaId] || {};
-                                    const isDone = entry.status === 'done';
-
-                                    return (
-                                        <div key={areaId} className="identity-log-container">
-                                            <div 
-                                                className={`identity-log-item liquid-glass ${isExpanded ? 'active' : ''}`} 
-                                                onClick={() => toggleAreaExpansion(areaId)}
-                                                style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    padding: '12px 16px',
-                                                    borderRadius: '8px',
-                                                    fontSize: '14px',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease',
-                                                    opacity: isDone ? 1 : 0.85
-                                                }}
-                                            >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
-                                                        {isDone ? '✓' : '•'} {areaName}
-                                                    </span>
-                                                    <span style={{ 
-                                                        fontSize: '10px', 
-                                                        opacity: 0.5,
-                                                        transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                                                        transition: 'transform 0.2s ease'
-                                                    }}>▶</span>
-                                                </div>
-                                                <span style={{ color: 'var(--color-primary)', fontWeight: '700' }}>
-                                                    {isDone ? `× ${entry.count}` : 'Activity'}
-                                                </span>
-                                            </div>
-
-                                            {isExpanded && (
-                                                <div className="area-details">
-                                                    {Object.entries(areaGroups).map(([skillId, skillGroup]) => (
-                                                        <div key={skillId} className="skill-group">
-                                                            <div className="skill-group-header">
-                                                                <span className="skill-group-name">{skillGroup.name}</span>
-                                                            </div>
-                                                            <div className="skill-task-list">
-                                                                {skillGroup.tasks.map(task => (
-                                                                    <div key={task.id} className="completed-task-item">
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                            <span className="task-title">{task.name}</span>
-                                                                            {task.status === 'in_progress' && (
-                                                                                <span className="identity-badge-inprogress">In Progress</span>
-                                                                            )}
-                                                                        </div>
-                                                                        <div className="task-meta">
-                                                                            {task.sessionMinutes > 0 && (
-                                                                                <span className="task-session-minutes">
-                                                                                    {(() => {
-                                                                                        const mins = task.sessionMinutes;
-                                                                                        if (mins >= 60) {
-                                                                                            const h = Math.floor(mins / 60);
-                                                                                            const m = mins % 60;
-                                                                                            return `${h}h ${m}m`;
-                                                                                        }
-                                                                                        return `${mins}m`;
-                                                                                    })()} focus
-                                                                                </span>
-                                                                            )}
-                                                                            <span className="task-completion-time">
-                                                                                {new Date(task.completionTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    {Object.keys(areaGroups).length === 0 && (
-                                                        <div className="no-tasks-hint">No direct task completions detected for this area today.</div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                                {Object.entries(todayRepLog).map(([taskId, { name, count }]) => (
-                                    <div key={taskId} className="identity-log-item liquid-glass" style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '12px 16px',
-                                        borderRadius: '8px',
-                                        fontSize: '14px'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>• {name}</span>
-                                            <span style={{
-                                                fontSize: '11px',
-                                                fontWeight: '600',
-                                                color: 'var(--color-primary)',
-                                                background: 'color-mix(in srgb, var(--color-primary) 12%, transparent)',
-                                                border: '1px solid color-mix(in srgb, var(--color-primary) 30%, transparent)',
-                                                borderRadius: '4px',
-                                                padding: '2px 6px',
-                                                letterSpacing: '0.04em',
-                                                textTransform: 'uppercase'
-                                            }}>Rep</span>
-                                        </div>
-                                        <span style={{ color: 'var(--color-primary)', fontWeight: '700' }}>× {count}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="no-data-message" style={{ color: 'var(--text-secondary)', fontSize: '14px', opacity: '0.6' }}>
-                                No identities reinforced yet today. Focus on a skill to begin.
-                            </div>
-                        )}
-                    </div>
-                    )}
-                </section>
-
-
-                {/* SECTION 3: AI REFLECTION */}
-                <section className={`journal-section liquid-glass ${sections.reflection ? 'open' : 'collapsed'}`}>
-                    <div className="section-header" onClick={() => toggleSection('reflection')}>
-                        <h2>AI Reflection</h2>
-                        <span className="toggle-arrow">{sections.reflection ? '▼' : '▶'}</span>
-                    </div>
-                    {sections.reflection && (
-                        <div className="section-body">
-                            <button className="ai-btn" disabled={true}>Generate Reflection (Soon)</button>
-                            <div className="reflection-placeholder">
-                                Reflection analysis will appear here. No sensitive data is sent.
-                            </div>
-                        </div>
-                    )}
                 </section>
             </main>
         </div>

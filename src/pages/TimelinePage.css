@@ -24,10 +24,7 @@
     font-size: 2.5rem;
     font-weight: 800;
     margin-bottom: 8px;
-    background: linear-gradient(135deg, #fff 0%, #aaa 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
     letter-spacing: -0.02em;
 }
 
@@ -91,16 +88,25 @@
     overflow: hidden;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08); /* Adjusted to match sidebar border standard */
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    transform: translateZ(0);
 }
 
 .liquid-mode.dark .day-card {
     background: transparent !important;
 }
 
-.day-card.is-today {
-    border: 1.5px solid var(--color-primary);
+.dark.solid-mode .day-card.is-today {
+    border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.light.solid-mode .day-card.is-today {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
 }
 
 .day-card:last-child {
@@ -118,9 +124,9 @@
 }
 
 .summary-pill.highlighted {
-    color: var(--color-primary);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
     font-weight: 800;
 }
 
@@ -146,6 +152,9 @@
     overflow: hidden;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    transform: translateZ(0);
 }
 
 .day-card:last-child {
@@ -185,19 +194,26 @@
     gap: 16px;
     position: relative;
     overflow: hidden;
+.dark.solid-mode .day-card {
     background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
-.day-card:hover {
-    background: rgba(255, 255, 255, 0.05);
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+.light.solid-mode .day-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .day-card.expanded {
     min-width: 450px;
     max-width: 450px;
     background: rgba(255, 255, 255, 0.07);
+}
+
+.light.solid-mode .day-card.expanded {
+    background: #ffffff;
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .day-header {
@@ -209,7 +225,7 @@
 .day-date {
     font-size: 1.2rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
     letter-spacing: -0.01em;
 }
 
@@ -224,9 +240,9 @@
     font-weight: 600;
     padding: 4px 10px;
     border-radius: 100px;
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--alpha-med);
+    color: var(--text-secondary);
+    border: 1px solid var(--color-border);
 }
 
 .expand-hint {
@@ -303,7 +319,7 @@
     margin: 0;
     font-size: 1.05rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text-primary);
     letter-spacing: -0.01em;
 }
 
@@ -356,11 +372,11 @@
 }
 
 .day-content-section h3 {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--color-primary);
-    opacity: 0.9;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    opacity: 0.8;
     font-weight: 800;
     margin: 0;
 }
@@ -382,12 +398,16 @@
 .item-row {
     font-size: 0.95rem;
     padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.03);
     border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-left: 3px solid transparent;
+}
+
+.item-row span:first-child {
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 .liquid-mode.dark .item-row {
@@ -407,8 +427,8 @@
 .duration-tag {
     font-size: 0.8rem;
     font-weight: 700;
-    color: var(--color-secondary);
-    opacity: 0.9;
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
 .journal-note-preview {
@@ -436,7 +456,9 @@
     color: #fff;
     font-size: 1.2rem;
     background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    transform: translateZ(0);
 }
 
 /* Custom Scrollbar for the horizontal cards */
@@ -473,4 +495,81 @@
         min-width: 100%;
         max-width: 100%;
     }
+}
+
+/* ============================================================
+   SOLID LIGHT MODE OVERRIDES
+   ============================================================ */
+
+[data-theme="light"][data-background-mode="solid"] .timeline-header h1 {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .timeline-header p {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .timeline-main-scroller {
+    scrollbar-color: var(--alpha-high) transparent;
+}
+
+[data-theme="light"][data-background-mode="solid"] .day-card {
+    background: var(--color-bg-card);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"][data-background-mode="solid"] .day-card:hover {
+    background: var(--color-bg-card);
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"][data-background-mode="solid"] .day-card.is-today {
+    border-color: var(--color-accent);
+    background: var(--alpha-low);
+}
+
+[data-theme="light"][data-background-mode="solid"] .summary-pill {
+    background: var(--alpha-med);
+    color: var(--text-secondary);
+    border-color: var(--color-border);
+}
+
+[data-theme="light"][data-background-mode="solid"] .summary-pill.highlighted {
+    background: var(--color-accent);
+    color: #fff;
+    border-color: var(--color-accent);
+}
+
+[data-theme="light"][data-background-mode="solid"] .skill-group-section {
+    background: var(--alpha-low);
+}
+
+[data-theme="light"][data-background-mode="solid"] .skill-group-header {
+    background: var(--alpha-med);
+    border-color: var(--color-border);
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .item-row {
+    background: var(--alpha-low);
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .item-row:hover {
+    background: var(--alpha-med);
+}
+
+[data-theme="light"][data-background-mode="solid"] .duration-tag {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .journal-note-preview {
+    border-left-color: var(--alpha-high);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .timeline-loading {
+    background: var(--color-bg-main);
+    color: var(--text-primary);
 }

@@ -191,29 +191,36 @@ video {
 .liquid-glass {
     border-radius: 18px;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    transition: background 0.3s ease, border 0.3s ease;
-
-    /* Optimization: Force GPU layering */
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    perspective: 1000;
-    contain: content;
+    transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Liquid Mode Specifics for Glass Cards & Modals */
+@keyframes webkit-blur-jitter {
+    from { transform: translateZ(0.01px); }
+    to { transform: translateZ(0px); }
+}
+
 .liquid-mode .liquid-glass,
 .liquid-mode .modal-content,
 .liquid-mode .reward-modal,
 .liquid-mode .floating-ui,
 .liquid-mode .popover {
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
 }
+
+.liquid-mode .liquid-glass,
+.liquid-mode .skill-card,
+.liquid-mode .day-card,
+.liquid-mode .area-card {
+    animation: webkit-blur-jitter 0.1s infinite;
+    will-change: backdrop-filter, -webkit-backdrop-filter;
+}
+
 
 .wallpaper-mode .liquid-glass,
 .wallpaper-mode .modal-content,
@@ -224,23 +231,21 @@ video {
 .wallpaper-mode .floating-ui,
 .wallpaper-mode .popover,
 .wallpaper-mode .page-panel {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.20),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .liquid-mode.light .liquid-glass {
-    background: rgba(255, 255, 255, 0.40);
-    border-color: rgba(255, 255, 255, 0.50);
-    backdrop-filter: blur(30px) saturate(140%);
-    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    background: rgba(255, 255, 255, 0.45);
+    border-color: rgba(255, 255, 255, 0.55);
     box-shadow:
         inset 0 1px 1px rgba(255, 255, 255, 0.6),
         0 10px 30px rgba(0, 0, 0, 0.10);
 }
 
-/* Solid Mode Specifics for Cards */
 .solid-mode .liquid-glass {
     background: var(--color-bg-secondary);
     border-color: var(--color-border);
@@ -251,7 +256,7 @@ video {
 
 /* Solid background for hidden backgrounds mode - NO liquid glass effect */
 .solid-bg {
-    background: rgba(20, 20, 20, 0.98);
+    background: var(--color-bg-main);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     border: 1px solid var(--color-border);
@@ -299,12 +304,12 @@ video {
 }
 
 .notion-input:hover {
-    background: rgba(255, 255, 255, 0.03) !important;
+    background: var(--color-bg-hover) !important;
 }
 
 .notion-input:focus {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: var(--color-bg-hover) !important;
+    border-color: var(--color-border) !important;
 }
 
 /* Notion Cover & Header */
@@ -355,7 +360,7 @@ video {
 }
 
 .notion-property-row:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--color-bg-hover);
 }
 
 .notion-property-label {
@@ -416,11 +421,11 @@ video {
 }
 
 .premium-activity-list tr:hover td {
-    background: rgba(255, 255, 255, 0.05);
-    border-top-color: rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-hover);
+    border-top-color: var(--color-border);
     transform: translateY(-2px);
     box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15);
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .list-icon-wrapper {
@@ -581,7 +586,7 @@ video {
 
 .notion-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-border);
     margin: 16px 0;
 }
 
@@ -963,4 +968,8 @@ body.liquid-mode.neutral {
 
 .liquid-mode.neutral .glass-card--amber {
   background: transparent;
+/* Global suppression of emojis in Solid Mode for professional aesthetic */
+[data-background-mode="solid"] .is-emoji {
+    display: none !important;
+}
 }

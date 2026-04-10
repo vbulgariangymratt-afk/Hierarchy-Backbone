@@ -86,7 +86,7 @@ const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon'
         }
 
         return (
-            <span className={className} style={{
+            <span className={`${className} ${!iconUrl && !processedSvg ? 'is-emoji' : ''}`} style={{
                 fontSize: (size * 0.8) + 'px',
                 flexShrink: 0,
                 display: 'flex',

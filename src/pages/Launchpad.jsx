@@ -92,9 +92,10 @@ const Launchpad = () => {
     }, [backbone]);
 
     const handleHabitComplete = useCallback(async (habitId) => {
-        await habitService.completeHabit(habitId);
-        // fetchData will be called via repository subscription
-    }, [habitService]);
+        // The HabitCard now handles its own completeHabit call to capture friction.
+        // We just need to wait for the repository to notify us (handled by subscription).
+        console.log("Launchpad: Habit completion detected for", habitId);
+    }, []);
 
     if (data.loading) {
         return (

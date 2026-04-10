@@ -292,408 +292,410 @@ const Sidebar = ({ onSkillClick }) => {
     };
 
     return (
-        <aside className={`sidebar ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''}`}>
-            <div className="sidebar-top">
-                <button
-                    className="mode-toggle-btn"
-                    onClick={toggleMode}
-                    disabled={storeLoading}
-                >
-                    <div className="btn-icon">
-                        <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={16} />
+        <aside className={`sidebar ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''}`} data-tauri-drag-region>
+            <div className="sidebar-scroll-content">
+                <div className="sidebar-top">
+                    <button
+                        className="mode-toggle-btn"
+                        onClick={toggleMode}
+                        disabled={storeLoading}
+                    >
+                        <div className="btn-icon">
+                            <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={16} />
+                        </div>
+                        <span className="btn-text">
+                            {isFocusMode ? 'Focus Mode' : 'Planning Mode'}
+                        </span>
+                        <div className="btn-status-indicator"></div>
+                    </button>
+                    
+                    {/* Energy Level Selector */}
+                    <div className="energy-selector-container">
+                        <div className="energy-label">Energy</div>
+                        <div className="energy-pills">
+                            {[1, 2, 3, 4, 5].map(level => (
+                                <button
+                                    key={level}
+                                    className={`energy-pill ${energyLevel === level ? 'active' : ''}`}
+                                    onClick={() => updateEnergyLevel(level)}
+                                    title={`Set Energy to ${level}`}
+                                >
+                                    {level}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <span className="btn-text">
-                        {isFocusMode ? 'Focus Mode' : 'Planning Mode'}
-                    </span>
-                    <div className="btn-status-indicator"></div>
-                </button>
-                
-                {/* Energy Level Selector */}
-                <div className="energy-selector-container">
-                    <div className="energy-label">Energy</div>
-                    <div className="energy-pills">
-                        {[1, 2, 3, 4, 5].map(level => (
-                            <button
-                                key={level}
-                                className={`energy-pill ${energyLevel === level ? 'active' : ''}`}
-                                onClick={() => updateEnergyLevel(level)}
-                                title={`Set Energy to ${level}`}
-                            >
-                                {level}
-                            </button>
-                        ))}
-                    </div>
-                </div>
 
-                <nav className="sidebar-nav">
-                    {!isFocusMode ? (
-                        /* PLANNING MODE SIDEBAR CONTENT */
-                        <>
-                            <NavLink to="/launchpad" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                <span className="btn-icon">
-                                    <NodeIcon iconUrl={SVG_ICONS.LAUNCHPAD} size={16} />
-                                </span>
-                                <span className="btn-text">Launchpad</span>
-                            </NavLink>
-
-
-                            {energyLevel >= 3 && (
-                                <NavLink to="/marketplace" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <nav className="sidebar-nav">
+                        {!isFocusMode ? (
+                            /* PLANNING MODE SIDEBAR CONTENT */
+                            <>
+                                <NavLink to="/launchpad" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                     <span className="btn-icon">
-                                        <NodeIcon iconUrl={SVG_ICONS.MARKETPLACE} size={16} />
+                                        <NodeIcon iconUrl={SVG_ICONS.LAUNCHPAD} size={16} />
                                     </span>
-                                    <span className="btn-text">Marketplace</span>
+                                    <span className="btn-text">Launchpad</span>
                                 </NavLink>
-                            )}
-
-                            <NavLink to="/journal" className={({ isActive }) => `nav-item journal-nav ${isActive ? 'active' : ''}`}>
-                                <span className="btn-icon">
-                                    <NodeIcon iconUrl={SVG_ICONS.JOURNAL} size={16} />
-                                </span>
-                                <span className="btn-text">Journal</span>
-                            </NavLink>
-
-                            <NavLink to="/calendar" className={({ isActive }) => `nav-item timeline-nav ${isActive ? 'active' : ''}`}>
-                                <span className="btn-icon">
-                                    <NodeIcon iconUrl={SVG_ICONS.TIMELINE} size={16} />
-                                </span>
-                                <span className="btn-text">Timeline</span>
-                            </NavLink>
 
 
-                            {/* FOCUS SLOTS SECTION (Partially visible in Energy 2, hidden in Energy 1) */}
-                            {energyLevel >= 2 && (
-                                <div className={`sidebar-section focus-slots-section ${energyLevel === 2 ? 'ghosted-focus' : ''}`}>
-                                    <div className="section-title-container">
-                                        <span className="section-title-static">Focus</span>
-                                        <Link 
-                                            to="/focus-center" 
-                                            className="header-action-btn"
-                                            onClick={(e) => e.stopPropagation()}
-                                            title="Manage Focus Slots"
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                                            </svg>
-                                        </Link>
-                                    </div>
-                                    <div className="section-content">
-                                        {focusSlots.map((slotId, idx) => {
-                                            const skill = slotSkills[slotId];
-                                            const role = SLOT_ROLES[idx];
-                                            
-                                            // Compute engagement status from pre-computed map
-                                            const engagement = slotId ? engagementMap[slotId] : null;
+                                {energyLevel >= 3 && (
+                                    <NavLink to="/marketplace" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                                        <span className="btn-icon">
+                                            <NodeIcon iconUrl={SVG_ICONS.MARKETPLACE} size={16} />
+                                        </span>
+                                        <span className="btn-text">Marketplace</span>
+                                    </NavLink>
+                                )}
 
-                                            return (
-                                                <div 
-                                                    key={idx} 
-                                                    className={`nav-item slot-nav-item ${!slotId ? 'empty' : ''}`}
-                                                    onClick={() => {
-                                                        if (slotId) {
-                                                            if (onSkillClick) onSkillClick(skill);
-                                                            else navigate(`/skill/${slotId}`);
-                                                        } else {
-                                                            navigate('/focus-center');
-                                                        }
-                                                    }}
-                                                >
-                                                     {/* Standardized Icon Rail Wrapper for Dots */}
-                                                     <span className="btn-icon">
-                                                         {engagement ? (
-                                                             <HealthTooltip engagement={engagement}>
-                                                                 <div className={`health-dot ${engagement.status}`} />
-                                                             </HealthTooltip>
-                                                         ) : (
-                                                             /* Empty Slot Placeholder Icon space holder */
-                                                             <div className="dot-placeholder" />
-                                                         )}
-                                                     </span>
-                                                     <span className="btn-text">
-                                                         {skill?.name || (
-                                                             guidedSlotRoles
-                                                                 ? <span className="slot-role-inline">{role.shortLabel}</span>
-                                                                 : 'Empty Slot'
-                                                         )}
-                                                     </span>
-                                                </div>
-                                            );
-                                        })}
-                                        {/* Emojis and manage button removed for header relocation */}
-                                    </div>
-                                </div>
-                            )}
+                                <NavLink to="/journal" className={({ isActive }) => `nav-item journal-nav ${isActive ? 'active' : ''}`}>
+                                    <span className="btn-icon">
+                                        <NodeIcon iconUrl={SVG_ICONS.JOURNAL} size={16} />
+                                    </span>
+                                    <span className="btn-text">Journal</span>
+                                </NavLink>
 
-                            {/* KEEP IT ALIVE — Pilot Light Drawer */}
-                            {maintenanceEnabled && maintenanceSkillIds.length > 0 && (
-                                <div className="sidebar-section maintenance-section">
-                                    <div
-                                        className="section-title-container"
-                                        onClick={toggleMaintenance}
-                                    >
-                                        <span className="section-title-static">Keep It Alive</span>
-                                    </div>
+                                <NavLink to="/calendar" className={({ isActive }) => `nav-item timeline-nav ${isActive ? 'active' : ''}`}>
+                                    <span className="btn-icon">
+                                        <NodeIcon iconUrl={SVG_ICONS.TIMELINE} size={16} />
+                                    </span>
+                                    <span className="btn-text">Timeline</span>
+                                </NavLink>
 
-                                    {/* Pilot Light Drawer forced expanded in low energy */}
-                                    {(isMaintenanceExpanded || energyLevel <= 2) && (
-                                        <div className="pilot-drawer">
 
-                                            {/* ── SPOTLIGHT ── */}
-                                            {spotlightHabits.length > 0 && (
-                                                <div className="pilot-spotlight-list">
-                                                    {spotlightHabits.map(h => (
-                                                        <SidebarSpotlightCard 
-                                                            key={h.id}
-                                                            habit={h}
-                                                            skill={maintenanceSkills.find(s => s.id === h._maintenanceSkillId)}
-                                                            isCompleting={completingHabitId === h.id}
-                                                            onNavigate={navigate}
-                                                            onComplete={handleHabitComplete}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
+                                {/* FOCUS SLOTS SECTION (Partially visible in Energy 2, hidden in Energy 1) */}
+                                {energyLevel >= 2 && (
+                                    <div className={`sidebar-section focus-slots-section ${energyLevel === 2 ? 'ghosted-focus' : ''}`}>
+                                        <div className="section-title-container">
+                                            <span className="section-title-static">Focus</span>
+                                            <Link 
+                                                to="/focus-center" 
+                                                className="header-action-btn"
+                                                onClick={(e) => e.stopPropagation()}
+                                                title="Manage Focus Slots"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                </svg>
+                                            </Link>
+                                        </div>
+                                        <div className="section-content">
+                                            {focusSlots.map((slotId, idx) => {
+                                                const skill = slotSkills[slotId];
+                                                const role = SLOT_ROLES[idx];
+                                                
+                                                // Compute engagement status from pre-computed map
+                                                const engagement = slotId ? engagementMap[slotId] : null;
 
-                                            {/* ── PILOT LIGHTS ── */}
-                                            {maintenanceSkills.map(skill => {
-                                                const skillPilots = pilotLightsBySkill[skill.id] || [];
-                                                const hasNoHabits = skillsWithNoHabits.some(s => s.id === skill.id);
-                                                // Skip rendering this group if it has neither pilots nor no-habits fallback
-                                                // (all its habits are in spotlight)
-                                                const inSpotlight = spotlightHabits.filter(h => h._maintenanceSkillId === skill.id);
-                                                if (!hasNoHabits && skillPilots.length === 0 && inSpotlight.length > 0) return null;
-
-                                                // Don't render a pilot group if all habits are in spotlight and there's no fallback
-                                                if (!hasNoHabits && skillPilots.length === 0) return null;
-
-                                                 return (
-                                                    <div key={skill.id} className="pilot-skill-group">
-                                                        <div
-                                                            className="pilot-skill-label"
-                                                            onClick={() => navigate(`/skill/${skill.id}`)}
-                                                        >
-                                                            <span className="btn-icon">
-                                                                {(() => {
-                                                                    const engagement = engagementMap[skill.id];
-                                                                    if (!engagement) return <div className="dot-placeholder" />;
-                                                                    return (
-                                                                        <HealthTooltip engagement={engagement}>
-                                                                            <div className={`health-dot ${engagement.status}`} />
-                                                                        </HealthTooltip>
-                                                                    );
-                                                                })()}
-                                                            </span>
-                                                            <span className="btn-text">{skill.name}</span>
-                                                        </div>
-
-                                                        <div className="pilot-chips">
-                                                            {hasNoHabits ? (
-                                                                <div className="pilot-fallback">
-                                                                    Open this skill for {formatDuration(2, 'minutes')}
-                                                                </div>
+                                                return (
+                                                    <div 
+                                                        key={idx} 
+                                                        className={`nav-item slot-nav-item ${!slotId ? 'empty' : ''}`}
+                                                        onClick={() => {
+                                                            if (slotId) {
+                                                                if (onSkillClick) onSkillClick(skill);
+                                                                else navigate(`/skill/${slotId}`);
+                                                            } else {
+                                                                navigate('/focus-center');
+                                                            }
+                                                        }}
+                                                    >
+                                                        {/* Standardized Icon Rail Wrapper for Dots */}
+                                                        <span className="btn-icon">
+                                                            {engagement ? (
+                                                                <HealthTooltip engagement={engagement}>
+                                                                    <div className={`health-dot ${engagement.status}`} />
+                                                                </HealthTooltip>
                                                             ) : (
-                                                                skillPilots.map(h => {
-                                                                    const prog = habitService.getHabitProgress(h);
-                                                                    return (
-                                                                        <button
-                                                                            key={h.id}
-                                                                            className={`pilot-chip ${prog.isDone ? 'done' : ''}`}
-                                                                            title={`Promote to spotlight: ${h.ifTrigger}`}
-                                                                            onClick={() => promoteToSpotlight(h.id)}
-                                                                        >
-                                                                            <span className="pilot-chip-name">{h.ifTrigger}</span>
-                                                                            <HabitEvolutionGauge habitId={h.id} compact={true} />
-                                                                            {prog.isDone && <span className="pilot-chip-check">✓</span>}
-                                                                        </button>
-                                                                    );
-                                                                })
+                                                                /* Empty Slot Placeholder Icon space holder */
+                                                                <div className="dot-placeholder" />
                                                             )}
-                                                        </div>
+                                                        </span>
+                                                        <span className="btn-text">
+                                                            {skill?.name || (
+                                                                guidedSlotRoles
+                                                                    ? <span className="slot-role-inline">{role.shortLabel}</span>
+                                                                    : 'Empty Slot'
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 );
                                             })}
-
-                                            {/* ── ALL DONE STATE ── */}
-                                            {spotlightHabits.length === 0 && pilotLightHabits.length === 0 && skillsWithNoHabits.length === 0 && (
-                                                <div className="maintenance-all-done">
-                                                    {energyLevel <= 2 && maintenanceSkills.length > 0 ? (
-                                                        <div className="low-energy-instruction">
-                                                            <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Open: {maintenanceSkills[0].name}</div>
-                                                            <div style={{ fontSize: '11px', opacity: 0.6 }}>Just 2 minutes of focus.</div>
-                                                        </div>
-                                                    ) : (
-                                                        "Everything is alive today."
-                                                    )}
-                                                </div>
-                                            )}
+                                            {/* Emojis and manage button removed for header relocation */}
                                         </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Collapsible Life Areas Section */}
-                            {energyLevel >= 3 && (
-                                <div className="sidebar-section life-areas-section">
-                                    <div
-                                        className="section-title-container"
-                                        onClick={() => setIsAreasExpanded(!isAreasExpanded)}
-                                    >
-                                        <span className="section-title-static">Life Areas</span>
                                     </div>
+                                )}
 
-                                    {isAreasExpanded && (
-                                        <div className="section-content">
-                                            {lifeAreas
-                                                .filter(area => area.name !== 'System Root')
-                                                .map(area => (
-                                                <NavLink
-                                                    key={area.id}
-                                                    to={`/area/${area.id}`}
-                                                    className={({ isActive }) => `nav-item area-item ${isActive ? 'active' : ''}`}
-                                                >
-                                                    <div
-                                                        role="button"
-                                                        tabIndex={0}
-                                                        className="btn-icon editable-icon-trigger"
-                                                        title="Click to change icon"
-                                                        onClick={(e) => handleIconClick(e, area)}
-                                                        onMouseDown={(e) => e.stopPropagation()}
-                                                        style={{ border: 'none', background: 'none', padding: 0, margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                    >
-                                                        <NodeIcon
-                                                            iconUrl={area.metadata?.iconUrl}
-                                                            defaultIcon="🌐"
-                                                        />
-                                                        {editingIconNode?.id === area.id && (
-                                                            <div className="icon-edit-popover" onClick={e => e.stopPropagation()}>
-                                                                <div className="popover-header">Change Icon</div>
-                                                                <input
-                                                                    autoFocus
-                                                                    className="popover-input"
-                                                                    placeholder="Paste icon URL..."
-                                                                    value={tempIconUrl}
-                                                                    onChange={e => setTempIconUrl(e.target.value)}
-                                                                    onKeyDown={e => {
-                                                                        if (e.key === 'Enter') handleSaveIcon(e);
-                                                                        if (e.key === 'Escape') setEditingIconNode(null);
-                                                                    }}
-                                                                />
-                                                                <div className="popover-preview">
-                                                                    <NodeIcon iconUrl={tempIconUrl} size={24} />
-                                                                </div>
-                                                                <div className="popover-actions">
-                                                                    <button className="confirm-btn" onClick={handleSaveIcon}>Save</button>
-                                                                    <button className="cancel-btn" onClick={() => setEditingIconNode(null)}>Cancel</button>
-                                                                </div>
+                                {/* KEEP IT ALIVE — Pilot Light Drawer */}
+                                {maintenanceEnabled && maintenanceSkillIds.length > 0 && (
+                                    <div className="sidebar-section maintenance-section">
+                                        <div
+                                            className="section-title-container"
+                                            onClick={toggleMaintenance}
+                                        >
+                                            <span className="section-title-static">Keep It Alive</span>
+                                        </div>
+
+                                        {/* Pilot Light Drawer forced expanded in low energy */}
+                                        {(isMaintenanceExpanded || energyLevel <= 2) && (
+                                            <div className="pilot-drawer">
+
+                                                {/* ── SPOTLIGHT ── */}
+                                                {spotlightHabits.length > 0 && (
+                                                    <div className="pilot-spotlight-list">
+                                                        {spotlightHabits.map(h => (
+                                                            <SidebarSpotlightCard 
+                                                                key={h.id}
+                                                                habit={h}
+                                                                skill={maintenanceSkills.find(s => s.id === h._maintenanceSkillId)}
+                                                                isCompleting={completingHabitId === h.id}
+                                                                onNavigate={navigate}
+                                                                onComplete={handleHabitComplete}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* ── PILOT LIGHTS ── */}
+                                                {maintenanceSkills.map(skill => {
+                                                    const skillPilots = pilotLightsBySkill[skill.id] || [];
+                                                    const hasNoHabits = skillsWithNoHabits.some(s => s.id === skill.id);
+                                                    // Skip rendering this group if it has neither pilots nor no-habits fallback
+                                                    // (all its habits are in spotlight)
+                                                    const inSpotlight = spotlightHabits.filter(h => h._maintenanceSkillId === skill.id);
+                                                    if (!hasNoHabits && skillPilots.length === 0 && inSpotlight.length > 0) return null;
+
+                                                    // Don't render a pilot group if all habits are in spotlight and there's no fallback
+                                                    if (!hasNoHabits && skillPilots.length === 0) return null;
+
+                                                    return (
+                                                        <div key={skill.id} className="pilot-skill-group">
+                                                            <div
+                                                                className="pilot-skill-label"
+                                                                onClick={() => navigate(`/skill/${skill.id}`)}
+                                                            >
+                                                                <span className="btn-icon">
+                                                                    {(() => {
+                                                                        const engagement = engagementMap[skill.id];
+                                                                        if (!engagement) return <div className="dot-placeholder" />;
+                                                                        return (
+                                                                            <HealthTooltip engagement={engagement}>
+                                                                                <div className={`health-dot ${engagement.status}`} />
+                                                                            </HealthTooltip>
+                                                                        );
+                                                                    })()}
+                                                                </span>
+                                                                <span className="btn-text">{skill.name}</span>
                                                             </div>
+
+                                                            <div className="pilot-chips">
+                                                                {hasNoHabits ? (
+                                                                    <div className="pilot-fallback">
+                                                                        Open this skill for {formatDuration(2, 'minutes')}
+                                                                    </div>
+                                                                ) : (
+                                                                    skillPilots.map(h => {
+                                                                        const prog = habitService.getHabitProgress(h);
+                                                                        return (
+                                                                            <button
+                                                                                key={h.id}
+                                                                                className={`pilot-chip ${prog.isDone ? 'done' : ''}`}
+                                                                                title={`Promote to spotlight: ${h.ifTrigger}`}
+                                                                                onClick={() => promoteToSpotlight(h.id)}
+                                                                            >
+                                                                                <span className="pilot-chip-name">{h.ifTrigger}</span>
+                                                                                <HabitEvolutionGauge habitId={h.id} compact={true} />
+                                                                                {prog.isDone && <span className="pilot-chip-check">✓</span>}
+                                                                            </button>
+                                                                        );
+                                                                    })
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+
+                                                {/* ── ALL DONE STATE ── */}
+                                                {spotlightHabits.length === 0 && pilotLightHabits.length === 0 && skillsWithNoHabits.length === 0 && (
+                                                    <div className="maintenance-all-done">
+                                                        {energyLevel <= 2 && maintenanceSkills.length > 0 ? (
+                                                            <div className="low-energy-instruction">
+                                                                <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Open: {maintenanceSkills[0].name}</div>
+                                                                <div style={{ fontSize: '11px', opacity: 0.6 }}>Just 2 minutes of focus.</div>
+                                                            </div>
+                                                        ) : (
+                                                            "Everything is alive today."
                                                         )}
                                                     </div>
-                                                    <span className="btn-text">{area.name}</span>
-                                                    {area.isActive && (
-                                                        <span className="area-dot" title="Active in Launchpad"></span>
-                                                    )}
-                                                </NavLink>
-                                            ))}
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
-                                            {isAddingArea ? (
-                                                <input
-                                                    autoFocus
-                                                    className="new-area-input"
-                                                    placeholder="Area name..."
-                                                    value={newAreaName}
-                                                    onChange={(e) => setNewAreaName(e.target.value)}
-                                                    onKeyDown={handleCreateArea}
-                                                    onBlur={() => { setIsAddingArea(false); setNewAreaName(''); }}
-                                                />
-                                            ) : (
-                                                <button
-                                                    className="nav-item new-area-btn"
-                                                    onClick={() => setIsAddingArea(true)}
-                                                >
-                                                    <span className="btn-icon">
-                                                        <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
-                                                    </span>
-                                                    <span className="btn-text">New Area</span>
-                                                </button>
-                                            )}
+                                {/* Collapsible Life Areas Section */}
+                                {energyLevel >= 3 && (
+                                    <div className="sidebar-section life-areas-section">
+                                        <div
+                                            className="section-title-container"
+                                            onClick={() => setIsAreasExpanded(!isAreasExpanded)}
+                                        >
+                                            <span className="section-title-static">Life Areas</span>
                                         </div>
-                                    )}
+
+                                        {isAreasExpanded && (
+                                            <div className="section-content">
+                                                {lifeAreas
+                                                    .filter(area => area.name !== 'System Root')
+                                                    .map(area => (
+                                                    <NavLink
+                                                        key={area.id}
+                                                        to={`/area/${area.id}`}
+                                                        className={({ isActive }) => `nav-item area-item ${isActive ? 'active' : ''}`}
+                                                    >
+                                                        <div
+                                                            role="button"
+                                                            tabIndex={0}
+                                                            className="btn-icon editable-icon-trigger"
+                                                            title="Click to change icon"
+                                                            onClick={(e) => handleIconClick(e, area)}
+                                                            onMouseDown={(e) => e.stopPropagation()}
+                                                            style={{ border: 'none', background: 'none', padding: 0, margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                        >
+                                                            <NodeIcon
+                                                                iconUrl={area.metadata?.iconUrl}
+                                                                defaultIcon="🌐"
+                                                            />
+                                                            {editingIconNode?.id === area.id && (
+                                                                <div className="icon-edit-popover" onClick={e => e.stopPropagation()}>
+                                                                    <div className="popover-header">Change Icon</div>
+                                                                    <input
+                                                                        autoFocus
+                                                                        className="popover-input"
+                                                                        placeholder="Paste icon URL..."
+                                                                        value={tempIconUrl}
+                                                                        onChange={e => setTempIconUrl(e.target.value)}
+                                                                        onKeyDown={e => {
+                                                                            if (e.key === 'Enter') handleSaveIcon(e);
+                                                                            if (e.key === 'Escape') setEditingIconNode(null);
+                                                                        }}
+                                                                    />
+                                                                    <div className="popover-preview">
+                                                                        <NodeIcon iconUrl={tempIconUrl} size={24} />
+                                                                    </div>
+                                                                    <div className="popover-actions">
+                                                                        <button className="confirm-btn" onClick={handleSaveIcon}>Save</button>
+                                                                        <button className="cancel-btn" onClick={() => setEditingIconNode(null)}>Cancel</button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <span className="btn-text">{area.name}</span>
+                                                        {area.isActive && (
+                                                            <span className="area-dot" title="Active in Launchpad"></span>
+                                                        )}
+                                                    </NavLink>
+                                                ))}
+
+                                                {isAddingArea ? (
+                                                    <input
+                                                        autoFocus
+                                                        className="new-area-input"
+                                                        placeholder="Area name..."
+                                                        value={newAreaName}
+                                                        onChange={(e) => setNewAreaName(e.target.value)}
+                                                        onKeyDown={handleCreateArea}
+                                                        onBlur={() => { setIsAddingArea(false); setNewAreaName(''); }}
+                                                    />
+                                                ) : (
+                                                    <button
+                                                        className="nav-item new-area-btn"
+                                                        onClick={() => setIsAddingArea(true)}
+                                                    >
+                                                        <span className="btn-icon">
+                                                            <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
+                                                        </span>
+                                                        <span className="btn-text">New Area</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            /* FOCUS MODE SIDEBAR CONTENT (Refined) */
+                            <div className="focus-sidebar-placeholder">
+                                <div className="nav-item active">
+                                    <span className="btn-icon">
+                                        <div className="health-dot active" />
+                                    </span>
+                                    <span className="btn-text">Active Session</span>
                                 </div>
-                            )}
-                        </>
-                    ) : (
-                        /* FOCUS MODE SIDEBAR CONTENT (Refined) */
-                        <div className="focus-sidebar-placeholder">
-                            <div className="nav-item active">
-                                <span className="btn-icon">
-                                    <div className="health-dot active" />
-                                </span>
-                                <span className="btn-text">Active Session</span>
+                                <p className="placeholder-hint">Focus mode active...</p>
                             </div>
-                            <p className="placeholder-hint">Focus mode active...</p>
-                        </div>
-                    )}
-                </nav>
-            </div>
-
-            <div className="hryvnia-display">
-                <span className="hryvnia-icon">₴</span>
-                <span className="hryvnia-amount">{hryvniaBalance}</span>
-            </div>
-
-            <div className="sidebar-bottom">
-
-                {/* Theme Toggle Button */}
-                <button className="nav-item theme-toggle-sidebar" onClick={toggleTheme}>
-                    <span className="btn-icon">
-                        <NodeIcon 
-                            iconUrl={theme === 'dark' ? SVG_ICONS.MOON : SVG_ICONS.SUN} 
-                            size={16} 
-                        />
-                    </span>
-                    <span className="btn-text">
-                        {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-                    </span>
-                </button>
-
-                {/* Unified Appearance Segmented Control */}
-                <div className="segmented-control-container">
-                    <label className="segmented-control-label">Appearance</label>
-                    <div className="segmented-control">
-                        <button
-                            title="Solid background mode"
-                            className={`segmented-control-item ${backgroundMode === 'solid' ? 'active' : ''}`}
-                            onClick={() => setBackgroundMode('solid')}
-                        >
-                            Solid
-                        </button>
-                        <button
-                            title="Liquid glass background mode"
-                            className={`segmented-control-item ${backgroundMode === 'liquid' ? 'active' : ''}`}
-                            onClick={() => setBackgroundMode('liquid')}
-                        >
-                            Liquid
-                        </button>
-                        <button
-                            title="Wallpaper background mode"
-                            className={`segmented-control-item ${backgroundMode === 'wallpaper' ? 'active' : ''}`}
-                            onClick={() => setBackgroundMode('wallpaper')}
-                        >
-                            Wallpaper
-                        </button>
-                    </div>
+                        )}
+                    </nav>
                 </div>
 
-                {/* Conditional wallpaper URL inputs */}
-                <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />
+                <div className="hryvnia-display">
+                    <span className="hryvnia-icon">₴</span>
+                    <span className="hryvnia-amount">{hryvniaBalance}</span>
+                </div>
 
-                <Link to="/settings" className="nav-item settings-btn">
-                    <span className="btn-icon">
-                        <NodeIcon iconUrl={SVG_ICONS.SETTINGS} size={16} />
-                    </span>
-                    <span className="btn-text">Settings</span>
-                </Link>
+                <div className="sidebar-bottom">
+
+                    {/* Theme Toggle Button */}
+                    <button className="nav-item theme-toggle-sidebar" onClick={toggleTheme}>
+                        <span className="btn-icon">
+                            <NodeIcon 
+                                iconUrl={theme === 'dark' ? SVG_ICONS.MOON : SVG_ICONS.SUN} 
+                                size={16} 
+                            />
+                        </span>
+                        <span className="btn-text">
+                            {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                        </span>
+                    </button>
+
+                    {/* Unified Appearance Segmented Control */}
+                    <div className="segmented-control-container">
+                        <label className="segmented-control-label">Appearance</label>
+                        <div className="segmented-control">
+                            <button
+                                title="Solid background mode"
+                                className={`segmented-control-item ${backgroundMode === 'solid' ? 'active' : ''}`}
+                                onClick={() => setBackgroundMode('solid')}
+                            >
+                                Solid
+                            </button>
+                            <button
+                                title="Liquid glass background mode"
+                                className={`segmented-control-item ${backgroundMode === 'liquid' ? 'active' : ''}`}
+                                onClick={() => setBackgroundMode('liquid')}
+                            >
+                                Liquid
+                            </button>
+                            <button
+                                title="Wallpaper background mode"
+                                className={`segmented-control-item ${backgroundMode === 'wallpaper' ? 'active' : ''}`}
+                                onClick={() => setBackgroundMode('wallpaper')}
+                            >
+                                Wallpaper
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Conditional wallpaper URL inputs */}
+                    <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />
+
+                    <Link to="/settings" className="nav-item settings-btn">
+                        <span className="btn-icon">
+                            <NodeIcon iconUrl={SVG_ICONS.SETTINGS} size={16} />
+                        </span>
+                        <span className="btn-text">Settings</span>
+                    </Link>
+                </div>
             </div>
         </aside>
     );

@@ -13,6 +13,7 @@ import { useBackboneStore } from '../store/backboneStore';
 
 // Module-level tracker to prevent redundant reloads on macOS desktop switching (token refresh)
 let _lastKnownUid = null;
+let _isReloading = false;
 
 /**
  * The core "Brain" hook that bootstraps the entire Backbone V2 system.
@@ -51,6 +52,8 @@ export const useAppInitialization = (setSession) => {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         console.log('[AUTH] Initial session:', initialSession ? initialSession.user.email : 'None');
         
+        // Set this BEFORE registering the auth listener so the startup
+        // SIGNED_IN event is treated as a token refresh, not a new login
         if (initialSession?.user?.id) {
           _lastKnownUid = initialSession.user.id;
         }
@@ -58,6 +61,7 @@ export const useAppInitialization = (setSession) => {
         setSession(initialSession);
         setLoading(false);
         setRepositoriesReady(true);
+
 
         // --- STEP 3: Listen for system-level auth state changes ---
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
@@ -69,8 +73,9 @@ export const useAppInitialization = (setSession) => {
             // macOS Performance Fix: Skip re-load if it's just a token refresh
             const isNewUser = newSession.user.id !== _lastKnownUid;
             
-            if (isNewUser) {
+            if (isNewUser && !_isReloading) {
               console.log('[App] SIGNED_IN (New User) — Reloading all data...');
+              _isReloading = true;
               _lastKnownUid = newSession.user.id;
               setRepositoriesReady(false);
               try {
@@ -79,12 +84,14 @@ export const useAppInitialization = (setSession) => {
               } catch (err) {
                 console.error('[App] Reload failed after sign-in:', err);
               } finally {
+                _isReloading = false;
                 setRepositoriesReady(true);
               }
             } else {
-              console.log('[App] SIGNED_IN (Token Refresh) — skipping redundant reload across desktop spaces.');
+              console.log('[App] SIGNED_IN (Token Refresh or Reload in progress) — skipping redundant reload.');
             }
           }
+
 
           if (event === 'SIGNED_OUT') {
             console.log('[App] SIGNED_OUT — clearing all local caches...');

@@ -32,11 +32,7 @@ const DroppableAspect = React.memo(({
             className={`aspect-card ${isOver ? 'drag-over' : ''} ${isUntouched ? 'is-untouched' : ''} ${isNoveltyHighlighted ? 'novelty-highlight' : ''}`}
             transition={macOSSpring}
             style={{
-                borderRadius: CARD_BORDER_RADIUS,
-                willChange: 'transform',
-                WebkitBackfaceVisibility: 'hidden',
-                backfaceVisibility: 'hidden',
-                transform: 'translateZ(0)'
+                borderRadius: CARD_BORDER_RADIUS
             }}
             onClick={(e) => {
                 // Don't toggle if clicking inside the aspect title area (rename interaction)

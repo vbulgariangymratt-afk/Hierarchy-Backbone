@@ -16,9 +16,15 @@ export const createPersistentRepository = () => {
 
     // Internal helper to save to cloud
     const persist = async (nodes) => {
-        const userId = await getUserId();
+        let userId = await getUserId();
         if (!userId) {
-            console.error(`Repository [ID:${instanceId}]: Persist FAILED - No user ID`);
+            // Wait briefly for token refresh and retry once
+            await new Promise(r => setTimeout(r, 1500));
+            userId = await getUserId();
+        }
+
+        if (!userId) {
+            console.error(`Repository [ID:${instanceId}]: Persist FAILED - No user ID after retry`);
             return;
         }
 
@@ -120,7 +126,8 @@ export const createPersistentRepository = () => {
             } else {
                 storage.push(node);
             }
-            await persist(node);
+            const snapshot = JSON.parse(JSON.stringify(node));
+            await persist(snapshot);
             notify();
             return node;
         },
@@ -152,7 +159,8 @@ export const createPersistentRepository = () => {
                 }
 
                 storage[index] = updatedNode;
-                await persist(storage[index]);
+                const snapshot = JSON.parse(JSON.stringify(updatedNode));
+                await persist(snapshot);
                 notify();
                 return storage[index];
             }
@@ -218,6 +226,13 @@ export const createPersistentRepository = () => {
             } catch (e) {
                 console.error('Failed to clear nodes from Supabase:', e);
             }
+        },
+
+        reset: () => {
+            console.log(`Repository [ID:${instanceId}]: RESETTING Repository State`);
+            initPromise = null;
+            storage = [];
+            notify();
         }
     };
 };

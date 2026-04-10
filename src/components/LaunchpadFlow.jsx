@@ -1009,7 +1009,7 @@ const LaunchpadFlow = () => {
                         {energyLevel >= 4 ? (
                             <div className="high-energy-view" style={{ textAlign: 'left', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
                                 <header style={{ marginBottom: '40px', textAlign: 'center' }}>
-                                    <h1 className="flow-title" style={{ fontSize: '24px', color: '#fff', fontWeight: 500, lineHeight: 1.4 }}>
+                                    <h1 className="flow-title themed-flow-title">
                                         Your battery is full. Let’s build something your future self will thank you for.
                                     </h1>
                                 </header>
@@ -1064,15 +1064,15 @@ const LaunchpadFlow = () => {
                                                 filteredList.map(task => (
                                                     <div 
                                                         key={task.id} 
-                                                        style={{ padding: '16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                                                        className="flow-item-row"
                                                         onClick={() => handleStartTask(task)}
                                                     >
-                                                        <span style={{ color: '#eee', fontWeight: 500 }}>{task.name}</span>
-                                                        <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.05)', color: '#666', padding: '4px 8px', borderRadius: '6px' }}>High Energy</span>
+                                                        <span className="flow-item-name">{task.name}</span>
+                                                        <span className="flow-item-label">High Energy</span>
                                                     </div>
                                                 ))
                                             ) : (
-                                                <div style={{ padding: '24px', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)', textAlign: 'center' }}>
+                                                <div className="flow-empty-state">
                                                     <p style={{ color: '#444', fontSize: '14px', margin: 0 }}>No other tasks saved for high energy yet</p>
                                                 </div>
                                             );

@@ -37,15 +37,15 @@ const EnergyModeTag = () => {
                     padding: '6px 14px',
                     borderRadius: '999px',
                     fontSize: '12px',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     letterSpacing: '0.02em',
-                    color: 'rgba(255, 255, 255, 0.95)',
-                    background: background,
+                    color: 'var(--color-bg-main)',
+                    background: 'var(--color-accent)',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    border: '1px solid var(--alpha-high)',
                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    pointerEvents: 'none', // Don't block clicking things underneath
+                    pointerEvents: 'none', 
                     fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}
             >

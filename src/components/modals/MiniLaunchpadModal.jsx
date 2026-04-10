@@ -119,10 +119,10 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
                         <div className="title-group">
                             <h2>{skill?.name}</h2>
                             {skill?.metadata?.identityAnchor && (
-                                <p className="becoming-statement">Becoming: {skill.metadata.identityAnchor}</p>
+                                <p className="becoming-statement"><span className="label-subtle">Becoming:</span> {skill.metadata.identityAnchor}</p>
                             )}
                             {energyLevel >= 3 && activeExp?.metadata?.wish && (
-                                <p className="experiment-wish">Experiment: {activeExp.metadata.wish}</p>
+                                <p className="experiment-wish"><span className="label-subtle">Experiment:</span> {activeExp.metadata.wish}</p>
                             )}
                         </div>
                         <div className="modal-actions-header">

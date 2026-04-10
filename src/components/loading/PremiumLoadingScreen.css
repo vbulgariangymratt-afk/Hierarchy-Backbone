@@ -28,8 +28,6 @@
     
     /* Apple-style Premium Glassmorphism */
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
     
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 44px;
@@ -46,7 +44,6 @@
 [data-theme='light'] .loader-glass {
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(32px) saturate(120%);
     box-shadow: 
         0 20px 50px rgba(0, 0, 0, 0.08),
         inset 0 1px 1px rgba(255, 255, 255, 0.8);

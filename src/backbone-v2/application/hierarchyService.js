@@ -1113,8 +1113,8 @@ export const HierarchyService = (repository, auraService) => {
                 metadata.sessions = [];
                 metadata.orderIndex = metadata.orderIndex || 0;
             } else if (type === NodeTypes.OBJECTIVE) {
-                if (!metadata.theme || !metadata.durationInDays || !metadata.accumulationType || !metadata.mve) {
-                    throw new Error("Objective creation requires Theme, DurationInDays, AccumulationType, and MVE.");
+                if (!metadata.theme || !metadata.accumulationType || !metadata.mve) {
+                    throw new Error("Objective creation requires Theme, AccumulationType, and MVE.");
                 }
                 metadata.status = ObjectiveStatuses.ACTIVE;
                 metadata.isActive = true;
@@ -2314,6 +2314,9 @@ export const HierarchyService = (repository, auraService) => {
                 metadata: { currentUnits: cur }
             });
 
+            // Update momentum (lastWorkedAt on skill ancestor)
+            await updateMomentum(taskId);
+
             // Daily Rep Log: stamp today's increment on ROOT
             const todayStr = new Date().toLocaleDateString('en-CA');
             const rootNode = await repository.getById('ROOT');
@@ -2349,6 +2352,7 @@ export const HierarchyService = (repository, auraService) => {
             }
             return res;
         },
+
 
         updateTaskRepetitionTarget: async (taskId, newTarget) => {
             const task = await repository.getById(taskId);

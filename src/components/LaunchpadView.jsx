@@ -145,7 +145,7 @@ const LaunchpadView = ({
                             <div className="everything-is-alive-message">
                                 {energyLevel <= 2 && maintenanceHabitGroups.length > 0 ? (
                                     <div className="low-energy-instruction">
-                                        <div style={{ fontWeight: 700, fontSize: '18px', color: '#fff', marginBottom: '8px' }}>Open: {maintenanceHabitGroups[0].skill.name}</div>
+                                        <div style={{ fontWeight: 700, fontSize: '18px', color: 'var(--text-primary)', marginBottom: '8px' }}>Open: {maintenanceHabitGroups[0].skill.name}</div>
                                         <div style={{ fontSize: '14px', opacity: 0.6 }}>Just 2 minutes of focus.</div>
                                     </div>
                                 ) : (

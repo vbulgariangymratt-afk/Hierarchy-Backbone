@@ -61,8 +61,6 @@
 
 .liquid-mode .energy-btn {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -116,8 +114,6 @@
 
 .liquid-mode.dark .flow-primary-btn {
     background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
     color: #fff !important;
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
@@ -153,9 +149,18 @@
 .hero-skill-card, .initiation-card, .golden-action-card, .hero-execution-card {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
+    border-radius: 12px; /* Notion-like radius */
     padding: 32px;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark.solid-mode .hero-skill-card, 
+.dark.solid-mode .initiation-card, 
+.dark.solid-mode .golden-action-card,
+.dark.solid-mode .hero-execution-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
 }
 
 .liquid-mode .hero-skill-card, 
@@ -163,8 +168,6 @@
 .liquid-mode .golden-action-card,
 .liquid-mode .hero-execution-card {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -190,8 +193,6 @@
 
 .liquid-mode .flow-skill-chip {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px) saturate(120%);
-    -webkit-backdrop-filter: blur(12px) saturate(120%);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -236,8 +237,6 @@
 
 .liquid-mode .flow-task-btn {
     background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(12px) saturate(120%);
-    -webkit-backdrop-filter: blur(12px) saturate(120%);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -252,4 +251,134 @@
 
 .liquid-mode.dark .flow-task-btn:hover {
     background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ============================================================
+   SOLID LIGHT MODE OVERRIDES
+   ============================================================ */
+
+[data-theme="light"][data-background-mode="solid"] .launchpad-flow-overlay {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-title {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-subtitle {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .energy-btn {
+    background: var(--alpha-low);
+    border-color: var(--color-border);
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .energy-btn:hover {
+    background: var(--alpha-med);
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .energy-btn.selected {
+    background: var(--color-accent);
+    color: #fff;
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-primary-btn {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-primary-btn:hover {
+    background: #222;
+}
+
+[data-theme="light"][data-background-mode="solid"] .hero-skill-card, 
+[data-theme="light"][data-background-mode="solid"] .initiation-card, 
+[data-theme="light"][data-background-mode="solid"] .golden-action-card,
+[data-theme="light"][data-background-mode="solid"] .hero-execution-card {
+    background: var(--color-bg-card);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-skill-chip {
+    background: var(--alpha-low);
+    border-color: var(--color-border);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-skill-chip:hover {
+    background: var(--alpha-med);
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-skill-chip.is-selected {
+    background: var(--color-accent) !important;
+    color: #fff !important;
+    border-color: var(--color-accent) !important;
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-task-btn {
+    background: var(--alpha-low);
+    border-color: var(--color-border);
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .flow-task-btn:hover {
+    background: var(--alpha-med) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--alpha-high) !important;
+}
+
+/* Themed Utility Classes for purging inline styles */
+.themed-flow-title {
+    font-size: 24px !important;
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+}
+
+.flow-item-row {
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--color-border);
+    background: var(--alpha-low);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.flow-item-row:hover {
+    background: var(--alpha-med);
+    border-color: var(--alpha-high);
+}
+
+.flow-item-name {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.flow-item-label {
+    font-size: 10px;
+    background: var(--alpha-high);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 6px;
+}
+
+.flow-empty-state {
+    padding: 24px;
+    border-radius: 16px;
+    border: 1px dashed var(--color-border);
+    background: var(--alpha-low);
+    text-align: center;
 }

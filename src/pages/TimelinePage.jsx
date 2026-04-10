@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { timelineService } from '../backbone-v2';
 import { useSettings } from '../context/SettingsContext';
 import { formatDuration } from '../utils/timeUtils';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import './TimelinePage.css';
 
 const TimelinePage = () => {
@@ -115,7 +116,9 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
                     {totalHabits > 0 && <span className="summary-pill">Habits: {totalHabits}</span>}
                 </div>
                 
-                <span className="expand-hint">{isExpanded ? '▼' : '▶'}</span>
+                <span className="expand-hint">
+                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                </span>
             </div>
 
             {isExpanded && (
@@ -166,13 +169,12 @@ const SkillSection = ({ group, isToday }) => {
         <div className={`skill-group-section ${isCollapsed ? 'collapsed' : ''}`}>
             <div className="skill-group-header" onClick={() => setIsCollapsed(!isCollapsed)}>
                 <div className="skill-group-title">
-                    <span className="skill-icon">⭐</span>
                     <h4>{group.name}</h4>
                     <span className="skill-stats-hint">
                         ({totalTasks > 0 && `tasks: ${totalTasks}`}{totalSessions > 0 && `${totalTasks > 0 ? ', ' : ''}focus: ${totalSessions}`}{totalHabits > 0 && `${(totalTasks > 0 || totalSessions > 0) ? ', ' : ''}habits: ${totalHabits}`})
                     </span>
                 </div>
-                <span className="collapse-arrow">{isCollapsed ? '▶' : '▼'}</span>
+                <span className="collapse-arrow">{isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</span>
             </div>
 
             {!isCollapsed && (
@@ -181,7 +183,7 @@ const SkillSection = ({ group, isToday }) => {
                         <Section title="Accomplished">
                             {group.tasksCompleted.map(t => (
                                 <div key={t.id} className="item-row">
-                                    <span>✓ {t.name}</span>
+                                    <span>{t.name}</span>
                                 </div>
                             ))}
                         </Section>
@@ -191,7 +193,7 @@ const SkillSection = ({ group, isToday }) => {
                         <Section title="Resting (Deferred)">
                             {group.tasksUnfinished.map(t => (
                                 <div key={t.id} className="item-row muted">
-                                    <span>⟲ {t.name}</span>
+                                    <span>{t.name}</span>
                                 </div>
                             ))}
                         </Section>
@@ -204,7 +206,7 @@ const SkillSection = ({ group, isToday }) => {
                         >
                             {group.focusSessions.map((s, i) => (
                                 <div key={i} className="item-row">
-                                    <span>⚡ {s.taskName}</span>
+                                    <span>{s.taskName}</span>
                                     <span className="duration-tag">{formatDuration(s.actualDuration, 'seconds')}</span>
                                 </div>
                             ))}
@@ -215,7 +217,7 @@ const SkillSection = ({ group, isToday }) => {
                         <Section title="Habits Reinforced">
                             {group.habitCompletions.map(h => (
                                 <div key={h.habitId} className="item-row">
-                                    <span>◈ {h.name}</span>
+                                    <span>{h.name}</span>
                                     {h.count > 1 && <span className="duration-tag">×{h.count}</span>}
                                 </div>
                             ))}
@@ -226,7 +228,7 @@ const SkillSection = ({ group, isToday }) => {
                         <Section title="Repetitions">
                             {group.repetitionActivities.map(r => (
                                 <div key={r.taskId} className="item-row">
-                                    <span>↻ {r.name}</span>
+                                    <span>{r.name}</span>
                                     <span className="duration-tag">× {r.count}</span>
                                 </div>
                             ))}

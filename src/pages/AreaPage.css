@@ -66,18 +66,19 @@
     flex-direction: column;
     gap: 20px;
     position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 /* Liquid Mode Specifics */
 .liquid-mode .skill-card,
 .liquid-mode .add-skill-card-btn {
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
 }
 
 .dark.liquid-mode .skill-card,
@@ -88,8 +89,6 @@
 .wallpaper-mode .skill-card,
 .wallpaper-mode .add-skill-card-btn {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -104,6 +103,25 @@
     box-shadow: var(--shadow-sm);
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    border-radius: 12px; /* Cleaner, Notion-like corners */
+}
+
+/* Notion Premium Dark Mode - Skill Cards */
+.dark.solid-mode .skill-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+.light.solid-mode .skill-card {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dark.solid-mode .skill-card::before,
+.light.solid-mode .skill-card::before {
+    display: none !important; /* Remove any glassy highlights */
 }
 
 /* Top-edge highlight reflection / Glass Highlight Layer */
@@ -131,31 +149,50 @@
 }
 
 .skill-card.is-active {
-    background: var(--alpha-low);
-    border-color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.08); /* Slightly more prominent than default */
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10); /* Soft neutral highlight per request */
+}
+
+.dark.solid-mode .skill-card.is-active {
+    background: var(--color-bg-secondary);
+    border-color: rgba(255, 255, 255, 0.06);
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .liquid-mode .skill-card.is-active,
 .wallpaper-mode .skill-card.is-active {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* Removed duplicate block */
 
 .liquid-mode .skill-card:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.12); /* Subtle Notion hover border */
     box-shadow:
-        0 15px 45px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
     transform: translateY(-2px) translateZ(0);
 }
 
 .solid-mode .skill-card:hover {
-    background: var(--alpha-high);
-    border-color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12); /* Brighter border on hover */
     transform: translateY(-2px);
+}
+
+.dark.solid-mode .skill-card:hover {
+    background: #2d2d2d;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.light.solid-mode .skill-card:hover {
+    background: #fcfcfc;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 
@@ -250,6 +287,10 @@
     pointer-events: auto;
 }
 
+.dark.solid-mode .skill-card-footer {
+    border-top-color: rgba(255, 255, 255, 0.03);
+}
+
 .footer-left {
     display: flex;
     gap: 12px;
@@ -295,6 +336,10 @@
     background: var(--color-accent);
 }
 
+.dark.solid-mode .focus-toggle.active .toggle-track {
+    background: rgba(255, 255, 255, 0.4);
+}
+
 .liquid-mode .focus-toggle.active .toggle-track,
 .wallpaper-mode .focus-toggle.active .toggle-track {
     background: rgba(255, 255, 255, 0.3);
@@ -320,6 +365,10 @@
 
 .focus-toggle.active .toggle-label {
     color: var(--color-accent);
+}
+
+.dark.solid-mode .focus-toggle.active .toggle-label {
+    color: #ffffff;
 }
 
 .liquid-mode .focus-toggle.active .toggle-label,
@@ -354,7 +403,7 @@
 .add-skill-card-btn {
     background: rgba(255, 255, 255, 0.01);
     border: 2px dashed rgba(255, 255, 255, 0.05);
-    border-radius: 24px;
+    border-radius: 12px;
     display: grid;
     place-content: center;
     gap: 16px;
@@ -368,15 +417,20 @@
     text-align: center;
 }
 
+.dark.solid-mode .add-skill-card-btn {
+    border-color: rgba(255, 255, 255, 0.03);
+    background: transparent;
+}
+
 .add-skill-card-btn:hover {
     background: rgba(255, 255, 255, 0.03);
-    border-color: var(--color-accent);
-    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
 }
 
 .add-skill-card-btn .plus-icon {
     font-size: 32px;
-    color: var(--color-accent);
+    color: var(--text-muted);
     opacity: 0.6;
 }
 
@@ -395,8 +449,8 @@
 }
 
 .creation-card {
-    border: 1px dashed var(--color-accent) !important;
-    background: var(--alpha-low) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.2) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
 }
 
 .liquid-mode .creation-card,
@@ -430,7 +484,7 @@
 }
 
 .skill-input:focus {
-    border-bottom-color: var(--color-accent);
+    border-bottom-color: rgba(255, 255, 255, 0.2);
 }
 
 .liquid-mode .skill-input:focus,
@@ -478,7 +532,7 @@
 }
 
 .confirm-btn {
-    background: var(--color-accent);
+    background: #444;
     color: white;
     border: none;
     border-radius: 12px;
@@ -497,8 +551,8 @@
 }
 
 .confirm-btn:hover {
-    background: var(--color-accent-hover);
-    transform: scale(1.02);
+    background: #555;
+    transform: translateY(-1px);
 }
 
 .liquid-mode .confirm-btn:hover,
@@ -541,8 +595,6 @@
 .wallpaper-mode .area-page-loading,
 .wallpaper-mode .area-page-error {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -585,8 +637,6 @@
 .wallpaper-mode .skill-card.is-sleeping {
     opacity: 1;
     background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(30px) saturate(160%);
-    -webkit-backdrop-filter: blur(30px) saturate(160%);
 }
 
 .skill-card.is-sleeping:hover {
@@ -626,7 +676,7 @@
 .mini-objective-item .dot {
     width: 4px;
     height: 4px;
-    background: var(--color-accent);
+    background: var(--text-muted);
     border-radius: 50%;
     flex-shrink: 0;
 }
@@ -664,6 +714,11 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.dark.solid-mode .aura-display-new {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
 .aura-header-row {
     display: flex;
     align-items: center;
@@ -680,6 +735,11 @@
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.5px;
+}
+
+.dark.solid-mode .aura-badge-insignia {
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
 }
 
 .aura-stat-container {
@@ -733,6 +793,17 @@
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
 }
 
+.dark.solid-mode .skill-status-btn {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.dark.solid-mode .skill-status-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
 .skill-status-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
@@ -742,8 +813,11 @@
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+}
+
+.dark.solid-mode .skill-status-btn.activate {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
 }
 
 .liquid-mode.dark .skill-status-btn.activate {
@@ -770,8 +844,6 @@
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
 }
 
 .liquid-mode.dark .skill-status-btn.rest {
@@ -782,8 +854,6 @@
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
 }
 
 .liquid-mode.dark .skill-status-btn.sleep {

@@ -42,9 +42,9 @@
 
 .wallpaper-mode .launchpad-loading, .liquid-mode .launchpad-loading {
     background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(22px) saturate(140%);
     -webkit-backdrop-filter: blur(22px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .liquid-mode.dark .launchpad-loading {
@@ -123,8 +123,8 @@
 .liquid-mode .area-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(30px) saturate(140%);
-    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
     box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.16),
         inset 0 1px 1px rgba(255, 255, 255, 0.3);
@@ -136,9 +136,9 @@
 
 .wallpaper-mode .area-card {
     background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(22px) saturate(140%);
     -webkit-backdrop-filter: blur(22px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .liquid-mode.light .area-card {
@@ -508,9 +508,9 @@
 
 .wallpaper-mode .maintenance-card, .liquid-mode .maintenance-card {
     background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(22px) saturate(140%);
     -webkit-backdrop-filter: blur(22px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .liquid-mode.dark .maintenance-card {
@@ -678,9 +678,9 @@
 .liquid-mode .start-day-btn {
     background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(22px) saturate(140%);
     -webkit-backdrop-filter: blur(22px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -828,8 +828,6 @@
 
 .wallpaper-mode .keep-it-alive-group, .liquid-mode .keep-it-alive-group {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -865,8 +863,6 @@
 
 .liquid-mode.dark .keep-it-alive-habit-row {
     background: transparent !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
 }
 
 .keep-it-alive-habit-row .habit-info {
@@ -930,4 +926,149 @@
 
 .liquid-mode.dark .everything-is-alive-message {
     background: transparent !important;
+}
+
+/* ============================================================
+   SOLID LIGHT MODE: FULL UI REFINEMENT
+   ============================================================ */
+
+[data-theme="light"][data-background-mode="solid"] .launchpad-view {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .launchpad-loading {
+    background: var(--color-bg-card);
+    border-color: var(--color-border);
+    color: var(--text-secondary);
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"][data-background-mode="solid"] .header-stat .stat-label {
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .header-stat .stat-value {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .stat-value.aura {
+    background: none;
+    -webkit-text-fill-color: initial;
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .stat-value.hryvnia {
+    color: #059669; /* Balanced emerald */
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-card::before {
+    display: none !important; /* Remove glass glare */
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-card:hover {
+    background: var(--color-bg-card);
+    border-color: var(--alpha-high);
+    box-shadow: var(--shadow-lg);
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-card.is-selected {
+    border-color: var(--color-accent) !important;
+    background: var(--alpha-low) !important;
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-icon-container {
+    background: var(--alpha-med);
+    border-color: var(--color-border);
+}
+
+[data-theme="light"][data-background-mode="solid"] .aura-badge-value {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-name {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .active-marker-dot {
+    background-color: var(--color-accent);
+    box-shadow: 0 0 8px var(--alpha-high);
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-value-statement {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .inviting-action-block {
+    background: var(--alpha-low);
+    border-color: var(--color-border);
+}
+
+[data-theme="light"][data-background-mode="solid"] .area-card:hover .inviting-action-block {
+    background: var(--alpha-med);
+    border-color: var(--alpha-high);
+}
+
+[data-theme="light"][data-background-mode="solid"] .task-highlight {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .action-reward-text {
+    color: #4b5563; /* Neutral slate */
+}
+
+[data-theme="light"][data-background-mode="solid"] .no-task-placeholder {
+    background: var(--alpha-low);
+    border-color: var(--color-border);
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .maint-btn.complete {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+}
+
+[data-theme="light"][data-background-mode="solid"] .maint-btn.complete:hover {
+    background: #333 !important;
+}
+
+[data-theme="light"][data-background-mode="solid"] .maint-btn.replace {
+    border-color: var(--color-border);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .selection-indicator {
+    background: var(--color-accent);
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="light"][data-background-mode="solid"] .selection-indicator .check-icon {
+    color: #fff;
+}
+
+[data-theme="light"][data-background-mode="solid"] .start-day-btn {
+    background: var(--color-accent);
+    color: #fff;
+    box-shadow: var(--shadow-lg);
+}
+
+[data-theme="light"][data-background-mode="solid"] .start-day-btn:hover:not(:disabled) {
+    background: #222;
+}
+
+[data-theme="light"][data-background-mode="solid"] .start-day-btn:disabled {
+    background: var(--alpha-med);
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .everything-is-alive-message {
+    background: var(--alpha-low);
+    border-color: var(--color-border);
+    color: var(--text-secondary);
 }

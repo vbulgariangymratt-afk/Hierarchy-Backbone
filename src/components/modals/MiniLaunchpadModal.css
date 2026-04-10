@@ -5,7 +5,6 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -16,6 +15,10 @@
     background: rgba(0, 0, 0, 0.15) !important;
 }
 
+.solid-mode.dark .mini-launchpad-overlay {
+    background: rgba(0, 0, 0, 0.6) !important; /* Slightly darker overlay for solid mode focus */
+}
+
 .mini-launchpad-modal.glass-panel {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -24,9 +27,101 @@
     width: 440px;
     max-width: 90vw;
     padding: 24px;
-    color: white;
-    backdrop-filter: blur(28px) saturate(160%);
-    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    color: var(--text-primary);
+}
+
+.dark.solid-mode .mini-launchpad-modal.glass-panel {
+    background: rgb(28, 28, 28) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 12px;
+}
+
+.light.solid-mode .mini-launchpad-modal.glass-panel {
+    background: #ffffff !important;
+    border: 1px solid var(--color-border) !important;
+    box-shadow: var(--shadow-lg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-radius: 12px;
+    color: var(--text-primary);
+}
+
+.liquid-mode.dark .mini-launchpad-modal.glass-panel {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-theme="light"][data-background-mode="solid"] .mini-launchpad-overlay {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"][data-background-mode="solid"] .skill-badge {
+    background: var(--alpha-med);
+    border-color: var(--color-border);
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .title-group h2 {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .becoming-statement {
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .label-subtle {
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .experiment-wish {
+    color: var(--text-tertiary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .guidance-nudge {
+    background: var(--alpha-med);
+    border-color: var(--color-border);
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .close-btn {
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .close-btn:hover {
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .guidance-overlay {
+    background: var(--alpha-low);
+    border-color: var(--color-border);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .task-button {
+    background: var(--color-bg-main);
+    border-color: var(--color-border);
+    color: var(--text-primary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .task-button:hover {
+    background: var(--alpha-med);
+    border-color: var(--alpha-high);
+}
+
+[data-theme="light"][data-background-mode="solid"] .loading-state, 
+[data-theme="light"][data-background-mode="solid"] .empty-state {
+    color: var(--text-muted);
+}
+
+[data-theme="light"][data-background-mode="solid"] .view-library-btn {
+    color: var(--text-tertiary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .view-library-btn:hover {
+    color: var(--text-primary);
 }
 
 .liquid-mode.dark .mini-launchpad-modal.glass-panel {
@@ -37,6 +132,24 @@
 .liquid-mode.dark .mini-launchpad-modal.glass-panel::before,
 .liquid-mode.dark .mini-launchpad-modal.glass-panel::after {
     display: none !important;
+}
+
+.solid-mode .mini-launchpad-modal.glass-panel::before,
+.solid-mode .mini-launchpad-modal.glass-panel::after {
+    content: none !important;
+    display: none !important;
+    background: none !important;
+    opacity: 0 !important;
+}
+
+.dark.solid-mode .mini-launchpad-modal .modal-content {
+    background: transparent !important;
+    border: none !important;
+}
+
+.light.solid-mode .mini-launchpad-modal .modal-content {
+    background: #ffffff !important;
+    border: none !important;
 }
 
 .liquid-mode.dark .mini-launchpad-modal .modal-content {
@@ -74,29 +187,51 @@
     border-color: rgba(255, 255, 255, 0.08) !important;
 }
 
+.solid-mode.dark .skill-badge {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
 .title-group h2 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
+    margin: 0 0 10px 0;
+    font-size: 22px;
+    font-weight: 700;
     color: white;
+    letter-spacing: -0.02em;
+}
+
+.light.solid-mode .title-group h2 {
+    color: #111;
 }
 
 .becoming-statement {
-    margin: 4px 0 2px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--color-accent);
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    opacity: 1;
+}
+
+.label-subtle {
+    font-weight: 600;
+    color: var(--text-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.9;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    margin-right: 4px;
+}
+
+.light.solid-mode .label-subtle {
+    color: rgba(0, 0, 0, 0.4);
 }
 
 .experiment-wish {
-    margin: 2px 0 0;
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: var(--text-tertiary);
     font-style: italic;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 .modal-actions-header {
@@ -143,6 +278,10 @@
     line-height: 1;
 }
 
+.solid-mode.dark .close-btn {
+    color: rgba(255, 255, 255, 0.3);
+}
+
 .close-btn:hover {
     color: white;
 }
@@ -160,6 +299,11 @@
     overflow: hidden;
 }
 
+.solid-mode.dark .guidance-overlay {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
 .guidance-overlay p {
     margin: 0;
 }
@@ -172,8 +316,8 @@
 }
 
 .task-button {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
     border-radius: 14px;
     padding: 16px;
     display: flex;
@@ -183,12 +327,17 @@
     transition: all 0.2s ease;
     width: 100%;
     text-align: left;
-    color: white;
+    color: var(--text-primary);
 }
 
 .liquid-mode.dark .task-button {
     background: transparent !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.solid-mode.dark .task-button {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
 }
 
 .task-button:hover {
@@ -202,6 +351,11 @@
     background: rgba(255, 255, 255, 0.05) !important;
 }
 
+.solid-mode.dark .task-button:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 .task-left {
     display: flex;
     align-items: flex-start;
@@ -211,9 +365,8 @@
 .task-status-dot {
     width: 8px;
     height: 8px;
-    background: #00ffcc;
+    background: var(--text-tertiary);
     border-radius: 50%;
-    box-shadow: 0 0 8px #00ffcc;
     margin-top: 5px;
     flex-shrink: 0;
 }
@@ -227,7 +380,7 @@
     font-size: 11px;
     letter-spacing: 0.8px;
     font-weight: 700;
-    color: #00ffcc;
+    color: var(--color-accent);
     opacity: 0;
     transition: opacity 0.2s;
 }

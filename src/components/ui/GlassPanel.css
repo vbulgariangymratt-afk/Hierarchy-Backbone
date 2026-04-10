@@ -11,8 +11,6 @@
     border: 1px solid rgba(255, 255, 255, 0.25);
 
     /* Native blur + chromatic saturation */
-    backdrop-filter: blur(30px) saturate(160%);
-    -webkit-backdrop-filter: blur(30px) saturate(160%);
 
     /* Depth shadow + top inset highlight */
     box-shadow:
@@ -70,8 +68,6 @@
 .glass-panel-secondary {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.14);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
 }
 
 .glass-panel-floating {

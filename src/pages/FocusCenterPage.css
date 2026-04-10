@@ -48,16 +48,22 @@
     border-radius: 20px;
 }
 
-.liquid-mode .slot-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+.solid-mode .slot-card {
+    background: var(--color-bg-secondary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-radius: 12px;
 }
 
-.liquid-mode.dark .slot-card {
-    background: transparent !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
+.light.solid-mode .slot-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+}
+
+.solid-mode .slot-card::before,
+.solid-mode .slot-card::after {
+    display: none !important;
+    content: none !important;
 }
 
 .liquid-mode.dark .slot-card::before,
@@ -66,10 +72,15 @@
 }
 
 .slot-card:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-accent);
+    background: var(--alpha-high);
     transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.solid-mode .slot-card:hover {
+    background: var(--alpha-high) !important;
+    border-color: var(--color-accent) !important;
+    transform: translateY(-4px);
 }
 
 .liquid-mode.dark .slot-card:hover {
@@ -81,15 +92,18 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
-.slot-role-emoji {
-    font-size: 16px;
+.slot-role-icon {
+    display: flex;
+    align-items: center;
+    color: var(--text-tertiary);
+    opacity: 0.8;
 }
 
 .slot-role-label {
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
     font-weight: 800;
     color: var(--text-tertiary);
@@ -174,8 +188,6 @@
     right: 0;
     bottom: 0;
     background: rgba(0,0,0,0.4);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -184,15 +196,15 @@
 }
 
 .skill-picker-modal {
-    background: rgba(30,30,30,0.9);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
     border-radius: 24px;
     width: 100%;
     max-width: 480px;
     max-height: 78vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    box-shadow: var(--shadow-lg);
     overflow: hidden;
 }
 
@@ -248,8 +260,8 @@
 
 .picker-search input {
     width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 12px 18px;
     color: var(--text-primary);
@@ -260,8 +272,8 @@
 
 .picker-search input:focus {
     outline: none;
-    border-color: rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.06);
+    border-color: var(--color-accent);
+    background: var(--alpha-med);
 }
 
 .picker-search input::placeholder {
@@ -289,13 +301,13 @@
 }
 
 .picker-skill-item:hover {
-    background: rgba(255,255,255,0.05);
-    border-color: rgba(255,255,255,0.06);
+    background: var(--alpha-low);
+    border-color: var(--color-border);
 }
 
 .picker-skill-item.is-active {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(255,255,255,0.12);
+    background: var(--alpha-med);
+    border-color: var(--color-accent);
 }
 
 .picker-skill-item.clear-item {

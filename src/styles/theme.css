@@ -20,18 +20,18 @@
 /* DARK THEME SEMANTIC TOKENS */
 [data-theme="dark"],
 .dark {
-    --color-bg: #000000;
-    --color-surface: #1c1c1e;
-    --color-surface-elevated: #2c2c2e;
-    --color-border: rgba(255, 255, 255, 0.1);
+    --color-bg: var(--color-bg-main);
+    --color-surface: var(--color-bg-card);
+    --color-surface-elevated: var(--color-bg-hover);
+    --color-border: var(--color-border);
     --color-text-primary: var(--text-primary);
     --color-text-secondary: var(--text-secondary);
     --color-accent: #0a84ff;
     --color-accent-hover: #409cff;
 
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.14);
-    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.18);
+    --shadow-sm: var(--shadow-sm);
+    --shadow-md: var(--shadow-md);
+    --shadow-lg: var(--shadow-lg);
 }
 
 /* Glass & Wallpaper Mode Neutral Accents */

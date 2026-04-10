@@ -57,13 +57,10 @@ const AreaDetail = () => {
 
         .hot-body-habit-pill {
             background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 10px 16px;
             transition: background 0.2s ease, transform 0.2s ease;
-            will-change: backdrop-filter, transform;
             transform: translateZ(0); /* Force GPU layer */
         }
 

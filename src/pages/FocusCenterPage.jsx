@@ -3,6 +3,7 @@ import { useSettings, SLOT_ROLES } from '../context/SettingsContext';
 import { backbone, NodeTypes } from '../backbone-v2';
 import './FocusCenterPage.css';
 import GlassPanel from '../components/ui/GlassPanel';
+import { Target, TrendingUp, Settings, Compass, Layers, Plus, X, BookOpen } from 'lucide-react';
 
 const FocusCenterPage = () => {
     const {
@@ -106,7 +107,13 @@ const FocusCenterPage = () => {
                             <div className="slot-role-header">
                                 {guidedSlotRoles ? (
                                     <>
-                                        <span className="slot-role-emoji">{role.emoji}</span>
+                                        <span className="slot-role-icon">
+                                            {index === 0 && <Target size={14} />}
+                                            {index === 1 && <TrendingUp size={14} />}
+                                            {index === 2 && <Settings size={14} />}
+                                            {index === 3 && <Compass size={14} />}
+                                            {index === 4 && <Layers size={14} />}
+                                        </span>
                                         <span className="slot-role-label">{role.label}</span>
                                     </>
                                 ) : (
@@ -116,7 +123,7 @@ const FocusCenterPage = () => {
 
                             {skill ? (
                                 <div className="slot-content filled">
-                                    <div className="skill-icon">{skill.metadata?.icon || '⭐'}</div>
+                                    <div className="skill-icon"><BookOpen size={24} strokeWidth={1.5} /></div>
                                     <div className="skill-name">{skill.name}</div>
 
                                     <button
@@ -131,8 +138,7 @@ const FocusCenterPage = () => {
                                 </div>
                             ) : (
                                 <div className="slot-content empty">
-                                    <div className="empty-plus">+</div>
-
+                                    <div className="empty-plus"><Plus size={32} strokeWidth={1} /></div>
                                     <div className="empty-text">Empty Slot</div>
                                 </div>
                             )}
@@ -149,7 +155,7 @@ const FocusCenterPage = () => {
                             <div className="picker-title-group">
                                 {guidedSlotRoles && activeSlot && (
                                     <span className="picker-role-badge">
-                                        {activeSlot.emoji} {activeSlot.label}
+                                        {activeSlot.label}
                                     </span>
                                 )}
                                 <h3>Select a Skill</h3>
@@ -158,7 +164,7 @@ const FocusCenterPage = () => {
                                 className="close-picker"
                                 onClick={() => { setShowPicker(null); setSearchQuery(''); }}
                             >
-                                ×
+                                <X size={24} strokeWidth={1.5} />
                             </button>
                         </header>
 
@@ -179,7 +185,7 @@ const FocusCenterPage = () => {
                                     className="picker-skill-item clear-item"
                                     onClick={() => handleSelectSkill(null)}
                                 >
-                                    <span className="item-icon">✕</span>
+                                    <span className="item-icon"><X size={16} /></span>
                                     <span className="item-name">Clear this slot</span>
                                 </div>
                             )}
@@ -193,10 +199,10 @@ const FocusCenterPage = () => {
                                         className={`picker-skill-item ${focusSlots[showPicker] === s.id ? 'is-active' : ''}`}
                                         onClick={() => handleSelectSkill(s.id)}
                                     >
-                                        <span className="item-icon">{s.metadata?.icon || '⭐'}</span>
+                                        <span className="item-icon"><BookOpen size={16} /></span>
                                         <span className="item-name">{s.name}</span>
                                         {focusSlots[showPicker] === s.id && (
-                                            <span className="item-check">✓</span>
+                                            <span className="item-check">Active</span>
                                         )}
                                     </div>
                                 ))

@@ -15,8 +15,17 @@ export const createHabitRepository = () => {
     };
 
     const persist = async (habit) => {
-        const userId = await getUserId();
-        if (!userId) return;
+        let userId = await getUserId();
+        if (!userId) {
+            // Wait briefly for token refresh and retry once
+            await new Promise(r => setTimeout(r, 1500));
+            userId = await getUserId();
+        }
+
+        if (!userId) {
+            console.error(`HabitRepo [ID:${instanceId}]: persist() FAILED — No authenticated user after retry`);
+            return;
+        }
 
         try {
             const { error } = await supabase
@@ -50,7 +59,7 @@ export const createHabitRepository = () => {
 
     let initPromise = null;
 
-    return {
+    const instance = {
         initialize: async () => {
             if (initPromise) return initPromise;
             initPromise = (async () => {
@@ -84,12 +93,19 @@ export const createHabitRepository = () => {
                         };
                     });
                     console.log(`HabitRepo [ID:${instanceId}]: Loaded ${habits.length} habits from Supabase`);
+                    notify(); // Ensure subscribers are notified after initial load
                 } catch (e) {
                     console.error('Failed to load Habit data from Supabase:', e);
                     habits = [];
                 }
             })();
             return initPromise;
+        },
+
+        reinitialize: async () => {
+            console.log(`HabitRepo [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
+            initPromise = null;
+            return await instance.initialize();
         },
 
         subscribe: (callback) => {
@@ -101,8 +117,9 @@ export const createHabitRepository = () => {
 
         add: async (habit) => {
             habits.push(habit);
-            await persist(habit);
-            notify();
+            const snapshot = JSON.parse(JSON.stringify(habit));
+            notify(); // Optimistic UI
+            await persist(snapshot);
             return habit;
         },
 
@@ -110,8 +127,9 @@ export const createHabitRepository = () => {
             const index = habits.findIndex(h => h.id === id);
             if (index !== -1) {
                 habits[index] = { ...habits[index], ...updates };
-                await persist(habits[index]);
-                notify();
+                const snapshot = JSON.parse(JSON.stringify(habits[index]));
+                notify(); // Optimistic UI
+                await persist(snapshot);
                 return habits[index];
             }
             throw new Error(`Habit with ID ${id} not found`);
@@ -132,6 +150,14 @@ export const createHabitRepository = () => {
             } catch (e) {
                 console.error('Failed to delete habit from Supabase:', e);
             }
+        },
+
+        reset: () => {
+            console.log(`HabitRepo [ID:${instanceId}]: RESETTING Repository State`);
+            initPromise = null;
+            habits = [];
+            notify();
         }
     };
+    return instance;
 };
