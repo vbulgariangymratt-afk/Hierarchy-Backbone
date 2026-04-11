@@ -15,6 +15,16 @@
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.12);
+    --focus-contrast: 0, 0, 0;
+    --focus-opacity-focus: 0.85;
+    --focus-opacity-status: 0.40;
+    --focus-opacity-ghost: 0.15;
+    --focus-opacity-track: 0.08;
+
+    --focus-color-focus: rgba(var(--focus-contrast), var(--focus-opacity-focus));
+    --focus-color-status: rgba(var(--focus-contrast), var(--focus-opacity-status));
+    --focus-color-ghost: rgba(var(--focus-contrast), var(--focus-opacity-ghost));
+    --focus-color-track: rgba(var(--focus-contrast), var(--focus-opacity-track));
 }
 
 /* DARK THEME SEMANTIC TOKENS */
@@ -32,6 +42,16 @@
     --shadow-sm: var(--shadow-sm);
     --shadow-md: var(--shadow-md);
     --shadow-lg: var(--shadow-lg);
+    --focus-contrast: 255, 255, 255;
+    --focus-opacity-focus: 0.85;
+    --focus-opacity-status: 0.45;
+    --focus-opacity-ghost: 0.15;
+    --focus-opacity-track: 0.15;
+
+    --focus-color-focus: rgba(var(--focus-contrast), var(--focus-opacity-focus));
+    --focus-color-status: rgba(var(--focus-contrast), var(--focus-opacity-status));
+    --focus-color-ghost: rgba(var(--focus-contrast), var(--focus-opacity-ghost));
+    --focus-color-track: rgba(var(--focus-contrast), var(--focus-opacity-track));
 }
 
 /* Glass & Wallpaper Mode Neutral Accents */

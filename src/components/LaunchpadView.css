@@ -11,7 +11,7 @@
     --accent-purple: #a855f7;
     --accent-amber: var(--color-warning);
 
-    --glass-blur: blur(18px) saturate(160%);
+    --glass-blur: blur(24px) saturate(160%);
     --transition-premium: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
@@ -43,8 +43,8 @@
 .wallpaper-mode .launchpad-loading, .liquid-mode .launchpad-loading {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
 }
 
 .liquid-mode.dark .launchpad-loading {
@@ -123,8 +123,8 @@
 .liquid-mode .area-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow:
         0 10px 40px rgba(0, 0, 0, 0.16),
         inset 0 1px 1px rgba(255, 255, 255, 0.3);
@@ -137,8 +137,8 @@
 .wallpaper-mode .area-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
 }
 
 .liquid-mode.light .area-card {
@@ -509,8 +509,8 @@
 .wallpaper-mode .maintenance-card, .liquid-mode .maintenance-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
 }
 
 .liquid-mode.dark .maintenance-card {
@@ -679,8 +679,8 @@
     background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -829,6 +829,8 @@
 .wallpaper-mode .keep-it-alive-group, .liquid-mode .keep-it-alive-group {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
 }
 
 .liquid-mode.dark .keep-it-alive-group {
@@ -922,6 +924,8 @@
     background: rgba(255, 255, 255, 0.03);
     border-radius: 20px;
     border: 1px dashed rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
 }
 
 .liquid-mode.dark .everything-is-alive-message {

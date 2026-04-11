@@ -36,6 +36,7 @@ const SVG_ICONS = {
 const Sidebar = ({ onSkillClick }) => {
     const navigate = useNavigate();
     const { theme, toggleTheme, backgroundMode, setBackgroundMode } = useTheme();
+
     
     // --- ZUSTAND SELECTORS ---
     const { 
@@ -67,6 +68,23 @@ const Sidebar = ({ onSkillClick }) => {
     const [completingHabitId, setCompletingHabitId] = useState(null);
     const [pinnedSpotlightIds, setPinnedSpotlightIds] = useState([]);
     
+    const [isScrolling, setIsScrolling] = useState(false);
+    const scrollTimeoutRef = useRef(null);
+
+    const handleScroll = useCallback(() => {
+        setIsScrolling(true);
+        if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        scrollTimeoutRef.current = setTimeout(() => {
+            setIsScrolling(false);
+        }, 1200); // Hide after 1.2s of inactivity
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        };
+    }, []);
+
     const { 
         focusSlots, 
         maintenanceSkillIds,
@@ -75,6 +93,16 @@ const Sidebar = ({ onSkillClick }) => {
         energyLevel, 
         updateEnergyLevel 
     } = useSettings();
+
+    // Diagnostic log for theme debugging
+    useEffect(() => {
+        console.log('[Sidebar Diagnostic]', {
+            theme,
+            backgroundMode,
+            documentClasses: document.documentElement.className,
+            sidebarClasses: `sidebar ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel}`
+        });
+    }, [theme, backgroundMode, isFocusMode, energyLevel]);
 
     const [isMaintenanceExpanded, setIsMaintenanceExpanded] = useState(() => {
         return localStorage.getItem('sidebar_maintenance_expanded') === 'true';
@@ -293,20 +321,19 @@ const Sidebar = ({ onSkillClick }) => {
 
     return (
         <aside className={`sidebar ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''}`} data-tauri-drag-region>
-            <div className="sidebar-scroll-content">
+            <div className={`sidebar-scroll-content ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
                 <div className="sidebar-top">
                     <button
                         className="mode-toggle-btn"
                         onClick={toggleMode}
                         disabled={storeLoading}
                     >
-                        <div className="btn-icon">
-                            <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={16} />
+                        <div className="btn-icon mode-toggle-icon">
+                            <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
                         </div>
                         <span className="btn-text">
-                            {isFocusMode ? 'Focus Mode' : 'Planning Mode'}
+                            {isFocusMode ? 'Go to planning' : 'Go to focus mode'}
                         </span>
-                        <div className="btn-status-indicator"></div>
                     </button>
                     
                     {/* Energy Level Selector */}
@@ -433,7 +460,7 @@ const Sidebar = ({ onSkillClick }) => {
                                             className="section-title-container"
                                             onClick={toggleMaintenance}
                                         >
-                                            <span className="section-title-static">Keep It Alive</span>
+                                            <span className="section-title-static">Keep it alive</span>
                                         </div>
 
                                         {/* Pilot Light Drawer forced expanded in low energy */}
@@ -540,7 +567,7 @@ const Sidebar = ({ onSkillClick }) => {
                                             className="section-title-container"
                                             onClick={() => setIsAreasExpanded(!isAreasExpanded)}
                                         >
-                                            <span className="section-title-static">Life Areas</span>
+                                            <span className="section-title-static">Life areas</span>
                                         </div>
 
                                         {isAreasExpanded && (

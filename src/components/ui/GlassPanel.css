@@ -80,24 +80,6 @@
 }
 
 /* ── Radial Highlight (legacy slot) ───────────────────────── */
-.glass-highlight {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
-    z-index: 0;
-    background: radial-gradient(circle at 50% -20%,
-            var(--glass-highlight, rgba(255, 255, 255, 0.15)) 0%,
-            transparent 60%);
-    opacity: 0;
-    transition: var(--transition-normal);
-}
-
-[data-surface="glass"] .glass-highlight {
-    opacity: 1;
-}
 
 .glass-content {
     position: relative;

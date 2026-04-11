@@ -25,9 +25,6 @@ const GlassPanel = ({
             style={style}
             {...props}
         >
-            {/* Radial highlighting diffusion layer */}
-            <div className="glass-highlight" />
-
             {/* Content layer */}
             <div className="glass-content">
                 {children}

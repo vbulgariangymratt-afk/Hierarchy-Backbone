@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
 import { backbone, NodeTypes, TaskStatuses, habitService, habitRepo } from '../backbone-v2/index';
 import HabitCard from './HabitCard';
 import { useSession } from '../context/SessionContext';
@@ -1000,8 +1001,8 @@ const LaunchpadFlow = () => {
     const displayAction = selectedTask ? "Let's Go" : suggestion.action;
 
     return (
-        <div className="launchpad-flow-overlay">
-            <div className="launchpad-flow-container">
+        <div className="launchpad-flow-overlay" onClick={() => navigate('/planning')}>
+            <div className="launchpad-flow-container" onClick={(e) => e.stopPropagation()}>
                 {/* Removed redundant energy step in favor of Sidebar selector */}
 
                 {step === 'action' && (
@@ -1284,27 +1285,15 @@ const LaunchpadFlow = () => {
                                     </div>
                                 ) : (
                                     <>
-                                        <h2 style={{ fontSize: '16px', color: '#666', marginBottom: '24px', fontWeight: 500 }}>
-                                            {(() => {
-                                                const skill = getSkillFromTask(lowEnergyTask, nodeMap);
-                                                return `Open: ${skill?.name || 'Skill'}`;
-                                            })()}
-                                        </h2>
-                                        
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                            <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '8px', lineHeight: 1.2 }}>
+                                            <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '36px', lineHeight: 1.2 }}>
                                                 {lowEnergyTask?.name}
                                             </h1>
-                                            <p style={{ color: '#444', fontSize: '13px', marginBottom: '32px', fontWeight: 600, letterSpacing: '0.02em' }}>
-                                                ⏱️ 2 min only
-                                            </p>
                                         </div>
-
-                                        <h3 style={{ fontSize: '20px', color: '#fff', marginBottom: '32px', fontWeight: 500 }}>Does this feel doable right now?</h3>
 
                                         <button 
                                             className="flow-primary-btn" 
-                                            style={{ width: '100%', marginBottom: '16px', padding: '18px', fontSize: '18px' }}
+                                            style={{ width: '100%', marginBottom: '36px', padding: '18px', fontSize: '18px' }}
                                             onClick={handleStartSprint}
                                         >
                                             Start 2-Minute Sprint
@@ -1320,7 +1309,7 @@ const LaunchpadFlow = () => {
                                                     Not feeling this?
                                                 </button>
                                             ) : (
-                                                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                                     {showEnergy1Skills ? (
                                                         <>
                                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
@@ -1342,14 +1331,37 @@ const LaunchpadFlow = () => {
                                                         </>
                                                     ) : showEnergy1Search ? (
                                                         <>
-                                                            <input
-                                                                autoFocus
-                                                                type="text"
-                                                                placeholder="Search active skills..."
-                                                                value={energy1SearchQuery}
-                                                                onChange={(e) => setEnergy1SearchQuery(e.target.value)}
-                                                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid #333', borderRadius: '12px', color: '#fff', marginBottom: '8px', boxSizing: 'border-box' }}
-                                                            />
+                                                            <div 
+                                                                style={{ 
+                                                                    borderBottom: '1px solid rgba(255, 255, 255, 0.6)', 
+                                                                    paddingBottom: '8px', 
+                                                                    display: 'flex', 
+                                                                    alignItems: 'center', 
+                                                                    justifyContent: 'center',
+                                                                    gap: '12px',
+                                                                    marginBottom: '16px'
+                                                                }}
+                                                            >
+                                                                <Search size={16} color="rgba(255, 255, 255, 0.8)" style={{ opacity: 1 }} />
+                                                                <input
+                                                                    autoFocus
+                                                                    type="text"
+                                                                    placeholder="Search for a task..."
+                                                                    value={energy1SearchQuery}
+                                                                    onChange={(e) => setEnergy1SearchQuery(e.target.value)}
+                                                                    style={{ 
+                                                                        width: 'auto',
+                                                                        minWidth: '150px',
+                                                                        background: 'transparent', 
+                                                                        border: 'none', 
+                                                                        outline: 'none',
+                                                                        color: '#fff', 
+                                                                        fontSize: '14px', 
+                                                                        padding: 0,
+                                                                        textAlign: 'left'
+                                                                    }}
+                                                                />
+                                                            </div>
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '150px', overflowY: 'auto' }}>
                                                                 {energy1SearchResults.map(t => (
                                                                     <div 
@@ -1376,30 +1388,46 @@ const LaunchpadFlow = () => {
                                                                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ccc'; }}
                                                                 onClick={() => handleEnergy1SwapTask()}
                                                             >
-                                                                Give me another from this skill
+                                                                New task
                                                             </button>
                                                             <button 
-                                                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#ccc', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
-                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
-                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ccc'; }}
+                                                                style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: '#888', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.2)'; e.currentTarget.style.color = '#fff'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#888'; }}
                                                                 onClick={() => setShowEnergy1Skills(true)}
                                                             >
                                                                 Switch skill
                                                             </button>
-                                                            <button 
-                                                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#ccc', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
-                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
-                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ccc'; }}
+                                                            <div 
+                                                                style={{ 
+                                                                    marginTop: '32px',
+                                                                    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+                                                                    paddingBottom: '8px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    gap: '12px',
+                                                                    transition: 'all 0.2s ease',
+                                                                    cursor: 'text',
+                                                                    pointerEvents: 'auto'
+                                                                }}
                                                                 onClick={() => setShowEnergy1Search(true)}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.4)';
+                                                                    const svg = e.currentTarget.querySelector('svg');
+                                                                    if (svg) svg.style.opacity = '0.7';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.2)';
+                                                                    const svg = e.currentTarget.querySelector('svg');
+                                                                    if (svg) svg.style.opacity = '0.4';
+                                                                }}
                                                             >
-                                                                Search
-                                                            </button>
-                                                            <button 
-                                                                style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '12px', cursor: 'pointer', marginTop: '4px' }} 
-                                                                onClick={() => setShowEnergy1Panel(false)}
-                                                            >
-                                                                Collapse
-                                                            </button>
+                                                                <Search size={16} color="rgba(255, 255, 255, 0.4)" style={{ opacity: 0.4, transition: 'opacity 0.2s ease' }} />
+                                                                <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '14px', textAlign: 'left' }}>
+                                                                    Search for a task...
+                                                                </span>
+                                                            </div>
                                                         </>
                                                     )}
                                                 </div>

@@ -22,8 +22,8 @@ body,
 .app-drag-region {
     position: fixed;
     top: 0;
-    left: 0;
-    width: 100%;
+    left: var(--sidebar-width, 260px);
+    width: calc(100% - var(--sidebar-width, 260px));
     height: 36px;
     z-index: 9999;
     background: transparent;
@@ -216,7 +216,8 @@ video {
 .liquid-mode .liquid-glass,
 .liquid-mode .skill-card,
 .liquid-mode .day-card,
-.liquid-mode .area-card {
+.liquid-mode .area-card,
+.liquid-mode .settings-card {
     animation: webkit-blur-jitter 0.1s infinite;
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }

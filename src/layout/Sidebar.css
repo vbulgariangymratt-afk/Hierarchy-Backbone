@@ -14,7 +14,7 @@
     --divider-gap: 6px; 
     --sidebar-h-padding: 12px;
     --section-gap: 12px; /* Unified Vertical Gap: 2 x --divider-gap */
-    --item-column-inset: 32px; /* Increased to 32px to compensate for removed sidebar padding (12px each side) + original 8px gap */
+    --item-column-inset: 8px; /* Corrected for symmetry with item margins (4px each side) */
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -27,11 +27,11 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 48px 0 20px 0; /* Horizontal padding removed to move scrollbar (scrollpill) to the very edge */
-    /* Increased top padding for macOS traffic lights (24px-32px) */
-    position: sticky;
+    padding: 0; /* Padding moved to scroll content for edge-aligned scrollbar */
+    position: fixed; /* Changed from sticky to fixed for static behavior */
+    left: 0;
     top: 0;
-    z-index: 10;
+    z-index: 1000; /* Higher z-index to stay above content */
     transition: var(--transition-smooth);
     box-sizing: border-box;
     overflow: visible;
@@ -44,27 +44,41 @@
     justify-content: space-between;
     height: 100%;
     overflow-y: auto;
-    overflow-x: visible;
+    overflow-x: hidden;
+    padding: 48px 12px 20px 12px; /* Restored padding here */
 }
 
-/* Custom Premium Scrollbar (Scrollpill) */
+/* ── Scrollpill (Custom Scrollbar) ── */
 .sidebar-scroll-content::-webkit-scrollbar {
-    width: 3px;
-}
-
-.sidebar-scroll-content::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 99px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    width: 6px;
 }
 
 .sidebar-scroll-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.light .sidebar-scroll-content::-webkit-scrollbar-thumb {
+.sidebar-scroll-content::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+    border: 2px solid transparent; /* Creates a floating pill effect */
+    background-clip: content-box;
+    transition: background 0.3s ease;
+}
+
+.sidebar-scroll-content:hover::-webkit-scrollbar-thumb,
+.sidebar-scroll-content.is-scrolling::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-scroll-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    background-clip: content-box;
+}
+
+.light .sidebar-scroll-content:hover::-webkit-scrollbar-thumb,
+.light .sidebar-scroll-content.is-scrolling::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.05);
+    background-clip: content-box;
 }
 
 /* Mode Specific Backgrounds */
@@ -79,12 +93,20 @@
         inset 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
+.liquid-mode .sidebar {
+    animation: sidebar-blur-ticker 1ms linear infinite alternate;
+}
+
 /* NEUTRAL & DARK SYNC: Pure Vibrancy Look */
 .neutral .sidebar,
 .dark.solid-mode .sidebar {
     background: var(--color-bg-sidebar-solid) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: none !important;
+}
+
+.dark.liquid-mode .sidebar {
+    background: transparent !important;
 }
 
 .light.solid-mode .sidebar {
@@ -109,6 +131,16 @@
     border-right: 1px solid var(--color-border);
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+}
+
+@keyframes sidebar-blur-ticker {
+    0% {
+        opacity: 0.999;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 /* Top-edge reflection sheen */
@@ -356,7 +388,7 @@
 }
 
 .hryvnia-display {
-    padding: 2px 24px 4px 24px; /* Adjusted padding after removing parent sidebar padding */
+    padding: 2px 16px 4px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -498,7 +530,7 @@
 }
 
 .section-title-container {
-    padding: 6px 24px; /* Updated from var(--sidebar-h-padding) to fixed 24px to maintain old gutter (12 + 12) */
+    padding: 6px var(--sidebar-h-padding);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -507,7 +539,7 @@
     border-radius: 8px;
     transition: var(--transition-smooth);
     color: var(--text-primary) !important; 
-    padding-left: 24px; /* Locked to 24px gutter */
+    padding-left: 8px;
 }
 
 .header-action-btn {
@@ -1443,4 +1475,171 @@
 .sidebar.low-energy-ghosting .marketplace-nav:hover {
     opacity: 0.6;
     filter: none;
+}
+
+/* ==========================================================================
+   LIQUID MODE UNIVERSAL REFINEMENTS
+   ========================================================================== */
+
+/* Clarified Borders for Primary Controls (Liquid Mode Universal) */
+.liquid-mode .sidebar .mode-toggle-btn,
+.liquid-mode .sidebar .energy-pills {
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: none !important;
+}
+
+/* ==========================================================================
+   LIQUID LIGHT MODE REFINEMENTS (CRAFT AESTHETIC V3)
+   ========================================================================== */
+
+/* 1. The 'Background Box' Purge & Interactive Borders */
+.liquid-mode.light .sidebar .btn-icon,
+.liquid-mode.light .sidebar .node-icon-wrapper,
+.liquid-mode.light .sidebar .dot-placeholder,
+.liquid-mode.light .sidebar .segmented-control {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Light Mode Specific Borders for Primary Controls */
+.liquid-mode.light .sidebar .mode-toggle-btn,
+.liquid-mode.light .sidebar .energy-pills {
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* 2. Visual Hierarchy & Typography Weights */
+/* TITLES & PRIMARY ACTIONS: The 'Anchors' (Darkest focal points) */
+.liquid-mode.light .sidebar .energy-label,
+.liquid-mode.light .sidebar .section-title-static,
+.liquid-mode.light .sidebar .segmented-control-label,
+.liquid-mode.light .sidebar .hryvnia-amount,
+.liquid-mode.light .sidebar .mode-toggle-btn {
+    color: rgba(0, 0, 0, 0.9) !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: -0.01em !important;
+    font-size: 13px !important;
+    opacity: 1 !important;
+}
+
+/* PAGES / LINKS: Match unselected energy pill rendered color rgb(129,126,125) */
+.liquid-mode.light .sidebar .nav-item,
+.liquid-mode.light .sidebar .settings-btn,
+.liquid-mode.light .sidebar .theme-toggle-sidebar,
+.liquid-mode.light .sidebar .pilot-skill-label,
+.liquid-mode.light .sidebar .hryvnia-icon {
+    color: rgb(129, 126, 125) !important; 
+    font-weight: 400 !important;
+    background: transparent !important;
+    border: none !important;
+    transition: var(--transition-smooth);
+}
+
+/* Re-apply borders for Primary Controls to ensure they are visible */
+.liquid-mode.light .sidebar .mode-toggle-btn,
+.liquid-mode.light .sidebar .energy-pills {
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Icons inherit the exact same whisper grey */
+.liquid-mode.light .sidebar .nav-item .btn-icon,
+.liquid-mode.light .sidebar .mode-toggle-btn .btn-icon,
+.liquid-mode.light .sidebar .pilot-skill-label .btn-icon {
+    color: inherit !important;
+    opacity: 1 !important;
+}
+
+/* 3. Hover & Active States (Pill shapes) */
+.liquid-mode.light .sidebar .nav-item:hover,
+.liquid-mode.light .sidebar .settings-btn:hover,
+.liquid-mode.light .sidebar .theme-toggle-sidebar:hover,
+.liquid-mode.light .sidebar .pilot-skill-label:hover {
+    color: rgba(0, 0, 0, 0.6) !important; /* Slightly more visible on hover */
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-radius: 100px !important;
+}
+
+.liquid-mode.light .sidebar .mode-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Active Page: Darker ink, subtle pill */
+.liquid-mode.light .sidebar .nav-item.active {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: rgba(0, 0, 0, 0.9) !important;
+    font-weight: 600 !important;
+    border-radius: 100px !important;
+}
+
+/* 4. Status Dots: Kept at 0.7 Opacity */
+.liquid-mode.light .sidebar .health-dot,
+.liquid-mode.light .sidebar .area-dot,
+.liquid-mode.light .sidebar .btn-status-indicator,
+.liquid-mode.light .sidebar .btn-status-dot {
+    opacity: 0.7 !important;
+    filter: none !important;
+    box-shadow: none !important;
+    animation: none !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Universal Button Text Sync (Go to focus mode) */
+.mode-toggle-icon {
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: none !important;
+    opacity: 0.8 !important;
+}
+
+/* Spotlight Card Consistency */
+.liquid-mode.light .sidebar .spotlight-card {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: none !important;
+}
+
+.liquid-mode.light .sidebar .spotlight-skill-label {
+    color: rgba(0, 0, 0, 0.3) !important; /* Whisper grey */
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+
+.liquid-mode.light .sidebar .spotlight-habit-name {
+    color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.liquid-mode.light .sidebar .spotlight-action-btn {
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Spatial Rhythm - tight but distinct */
+.liquid-mode.light .sidebar .sidebar-section {
+    gap: 2px !important;
+}
+
+.liquid-mode.light .sidebar .section-title-container {
+    padding-bottom: 4px !important;
+}
+
+/* Energy Pill Overrides for Liquid Light */
+.liquid-mode.light .sidebar .energy-pill {
+    color: rgba(0, 0, 0, 0.45) !important;
+    font-weight: 500 !important;
+}
+
+.liquid-mode.light .sidebar .energy-pill.active {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: rgba(0, 0, 0, 0.9) !important;
+    font-weight: 700 !important;
 }

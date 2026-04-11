@@ -23,11 +23,12 @@
 }
 
 .focus-skill-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--text-secondary);
+    opacity: 0.6;
 }
 
 .focus-exit-btn {
@@ -65,7 +66,6 @@
 
 
 .focus-action-card {
-    margin-bottom: 24px;
     text-align: center;
     position: relative;
     transition: box-shadow 0.4s ease-out;
@@ -86,14 +86,16 @@
 }
 
 .focus-task-name {
-    font-size: 48px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    color: var(--text-primary);
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--focus-color-focus);
     white-space: normal;
     word-break: keep-all;
     overflow-wrap: break-word;
+    margin-bottom: 48px;
+    text-align: center;
 }
 
 .focus-acknowledgment {
@@ -131,28 +133,33 @@
 }
 
 .focus-save-energy-btn {
+    position: fixed;
+    right: 32px;
+    bottom: 32px;
     background: transparent;
-    border: none;
-    color: var(--color-text-tertiary, #666);
+    border: 1px solid #708090;
+    color: #708090;
     font-size: 11px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     cursor: pointer;
-    margin-top: 4px;
-    padding: 4px 8px;
-    opacity: 0.6;
+    padding: 10px 18px;
+    border-radius: 100px;
+    opacity: 0.5;
     transition: all 0.2s ease;
+    z-index: 100;
 }
 
 .focus-save-energy-btn:hover:not(:disabled) {
     opacity: 1;
-    color: var(--color-text-secondary);
+    background: rgba(112, 128, 144, 0.1);
 }
 
 .focus-save-energy-btn.saved {
-    color: var(--color-accent, #4CAF50);
+    border-color: #10b981;
+    color: #10b981;
     opacity: 1;
-    font-weight: 700;
     cursor: default;
 }
 
@@ -169,15 +176,14 @@
 }
 
 .focus-toggle-container {
-    width: 120px;
-    height: 48px;
+    width: 96px;
+    height: 38px;
     position: relative;
     cursor: pointer;
     user-select: none;
-    padding: 3px;
-    background: var(--alpha-med);
+    background: var(--focus-color-track);
     border-radius: 100px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--focus-color-ghost);
     transition: opacity 0.3s ease;
 }
 
@@ -189,7 +195,6 @@
 .focus-toggle-track {
     width: 100%;
     height: 100%;
-    background: transparent;
     border-radius: 100px;
     position: relative;
     overflow: hidden;
@@ -206,13 +211,13 @@
 }
 
 .focus-toggle-knob {
-    width: 42px;
-    height: 42px;
-    background: var(--text-primary);
-    border-radius: 50%;
+    width: 52px;
+    height: 30px;
+    background: rgba(var(--focus-contrast), 1);
+    border-radius: 9999px;
     position: absolute;
-    top: 0;
-    left: 0;
+    top: 3px;
+    left: 3px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     z-index: 2;
 }
@@ -226,7 +231,7 @@
     justify-content: center;
     font-size: 11px;
     font-weight: 800;
-    color: var(--text-secondary);
+    color: var(--focus-color-status);
     letter-spacing: 0.1em;
     pointer-events: none;
     z-index: 1;
@@ -246,22 +251,19 @@
     align-items: center;
     gap: 16px;
     margin-top: 0;
-    margin-bottom: 48px;
+    margin-bottom: 60px;
 }
 
 .focus-timer-display {
     font-family: 'JetBrains Mono', monospace;
     font-size: 24px;
     font-weight: 500;
-    color: var(--text-secondary);
-    opacity: 0.8;
+    color: var(--focus-color-status);
     letter-spacing: 0.1em;
+    transition: color 0.3s ease;
 }
 
-.focus-timer-display.active {
-    opacity: 1;
-    color: var(--text-primary);
-}
+/* .focus-timer-display.active removed to keep same color as progress bar fill */
 
 .focus-play-pause-btn {
     width: 64px;
@@ -269,7 +271,7 @@
     border-radius: 50%;
     background: var(--alpha-med);
     border: 1px solid var(--color-border);
-    color: var(--text-primary);
+    color: var(--focus-color-status);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -646,43 +648,50 @@
 
 .focus-momentum-bar-container {
     width: 100%;
-    max-width: 200px;
-    height: 6px;
-    background: var(--alpha-med);
-    border-radius: 3px;
-    margin: 16px auto 0 auto;
+    height: 8px;
+    background: rgba(var(--focus-contrast), var(--focus-opacity-track));
+    border-radius: 4px;
     overflow: hidden;
+    margin-top: 6px;
 }
 
 .focus-momentum-bar-fill {
     height: 100%;
-    background: #fcd34d;
-    transition: width 0.5s ease-out;
+    background: var(--focus-color-status);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .substeps-container {
-    margin-top: 24px;
-    margin-bottom: 24px;
+    margin: 0 auto 24px auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    align-items: stretch;
+    gap: 8px;
     width: 100%;
-    max-width: 400px;
+    max-width: 280px;
     text-align: left;
 }
 
 .substep-row {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 12px;
-    cursor: pointer;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+    padding: 2px 0;
+}
+
+.substep-row:active {
+    cursor: grabbing;
 }
 
 .substep-checkbox {
-    width: 20px;
-    height: 20px;
+    width: 14px;
+    height: 14px;
     border-radius: 4px;
-    border: 2px solid var(--color-border);
+    border: 2px solid var(--focus-color-status);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -692,31 +701,45 @@
 }
 
 .substep-checkbox.checked {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-    color: var(--color-text-inverse);
+    background: transparent;
+    border-color: var(--focus-color-ghost);
+    color: var(--focus-color-ghost);
 }
 
 .substep-text {
-    font-size: 15px;
-    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--focus-color-status);
     transition: color 0.2s;
 }
 
+.substep-row.checked {
+    opacity: 1;
+}
+
 .substep-row.checked .substep-text {
-    color: var(--text-secondary);
+    color: var(--focus-color-ghost);
     text-decoration: line-through;
+}
+
+.substep-row.active .substep-checkbox {
+    border-color: var(--focus-color-focus);
+}
+
+.substep-row.active .substep-text {
+    color: var(--focus-color-focus);
 }
 
 .substep-input {
     background: transparent;
     border: none;
-    border-bottom: 1px solid var(--alpha-med);
-    font-size: 15px;
-    color: var(--text-secondary);
+    border-bottom: 1px dashed var(--focus-color-ghost);
+    font-size: 14px;
+    color: var(--focus-color-ghost);
     padding: 4px;
     outline: none;
-    transition: border-color 0.2s;
+    transition: opacity 0.2s;
+    margin-top: 20px;
 }
 
 .substep-input:focus {

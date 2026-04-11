@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 import './FocusPage.css';
 import GlassPanel from '../components/ui/GlassPanel';
@@ -24,6 +24,8 @@ const FocusPage = () => {
     const [isGlowing, setIsGlowing] = useState(false);
     const [ack, setAck] = useState(null);
     const [isToggled, setIsToggled] = useState(false);
+    const [knobSnapped, setKnobSnapped] = useState(false);
+    const [particleAnchor, setParticleAnchor] = useState({ x: 0, y: 0 });
     const [isToggling, setIsToggling] = useState(false);
     const [isInterestMode, setIsInterestMode] = useState(false);
 
@@ -57,6 +59,10 @@ const FocusPage = () => {
     const [checkpointsCompleted, setCheckpointsCompleted] = useState(0);
     const [subSteps, setSubSteps] = useState([]);
     const [newSubStep, setNewSubStep] = useState('');
+    const [showAllHistory, setShowAllHistory] = useState(false);
+    const [completionSequenceStarted, setCompletionSequenceStarted] = useState(false);
+    const completionSequenceRef = useRef(false);
+    const particleOffsetsRef = useRef([]);
     const [uninterruptedSeconds, setUninterruptedSeconds] = useState(0);
     const [checkpointToast, setCheckpointToast] = useState(null);
 
@@ -70,9 +76,27 @@ const FocusPage = () => {
     // Reward Animation Ref
     const rewardRef = useRef(null);
 
+    // Drag guard for sub-step reorder
+    const isDraggingSubStep = useRef(false);
+    const toggleContainerRef = useRef(null);
+
 
     // Snapshot / Locking State
     const lockedTaskIdsRef = useRef(null);
+
+    // ── Sub-step Progressive Disclosure Logic ──
+    const completedSubSteps = subSteps.filter(s => s.isCompleted);
+    const incompleteSubSteps = subSteps.filter(s => !s.isCompleted);
+    
+    // UI Guard: If sequence is starting, keep the last completed step in the 'active' slot
+    const activeSubStep = completionSequenceStarted 
+        ? completedSubSteps[completedSubSteps.length - 1] 
+        : incompleteSubSteps[0];
+
+    const upNextSubStep = completionSequenceStarted ? null : incompleteSubSteps[1];
+
+    const historyToDisplay = (showAllHistory ? completedSubSteps : completedSubSteps.slice(-3))
+        .filter(s => completionSequenceStarted ? s.id !== activeSubStep?.id : true);
 
     const triggerCheckpoint = useCallback(() => {
         setCheckpointsCompleted(c => {
@@ -124,18 +148,17 @@ const FocusPage = () => {
     }, [task, allNodes, aspectStats, energyLevel]);
 
 
-    const handleToggleSubStep = async (index) => {
-        const updated = [...subSteps];
-        const current = updated[index];
-        const isNowCompleted = !current.isCompleted;
-        updated[index] = { ...current, isCompleted: isNowCompleted };
+    const handleToggleSubStep = async (id) => {
+        if (isDraggingSubStep.current) return;
+
+        const updated = subSteps.map(s =>
+            s.id === id ? { ...s, isCompleted: !s.isCompleted } : s
+        );
         setSubSteps(updated);
 
         await backbone.updateNode(task.id, {
             metadata: { subSteps: updated }
         });
-
-        if (isNowCompleted) triggerCheckpoint();
     };
 
     const handleAddSubStep = async (e) => {
@@ -149,9 +172,17 @@ const FocusPage = () => {
         }
     };
 
+    const handleReorderSubSteps = async (newOrder) => {
+        setSubSteps(newOrder);
+        await backbone.updateNode(task.id, {
+            metadata: { subSteps: newOrder }
+        });
+    };
+
     const loadNextTask = useCallback(async () => {
         setLoading(true);
         setIsToggled(false);
+        setKnobSnapped(false);
         setIsToggling(false);
         
         // Note: we don't immediately clear activeSessionId/seconds here 
@@ -276,6 +307,7 @@ const FocusPage = () => {
                 setCheckpointsCompleted(0);
                 setUninterruptedSeconds(0);
                 setSubSteps(nextTask.metadata?.subSteps || []);
+                setShowAllHistory(false);
             } else {
                 setTask(null);
                 setSkill(null);
@@ -600,6 +632,7 @@ const FocusPage = () => {
                     console.error("Focus mode action failed:", error);
                     setIsToggling(false);
                     setIsToggled(false);
+                    setKnobSnapped(false);
                     setPendingTaskComplete(false);
                     console.timeEnd("taskCompleteTransition");
                 }
@@ -621,23 +654,83 @@ const FocusPage = () => {
     const handleAction = useCallback(async () => {
         if (!task || isToggling) return;
 
-        // Requirement: "The action must feel instant" 
-        // We trigger the summary modal view instantly if session is active
-        if (activeSessionId) {
-            // Already in summary? Submit it.
-            if (showSummary) {
-                handleSummarySubmit();
-                return;
-            }
-
-            setIsPaused(true);
-            setPendingTaskComplete(true);
-            setShowSummary(true);
+        // Already showing summary — submit it
+        if (showSummary) {
+            handleSummarySubmit();
             return;
         }
 
-        proceedWithTaskCompletion();
-    }, [task, isToggling, activeSessionId, showSummary, handleSummarySubmit]);
+        // No active session — complete immediately with no victory lap
+        if (!activeSessionId) {
+            proceedWithTaskCompletion();
+            return;
+        }
+
+        // Guard against double-firing
+        if (completionSequenceRef.current) return;
+
+        // Measure the real center of the toggle track to anchor particles perfectly
+        if (toggleContainerRef.current) {
+            const rect = toggleContainerRef.current.getBoundingClientRect();
+            setParticleAnchor({
+                x: rect.width / 2,
+                y: rect.height / 2,
+            });
+        }
+
+        // Snap the knob immediately — this is instant, no waiting
+        setKnobSnapped(true);
+
+        // === VICTORY LAP ===
+        // 1. Seed stable particle positions with quadrant-based spawning geometry
+        const TOGGLE_WIDTH = 96;  // updated px width
+        const TOGGLE_HEIGHT = 38; // updated px height
+
+        particleOffsetsRef.current = Array.from({ length: 18 }, (_, i) => {
+            const isTopLeft = i < 9;
+            // Origin: randomized within the relevant quadrant
+            const originX = isTopLeft
+                ? -(Math.random() * TOGGLE_WIDTH * 0.5)
+                : (Math.random() * TOGGLE_WIDTH * 0.5);
+            const originY = isTopLeft
+                ? -(Math.random() * TOGGLE_HEIGHT * 0.5)
+                : (Math.random() * TOGGLE_HEIGHT * 0.5);
+
+            // Velocity: explode outward from origin
+            const angle = isTopLeft
+                ? Math.PI + Math.random() * Math.PI * 0.8  // upper-left arc
+                : Math.random() * Math.PI * 0.8;             // lower-right arc
+            const speed = 60 + Math.random() * 80;
+
+            return {
+                originX,
+                originY,
+                targetX: originX + Math.cos(angle) * speed,
+                targetY: originY + Math.sin(angle) * speed,
+                size: 10 + Math.random() * 8,  // Scaled down slightly
+                duration: 0.5 + Math.random() * 0.3,
+                delay: i * 0.018,  // 18ms stagger
+            };
+        });
+
+        // 2. Lock UI and start animation
+        completionSequenceRef.current = true;
+        setCompletionSequenceStarted(true);
+
+        // 3. Wait 1000ms — let the animation breathe
+        setTimeout(() => {
+            setIsPaused(true);
+            setPendingTaskComplete(true);
+            setShowSummary(true);
+
+            // Drop the guard 50ms after modal opens
+            setTimeout(() => {
+                completionSequenceRef.current = false;
+                setCompletionSequenceStarted(false);
+            }, 50);
+        }, 1000);
+
+    }, [task, isToggling, activeSessionId, showSummary, handleSummarySubmit, proceedWithTaskCompletion]);
 
     useEffect(() => {
         // Expose handleAction to the global shortcut system
@@ -710,9 +803,16 @@ const FocusPage = () => {
             <button className="focus-exit-btn" onClick={handleExit}>Back to Planning</button>
 
 
+
             <header className="focus-header">
-                {isNoveltySprint && <span className="focus-novelty-session-label">Experiment Session</span>}
-                {skill && <span className="focus-skill-label">{skill.name}</span>}
+                {skill && (
+                    <span 
+                        className="focus-skill-label" 
+                        style={{ color: 'var(--focus-color-status)' }}
+                    >
+                        {skill.name}
+                    </span>
+                )}
             </header>
 
             <main className="focus-content">
@@ -720,7 +820,6 @@ const FocusPage = () => {
                 {(safeMode || (isInterestMode && !isInterestExploring)) && !activeSessionId && isPaused && (
                     <div className="focus-safe-onramp">
                         {isInterestMode ? `Just ${formatDuration(10, 'minutes')} of exploration.` : `Let’s just do ${formatDuration(10, 'minutes')}.`}
-
                     </div>
                 )}
 
@@ -741,7 +840,6 @@ const FocusPage = () => {
                             <span className="focus-ring-label">
                                 {formatDuration(TARGET_SECONDS - seconds)}
                             </span>
-
                         </div>
                     ) : (
                         <div className={`focus-timer-display ${!isPaused ? 'active' : ''}`}>
@@ -759,23 +857,7 @@ const FocusPage = () => {
                 <div className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
                     <h1 className="focus-task-name">{task.name}</h1>
                     
-                    <button 
-                        className={`focus-save-energy-btn ${task.metadata?.highEnergy ? 'saved' : ''}`}
-                        onClick={handleSaveForHighEnergy}
-                        disabled={task.metadata?.highEnergy === true}
-                    >
-                        {task.metadata?.highEnergy ? "Saved for later" : "Save for when I have more energy"}
-                    </button>
 
-
-                    {checkpointsCompleted > 0 && (
-                        <div className="focus-momentum-bar-container">
-                            <div
-                                className="focus-momentum-bar-fill"
-                                style={{ width: `${Math.min(checkpointsCompleted * 33.33, 100)}%` }}
-                            />
-                        </div>
-                    )}
 
                     <AnimatePresence>
                         {checkpointToast && (
@@ -810,17 +892,118 @@ const FocusPage = () => {
                 )}
 
                 <div className="substeps-container">
-                    <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--color-text-secondary)', fontWeight: 800, marginBottom: '8px', letterSpacing: '0.05em' }}>
-                        Sub-steps
-                    </div>
-                    {subSteps.map((s, idx) => (
-                        <div key={s.id} className={`substep-row ${s.isCompleted ? 'checked' : ''}`} onClick={() => handleToggleSubStep(idx)}>
-                            <div className={`substep-checkbox ${s.isCompleted ? 'checked' : ''}`}>
-                                ✓
-                            </div>
-                            <div className="substep-text">{s.text}</div>
+                    <div style={{ marginBottom: '10px', width: '100%' }}>
+                        <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--focus-color-status)', fontWeight: 800, letterSpacing: '0.1em', textAlign: 'center' }}>
+                            Sub-steps
                         </div>
-                    ))}
+                        <div className="focus-momentum-bar-container">
+                            <div
+                                className="focus-momentum-bar-fill"
+                                style={{ width: `${subSteps.length > 0 ? (subSteps.filter(s => s.isCompleted).length / subSteps.length) * 100 : 0}%` }}
+                            />
+                        </div>
+                    </div>
+                    <Reorder.Group
+                        axis="y"
+                        values={subSteps}
+                        onReorder={handleReorderSubSteps}
+                        className="substeps-list"
+                        style={{ display: 'flex', flexDirection: 'column', gap: '6px', listStyle: 'none', padding: 0 }}
+                    >
+                        {/* 1. History Toggle Label */}
+                        {completedSubSteps.length > 3 && (
+                            <motion.div 
+                                className="history-collapse-label"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 0.5 }}
+                                onClick={() => setShowAllHistory(!showAllHistory)}
+                                style={{ 
+                                    fontSize: '11px', 
+                                    color: '#708090', 
+                                    cursor: 'pointer', 
+                                    marginBottom: '4px', 
+                                    paddingLeft: '32px',
+                                    fontStyle: 'italic'
+                                }}
+                            >
+                                {showAllHistory ? "Show less" : `+${completedSubSteps.length - 3} more completed`}
+                            </motion.div>
+                        )}
+
+                        {/* 2. Ghosted History */}
+                        {historyToDisplay.map((s) => (
+                            <Reorder.Item
+                                layout
+                                key={s.id}
+                                value={s}
+                                className={`substep-row checked`}
+                                onDragStart={() => { isDraggingSubStep.current = true; }}
+                                onDragEnd={() => {
+                                    setTimeout(() => { isDraggingSubStep.current = false; }, 100);
+                                }}
+                                onClick={() => handleToggleSubStep(s.id)}
+                                style={{ opacity: 1 }}
+                            >
+                                <div className="substep-checkbox checked">
+                                    ✓
+                                </div>
+                                <div className="substep-text" style={{ textDecoration: 'line-through', color: 'var(--focus-color-ghost)' }}>{s.text}</div>
+                            </Reorder.Item>
+                        ))}
+
+                        {/* 3. Active Step */}
+                        {activeSubStep && (
+                            <Reorder.Item
+                                layout
+                                key={activeSubStep.id}
+                                value={activeSubStep}
+                                className="substep-row active"
+                                onDragStart={() => { isDraggingSubStep.current = true; }}
+                                onDragEnd={() => {
+                                    setTimeout(() => { isDraggingSubStep.current = false; }, 100);
+                                }}
+                                onClick={() => handleToggleSubStep(activeSubStep.id)}
+                                style={{ opacity: 1 }}
+                            >
+                                <div style={{ position: 'relative' }}>
+                                    <motion.div 
+                                        className="substep-checkbox"
+                                        whileTap={{ scale: 0.9 }}
+                                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                    >
+                                        ✓
+                                    </motion.div>
+                                    {/* Particle Burst removed - relocated to main toggle */}
+                                </div>
+                                <div className="substep-text" style={{ fontWeight: 600, color: 'var(--focus-color-focus)' }}>{activeSubStep.text}</div>
+                            </Reorder.Item>
+                        )}
+
+                        {/* 4. Up Next Step */}
+                        {upNextSubStep && (
+                            <Reorder.Item
+                                layout
+                                key={upNextSubStep.id}
+                                value={upNextSubStep}
+                                className="substep-row next"
+                                onDragStart={() => { isDraggingSubStep.current = true; }}
+                                onDragEnd={() => {
+                                    setTimeout(() => { isDraggingSubStep.current = false; }, 100);
+                                }}
+                                onClick={() => handleToggleSubStep(upNextSubStep.id)}
+                                style={{ opacity: 1 }}
+                            >
+                                <motion.div 
+                                    className="substep-checkbox"
+                                    whileTap={{ scale: 0.9 }}
+                                    style={{ borderColor: 'var(--focus-color-status)' }}
+                                >
+                                    ✓
+                                </motion.div>
+                                <div className="substep-text" style={{ color: 'var(--focus-color-status)' }}>{upNextSubStep.text}</div>
+                            </Reorder.Item>
+                        )}
+                    </Reorder.Group>
                     <input
                         className="substep-input"
                         placeholder="Add sub-step..."
@@ -834,13 +1017,21 @@ const FocusPage = () => {
             </main>
 
 
-            <footer className="focus-footer">
+            <footer className="focus-footer" style={{ overflow: 'visible' }}>
                 <div
+                    ref={toggleContainerRef}
                     className={`focus-toggle-container ${isToggled ? 'completed' : ''} ${!activeSessionId && isPaused && !isToggled ? 'disabled' : ''}`}
-                    onClick={handleAction}
+                    onMouseDown={handleAction}
                     title={!activeSessionId ? "Start session first" : ""}
+                    style={{ position: 'relative', overflow: 'visible' }}
                 >
-                    <div className={`focus-toggle-track ${isToggled ? 'active' : ''}`}>
+                    <motion.div 
+                        className={`focus-toggle-track ${isToggled ? 'active' : ''}`}
+                        animate={{ 
+                            backgroundColor: knobSnapped ? 'rgba(16, 185, 129, 0.25)' : 'var(--alpha-med)' 
+                        }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                    >
                         <div
                             className="focus-toggle-fill"
                             style={{ width: isToggled ? '100%' : '0%' }}
@@ -850,14 +1041,57 @@ const FocusPage = () => {
                         </div>
                         <motion.div
                             className="focus-toggle-knob"
-                            animate={{ x: isToggled ? 72 : 0 }}
+                            initial={{ x: 0 }}
+                            animate={{ 
+                                x: knobSnapped ? 36 : 0,
+                                opacity: knobSnapped ? [1, 0.7, 1] : 1
+                            }}
                             transition={{
-                                type: "tween",
-                                ease: [0.4, 0, 0.2, 1], // Grounded, solid ease
-                                duration: 0.4
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 28,
+                                mass: 1,
+                                opacity: { duration: 0.2 }
+                            }}
+                            style={{ zIndex: 2 }}
+                        />
+                    </motion.div>
+
+                    {/* Victory Lap — Quadrant Physics Burst (Measured Anchor) */}
+                    {completionSequenceStarted && particleOffsetsRef.current.map((p, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ 
+                                x: particleAnchor.x + p.originX, 
+                                y: particleAnchor.y + p.originY, 
+                                opacity: 1, 
+                                scale: 0 
+                            }}
+                            animate={{ 
+                                x: particleAnchor.x + p.targetX, 
+                                y: particleAnchor.y + p.targetY, 
+                                opacity: 0,
+                                scale: [0, 1.5, 0.2]
+                            }}
+                            transition={{ 
+                                duration: p.duration,
+                                ease: "easeOut",
+                                delay: p.delay
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: `${p.size}px`,
+                                height: `${p.size}px`,
+                                borderRadius: '50%',
+                                background: '#FFFFFF',
+                                pointerEvents: 'none',
+                                zIndex: 1,
+                                filter: 'blur(2px) brightness(1.8) drop-shadow(0 0 10px rgba(255,255,255,0.8))'
                             }}
                         />
-                    </div>
+                    ))}
                 </div>
             </footer>
 
@@ -1134,7 +1368,13 @@ const FocusPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
-
+            <button 
+                className={`focus-save-energy-btn ${task.metadata?.highEnergy ? 'saved' : ''}`}
+                onClick={handleSaveForHighEnergy}
+                disabled={task.metadata?.highEnergy === true}
+            >
+                {task.metadata?.highEnergy ? "Saved for later" : "Save for high energy"}
+            </button>
         </div>
     );
 };
