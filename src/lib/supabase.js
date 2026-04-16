@@ -12,10 +12,11 @@ console.log('[DEBUG Supabase] URL:', supabaseUrl, 'Key present:', !!supabaseAnon
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     auth: {
-        flowType: "pkce",
+        flowType: "implicit",
         detectSessionInUrl: false,
         persistSession: true,
-        autoRefreshToken: true
+        autoRefreshToken: true,
+        storage: window.localStorage,
     }
 });
 

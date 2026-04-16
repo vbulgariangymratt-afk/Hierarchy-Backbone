@@ -54,15 +54,25 @@
 }
 
 .skill-header {
-    margin-bottom: 60px;
+    margin-bottom: 24px; /* Spatial Separation */
+    position: relative;
+    border-bottom: none !important; /* Delete Dividers */
+    padding-bottom: 0;
 }
 
 .skill-title {
-    font-size: 40px;
+    font-size: 32px;
     font-weight: 800;
     color: var(--text-primary);
     margin: 0;
-    letter-spacing: -0.5px;
+    letter-spacing: -1.5px;
+    margin-bottom: 8px;
+    transition: font-size 0.3s ease;
+}
+
+.energy-level-3 .skill-title {
+    font-size: 52px;
+    letter-spacing: -1.5px;
 }
 
 .skill-identity-row {
@@ -74,12 +84,12 @@
 }
 
 .identity-prefix {
-    font-size: 13px;
     font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    opacity: 0.5;
+    color: var(--text-tertiary);
+    text-transform: none; /* Flow as one continuous line */
+    font-size: 1rem;       /* Match surrounding text size */
+    margin-right: 8px;
+    letter-spacing: 0.5px;
 }
 
 .skill-identity-input {
@@ -3732,6 +3742,14 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+}
+
+.energy-level-3 .active-experiments-list {
+    gap: 0;
+}
+
+.energy-level-3 .execution-mode.active-experiments-section {
+    margin-top: 12px;
 }
 
 /* Novelty Sprint UI */

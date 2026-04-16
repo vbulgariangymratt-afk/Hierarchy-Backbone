@@ -134,7 +134,7 @@ const LaunchpadView = ({
                                             ))
                                         ) : (
                                             <div className="keep-it-alive-placeholder">
-                                                Open this skill for {formatDuration(2, 'minutes')}
+                                                Open this skill for {formatDuration(5, 'minutes')}
 
                                             </div>
                                         )}
@@ -146,7 +146,7 @@ const LaunchpadView = ({
                                 {energyLevel <= 2 && maintenanceHabitGroups.length > 0 ? (
                                     <div className="low-energy-instruction">
                                         <div style={{ fontWeight: 700, fontSize: '18px', color: 'var(--text-primary)', marginBottom: '8px' }}>Open: {maintenanceHabitGroups[0].skill.name}</div>
-                                        <div style={{ fontSize: '14px', opacity: 0.6 }}>Just 2 minutes of focus.</div>
+                                        <div style={{ fontSize: '14px', opacity: 0.6 }}>Just 5 minutes of focus.</div>
                                     </div>
                                 ) : (
                                     "Everything is alive today."

@@ -50,6 +50,7 @@ const SkillPage = () => {
     const location = useLocation();
     const { showCompletedTasks, setShowCompletedTasks } = useTheme();
     const { energyLevel } = useSettings();
+    console.log('[energy level]', energyLevel);
     const [skill, setSkill] = useState(null);
     const [allNodes, setAllNodes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -1427,6 +1428,15 @@ const SkillPage = () => {
         }
     }, [newHabitTrigger, newHabitAction, newHabitPeriod, newHabitCount, id, fetchData]);
 
+    const handleHabitComplete = useCallback(async (habitId) => {
+        try {
+            await habitService.completeHabit(habitId);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to complete habit:", error);
+        }
+    }, [fetchData]);
+
     const getObjectiveTimeInfo = useCallback((obj) => {
         const m = obj.metadata || {};
         const isActive = m.isActive === true || (!m.isActive && !m.isSleeping && !m.isArchived);
@@ -1635,8 +1645,8 @@ const SkillPage = () => {
         return <div className="skill-page-error">Skill not found.</div>;
     }
 
-    // --- ENERGY 1-2 GATING: SURVIVAL VIEW ---
-    if (energyLevel <= 2) {
+    // --- ENERGY 1: GATING: SURVIVAL VIEW ---
+    if (energyLevel === 1) {
         const mveTask = allNodes.find(n => 
             n.type === NodeTypes.TASK && 
             n.metadata?.status !== TaskStatuses.DONE &&
@@ -1768,7 +1778,7 @@ const SkillPage = () => {
     const renderObjective = (obj) => {
 
         const isEditing = editingObjectiveId === obj.id;
-        const isExpanded = expandedObjectiveIds.includes(obj.id);
+        const isExpanded = energyLevel === 3 || expandedObjectiveIds.includes(obj.id) || (obj.metadata?.isFocused && energyLevel >= 3);
         const isSleeping = obj.metadata?.isSleeping === true;
         const aspects = getChildren(obj.id, NodeTypes.ASPECT);
         const timeInfo = getObjectiveTimeInfo(obj);
@@ -1980,7 +1990,7 @@ const SkillPage = () => {
                                         style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-primary)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none' }}
                                     />
                                 ) : (
-                                    <span className="objective-title-static" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
+                                    <span className="objective-title-static" style={{ fontSize: energyLevel === 3 ? '28px' : '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
                                 )}
                                 {energyLevel >= 4 && (
                                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)', opacity: 0.8, lineHeight: '1.4', maxWidth: '500px' }}>
@@ -1990,8 +2000,8 @@ const SkillPage = () => {
                             </div>
                         </div>
 
-                        <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                                 {energyLevel >= 4 && (
+                        {energyLevel !== 3 && (
+                            <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                                      <button
                                          onClick={() => handleStartEditObjective(obj)}
                                          style={{
@@ -2020,81 +2030,81 @@ const SkillPage = () => {
                                      >
                                          <Pencil size={11} strokeWidth={2.5} />
                                      </button>
-                                 )}
-                             <div className="experiment-progress-strip" style={{ 
-                                 display: 'flex', 
-                                 alignItems: 'center', 
-                                 gap: '10px', 
-                                 background: 'rgba(255, 255, 255, 0.03)', 
-                                 boxSizing: 'border-box',
-                                 height: '28px',
-                                 padding: '0 12px', 
-                                 lineHeight: '1',
-                                 borderRadius: '6px', 
-                                 fontSize: '11px', 
-                                 fontWeight: '600', 
-                                 color: 'var(--text-secondary)',
-                                 border: '1px solid rgba(255, 255, 255, 0.04)',
-                                 backdropFilter: 'blur(8px)',
-                                 WebkitBackdropFilter: 'blur(8px)'
-                             }}>
-                                {timeInfo && (
-                                    <span className="day-info" style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
-                                        Day {timeInfo.days}{obj.metadata?.durationInDays ? `/${obj.metadata.durationInDays}d` : ''}
+                                 <div className="experiment-progress-strip" style={{ 
+                                     display: 'flex', 
+                                     alignItems: 'center', 
+                                     gap: '10px', 
+                                     background: 'rgba(255, 255, 255, 0.03)', 
+                                     boxSizing: 'border-box',
+                                     height: '28px',
+                                     padding: '0 12px', 
+                                     lineHeight: '1',
+                                     borderRadius: '6px', 
+                                     fontSize: '11px', 
+                                     fontWeight: '600', 
+                                     color: 'var(--text-secondary)',
+                                     border: '1px solid rgba(255, 255, 255, 0.04)',
+                                     backdropFilter: 'blur(8px)',
+                                     WebkitBackdropFilter: 'blur(8px)'
+                                 }}>
+                                    {timeInfo && (
+                                        <span className="day-info" style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
+                                            Day {timeInfo.days}{obj.metadata?.durationInDays ? `/${obj.metadata.durationInDays}d` : ''}
+                                        </span>
+                                    )}
+                                    <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
+                                    <span className="metric-info" style={{ opacity: 0.8 }}>
+                                        {accumulationValue} {obj.metadata?.accumulationType || 'units'}
                                     </span>
-                                )}
-                                <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
-                                <span className="metric-info" style={{ opacity: 0.8 }}>
-                                    {accumulationValue} {obj.metadata?.accumulationType || 'units'}
-                                </span>
-                                {energyLevel >= 3 && obj.metadata?.mve && (
-                                    <>
-                                        <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
-                                        <div className="mve-stealth-anchor">
-                                            <span className="mve-stealth-icon" style={{ opacity: 0.8, cursor: 'help', display: 'flex', alignItems: 'center' }}>
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-tertiary)' }}>
-                                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                                                </svg>
-                                            </span>
-                                            <div className="mve-stealth-tooltip">
-                                                <div className="tooltip-label">Minimum Viable Effort</div>
-                                                {obj.metadata.mve}
+                                    {energyLevel >= 3 && obj.metadata?.mve && (
+                                        <>
+                                            <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
+                                            <div className="mve-stealth-anchor">
+                                                <span className="mve-stealth-icon" style={{ opacity: 0.8, cursor: 'help', display: 'flex', alignItems: 'center' }}>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-tertiary)' }}>
+                                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                                    </svg>
+                                                </span>
+                                                <div className="mve-stealth-tooltip">
+                                                    <div className="tooltip-label">Minimum Viable Effort</div>
+                                                    {obj.metadata.mve}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
+                                        </>
+                                    )}
+                                </div>
 
-                            <div className="objective-status-actions">
-                                <select 
-                                    className="objective-status-selector"
-                                    value={obj.metadata?.status || (obj.metadata?.isSleeping ? 'SLEEPING' : (obj.metadata?.isArchived ? 'COMPLETED' : 'ACTIVE'))}
-                                    onChange={(e) => handleStatusUpdate(obj, e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <option value="ACTIVE">Active</option>
-                                    <option value="SLEEPING">Sleeping</option>
-                                    <option value="COMPLETED">Completed</option>
-                                    <option value="ROTATING">Paused</option>
-                                </select>
-                                
-                                <button 
-                                    className="trash-experiment-btn"
-                                    title="Delete Experiment"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteObjective(obj);
-                                    }}
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                                    </svg>
-                                </button>
+                                <div className="objective-status-actions">
+                                    <select 
+                                        className="objective-status-selector"
+                                        value={obj.metadata?.status || (obj.metadata?.isSleeping ? 'SLEEPING' : (obj.metadata?.isArchived ? 'COMPLETED' : 'ACTIVE'))}
+                                        onChange={(e) => handleStatusUpdate(obj, e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="SLEEPING">Sleeping</option>
+                                        <option value="COMPLETED">Completed</option>
+                                        <option value="ROTATING">Paused</option>
+                                    </select>
+                                    
+                                    <button 
+                                        className="trash-experiment-btn"
+                                        title="Delete Experiment"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteObjective(obj);
+                                        }}
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         </div>
                     )}
@@ -2548,14 +2558,16 @@ const SkillPage = () => {
                                                                         className="masonry-column" 
                                                                         style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
                                                                     >
-                                                                        {leftColumn}
+                                                                        {energyLevel === 3 ? [...leftColumn, ...rightColumn] : leftColumn}
                                                                     </div>
-                                                                    <div 
-                                                                        className="masonry-column" 
-                                                                        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
-                                                                    >
-                                                                        {rightColumn}
-                                                                    </div>
+                                                                    {energyLevel !== 3 && (
+                                                                        <div 
+                                                                            className="masonry-column" 
+                                                                            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
+                                                                        >
+                                                                            {rightColumn}
+                                                                        </div>
+                                                                    )}
                                                                 </>
                                                             );
                                                         })()}
@@ -2574,8 +2586,8 @@ const SkillPage = () => {
 
 
     return (
-        <div className={`skill-page ${isNoveltySprint ? 'novelty-sprint-glow' : ''}`}>
-            {isNoveltySprint && (
+        <div id="skill-page-wrapper" className={`skill-page energy-level-${energyLevel} ${isNoveltySprint ? 'novelty-sprint-glow' : ''}`}>
+            {isNoveltySprint && energyLevel >= 3 && (
                 <div className="novelty-banner">
                     <span className="novelty-banner-icon">⚡</span>
                     <div>
@@ -2585,7 +2597,7 @@ const SkillPage = () => {
                 </div>
             )}
 
-            {showChallengeCard && !activeChallengeHighlight && (
+            {showChallengeCard && !activeChallengeHighlight && energyLevel >= 3 && (
                 <div className="challenge-opportunity-card">
                     <div className="challenge-content">
                         <div className="challenge-banner-icon">⚡</div>
@@ -2612,7 +2624,11 @@ const SkillPage = () => {
                 </div>
             )}
 
-            <button className="back-button" onClick={() => navigate(-1)}>
+            <button 
+                className="back-button" 
+                onClick={() => navigate(-1)}
+                style={energyLevel === 2 ? { visibility: 'hidden' } : {}}
+            >
                 <span>&larr;</span> Back to Area
             </button>
 
@@ -2654,7 +2670,7 @@ const SkillPage = () => {
 
 
             {/* INTEREST Mode: Suggested Experiments Placeholder */}
-            {skill.metadata?.pinchState === 'INTEREST' && (
+            {skill.metadata?.pinchState === 'INTEREST' && energyLevel >= 3 && (
                 <div className="suggested-experiments-container">
                     <h3 className="experiments-title">Suggested Experiments</h3>
                     <div className="experiments-placeholder">
@@ -2724,19 +2740,40 @@ const SkillPage = () => {
                 )}
 
                 <div className="habits-grid">
-                    {(habits || []).length > 0 ? (
-                        (habits || []).map(habit => (
-                            <HabitCard
-                                key={habit.id}
-                                habit={habit}
-                                onOpenEvolution={handleOpenEvolution}
-                                onToggleActive={handleToggleHabitActive}
-                                onUpdate={fetchSkills}
-                            />
-                        ))
-                    ) : !isCreatingHabit && (
-                        <div className="no-habits-message">No habits established for this skill.</div>
-                    )}
+                    {(() => {
+                        const filteredHabits = (habits || []).filter(h => {
+                            if (energyLevel === 2) {
+                                const progress = habitService.getHabitProgress(h);
+                                return !progress.isDone;
+                            }
+                            return true;
+                        });
+
+                        if (filteredHabits.length > 0) {
+                            return filteredHabits.map(habit => (
+                                <HabitCard
+                                    key={habit.id}
+                                    habit={habit}
+                                    onOpenEvolution={handleOpenEvolution}
+                                    onToggleActive={handleToggleHabitActive}
+                                    onUpdate={fetchSkills}
+                                />
+                            ));
+                        }
+
+                        if (!isCreatingHabit) {
+                            if (energyLevel === 2 && (habits || []).length > 0) {
+                                return (
+                                    <div className="no-habits-message everything-done-message" style={{ opacity: 0.8, fontStyle: 'normal' }}>
+                                        All habits for this skill are maintained for now.
+                                    </div>
+                                );
+                            }
+                            return <div className="no-habits-message">No habits established for this skill.</div>;
+                        }
+                        
+                        return null;
+                    })()}
                 </div>
             </section>
 
@@ -2752,7 +2789,7 @@ const SkillPage = () => {
 
             {/* Expiry Decision Prompt */}
             <AnimatePresence>
-                {expiringObjective && (
+                {expiringObjective && energyLevel >= 3 && (
                     <motion.div 
                         className="expiry-decision-card"
                         initial={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.95 }}
@@ -2785,9 +2822,9 @@ const SkillPage = () => {
                 )}
             </AnimatePresence>
 
-            {activeObjectives.length > 0 && (
-                <section className="skill-section active-experiments-section">
-                    <span className="section-label">Active Experiments</span>
+            {activeObjectives.length > 0 && energyLevel >= 3 && (
+                <section className={`skill-section active-experiments-section ${energyLevel === 3 ? 'execution-mode' : ''}`}>
+                    {energyLevel !== 3 && <span className="section-label">Active Experiments</span>}
                     <LayoutGroup id="active-objectives">
                         <div className="active-experiments-list">
                             {(activeObjectives || []).map(obj => (

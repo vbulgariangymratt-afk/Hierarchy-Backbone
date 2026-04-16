@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { backbone, NodeTypes, TaskStatuses, habitService, habitRepo } from '../backbone-v2/index';
 import HabitCard from './HabitCard';
 import { useSession } from '../context/SessionContext';
@@ -133,6 +133,8 @@ const LaunchpadFlow = () => {
     const [lowEnergySafeStates, setLowEnergySafeStates] = useState({}); // { taskId: boolean }
     const [newAspectName, setNewAspectName] = useState("");
     const [initiationTask, setInitiationTask] = useState(null);
+    const [showEnergy2Habits, setShowEnergy2Habits] = useState(false);
+    const [habitCycleIndex, setHabitCycleIndex] = useState(0);
 
     const toggleSkill = (skillId) => {
         setSelectedSkills(prev => {
@@ -251,25 +253,63 @@ const LaunchpadFlow = () => {
 
     const [showEnergy1Panel, setShowEnergy1Panel] = useState(false);
     const [showEnergy1Skills, setShowEnergy1Skills] = useState(false);
+    const [skillCycleIndex, setSkillCycleIndex] = useState(0);
     const [showEnergy1Search, setShowEnergy1Search] = useState(false);
     const [energy1SearchQuery, setEnergy1SearchQuery] = useState("");
 
-    const handleEnergy1SwapTask = () => {
-        if (!lowEnergyTask) return;
-        const currentSkill = getSkillFromTask(lowEnergyTask, nodeMap);
-        if (!currentSkill) return;
+    const energy1Skills = useMemo(() => {
+        return (focusSlots || []).map(id => nodeMap.get(id)).filter(Boolean);
+    }, [focusSlots, nodeMap]);
+
+    const energy1TaskPool = useMemo(() => {
+        // 1. Root Most Active Skill
+        const mostActiveSkillId = Object.entries(skillMomentum)
+            .sort((a, b) => b[1] - a[1])[0]?.[0];
         
-        const tasksForSkill = allNodes.filter(n => {
+        let pool = [];
+        
+        if (mostActiveSkillId) {
+            // Find ALL aspects belonging to the active skill
+            const skillAspects = allNodes.filter(n => 
+                n.type === NodeTypes.ASPECT && 
+                nodeMap.get(n.parentId)?.parentId === mostActiveSkillId
+            );
+            
+            // Score aspects by task completion rate within them
+            const aspectsWithRate = skillAspects.map(aspect => {
+                const tasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.parentId === aspect.id);
+                const done = tasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
+                const total = tasks.length;
+                const rate = total === 0 ? 1 : done / total;
+                return { aspect, rate, pendingTasks: tasks.filter(t => t.metadata?.status !== TaskStatuses.DONE) };
+            }).sort((a, b) => a.rate - b.rate); // lowest rate (least done) first
+            
+            pool = aspectsWithRate.flatMap(ar => ar.pendingTasks);
+        }
+
+        // Fallback: Combine with other tasks from focus slots
+        const focusSkillIds = focusSlots || [];
+        const otherFocusTasks = allNodes.filter(n => {
             if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
-            const s = getSkillFromTask(n, nodeMap);
-            return s?.id === currentSkill.id;
+            const skill = getSkillFromTask(n, nodeMap);
+            return skill && focusSkillIds.includes(skill.id) && skill.id !== mostActiveSkillId;
         });
 
-        const available = tasksForSkill.filter(t => t.id !== lowEnergyTask.id);
-        if (available.length > 0) {
-            const random = available[Math.floor(Math.random() * available.length)];
-            setLowEnergyTask(random);
-        }
+        const finalPool = [...pool, ...otherFocusTasks];
+        console.log(`[E1] Task Pool built: ${finalPool.length} tasks. (Recommended first: ${pool.length})`);
+        return finalPool;
+    }, [allNodes, nodeMap, skillMomentum, focusSlots, getSkillFromTask]);
+
+    const handleEnergy1SwapTask = () => {
+        // Obsolete but keeping signature if needed internally
+        handleCycleTask(1);
+    };
+
+    const handleCycleTask = (dir) => {
+        if (!energy1TaskPool.length) return;
+        const currentIndex = energy1TaskPool.findIndex(t => t.id === lowEnergyTask?.id);
+        const nextIndex = (currentIndex + dir + energy1TaskPool.length) % energy1TaskPool.length;
+        setLowEnergyTask(energy1TaskPool[nextIndex]);
     };
 
     const handleEnergy1SwitchSkill = (skillId) => {
@@ -328,6 +368,45 @@ const LaunchpadFlow = () => {
             console.error("Habit completion failed", error);
         }
     }, []);
+
+    const hasIncompleteHabits = useMemo(() => maintenanceHabitGroups.some(g => g.habits.length > 0), [maintenanceHabitGroups]);
+
+    const sortedIncompleteHabits = useMemo(() => {
+        if (!maintenanceHabitGroups.length) return [];
+        
+        // Flatten all habits from all groups
+        const allIncomplete = maintenanceHabitGroups.flatMap(g => g.habits.map(h => ({
+            ...h,
+            skillName: g.skill.name
+        })));
+        
+        // Helper to get friction score (lower is easier/better)
+        const getFriction = (h) => {
+            const comps = h.completions || [];
+            if (comps.length === 0) return 3; // Default to heavy/high for new habits
+            
+            const scores = { low: 1, light: 1, medium: 2, high: 3, heavy: 3, fail: 4 };
+            const lastComps = comps.slice(-8);
+            const sum = lastComps.reduce((acc, c) => acc + (scores[c.friction] || 2), 0);
+            return sum / lastComps.length;
+        };
+
+        return allIncomplete.sort((a, b) => getFriction(a) - getFriction(b));
+    }, [maintenanceHabitGroups]);
+
+    const activeEnergy2Habit = sortedIncompleteHabits[habitCycleIndex] || sortedIncompleteHabits[0];
+
+    // Reset index if it goes out of bounds when habits are completed
+    useEffect(() => {
+        if (habitCycleIndex >= sortedIncompleteHabits.length && sortedIncompleteHabits.length > 0) {
+            setHabitCycleIndex(0);
+        }
+    }, [sortedIncompleteHabits.length, habitCycleIndex]);
+
+    const handleCycleHabit = (dir) => {
+        if (!sortedIncompleteHabits.length) return;
+        setHabitCycleIndex(prev => (prev + dir + sortedIncompleteHabits.length) % sortedIncompleteHabits.length);
+    };
 
     const lowEnergyFastTasks = useMemo(() => {
         if (energyLevel > 2) return [];
@@ -394,69 +473,12 @@ const LaunchpadFlow = () => {
     useEffect(() => {
         if (energyLevel > 2) return;
 
-        // 1. SURVIVAL (Energy 1) - Single best MVE strictly driven by slot priority
-        if (energyLevel === 1 && !lowEnergyTask) {
-            console.log('[E1 SELECTION] focusSlots:', focusSlots);
-            console.log('[E1 SELECTION] allNodes count:', allNodes.length);
-            console.log('[E1 SELECTION] pending tasks:', allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.status !== TaskStatuses.DONE).length);
-            console.log('[E1 SELECTION] aspectStats:', aspectStats);
-
-            for (const skillId of (focusSlots || [])) {
-                if (!skillId) continue;
-                const skillTasks = allNodes.filter(n => {
-                    if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
-                    const s = getSkillFromTask(n, nodeMap);
-                    
-                    // Only log it if the exact slot check runs, but because this loops over every pending task for every slot, we might spam the console heavily. 
-                    // To follow the user's explicit instructions, we will log it exactly as requested.
-                    console.log('[E1 SELECTION] task:', n.name, 'skill found:', s?.id, 'matches:', s?.id === skillId);
-                    return s?.id === skillId;
-                });
-                console.log(`[E1 SELECTION] slot ${skillId} task count:`, skillTasks.length);
-            }
-
-            const activeIds = focusSlots || [];
-            if (activeIds.length === 0) {
-                setLowEnergyTask('EMPTY_STATE');
+        // 1. SURVIVAL & MOMENTUM (Energy 1-2) - Recommendation: Lowest completion aspect in most active skill
+        if ((energyLevel === 1 || energyLevel === 2) && !lowEnergyTask) {
+            if (energy1TaskPool.length > 0) {
+                setLowEnergyTask(energy1TaskPool[0]);
             } else {
-                const allPendingTasks = allNodes.filter(n => 
-                    n.type === NodeTypes.TASK && 
-                    n.metadata?.status !== TaskStatuses.DONE
-                );
-
-                let selectedTask = null;
-
-                for (const skillId of activeIds) {
-                    if (!skillId) continue;
-
-                    const skillTasks = allPendingTasks.filter(t => {
-                        const s = getSkillFromTask(t, nodeMap);
-                        return s?.id === skillId;
-                    });
-
-                    if (skillTasks.length > 0) {
-                        const sortedSkillTasks = [...skillTasks].sort((a, b) => {
-                            const avgTimeA = getAspectAvgTime(a.parentId, aspectStats);
-                            const avgTimeB = getAspectAvgTime(b.parentId, aspectStats);
-
-                            if (avgTimeA !== avgTimeB) {
-                                return avgTimeA - avgTimeB;
-                            }
-
-                            const isTodayA = a.metadata?.isToday === true;
-                            const isTodayB = b.metadata?.isToday === true;
-                            if (isTodayA && !isTodayB) return -1;
-                            if (!isTodayA && isTodayB) return 1;
-
-                            return 0;
-                        });
-
-                        selectedTask = sortedSkillTasks[0];
-                        break; 
-                    }
-                }
-
-                setLowEnergyTask(selectedTask || 'EMPTY_STATE');
+                setLowEnergyTask('EMPTY_STATE');
             }
         }
 
@@ -1267,7 +1289,7 @@ const LaunchpadFlow = () => {
                                     </button>
                                 </div>
                             </div>
-                        ) : energyLevel === 1 ? (
+                        ) : energyLevel <= 2 ? (
                             <div className="initiation-card" style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '440px', minHeight: '420px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', transition: 'all 0.3s ease' }}>
                                 {lowEnergyTask === 'EMPTY_STATE' ? (
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
@@ -1285,150 +1307,170 @@ const LaunchpadFlow = () => {
                                     </div>
                                 ) : (
                                     <>
-                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                            <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '36px', lineHeight: 1.2 }}>
-                                                {lowEnergyTask?.name}
-                                            </h1>
-                                        </div>
+                                        {!showEnergy1Skills && !showEnergy2Habits && (
+                                            <div style={{ flex: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '32px', marginBottom: '36px' }}>
+                                                {showEnergy1Panel && !showEnergy2Habits && (
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); handleCycleTask(-1); }}
+                                                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <ChevronLeft size={36} />
+                                                    </button>
+                                                )}
+                                                
+                                                <h1 style={{ fontSize: '28px', color: '#fff', margin: 0, lineHeight: 1.2, flex: 1, textAlign: 'center' }}>
+                                                    {lowEnergyTask?.name}
+                                                </h1>
 
-                                        <button 
-                                            className="flow-primary-btn" 
-                                            style={{ width: '100%', marginBottom: '36px', padding: '18px', fontSize: '18px' }}
-                                            onClick={handleStartSprint}
-                                        >
-                                            Start 2-Minute Sprint
-                                        </button>
+                                                {showEnergy1Panel && !showEnergy2Habits && (
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); handleCycleTask(1); }}
+                                                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <ChevronRight size={36} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {!showEnergy1Skills && (
+                                            showEnergy2Habits ? (
+                                                <div className="energy-2-singular-habit" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
+                                                    {activeEnergy2Habit ? (
+                                                        <>
+                                                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '24px', position: 'absolute', top: '40px' }}>
+                                                                {activeEnergy2Habit.skillName}
+                                                            </div>
+                                                            
+                                                            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '32px', marginBottom: '36px', width: '100%' }}>
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleCycleHabit(-1); }}
+                                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                >
+                                                                    <ChevronLeft size={36} />
+                                                                </button>
+
+                                                                <h1 style={{ fontSize: '48px', color: '#fff', margin: 0, lineHeight: 1.1, textAlign: 'center', wordBreak: 'break-word' }}>
+                                                                    {activeEnergy2Habit.phases?.[activeEnergy2Habit.currentPhaseLevel]?.description || activeEnergy2Habit.name}
+                                                                </h1>
+
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleCycleHabit(1); }}
+                                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                                                >
+                                                                    <ChevronRight size={36} />
+                                                                </button>
+                                                            </div>
+
+                                                            <button 
+                                                                className="flow-primary-btn" 
+                                                                style={{ width: '240px', padding: '16px', fontSize: '18px' }}
+                                                                onClick={() => handleHabitComplete(activeEnergy2Habit.id)}
+                                                            >
+                                                                Complete
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '16px' }}>All maintenance done!</div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <button 
+                                                    className="flow-primary-btn" 
+                                                    style={{ width: '100%', marginBottom: '36px', padding: '18px', fontSize: '18px' }}
+                                                    onClick={handleStartSprint}
+                                                >
+                                                    Start 5-Minute Sprint
+                                                </button>
+                                            )
+                                        )}
 
                                         <div style={{ width: '100%' }}>
-                                            {!showEnergy1Panel ? (
+
+                                            {!showEnergy1Panel && !showEnergy2Habits ? (
                                                 <button 
                                                     className="flow-secondary-btn" 
-                                                    style={{ width: '100%', fontSize: '14px', color: '#444', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s ease', padding: '12px' }}
+                                                    style={{ width: '100%', fontSize: '14px', color: 'rgba(255, 255, 255, 0.5)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s ease', padding: '12px' }}
                                                     onClick={() => setShowEnergy1Panel(true)}
                                                 >
                                                     Not feeling this?
                                                 </button>
                                             ) : (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    {showEnergy1Skills ? (
-                                                        <>
-                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                                                                {focusSlots?.map(skillId => {
-                                                                    const skill = nodeMap.get(skillId);
-                                                                    if (!skill) return null;
-                                                                    return (
-                                                                        <button 
-                                                                            key={skillId} 
-                                                                            style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '14px', textAlign: 'center', cursor: 'pointer' }}
-                                                                            onClick={() => handleEnergy1SwitchSkill(skillId)}
-                                                                        >
-                                                                            {skill.name}
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                            <button style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '12px', cursor: 'pointer', marginTop: '8px' }} onClick={() => setShowEnergy1Skills(false)}>Back</button>
-                                                        </>
-                                                    ) : showEnergy1Search ? (
-                                                        <>
-                                                            <div 
-                                                                style={{ 
-                                                                    borderBottom: '1px solid rgba(255, 255, 255, 0.6)', 
-                                                                    paddingBottom: '8px', 
-                                                                    display: 'flex', 
-                                                                    alignItems: 'center', 
-                                                                    justifyContent: 'center',
-                                                                    gap: '12px',
-                                                                    marginBottom: '16px'
-                                                                }}
-                                                            >
-                                                                <Search size={16} color="rgba(255, 255, 255, 0.8)" style={{ opacity: 1 }} />
-                                                                <input
-                                                                    autoFocus
-                                                                    type="text"
-                                                                    placeholder="Search for a task..."
-                                                                    value={energy1SearchQuery}
-                                                                    onChange={(e) => setEnergy1SearchQuery(e.target.value)}
-                                                                    style={{ 
-                                                                        width: 'auto',
-                                                                        minWidth: '150px',
-                                                                        background: 'transparent', 
-                                                                        border: 'none', 
-                                                                        outline: 'none',
-                                                                        color: '#fff', 
-                                                                        fontSize: '14px', 
-                                                                        padding: 0,
-                                                                        textAlign: 'left'
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '150px', overflowY: 'auto' }}>
-                                                                {energy1SearchResults.map(t => (
-                                                                    <div 
-                                                                        key={t.id} 
-                                                                        onClick={() => { setLowEnergyTask(t); setShowEnergy1Search(false); setShowEnergy1Panel(false); setEnergy1SearchQuery(""); }}
-                                                                        style={{ padding: '8px 12px', color: '#ccc', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', textAlign: 'left' }}
-                                                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                    {!showEnergy2Habits ? (
+                                                        showEnergy1Skills ? (
+                                                            <>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); setSkillCycleIndex(prev => (prev - 1 + energy1Skills.length) % energy1Skills.length); }}
+                                                                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                     >
-                                                                        {t.name}
-                                                                    </div>
-                                                                ))}
-                                                                {energy1SearchQuery && energy1SearchResults.length === 0 && (
-                                                                    <div style={{ padding: '8px', color: '#666', fontSize: '12px', textAlign: 'center' }}>No tasks found</div>
+                                                                        <ChevronLeft size={24} />
+                                                                    </button>
+                                                                    
+                                                                    <button 
+                                                                        style={{ 
+                                                                            flex: 1, 
+                                                                            padding: '24px 16px', 
+                                                                            background: 'rgba(255,255,255,0.05)', 
+                                                                            border: '1px solid rgba(255,255,255,0.1)', 
+                                                                            borderRadius: '16px', 
+                                                                            color: '#fff', 
+                                                                            fontSize: '18px', 
+                                                                            fontWeight: 600,
+                                                                            textAlign: 'center', 
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all 0.2s ease'
+                                                                        }}
+                                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+                                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ccc'; }}
+                                                                        onClick={() => handleEnergy1SwitchSkill(energy1Skills[skillCycleIndex]?.id)}
+                                                                    >
+                                                                        {energy1Skills[skillCycleIndex]?.name || "Select skill"}
+                                                                    </button>
+
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); setSkillCycleIndex(prev => (prev + 1) % energy1Skills.length); }}
+                                                                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                    >
+                                                                        <ChevronRight size={24} />
+                                                                    </button>
+                                                                </div>
+                                                                <button style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '12px', cursor: 'pointer', marginTop: '16px' }} onClick={() => setShowEnergy1Skills(false)}>Back</button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                                    <button 
+                                                                        style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', color: '#ccc', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2', textAlign: 'center' }}
+                                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+                                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ccc'; }}
+                                                                        onClick={() => setShowEnergy1Skills(true)}
+                                                                    >
+                                                                        Switch skill
+                                                                    </button>
+                                                                </div>
+                                                                {/* RELOCATED HABIT TOGGLE */}
+                                                                {energyLevel === 2 && hasIncompleteHabits && (
+                                                                    <button 
+                                                                        className="flow-secondary-btn" 
+                                                                        style={{ width: '100%', fontSize: '14px', marginTop: '8px', padding: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer' }}
+                                                                        onClick={() => setShowEnergy2Habits(!showEnergy2Habits)}
+                                                                    >
+                                                                        Switch to habits
+                                                                    </button>
                                                                 )}
-                                                            </div>
-                                                            <button style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '12px', cursor: 'pointer', marginTop: '8px' }} onClick={() => setShowEnergy1Search(false)}>Back</button>
-                                                        </>
+                                                            </>
+                                                        )
                                                     ) : (
-                                                        <>
-                                                            <button 
-                                                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#ccc', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
-                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
-                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ccc'; }}
-                                                                onClick={() => handleEnergy1SwapTask()}
-                                                            >
-                                                                New task
-                                                            </button>
-                                                            <button 
-                                                                style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: '#888', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
-                                                                onMouseEnter={(e) => { e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.2)'; e.currentTarget.style.color = '#fff'; }}
-                                                                onMouseLeave={(e) => { e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#888'; }}
-                                                                onClick={() => setShowEnergy1Skills(true)}
-                                                            >
-                                                                Switch skill
-                                                            </button>
-                                                            <div 
-                                                                style={{ 
-                                                                    marginTop: '32px',
-                                                                    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-                                                                    paddingBottom: '8px',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    gap: '12px',
-                                                                    transition: 'all 0.2s ease',
-                                                                    cursor: 'text',
-                                                                    pointerEvents: 'auto'
-                                                                }}
-                                                                onClick={() => setShowEnergy1Search(true)}
-                                                                onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.4)';
-                                                                    const svg = e.currentTarget.querySelector('svg');
-                                                                    if (svg) svg.style.opacity = '0.7';
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.2)';
-                                                                    const svg = e.currentTarget.querySelector('svg');
-                                                                    if (svg) svg.style.opacity = '0.4';
-                                                                }}
-                                                            >
-                                                                <Search size={16} color="rgba(255, 255, 255, 0.4)" style={{ opacity: 0.4, transition: 'opacity 0.2s ease' }} />
-                                                                <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '14px', textAlign: 'left' }}>
-                                                                    Search for a task...
-                                                                </span>
-                                                            </div>
-                                                        </>
+                                                        /* IF HABITS ACTIVE, SHOW RETURN TO TASKS */
+                                                        <button 
+                                                            className="flow-secondary-btn" 
+                                                            style={{ width: '100%', fontSize: '14px', padding: '12px', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer' }}
+                                                            onClick={() => setShowEnergy2Habits(false)}
+                                                        >
+                                                            Switch to tasks
+                                                        </button>
                                                     )}
                                                 </div>
                                             )}
@@ -2085,7 +2127,7 @@ const LaunchpadFlow = () => {
                                                         ))
                                                     ) : (
                                                         <div className="keep-it-alive-placeholder" style={{ fontSize: '13px', color: '#333', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px' }}>
-                                                            Open this skill for 2 minutes
+                                                            Open this skill for 5 minutes
                                                         </div>
                                                     )}
                                                 </div>

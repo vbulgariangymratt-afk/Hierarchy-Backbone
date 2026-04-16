@@ -109,7 +109,7 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
         <AnimatePresence>
             <div className="mini-launchpad-overlay" onClick={onClose}>
                 <motion.div 
-                    className="mini-launchpad-modal glass-panel"
+                    className={`mini-launchpad-modal glass-panel energy-level-${energyLevel}`}
                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -121,12 +121,9 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
                             {skill?.metadata?.identityAnchor && (
                                 <p className="becoming-statement"><span className="label-subtle">Becoming:</span> {skill.metadata.identityAnchor}</p>
                             )}
-                            {energyLevel >= 3 && activeExp?.metadata?.wish && (
+                            {energyLevel !== 3 && activeExp?.metadata?.wish && (
                                 <p className="experiment-wish"><span className="label-subtle">Experiment:</span> {activeExp.metadata.wish}</p>
                             )}
-                        </div>
-                        <div className="modal-actions-header">
-                            <button className="close-btn" onClick={onClose}>×</button>
                         </div>
                     </header>
 

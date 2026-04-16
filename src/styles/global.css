@@ -969,8 +969,9 @@ body.liquid-mode.neutral {
 
 .liquid-mode.neutral .glass-card--amber {
   background: transparent;
+}
+
 /* Global suppression of emojis in Solid Mode for professional aesthetic */
 [data-background-mode="solid"] .is-emoji {
     display: none !important;
-}
 }

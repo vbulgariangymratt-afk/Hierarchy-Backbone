@@ -5,6 +5,9 @@ import { fetchWallpaperConfig, saveWallpaperConfig } from '../lib/wallpaperServi
 
 const ThemeContext = createContext();
 
+const isTauri = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
+
+
 // ─── Default wallpaper config shape ──────────────────────────────────────────
 const DEFAULT_WALLPAPER_CONFIG = {
     wallpaperScope: 'global',
@@ -236,15 +239,19 @@ export const ThemeProvider = ({ children }) => {
     useEffect(() => {
         // Liquid Mode (Full window transparency)
         if (backgroundMode === 'liquid') {
-            // For neutral mode, we pass null to Rust to allow natural vibrancy
-            const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
-            invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
-                console.error("Failed to enable glass:", err)
-            );
+            if (isTauri) {
+                // For neutral mode, we pass null to Rust to allow natural vibrancy
+                const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
+                invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
+                    console.error("Failed to enable glass:", err)
+                );
+            }
         } else {
-            invoke('disable_liquid_glass').catch(err =>
-                console.error("Failed to disable glass:", err)
-            );
+            if (isTauri) {
+                invoke('disable_liquid_glass').catch(err =>
+                    console.error("Failed to disable glass:", err)
+                );
+            }
         }
 
         const root = document.documentElement;

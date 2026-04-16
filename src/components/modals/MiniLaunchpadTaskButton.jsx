@@ -13,13 +13,7 @@ const MiniLaunchpadTaskButton = React.memo(({ task, onClick }) => {
             className="task-button"
             onClick={() => onClick(task)}
         >
-            <div className="task-left">
-                <span className="task-status-dot" />
-                <span className="task-name">{task.name}</span>
-            </div>
-            <div className="task-right">
-                <span className="task-action-hint">START FOCUS</span>
-            </div>
+            <span className="task-name">{task.name}</span>
         </button>
     );
 });

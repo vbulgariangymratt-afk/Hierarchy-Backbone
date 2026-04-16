@@ -1,5 +1,7 @@
 use tauri::Manager;
+use tauri::{Emitter, Listener};
 use tauri_plugin_liquid_glass::{LiquidGlassConfig, LiquidGlassExt, GlassMaterialVariant};
+use tauri_plugin_deep_link::DeepLinkExt;
 
 #[tauri::command]
 fn enable_liquid_glass(app: tauri::AppHandle, theme: Option<String>) {
@@ -52,9 +54,22 @@ pub fn run() {
         )?;
       }
 
-      // Initial state based on current preference (handled by frontend on mount if needed,
-      // but applying it here as well for immediate startup)
       enable_liquid_glass(app.handle().clone(), None);
+
+      // Capture deep link URL at startup (macOS sends it before JS is ready)
+      let handle = app.handle().clone();
+      app.deep_link().on_open_url(move |event| {
+        let urls = event.urls();
+        let handle = handle.clone();
+        tauri::async_runtime::spawn(async move {
+          std::thread::sleep(std::time::Duration::from_millis(3000));
+          for url in urls {
+            let url_str = url.to_string();
+            println!("[DEEP LINK] Emitting after delay: {}", url_str);
+            handle.emit("deep-link-received", url_str).ok();
+          }
+        });
+      });
 
       Ok(())
     })
