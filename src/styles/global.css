@@ -206,21 +206,14 @@ video {
 .liquid-mode .popover {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
     box-shadow:
         0 8px 30px rgba(0, 0, 0, 0.28),
         inset 0 1px 0 rgba(255, 255, 255, 0.20);
 }
 
-.liquid-mode .liquid-glass,
-.liquid-mode .skill-card,
-.liquid-mode .day-card,
-.liquid-mode .area-card,
-.liquid-mode .settings-card {
-    animation: webkit-blur-jitter 0.1s infinite;
-    will-change: backdrop-filter, -webkit-backdrop-filter;
-}
+
 
 
 .wallpaper-mode .liquid-glass,
@@ -968,10 +961,41 @@ body.liquid-mode.neutral {
 }
 
 .liquid-mode.neutral .glass-card--amber {
-  background: transparent;
+    background: transparent;
 }
 
 /* Global suppression of emojis in Solid Mode for professional aesthetic */
 [data-background-mode="solid"] .is-emoji {
     display: none !important;
+}
+
+.liquid-mode body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.001);
+    animation: global-paint-sweeper 1ms linear infinite alternate;
+    will-change: background;
+}
+
+@keyframes global-paint-sweeper {
+    0% { background: rgba(0, 0, 0, 0.001); }
+    100% { background: rgba(0, 0, 0, 0.002); }
+}
+/* ── Blur Quality: Performance Mode ─────────────────────── */
+html[data-blur-quality="performance"].liquid-mode .liquid-glass,
+html[data-blur-quality="performance"].liquid-mode .modal-content,
+html[data-blur-quality="performance"].liquid-mode .reward-modal,
+html[data-blur-quality="performance"].liquid-mode .floating-ui,
+html[data-blur-quality="performance"].liquid-mode .popover {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+}
+html[data-blur-quality="performance"].liquid-mode.dark .liquid-glass,
+html[data-blur-quality="performance"].liquid-mode.dark .modal-content {
+    background: rgba(255, 255, 255, 0.07) !important;
 }

@@ -71,6 +71,32 @@ pub fn run() {
         });
       });
 
+      #[cfg(target_os = "macos")]
+      {
+          let app_handle = app.handle().clone();
+          std::thread::spawn(move || {
+              let mut last_dark = {
+                  let output = std::process::Command::new("defaults")
+                      .args(["read", "-g", "AppleInterfaceStyle"])
+                      .output();
+                  matches!(output, Ok(o) if 
+                      String::from_utf8_lossy(&o.stdout).trim() == "Dark")
+              };
+              loop {
+                  std::thread::sleep(std::time::Duration::from_millis(500));
+                  let output = std::process::Command::new("defaults")
+                      .args(["read", "-g", "AppleInterfaceStyle"])
+                      .output();
+                  let is_dark = matches!(output, Ok(o) if 
+                      String::from_utf8_lossy(&o.stdout).trim() == "Dark");
+                  if is_dark != last_dark {
+                      last_dark = is_dark;
+                      let _ = app_handle.emit("system-appearance-changed", is_dark);
+                  }
+              }
+          });
+      }
+
       Ok(())
     })
     .run(tauri::generate_context!())

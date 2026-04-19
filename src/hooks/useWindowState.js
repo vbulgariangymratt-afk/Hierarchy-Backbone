@@ -25,7 +25,6 @@ export const useWindowState = () => {
                     }
                 }
             } catch (error) {
-                console.warn('WindowState: Failed to restore:', error);
             }
         };
 

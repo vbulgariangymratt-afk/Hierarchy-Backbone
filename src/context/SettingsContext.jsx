@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { backbone as backboneService } from '../backbone-v2';
 
 const SettingsContext = createContext();
 
@@ -56,6 +57,10 @@ const _cache = {
     maintenanceEnabled: true,
     guidedSlotRoles: true,
     energyLevel: 3,
+    activeExperimentLimit: 1,
+    dbSupportsExperimentLimit: true, // Track if column exists to avoid save errors
+    healthDotStyle: localStorage.getItem('app-health-dot-style') || 'glowing',
+    blurQuality: localStorage.getItem('app-blur-quality') || 'performance',
     hasLoaded: false,
 };
 
@@ -66,31 +71,45 @@ export const SettingsProvider = ({ children }) => {
     const [maintenanceEnabled, setMaintenanceEnabledState] = useState(_cache.maintenanceEnabled);
     const [guidedSlotRoles, setGuidedSlotRoles] = useState(_cache.guidedSlotRoles);
     const [energyLevel, setEnergyLevel] = useState(_cache.energyLevel);
+    const [activeExperimentLimit, setActiveExperimentLimitState] = useState(_cache.activeExperimentLimit);
+    const [healthDotStyle, setHealthDotStyleState] = useState(_cache.healthDotStyle);
+    const [blurQuality, setBlurQualityState] = useState(_cache.blurQuality);
     const [loading, setLoading] = useState(!_cache.hasLoaded);
+
 
     const loadSettings = useCallback(async (uid) => {
         if (!uid) return;
 
         // Skip if this user's settings are already cached
         if (_cache.uid === uid && _cache.hasLoaded) {
-            console.log('[SettingsContext] Cache HIT — skipping fetch for', uid);
             setLoading(false);
             return;
         }
 
-        console.log('[SettingsContext] Loading settings from Supabase for:', uid);
         setLoading(true);
 
         try {
-            const { data, error } = await supabase
+            let { data, error } = await supabase
                 .from('user_settings')
-                .select('focus_slots, guided_slot_roles, energy_level, maintenance_skill_ids, maintenance_enabled')
+                .select('focus_slots, guided_slot_roles, energy_level, maintenance_skill_ids, maintenance_enabled, active_experiment_limit')
                 .eq('user_id', uid)
                 .single();
 
+            // Graceful fallback if the new column is missing in Supabase
+            if (error && error.message?.includes('active_experiment_limit')) {
+                // We'll trust the error message to know which one failed if we wanted to be precise, 
+                // but checking for both covers our bases.
+                const retry = await supabase
+                    .from('user_settings')
+                    .select('focus_slots, guided_slot_roles, energy_level, maintenance_skill_ids, maintenance_enabled')
+                    .eq('user_id', uid)
+                    .single();
+                data = retry.data;
+                error = retry.error;
+            }
+
             if (error && error.code === 'PGRST116') {
                 // Row doesn't exist yet — create with defaults
-                console.log('[SettingsContext] No settings found — creating defaults for', uid);
                 const defaults = {
                     user_id: uid,
                     focus_slots: [null, null, null, null, null],
@@ -98,10 +117,20 @@ export const SettingsProvider = ({ children }) => {
                     maintenance_enabled: true,
                     guided_slot_roles: true,
                     energy_level: 3,
+                    ...(_cache.dbSupportsExperimentLimit ? { active_experiment_limit: 1 } : {})
                 };
-                const { error: insertError } = await supabase
+                
+                let { error: insertError } = await supabase
                     .from('user_settings')
                     .insert(defaults);
+
+                // If insert failed due to column, try without it
+                if (insertError && insertError.message?.includes('active_experiment_limit')) {
+                    _cache.dbSupportsExperimentLimit = false;
+                    delete defaults.active_experiment_limit;
+                    const retryInsert = await supabase.from('user_settings').insert(defaults);
+                    insertError = retryInsert.error;
+                }
 
                 if (!insertError) {
                     _cache.focusSlots = [null, null, null, null, null];
@@ -109,6 +138,7 @@ export const SettingsProvider = ({ children }) => {
                     _cache.maintenanceEnabled = true;
                     _cache.guidedSlotRoles = true;
                     _cache.energyLevel = 3;
+                    _cache.activeExperimentLimit = 1;
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
                     setFocusSlots(_cache.focusSlots);
@@ -116,6 +146,7 @@ export const SettingsProvider = ({ children }) => {
                     setMaintenanceEnabledState(_cache.maintenanceEnabled);
                     setGuidedSlotRoles(_cache.guidedSlotRoles);
                     setEnergyLevel(_cache.energyLevel);
+                    setActiveExperimentLimitState(_cache.activeExperimentLimit);
                 }
             } else if (!error && data) {
                 _cache.focusSlots = data.focus_slots || [null, null, null, null, null];
@@ -123,6 +154,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.maintenanceEnabled = data.maintenance_enabled !== undefined ? data.maintenance_enabled : true;
                 _cache.guidedSlotRoles = data.guided_slot_roles !== undefined ? data.guided_slot_roles : true;
                 _cache.energyLevel = data.energy_level !== undefined ? data.energy_level : 3;
+                _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
                 setFocusSlots(_cache.focusSlots);
@@ -130,7 +162,7 @@ export const SettingsProvider = ({ children }) => {
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
                 setGuidedSlotRoles(_cache.guidedSlotRoles);
                 setEnergyLevel(_cache.energyLevel);
-                console.log('[SettingsContext] Loaded settings successfully');
+                setActiveExperimentLimitState(_cache.activeExperimentLimit);
             }
         } catch (err) {
             console.error('[SettingsContext] Unexpected error during load:', err);
@@ -141,14 +173,38 @@ export const SettingsProvider = ({ children }) => {
 
     const saveSettings = async (updates) => {
         if (!_cache.uid) return;
+        
+        // Strip out the experiment limit if we know the DB doesn't have the column
+        const cleanUpdates = { ...updates };
+        if (!_cache.dbSupportsExperimentLimit) {
+            delete cleanUpdates.active_experiment_limit;
+        }
+
+        // If nothing left to update, skip
+        if (Object.keys(cleanUpdates).length === 0 && !updates.focus_slots) {
+             // We allow focus_slots even if it's the only one
+        }
+
         try {
-            await supabase
+            const { error } = await supabase
                 .from('user_settings')
                 .upsert({
                     user_id: _cache.uid,
-                    ...updates,
+                    ...cleanUpdates,
                     updated_at: new Date().toISOString(),
                 });
+            
+            if (error && error.message?.includes('active_experiment_limit')) {
+                console.error('[SettingsContext] Save failed due to missing limit column. Disabling limit sync.');
+                _cache.dbSupportsExperimentLimit = false;
+                // Retry without the failing column
+                delete cleanUpdates.active_experiment_limit;
+                await supabase.from('user_settings').upsert({
+                    user_id: _cache.uid,
+                    ...cleanUpdates,
+                    updated_at: new Date().toISOString(),
+                });
+            }
         } catch (err) {
             console.error('[SettingsContext] Failed to save settings:', err);
         }
@@ -188,9 +244,39 @@ export const SettingsProvider = ({ children }) => {
         saveSettings({ energy_level: clampedLevel });
     };
 
+    const updateActiveExperimentLimit = (limit) => {
+        const val = parseInt(limit);
+        if (isNaN(val)) return;
+        _cache.activeExperimentLimit = val;
+        setActiveExperimentLimitState(val);
+        saveSettings({ active_experiment_limit: val });
+    };
+
+    const updateHealthDotStyle = (style) => {
+        _cache.healthDotStyle = style;
+        setHealthDotStyleState(style);
+        localStorage.setItem('app-health-dot-style', style);
+    };
+
+    const updateBlurQuality = (quality) => {
+        _cache.blurQuality = quality;
+        setBlurQualityState(quality);
+        localStorage.setItem('app-blur-quality', quality);
+    };
+
+    // Reflect health dot style to DOM for CSS access
+    useEffect(() => {
+        document.documentElement.dataset.healthDotStyle = healthDotStyle;
+    }, [healthDotStyle]);
+
+    useEffect(() => {
+        document.documentElement.dataset.blurQuality = blurQuality;
+    }, [blurQuality]);
+
+
+
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('[SettingsContext] Auth event:', event);
 
             // ONLY react to these major events. Ignore TOKEN_REFRESHED, USER_UPDATED, etc.
             if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
@@ -199,7 +285,6 @@ export const SettingsProvider = ({ children }) => {
                     loadSettings(uid);
                 }
             } else if (event === 'SIGNED_OUT') {
-                console.log('[SettingsContext] Cleaning cache on sign out');
                 _cache.uid = null;
                 _cache.hasLoaded = false;
                 _cache.focusSlots = [null, null, null, null, null];
@@ -207,11 +292,13 @@ export const SettingsProvider = ({ children }) => {
                 _cache.maintenanceEnabled = true;
                 _cache.guidedSlotRoles = true;
                 _cache.energyLevel = 3;
+                _cache.activeExperimentLimit = 1;
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
                 setGuidedSlotRoles(_cache.guidedSlotRoles);
                 setEnergyLevel(_cache.energyLevel);
+                setActiveExperimentLimitState(_cache.activeExperimentLimit);
             }
         });
 
@@ -223,22 +310,35 @@ export const SettingsProvider = ({ children }) => {
         return () => subscription.unsubscribe();
     }, [loadSettings]);
 
+    const refreshSettings = useCallback(() => {
+        if (_cache.uid) loadSettings(_cache.uid);
+    }, [loadSettings]);
+
+    const settingsValue = useMemo(() => ({
+        focusSlots,
+        maintenanceSkillIds,
+        maintenanceEnabled,
+        guidedSlotRoles,
+        energyLevel,
+        updateFocusSlot,
+        updateMaintenanceSkillIds,
+        toggleMaintenanceEnabled,
+        updateGuidedSlotRoles,
+        updateEnergyLevel,
+        activeExperimentLimit,
+        updateActiveExperimentLimit,
+        healthDotStyle,
+        updateHealthDotStyle,
+        blurQuality,
+        updateBlurQuality,
+        dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
+        loading,
+        userId: _cache.uid,
+        refreshSettings,
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, loading, refreshSettings]);
+
     return (
-        <SettingsContext.Provider value={{
-            focusSlots,
-            maintenanceSkillIds,
-            maintenanceEnabled,
-            guidedSlotRoles,
-            energyLevel,
-            updateFocusSlot,
-            updateMaintenanceSkillIds,
-            toggleMaintenanceEnabled,
-            updateGuidedSlotRoles,
-            updateEnergyLevel,
-            loading,
-            userId: _cache.uid,
-            refreshSettings: () => _cache.uid && loadSettings(_cache.uid),
-        }}>
+        <SettingsContext.Provider value={settingsValue}>
             {children}
         </SettingsContext.Provider>
     );

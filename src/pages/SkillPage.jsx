@@ -43,16 +43,16 @@ const macOSSpring = {
 };
 
 
-console.log("SkillPage module loaded");
 
 const SkillPage = () => {
     const { id } = useParams();
     const location = useLocation();
     const { showCompletedTasks, setShowCompletedTasks } = useTheme();
-    const { energyLevel } = useSettings();
-    console.log('[energy level]', energyLevel);
+    const { energyLevel, activeExperimentLimit, maintenanceSkillIds, updateMaintenanceSkillIds } = useSettings();
+
     const [skill, setSkill] = useState(null);
     const [allNodes, setAllNodes] = useState([]);
+    const allNodesRef = useRef([]);
     const [loading, setLoading] = useState(true);
 
     // UI State for expansion
@@ -95,9 +95,11 @@ const SkillPage = () => {
     const [isConfirmSleepModalOpen, setIsConfirmSleepModalOpen] = useState(false);
     const [pendingSleepObj, setPendingSleepObj] = useState(null);
     const [isSleepingExpanded, setIsSleepingExpanded] = useState(false);
+    const [collapsedCompletedAspects, setCollapsedCompletedAspects] = useState({});
 
     // Evolution Drill-In State
     const [activeHabitForEvolution, setActiveHabitForEvolution] = useState(null);
+    const [isHabitsExpanded, setIsHabitsExpanded] = useState(energyLevel !== 4);
 
     // Create Habit State
     const [isCreatingHabit, setIsCreatingHabit] = useState(false);
@@ -163,23 +165,14 @@ const SkillPage = () => {
 
     // Derived State
     const activeObjectives = useMemo(() => {
-        console.log('[FILTER] objectives coming in:', objectives.length);
-        console.log('[OBJECTIVE RAW]', objectives.map(o => ({
-            id: o.id,
-            name: o.name,
-            status: o.metadata?.status,
-            childCount: allNodes.filter(n => n.parentId === o.id).length,
-            children: allNodes.filter(n => n.parentId === o.id).map(n => ({
-              id: n.id,
-              name: n.name,
-              type: n.type,
-              status: n.metadata?.status
-            }))
-        })));
         return objectives.filter(o => {
-            const keep = !o.metadata?.isArchived && !o.metadata?.isSleeping && o.metadata?.status !== 'COMPLETED' && o.metadata?.status !== 'ACHIEVED';
-            console.log('[FILTER] node:', o.id, 'status:', o.metadata?.status, 'keep:', keep);
-            return keep;
+            return !o.metadata?.isArchived && !o.metadata?.isSleeping && o.metadata?.status !== 'COMPLETED' && o.metadata?.status !== 'ACHIEVED';
+        }).sort((a, b) => {
+            const aPaused = a.metadata?.status === 'ROTATING';
+            const bPaused = b.metadata?.status === 'ROTATING';
+            if (aPaused && !bPaused) return 1;
+            if (!aPaused && bPaused) return -1;
+            return 0;
         });
     }, [objectives]);
 
@@ -371,6 +364,27 @@ const SkillPage = () => {
 
         return nextTasks.slice(0, 3);
     }, [allNodes, habits, id]);
+ 
+    const hasRecentPlanning = useMemo(() => {
+        if (!allNodes.length || !id) return false;
+        const fifteenMinsAgo = Date.now() - (15 * 60 * 1000);
+        
+        // Find all descendants of this skill
+        const descendants = (allNodes || []).filter(n => {
+            let curr = n;
+            while (curr && curr.parentId) {
+                if (curr.parentId === id) return true;
+                curr = allNodes.find(node => node.id === curr.parentId);
+            }
+            return false;
+        });
+
+        return descendants.some(n => {
+            const upAt = n.updatedAt ? new Date(n.updatedAt).getTime() : 0;
+            const crAt = n.createdAt ? new Date(n.createdAt).getTime() : 0;
+            return upAt > fifteenMinsAgo || crAt > fifteenMinsAgo;
+        });
+    }, [allNodes, id]);
 
     const fetchSkills = useCallback(async () => {
         const [nodes, habitsData] = await Promise.all([
@@ -378,6 +392,7 @@ const SkillPage = () => {
             habitService.getHabitsBySkill(id)
         ]);
             setAllNodes(nodes);
+            allNodesRef.current = nodes;
             setSkillHabits(habitsData || []);
             
             const skillNode = nodes.find(n => n.id === id);
@@ -385,10 +400,9 @@ const SkillPage = () => {
                 setSkill(skillNode);
                 setTempBecoming(skillNode.metadata?.identityAnchor || '');
             } else {
-                console.log("SkillPage fetch - Skill node not found for ID:", id);
                 setSkill(null);
             }
-    }, [id, expandedObjectiveIds, loading]);
+    }, [id]);
 
     const fetchData = useCallback(async () => {
         try {
@@ -399,6 +413,39 @@ const SkillPage = () => {
             setLoading(false);
         }
     }, [fetchSkills]);
+
+    async function checkAndAutoPauseExperiment(experimentId, currentTaskId) {
+        if (!experimentId) return;
+        const experiment = allNodes.find(n => n.id === experimentId);
+        if (experiment && experiment.metadata?.status === ObjectiveStatuses.ACTIVE) {
+            const aspectIds = allNodes.filter(n => n.parentId === experimentId && n.type === NodeTypes.ASPECT).map(n => n.id);
+            const otherPending = allNodes.filter(n => 
+                n.type === NodeTypes.TASK && 
+                aspectIds.includes(n.parentId) && 
+                n.id !== currentTaskId && 
+                n.metadata?.status !== TaskStatuses.DONE
+            );
+            if (otherPending.length === 0) {
+                try {
+                    await backbone.updateNode(experimentId, {
+                        metadata: {
+                            ...experiment.metadata,
+                            status: 'ROTATING',
+                            isActive: false,
+                            deactivatedAt: Date.now()
+                        }
+                    });
+                    fetchData();
+                } catch (err) {
+                    console.error("[AUTO-PAUSE] Failed to auto-pause experiment", err);
+                }
+            } else {
+                fetchData();
+            }
+        } else {
+            fetchData();
+        }
+    }
 
     const debouncedUpdateBecoming = useMemo(() => {
         let timeout;
@@ -419,7 +466,6 @@ const SkillPage = () => {
     }, [skill?.id, skill?.metadata]);
 
     const handleLogPulse = useCallback(async (obj) => {
-        console.log(`[PULSE] Logging MVE for objective: ${obj.id}`);
         try {
             await backbone.awardHryvnia(1, "MVE Pulse");
             await backbone.incrementDailyCompletionCount();
@@ -452,7 +498,8 @@ const SkillPage = () => {
 
         if (newStatus === 'ACTIVE') {
             const activeInSkill = objectives.filter(o => o.metadata?.isActive === true).length;
-            if (activeInSkill >= 1 && !obj.metadata?.isActive) {
+            const limit = typeof activeExperimentLimit === 'number' ? activeExperimentLimit : 1;
+            if (activeInSkill >= limit && !obj.metadata?.isActive) {
                 setIsLimitModalOpen(true);
                 return;
             }
@@ -511,11 +558,12 @@ const SkillPage = () => {
                 parentId: id,
                 name: name,
                 metadata: {
-                    status: ObjectiveStatuses.ACTIVE,
-                    isActive: true,
+                    status: 'ROTATING',
+                    isActive: false,
                     isSleeping: false,
                     isArchived: false,
-                    activatedAt: Date.now(),
+                    activatedAt: null,
+                    deactivatedAt: Date.now(),
                     theme,
                     durationInDays: duration,
                     accumulationType: accType,
@@ -537,7 +585,7 @@ const SkillPage = () => {
         } catch (error) {
             console.error("Failed to create objective:", error);
         }
-    }, [newObjectiveName, newObjectiveTheme, newObjectiveMVE, newObjectiveDuration, newObjectiveAccType, newObjectiveWish, newObjectiveOutcome, newObjectiveIconUrl, id]);
+    }, [newObjectiveName, newObjectiveTheme, newObjectiveMVE, newObjectiveDuration, newObjectiveAccType, newObjectiveWish, newObjectiveOutcome, newObjectiveIconUrl, id, fetchData]);
 
     const handleStartEditObjective = useCallback((obj) => {
         setEditingObjectiveId(obj.id);
@@ -687,7 +735,6 @@ const SkillPage = () => {
         }));
 
         // Fire-and-forget backend update
-        console.log(`[DEBUG SkillPage] handleSuggestionClick - patching metadata.isToday for ${task.id}`);
         backbone.updateNode(task.id, {
             metadata: { isToday: true }
         }).catch(err => {
@@ -843,11 +890,21 @@ const SkillPage = () => {
         });
 
         backbone.incrementTaskRepetition(taskId)
+            .then(() => {
+                if (nextUnits >= targetUnits && targetUnits > 0) {
+                    const parentAspect = allNodes.find(n => n.id === parentAspectId);
+                    checkAndAutoPauseExperiment(parentAspect?.parentId, taskId);
+                } else {
+                    fetchData();
+                }
+            })
             .catch(error => {
                 console.error("Failed to increment repetition:", error);
                 fetchData();
             });
-    }, [allNodes, fetchData]);
+    }, [allNodes, fetchData, checkAndAutoPauseExperiment]);
+
+
 
     const handleToggleTaskStatus = useCallback((task) => {
         const currentStatus = task.metadata?.status || TaskStatuses.NOT_STARTED;
@@ -861,7 +918,6 @@ const SkillPage = () => {
                           (energyLevel <= 2); // In low energy mode, any interaction on this page is a pulse pulse reset
 
         if (isMVETask && nextStatus === TaskStatuses.DONE) {
-            console.log(`[MVE] Pulse detected for task: ${task.name}. Resetting to uncompleted state.`);
             
             // 1. Find parent experiment to trigger the MVE Portal
             const parentAspect = allNodes.find(n => n.id === task.parentId);
@@ -900,17 +956,23 @@ const SkillPage = () => {
             return n;
         }));
 
-        console.log(`[DEBUG SkillPage] handleToggleTaskStatus - patching metadata.status to ${nextStatus} for ${task.id}`);
         backbone.updateNode(task.id, {
             metadata: {
                 status: nextStatus,
                 completedAt
             }
+        }).then(() => {
+            if (nextStatus === TaskStatuses.DONE) {
+                const parentAspect = allNodes.find(n => n.id === task.parentId);
+                checkAndAutoPauseExperiment(parentAspect?.parentId, task.id);
+            } else {
+                fetchData();
+            }
         }).catch(error => {
             console.error("[DEBUG SkillPage] Failed to toggle task status:", error);
             fetchData();
         });
-    }, [fetchData, allNodes, handleLogPulse]);
+    }, [fetchData, allNodes, handleLogPulse, checkAndAutoPauseExperiment]);
 
     const handleAddToToday = useCallback((e, taskId) => {
         if (e) {
@@ -947,7 +1009,6 @@ const SkillPage = () => {
             return n;
         }));
 
-        console.log(`[DEBUG SkillPage] handleAddToToday - patching metadata for ${taskId}:`, nextState);
         backbone.updateNode(taskId, {
             metadata: nextState
         }).catch(error => {
@@ -961,31 +1022,43 @@ const SkillPage = () => {
         const idToDelete = taskToDelete.id;
         setTaskToDelete(null);
 
+        const parentAspect = allNodes.find(n => n.id === taskToDelete.parentId);
+        const experimentId = parentAspect?.parentId;
+
         backbone.deleteNode(idToDelete)
             .then(() => {
-                fetchData();
+                if (experimentId) {
+                    checkAndAutoPauseExperiment(experimentId, idToDelete);
+                } else {
+                    fetchData();
+                }
             })
             .catch(error => {
                 console.error("Failed to delete task:", error);
                 alert("Error deleting task: " + error.message);
                 fetchData();
             });
-    }, [taskToDelete, fetchData]);
+    }, [taskToDelete, fetchData, allNodes, checkAndAutoPauseExperiment]);
 
     const handleDeleteAspect = useCallback(async () => {
         if (!aspectToDelete) return;
         const idToDelete = aspectToDelete.id;
         setAspectToDelete(null);
 
+        const experimentId = aspectToDelete.parentId;
         try {
             await backbone.deleteNode(idToDelete);
-            fetchData();
+            if (experimentId) {
+                await checkAndAutoPauseExperiment(experimentId, null);
+            } else {
+                fetchData();
+            }
         } catch (error) {
             console.error("Failed to delete aspect:", error);
             alert("Error deleting aspect: " + error.message);
             fetchData();
         }
-    }, [aspectToDelete, fetchData]);
+    }, [aspectToDelete, fetchData, allNodes, checkAndAutoPauseExperiment]);
 
     const handleTaskDragStart = useCallback((event) => {
         setDragActiveId(event.active.id);
@@ -1054,7 +1127,6 @@ const SkillPage = () => {
 
         const targetContainer = allNodes.find(n => n.id === targetAspectId);
         if (!targetContainer || (targetContainer.type !== NodeTypes.ASPECT && targetContainer.type !== NodeTypes.STAGE)) {
-            console.warn("DnD Aborted: Invalid target container type", targetContainer?.type);
             return;
         }
 
@@ -1130,12 +1202,6 @@ const SkillPage = () => {
     }, []);
 
     const performObjectiveToggle = useCallback(async (obj) => {
-        console.log("Experiment close attempt:", obj);
-        console.log("experimentNode.id:", obj?.id);
-        console.log("experimentNode.parentId:", obj?.parentId);
-        console.log("experimentNode.type:", obj?.type);
-        console.log("experimentNode.status:", obj?.metadata?.status);
-        console.log("experimentNode.order:", obj?.metadata?.orderIndex);
 
         const isCurrentlyActive = obj.metadata?.isActive === true || (!obj.metadata?.isActive && !obj.metadata?.isSleeping && !obj.metadata?.isArchived);
         const nextIsActive = !isCurrentlyActive;
@@ -1168,7 +1234,8 @@ const SkillPage = () => {
 
         if (!isCurrentlyActive) {
             const activeInSkill = objectives.filter(o => o.metadata?.isActive === true).length;
-            if (activeInSkill >= 1) {
+            const limit = typeof activeExperimentLimit === 'number' ? activeExperimentLimit : 1;
+            if (activeInSkill >= limit) {
                 setIsLimitModalOpen(true);
                 return;
             }
@@ -1428,15 +1495,6 @@ const SkillPage = () => {
         }
     }, [newHabitTrigger, newHabitAction, newHabitPeriod, newHabitCount, id, fetchData]);
 
-    const handleHabitComplete = useCallback(async (habitId) => {
-        try {
-            await habitService.completeHabit(habitId);
-            fetchData();
-        } catch (error) {
-            console.error("Failed to complete habit:", error);
-        }
-    }, [fetchData]);
-
     const getObjectiveTimeInfo = useCallback((obj) => {
         const m = obj.metadata || {};
         const isActive = m.isActive === true || (!m.isActive && !m.isSleeping && !m.isArchived);
@@ -1503,11 +1561,15 @@ const SkillPage = () => {
     // --- EXPIRY DECISION FLOW ---
     const expiringObjective = useMemo(() => {
         return (activeObjectives || []).find(obj => {
-            if (!obj.metadata?.activatedAt || !obj.metadata?.durationInDays) return false;
-            const expiry = obj.metadata.activatedAt + (obj.metadata.durationInDays * 24 * 60 * 60 * 1000);
-            return Date.now() >= expiry;
+            if (!obj.metadata?.durationInDays) return false;
+            // Use activity-based day count (same as the displayed "Day X/30d")
+            // so the expiry banner only fires when the USER has actually engaged
+            // for durationInDays days, not just because wall-clock time has elapsed.
+            const timeInfo = getObjectiveTimeInfo(obj);
+            if (!timeInfo) return false;
+            return timeInfo.days >= obj.metadata.durationInDays;
         });
-    }, [activeObjectives]);
+    }, [activeObjectives, getObjectiveTimeInfo]);
 
     const handleCompleteExpiry = async (id) => {
         await backbone.completeObjective(id);
@@ -1542,10 +1604,21 @@ const SkillPage = () => {
             fetchData();
         };
         init();
-        const sub1 = repository.subscribe(() => {
-            if (!isReorderingRef.current) {
-                fetchData();
+        const sub1 = repository.subscribe((changedId) => {
+            if (isReorderingRef.current) return;
+            if (changedId !== null && changedId !== id) {
+                const isDescendant = (() => {
+                    let current = allNodesRef.current.find(n => n.id === changedId);
+                    if (!current) { fetchData(); return; }
+                    while (current) {
+                        if (current.parentId === id) return true;
+                        current = allNodesRef.current.find(n => n.id === current.parentId);
+                    }
+                    return false;
+                })();
+                if (!isDescendant) return;
             }
+            fetchData();
         });
         return () => sub1();
     }, [fetchData, id]);
@@ -1603,7 +1676,11 @@ const SkillPage = () => {
     useEffect(() => {
         if (!loading && energyLevel >= 3 && activeObjectives.length > 0) {
             setExpandedObjectiveIds(prev => {
-                const activeIds = activeObjectives.map(o => o.id);
+                // Strictly expand ONLY status === 'ACTIVE' objectives, retracting 'ROTATING' by default
+                const activeIds = activeObjectives
+                    .filter(o => o.metadata?.status === 'ACTIVE')
+                    .map(o => o.id);
+                
                 const missingIds = activeIds.filter(id => !prev.includes(id));
                 if (missingIds.length === 0) return prev;
                 return [...prev, ...missingIds];
@@ -1614,10 +1691,6 @@ const SkillPage = () => {
     // DIAGNOSTIC LOGGING - Moved to useEffect for performance
     useEffect(() => {
         if (process.env.NODE_ENV === "development") {
-            console.log("--- SkillPage Diagnostic ---");
-            console.log("SkillPage skill:", skill);
-            console.log("allNodes length:", allNodes?.length);
-            console.log("activeObjectives:", activeObjectives);
             
             (activeObjectives || []).forEach((obj, index) => {
                 console.log(`Active Experiment [${index}]:`, {
@@ -1630,11 +1703,6 @@ const SkillPage = () => {
                 });
             });
 
-            console.log("sleepingObjectives:", sleepingObjectives);
-            console.log("archivedObjectives:", archivedObjectives);
-            console.log("nodesByParent size:", nodesByParent?.size);
-            console.log("loading:", loading);
-            console.log("----------------------------");
         }
     }, [skill, allNodes.length, activeObjectives, sleepingObjectives, archivedObjectives, nodesByParent.size, loading]);
 
@@ -1645,8 +1713,8 @@ const SkillPage = () => {
         return <div className="skill-page-error">Skill not found.</div>;
     }
 
-    // --- ENERGY 1: GATING: SURVIVAL VIEW ---
-    if (energyLevel === 1) {
+    // --- ENERGY 1-2 GATING: SURVIVAL VIEW ---
+    if (energyLevel <= 2) {
         const mveTask = allNodes.find(n => 
             n.type === NodeTypes.TASK && 
             n.metadata?.status !== TaskStatuses.DONE &&
@@ -1685,6 +1753,7 @@ const SkillPage = () => {
                     <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '8px', fontWeight: 800, letterSpacing: '-0.03em' }}>Fuel: {skill.name}</h1>
                     <p style={{ color: '#444', fontSize: '15px', marginBottom: '48px', fontWeight: 500 }}>Just a tiny win for your future self.</p>
 
+                    {/* Temporarily hiding MVE Survival Card
                     <div className="mini-launchpad-card" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '28px', padding: '48px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
                         <h2 style={{ fontSize: '22px', color: '#fff', marginBottom: '12px', fontWeight: 600, lineHeight: 1.3 }}>{mveTask?.name || "Ready to focus?"}</h2>
                         <p style={{ color: '#444', fontSize: '13px', marginBottom: '40px', fontWeight: 700, letterSpacing: '0.05em' }}>⏱️ 2 MIN SPRINT</p>
@@ -1699,6 +1768,7 @@ const SkillPage = () => {
                             Start Focus Session
                         </button>
                     </div>
+                    */}
 
                     {displayedHabits.length > 0 && (
                         <div style={{ marginTop: '48px', textAlign: 'left' }}>
@@ -1768,7 +1838,11 @@ const SkillPage = () => {
                         {pinch === 'CHALLENGE' && "Mastery has plateaued. You are going through the motions without growth. Increase the difficulty or move to a more complex stage."}
                         {pinch === 'PASSION' && "High value, high resistance. Your 'Becoming' statement is strong, but initiation is blocked. Break the next task into a 2-minute Minimum Viable Effort."}
                         {pinch === 'INTEREST' && "Low intrinsic fuel. This skill needs more 'Play' or 'Novelty' to sustain momentum. Look for an unorthodox angle."}
-                        {pinch === 'HURRY' && "Execution lag detected. You are over-planning. Pick any task and start for 5 minutes now."}
+                        {pinch === 'HURRY' && (
+                            hasRecentPlanning 
+                                ? "Roadmap ready, 5-min kickoff to break the seal?"
+                                : "I notice you're feeling stuck, 5-min kickoff to break the seal?"
+                        )}
                     </p>
                 </div>
             </div>
@@ -1778,7 +1852,7 @@ const SkillPage = () => {
     const renderObjective = (obj) => {
 
         const isEditing = editingObjectiveId === obj.id;
-        const isExpanded = energyLevel === 3 || expandedObjectiveIds.includes(obj.id) || (obj.metadata?.isFocused && energyLevel >= 3);
+        const isExpanded = expandedObjectiveIds.includes(obj.id);
         const isSleeping = obj.metadata?.isSleeping === true;
         const aspects = getChildren(obj.id, NodeTypes.ASPECT);
         const timeInfo = getObjectiveTimeInfo(obj);
@@ -1990,9 +2064,9 @@ const SkillPage = () => {
                                         style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-primary)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none' }}
                                     />
                                 ) : (
-                                    <span className="objective-title-static" style={{ fontSize: energyLevel === 3 ? '28px' : '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
+                                    <span className="objective-title-static" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
                                 )}
-                                {energyLevel >= 4 && (
+                                {energyLevel >= 5 && (
                                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)', opacity: 0.8, lineHeight: '1.4', maxWidth: '500px' }}>
                                         {obj.metadata?.wish || "Something worth doing."}
                                     </div>
@@ -2000,8 +2074,8 @@ const SkillPage = () => {
                             </div>
                         </div>
 
-                        {energyLevel !== 3 && (
-                            <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                        <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                                 {energyLevel >= 4 && (
                                      <button
                                          onClick={() => handleStartEditObjective(obj)}
                                          style={{
@@ -2030,33 +2104,30 @@ const SkillPage = () => {
                                      >
                                          <Pencil size={11} strokeWidth={2.5} />
                                      </button>
-                                 <div className="experiment-progress-strip" style={{ 
-                                     display: 'flex', 
-                                     alignItems: 'center', 
-                                     gap: '10px', 
-                                     background: 'rgba(255, 255, 255, 0.03)', 
-                                     boxSizing: 'border-box',
-                                     height: '28px',
-                                     padding: '0 12px', 
-                                     lineHeight: '1',
-                                     borderRadius: '6px', 
-                                     fontSize: '11px', 
-                                     fontWeight: '600', 
-                                     color: 'var(--text-secondary)',
-                                     border: '1px solid rgba(255, 255, 255, 0.04)',
-                                     backdropFilter: 'blur(8px)',
-                                     WebkitBackdropFilter: 'blur(8px)'
-                                 }}>
-                                    {timeInfo && (
-                                        <span className="day-info" style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
-                                            Day {timeInfo.days}{obj.metadata?.durationInDays ? `/${obj.metadata.durationInDays}d` : ''}
-                                        </span>
-                                    )}
-                                    <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
-                                    <span className="metric-info" style={{ opacity: 0.8 }}>
-                                        {accumulationValue} {obj.metadata?.accumulationType || 'units'}
+                                 )}
+                             <div className="experiment-progress-strip" style={{ 
+                                 display: 'flex', 
+                                 alignItems: 'center', 
+                                 gap: '10px', 
+                                 background: 'rgba(255, 255, 255, 0.03)', 
+                                 boxSizing: 'border-box',
+                                 height: '28px',
+                                 padding: '0 12px', 
+                                 lineHeight: '1',
+                                 borderRadius: '6px', 
+                                 fontSize: '11px', 
+                                 fontWeight: '600', 
+                                 color: 'var(--text-secondary)',
+                                 border: '1px solid rgba(255, 255, 255, 0.04)',
+                                 backdropFilter: 'blur(8px)',
+                                 WebkitBackdropFilter: 'blur(8px)'
+                             }}>
+                                {timeInfo && (
+                                    <span className="day-info" style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
+                                        Day {timeInfo.days}{obj.metadata?.durationInDays ? `/${obj.metadata.durationInDays}d` : ''}
                                     </span>
-                                    {energyLevel >= 3 && obj.metadata?.mve && (
+                                    {/* Temporarily hiding MVE stealth icon
+                                    energyLevel >= 3 && obj.metadata?.mve && (
                                         <>
                                             <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
                                             <div className="mve-stealth-anchor">
@@ -2071,7 +2142,8 @@ const SkillPage = () => {
                                                 </div>
                                             </div>
                                         </>
-                                    )}
+                                    )
+                                    */}
                                 </div>
 
                                 <div className="objective-status-actions">
@@ -2104,11 +2176,42 @@ const SkillPage = () => {
                                     </button>
                                 </div>
                             </div>
-                        )}
+
+                            <div className="objective-status-actions">
+                                <select 
+                                    className="objective-status-selector"
+                                    value={obj.metadata?.status || (obj.metadata?.isSleeping ? 'SLEEPING' : (obj.metadata?.isArchived ? 'COMPLETED' : 'ACTIVE'))}
+                                    onChange={(e) => handleStatusUpdate(obj, e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <option value="ACTIVE">Active</option>
+                                    <option value="SLEEPING">Sleeping</option>
+                                    <option value="COMPLETED">Completed</option>
+                                    <option value="ROTATING">Paused</option>
+                                </select>
+                                
+                                <button 
+                                    className="trash-experiment-btn"
+                                    title="Delete Experiment"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteObjective(obj);
+                                    }}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
 
                         </div>
                     )}
-                    {energyLevel <= 2 && (
+                    {/* Temporarily hiding MVE portal for Energy <= 2
+                    energyLevel <= 2 && (
                         <div 
                             key="mve-portal-always-on"
                             className="objective-content mve-portal-active"
@@ -2141,14 +2244,14 @@ const SkillPage = () => {
                                                 {isMVECompletedToday && (
                                                     <div style={{ position: 'relative', zIndex: 3, marginBottom: '16px' }}>
                                                         <div style={{ color: 'var(--color-primary)', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' }}>MVE Unlocked</div>
-                                                        <div style={{ color: 'white', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em' }}>Great Work. The rest is bonus.</div>
+                                                        <div style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em' }}>Great Work. The rest is bonus.</div>
                                                     </div>
                                                 )}
 
-                                                <div className="mve-intro" style={{ color: '#a1a1aa', fontSize: '15px', fontWeight: '500', opacity: 0.9, letterSpacing: '-0.01em' }}>
+                                                <div className="mve-intro" style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: '500', opacity: 0.9, letterSpacing: '-0.01em' }}>
                                                     Since you're feeling low energy, why don't you
                                                 </div>
-                                                <h2 className="mve-task" style={{ color: '#ffffff', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.03em', maxWidth: '580px', lineHeight: '1.25', margin: 0 }}>
+                                                <h2 className="mve-task" style={{ color: 'var(--text-primary)', fontSize: '28px', fontWeight: '800', letterSpacing: '-0.03em', maxWidth: '580px', lineHeight: '1.25', margin: 0 }}>
                                                     {obj.metadata?.mve || 'Just reflect back on what is working'}
                                                 </h2>
                                                 
@@ -2218,7 +2321,8 @@ const SkillPage = () => {
                                                 </button>
                                             </motion.div>
                         </div>
-                    )}
+                    )
+                    */}
                     {energyLevel > 2 && (
                         <AnimatePresence mode="wait">
                             {isExpanded && !isSleeping && (
@@ -2232,7 +2336,8 @@ const SkillPage = () => {
                                         style={{ overflow: 'visible' }}
                                     >
                                         <div style={{ overflow: 'visible' }}>
-                                            {isMVECompletedToday && (
+                                            {/* Temporarily hiding MVE success banner
+                                            isMVECompletedToday && (
                                                 <motion.div 
                                                     initial={{ opacity: 0, y: -10 }}
                                                     animate={{ opacity: 1, y: 0 }}
@@ -2251,12 +2356,12 @@ const SkillPage = () => {
                                                 >
                                                     <div>
                                                         <div style={{ color: 'var(--color-primary)', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' }}>MVE Unlocked</div>
-                                                        <div style={{ color: 'white', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em' }}>Great Work. The rest is bonus.</div>
+                                                        <div style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.02em' }}>Great Work. The rest is bonus.</div>
                                                     </div>
                                                     <div style={{ display: 'flex', gap: '12px' }}>
                                                         <button 
                                                             onClick={() => navigate('/launchpad')}
-                                                            style={{ padding: '8px 16px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontSize: '12px', fontWeight: '600' }}
+                                                            style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--alpha-low)', color: 'var(--text-primary)', border: '1px solid var(--color-border)', fontSize: '12px', fontWeight: '600' }}
                                                         >
                                                             Go to Launchpad
                                                         </button>
@@ -2270,7 +2375,8 @@ const SkillPage = () => {
                                                         )}
                                                     </div>
                                                 </motion.div>
-                                            )}
+                                            )
+                                            */}
                                             {energyLevel >= 5 && (
                                                 <div className="experiment-display-card">
                                                     <AnimatePresence mode="wait">
@@ -2284,14 +2390,14 @@ const SkillPage = () => {
                                                         >
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '40px', padding: '12px 0 24px 0' }}>
                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                                    <div style={{ fontSize: '15px', color: 'white', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                                                                    <div style={{ fontSize: '15px', color: 'var(--text-primary)', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
                                                                         <span style={{ fontWeight: '700', whiteSpace: 'nowrap' }}>Your wish:</span>
-                                                                        <span style={{ color: '#a1a1aa', lineHeight: '1.5' }}>{obj.metadata?.wish || "the wish goes here"}</span>
+                                                                        <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5' }}>{obj.metadata?.wish || "the wish goes here"}</span>
                                                                     </div>
 
-                                                                    <div style={{ fontSize: '15px', color: 'white', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                                                                    <div style={{ fontSize: '15px', color: 'var(--text-primary)', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
                                                                         <span style={{ fontWeight: '700', whiteSpace: 'nowrap' }}>Core outcome:</span>
-                                                                        <span style={{ color: '#a1a1aa', lineHeight: '1.5' }}>{obj.metadata?.outcome || "outcome goes here"}</span>
+                                                                        <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5' }}>{obj.metadata?.outcome || "outcome goes here"}</span>
                                                                     </div>
                                                                 </div>
 
@@ -2320,7 +2426,7 @@ const SkillPage = () => {
                                                     exit={{ opacity: 0, y: 20 }}
                                                     transition={macOSSpring}
                                                 >
-                                                    <div className="masonry-columns-wrapper" style={{ display: 'flex', gap: '24px', paddingTop: '8px' }}>
+                                                    <div className="masonry-columns-wrapper" style={{ display: 'flex', gap: '24px', paddingTop: '8px', flexWrap: 'wrap' }}>
                                                         {(() => {
                                                             const leftColumn = [];
                                                             const rightColumn = [];
@@ -2343,9 +2449,26 @@ const SkillPage = () => {
                                                                 return bFixes - aFixes;
                                                             });
 
-                                                            const aspectsToRender = energyLevel === 3 ? sortedAspects.slice(0, 2) : aspects;
+                                                            const aspectsToRender = energyLevel === 3 
+                                                                ? (creatingTaskForAspectId 
+                                                                    ? [...new Set([...sortedAspects.slice(0, 2), aspects.find(a => a.id === creatingTaskForAspectId)].filter(Boolean))]
+                                                                    : sortedAspects.slice(0, 2))
+                                                                : aspects;
+
+                                                            // Split into pending vs completed (no pending tasks)
+                                                            const pendingAspects = aspectsToRender.filter(a => {
+                                                                const tasks = getChildren(a.id, NodeTypes.TASK);
+                                                                return tasks.length === 0 || tasks.some(t => t.metadata?.status !== TaskStatuses.DONE) || creatingTaskForAspectId === a.id;
+                                                            });
+                                                            const completedAspects = aspectsToRender.filter(a => {
+                                                                const tasks = getChildren(a.id, NodeTypes.TASK);
+                                                                return tasks.length > 0 && tasks.every(t => t.metadata?.status === TaskStatuses.DONE) && creatingTaskForAspectId !== a.id;
+                                                            });
+                                                            const isCompletedAspectsExpanded = collapsedCompletedAspects[obj.id] === true;
+                                                            const aspectsForMasonry = energyLevel >= 4 ? pendingAspects : aspectsToRender;
                                     
-                                                            aspectsToRender.forEach(aspect => {
+                                                            aspectsForMasonry.forEach(aspect => {
+                                                                const isCreatingTask = creatingTaskForAspectId === aspect.id;
                                                                 const rawAspectTasks = getChildren(aspect.id, NodeTypes.TASK);
                                                                 const aspectTasks = showCompletedTasks 
                                                                     ? rawAspectTasks 
@@ -2388,18 +2511,18 @@ const SkillPage = () => {
                                                                                         />
                                                                                     ) : (
                                                                                         <span 
-                                                                                            className="aspect-name text-white font-semibold" 
+                                                                                            className="aspect-name" 
                                                                                             onClick={e => e.stopPropagation()}
                                                                                             onDoubleClick={(e) => {
                                                                                                 e.stopPropagation();
                                                                                                 e.preventDefault();
                                                                                                 handleStartInlineEdit(aspect.id, aspect.name);
                                                                                             }}
-                                                                                            style={{ cursor: 'text', userSelect: 'none', color: 'white', fontWeight: 600 }}
+                                                                                            style={{ cursor: 'text', userSelect: 'none', color: 'var(--text-primary)', fontWeight: 600 }}
                                                                                             title="Double-click to rename"
                                                                                         >{aspect.name}</span>
                                                                                     )}
-                                                                                    <span className="aspect-task-count text-zinc-500" style={{ display: 'inline-flex', gap: '3px', color: '#71717a' }}>
+                                                                                    <span className="aspect-task-count" style={{ display: 'inline-flex', gap: '3px', color: 'var(--text-secondary)' }}>
                                                                                         {(() => {
                                                                                             const aspectTasksForCount = getChildren(aspect.id, NodeTypes.TASK);
                                                                                             const doneInAspect = aspectTasksForCount.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
@@ -2438,6 +2561,39 @@ const SkillPage = () => {
                                                                                 </div>
                                                                             </div>
                                             
+                                                                            {isCreatingTask && (
+                                                                                <motion.div 
+                                                                                    initial={{ opacity: 0, y: -4 }}
+                                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                                    style={{ padding: '0 0 16px 0', borderBottom: '1px solid var(--alpha-low)', marginBottom: '16px' }}
+                                                                                >
+                                                                                    <input
+                                                                                        autoFocus
+                                                                                        className="task-input-inline"
+                                                                                        placeholder="Add a new mission..."
+                                                                                        value={newTaskName}
+                                                                                        onChange={e => setNewTaskName(e.target.value)}
+                                                                                        onKeyDown={e => handleCreateTask(e, aspect.id)}
+                                                                                        onBlur={() => setCreatingTaskForAspectId(null)}
+                                                                                        style={{
+                                                                                            width: '100%',
+                                                                                            background: 'rgba(255, 255, 255, 0.03)',
+                                                                                            border: '1px solid var(--color-primary)',
+                                                                                            borderRadius: '10px',
+                                                                                            color: 'var(--text-primary)',
+                                                                                            fontSize: '13px',
+                                                                                            fontWeight: '500',
+                                                                                            outline: 'none',
+                                                                                            padding: '10px 14px',
+                                                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                                                                        }}
+                                                                                    />
+                                                                                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '8px', opacity: 0.6, paddingLeft: '4px' }}>
+                                                                                        Press Enter to save task
+                                                                                    </div>
+                                                                                </motion.div>
+                                                                            )}
+
                                                                             <div className="aspect-tasks">
                                                                                 <AnimatePresence>
                                                                                     {aspectTasks.slice(0, visibleTasksCount).map(task => (
@@ -2554,11 +2710,18 @@ const SkillPage = () => {
                                     
                                                             return (
                                                                 <>
+                                                                    {/* Masonry columns for pending aspects */}
                                                                     <div 
                                                                         className="masonry-column" 
                                                                         style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
                                                                     >
-                                                                        {energyLevel === 3 ? [...leftColumn, ...rightColumn] : leftColumn}
+                                                                        {leftColumn}
+                                                                    </div>
+                                                                    <div 
+                                                                        className="masonry-column" 
+                                                                        style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
+                                                                    >
+                                                                        {rightColumn}
                                                                     </div>
                                                                     {energyLevel !== 3 && (
                                                                         <div 
@@ -2566,6 +2729,111 @@ const SkillPage = () => {
                                                                             style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
                                                                         >
                                                                             {rightColumn}
+                                                                        </div>
+                                                                    )}
+                                                                    {/* Completed Aspects section */}
+                                                                    {energyLevel >= 4 && completedAspects.length > 0 && (
+                                                                        <div style={{ width: '100%', marginTop: '8px' }}>
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setCollapsedCompletedAspects(prev => ({
+                                                                                        ...prev,
+                                                                                        [obj.id]: !prev[obj.id]
+                                                                                    }));
+                                                                                }}
+                                                                                style={{
+                                                                                    background: 'none',
+                                                                                    border: 'none',
+                                                                                    cursor: 'pointer',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '6px',
+                                                                                    padding: '4px 0',
+                                                                                    color: 'var(--text-secondary)',
+                                                                                    fontSize: '11px',
+                                                                                    fontWeight: '700',
+                                                                                    textTransform: 'uppercase',
+                                                                                    letterSpacing: '0.08em',
+                                                                                    opacity: 0.5,
+                                                                                    transition: 'opacity 0.2s',
+                                                                                }}
+                                                                                onMouseEnter={e => e.currentTarget.style.opacity = 0.8}
+                                                                                onMouseLeave={e => e.currentTarget.style.opacity = 0.5}
+                                                                            >
+                                                                                <span style={{ fontSize: '9px', transition: 'transform 0.2s', display: 'inline-block', transform: isCompletedAspectsExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                                                                                Completed Aspects ({completedAspects.length})
+                                                                            </button>
+                                                                            {isCompletedAspectsExpanded && (
+                                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '12px' }}>
+                                                                                        {completedAspects.map(aspect => {
+                                                                                            const allTasks = getChildren(aspect.id, NodeTypes.TASK);
+                                                                                            return (
+                                                                                                <div 
+                                                                                                    key={aspect.id} 
+                                                                                                    style={{ 
+                                                                                                        flex: '1 1 300px', 
+                                                                                                        minWidth: '280px',
+                                                                                                        background: 'var(--alpha-low)', 
+                                                                                                        border: '1px solid var(--color-border)', 
+                                                                                                        borderRadius: '16px', 
+                                                                                                        padding: '16px 20px', 
+                                                                                                        display: 'flex', 
+                                                                                                        flexDirection: 'column',
+                                                                                                        gap: '12px',
+                                                                                                        opacity: 0.6,
+                                                                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                                                                        backdropFilter: 'blur(10px)',
+                                                                                                        WebkitBackdropFilter: 'blur(10px)',
+                                                                                                        position: 'relative',
+                                                                                                        overflow: 'hidden'
+                                                                                                    }}
+                                                                                                >
+                                                                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                                                                                        <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>{aspect.name}</span>
+                                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                                                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '600', opacity: 0.8 }}>{allTasks.length} done</span>
+                                                                                                            <button 
+                                                                                                                className="add-task-btn-mini"
+                                                                                                                onClick={(e) => {
+                                                                                                                    e.stopPropagation();
+                                                                                                                    setCreatingTaskForAspectId(aspect.id);
+                                                                                                                    setNewTaskItemType('FINITE');
+                                                                                                                    setNewTaskName('');
+                                                                                                                }}
+                                                                                                                style={{
+                                                                                                                    background: 'var(--alpha-med)',
+                                                                                                                    border: '1px solid var(--color-border)',
+                                                                                                                    borderRadius: '8px',
+                                                                                                                    width: '28px',
+                                                                                                                    height: '28px',
+                                                                                                                    display: 'flex',
+                                                                                                                    alignItems: 'center',
+                                                                                                                    justifyContent: 'center',
+                                                                                                                    color: 'var(--text-primary)',
+                                                                                                                    cursor: 'pointer',
+                                                                                                                    fontSize: '16px',
+                                                                                                                    fontWeight: '600',
+                                                                                                                    transition: 'all 0.2s'
+                                                                                                                }}
+                                                                                                                onMouseEnter={e => {
+                                                                                                                    e.currentTarget.style.background = 'var(--alpha-high)';
+                                                                                                                    e.currentTarget.style.borderColor = 'var(--color-primary)';
+                                                                                                                }}
+                                                                                                                onMouseLeave={e => {
+                                                                                                                    e.currentTarget.style.background = 'var(--alpha-med)';
+                                                                                                                    e.currentTarget.style.borderColor = 'var(--color-border)';
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                +
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            );
+                                                                                        })}
+                                                                                    </div>
+                                                                            )}
                                                                         </div>
                                                                     )}
                                                                 </>
@@ -2586,7 +2854,7 @@ const SkillPage = () => {
 
 
     return (
-        <div id="skill-page-wrapper" className={`skill-page energy-level-${energyLevel} ${isNoveltySprint ? 'novelty-sprint-glow' : ''}`}>
+        <div id="skill-page-wrapper" className={`skill-page energy-level-${energyLevel}`}>
             {isNoveltySprint && energyLevel >= 3 && (
                 <div className="novelty-banner">
                     <span className="novelty-banner-icon">⚡</span>
@@ -2597,7 +2865,7 @@ const SkillPage = () => {
                 </div>
             )}
 
-            {showChallengeCard && !activeChallengeHighlight && energyLevel >= 3 && (
+            {showChallengeCard && !activeChallengeHighlight && (
                 <div className="challenge-opportunity-card">
                     <div className="challenge-content">
                         <div className="challenge-banner-icon">⚡</div>
@@ -2624,11 +2892,7 @@ const SkillPage = () => {
                 </div>
             )}
 
-            <button 
-                className="back-button" 
-                onClick={() => navigate(-1)}
-                style={energyLevel === 2 ? { visibility: 'hidden' } : {}}
-            >
+            <button className="back-button" onClick={() => navigate(-1)}>
                 <span>&larr;</span> Back to Area
             </button>
 
@@ -2670,7 +2934,7 @@ const SkillPage = () => {
 
 
             {/* INTEREST Mode: Suggested Experiments Placeholder */}
-            {skill.metadata?.pinchState === 'INTEREST' && energyLevel >= 3 && (
+            {skill.metadata?.pinchState === 'INTEREST' && (
                 <div className="suggested-experiments-container">
                     <h3 className="experiments-title">Suggested Experiments</h3>
                     <div className="experiments-placeholder">
@@ -2684,10 +2948,40 @@ const SkillPage = () => {
 
             {/* HABITS SECTION (Always Show) */}
             <section className="skill-section habits-skill-wrapper" style={{ marginTop: '32px' }}>
-                <header className="section-header-row">
-                    <span className="section-label">Habits</span>
+                <header 
+                    className="section-header-row" 
+                    onClick={() => energyLevel === 4 && setIsHabitsExpanded(!isHabitsExpanded)}
+                    style={{ cursor: energyLevel === 4 ? 'pointer' : 'default', userSelect: 'none' }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {energyLevel === 4 && (
+                            <motion.span 
+                                animate={{ rotate: isHabitsExpanded ? 90 : 0 }}
+                                style={{ 
+                                    fontSize: '8px', 
+                                    color: 'var(--text-secondary)', 
+                                    opacity: 0.5,
+                                    marginRight: '2px'
+                                }}
+                            >
+                                ▶
+                            </motion.span>
+                        )}
+                        <span className="section-label" style={{ marginBottom: 0 }}>Habits</span>
+                    </div>
                     {!isCreatingHabit && (
-                        <button className="add-habit-trigger-btn" onClick={() => setIsCreatingHabit(true)}>+ Create Habit</button>
+                        <button 
+                            className="add-habit-trigger-btn" 
+                            style={{ 
+                                opacity: isHabitsExpanded ? 1 : 0,
+                                pointerEvents: isHabitsExpanded ? 'auto' : 'none',
+                                transition: 'opacity 0.2s ease'
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsCreatingHabit(true);
+                                setIsHabitsExpanded(true);
+                        }}>+ Create Habit</button>
                     )}
                 </header>
 
@@ -2739,42 +3033,54 @@ const SkillPage = () => {
                     </div>
                 )}
 
-                <div className="habits-grid">
-                    {(() => {
-                        const filteredHabits = (habits || []).filter(h => {
-                            if (energyLevel === 2) {
-                                const progress = habitService.getHabitProgress(h);
-                                return !progress.isDone;
-                            }
-                            return true;
-                        });
+                <AnimatePresence>
+                    {(isHabitsExpanded || energyLevel !== 4) && (
+                        <motion.div 
+                            initial={energyLevel === 4 ? { height: 0, opacity: 0 } : false}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={macOSSpring}
+                            style={{ overflow: 'hidden' }}
+                        >
+                            <div className="habits-grid">
+                                {(() => {
+                                    const filteredHabits = (habits || []).filter(h => {
+                                        if (energyLevel === 2) {
+                                            const progress = habitService.getHabitProgress(h);
+                                            return !progress.isDone;
+                                        }
+                                        return true;
+                                    });
 
-                        if (filteredHabits.length > 0) {
-                            return filteredHabits.map(habit => (
-                                <HabitCard
-                                    key={habit.id}
-                                    habit={habit}
-                                    onOpenEvolution={handleOpenEvolution}
-                                    onToggleActive={handleToggleHabitActive}
-                                    onUpdate={fetchSkills}
-                                />
-                            ));
-                        }
+                                    if (filteredHabits.length > 0) {
+                                        return filteredHabits.map(habit => (
+                                            <HabitCard
+                                                key={habit.id}
+                                                habit={habit}
+                                                onOpenEvolution={handleOpenEvolution}
+                                                onToggleActive={handleToggleHabitActive}
+                                                onUpdate={fetchSkills}
+                                            />
+                                        ));
+                                    }
 
-                        if (!isCreatingHabit) {
-                            if (energyLevel === 2 && (habits || []).length > 0) {
-                                return (
-                                    <div className="no-habits-message everything-done-message" style={{ opacity: 0.8, fontStyle: 'normal' }}>
-                                        All habits for this skill are maintained for now.
-                                    </div>
-                                );
-                            }
-                            return <div className="no-habits-message">No habits established for this skill.</div>;
-                        }
-                        
-                        return null;
-                    })()}
-                </div>
+                                    if (!isCreatingHabit) {
+                                        if (energyLevel === 2 && (habits || []).length > 0) {
+                                            return (
+                                                <div className="no-habits-message everything-done-message" style={{ opacity: 0.8, fontStyle: 'normal' }}>
+                                                    All habits for this skill are maintained for now.
+                                                </div>
+                                            );
+                                        }
+                                        return <div className="no-habits-message">No habits established for this skill.</div>;
+                                    }
+                                    
+                                    return null;
+                                })()}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </section>
 
             {/* EVOLUTION DRILL-IN (Modal) */}
@@ -2789,7 +3095,7 @@ const SkillPage = () => {
 
             {/* Expiry Decision Prompt */}
             <AnimatePresence>
-                {expiringObjective && energyLevel >= 3 && (
+                {expiringObjective && (
                     <motion.div 
                         className="expiry-decision-card"
                         initial={{ opacity: 0, height: 0, marginBottom: 0, scale: 0.95 }}
@@ -2822,14 +3128,13 @@ const SkillPage = () => {
                 )}
             </AnimatePresence>
 
-            {activeObjectives.length > 0 && energyLevel >= 3 && (
-                <section className={`skill-section active-experiments-section ${energyLevel === 3 ? 'execution-mode' : ''}`}>
-                    {energyLevel !== 3 && <span className="section-label">Active Experiments</span>}
+            {activeObjectives.length > 0 && (
+                <section className="skill-section active-experiments-section">
+                    <span className="section-label">Active Experiments</span>
                     <LayoutGroup id="active-objectives">
                         <div className="active-experiments-list">
                             {(activeObjectives || []).map(obj => (
                                 <div key={obj.id}>
-                                    {console.log('[RENDER CHECK]', obj.id, 'energy:', energyLevel, 'expanded:', expandedObjectiveIds.includes(obj.id))}
                                     {renderObjective(obj)}
                                 </div>
                             ))}
@@ -2838,29 +3143,7 @@ const SkillPage = () => {
                 </section>
             )}
 
-            {sleepingObjectives.length > 0 && energyLevel >= 3 && (
-                <section className="skill-section sleeping-section">
-                    <header
-                        className="section-header-row collapsible"
-                        onClick={() => setIsSleepingExpanded(!isSleepingExpanded)}
-                    >
-                        <span className="section-label">
-                            Sleeping Experiments ({sleepingObjectives.length})
-                        </span>
-                        <span className={`collapse-arrow ${isSleepingExpanded ? 'expanded' : ''}`}>
-                            {isSleepingExpanded ? '▼' : '▶'}
-                        </span>
-                    </header>
 
-                    {isSleepingExpanded && (
-                        <LayoutGroup id="sleeping-objectives">
-                            <div className="sleeping-content">
-                                {(sleepingObjectives || []).map(renderObjective)}
-                            </div>
-                        </LayoutGroup>
-                    )}
-                </section>
-            )}
 
 
             {/* Experiment Creation Zone */}
@@ -2954,6 +3237,27 @@ const SkillPage = () => {
                         <button className="add-objective-btn" onClick={() => setIsCreatingObjective(true)}>
                             + New Experiment
                         </button>
+                    )}
+                </section>
+            )}
+
+            {sleepingObjectives.length > 0 && energyLevel >= 3 && (
+                <section className="skill-section sleeping-section">
+                    <div className="section-header" onClick={() => setIsSleepingExpanded(!isSleepingExpanded)}>
+                         <NodeIcon 
+                            iconUrl={isSleepingExpanded ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E" : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E"} 
+                            size={14} 
+                        />
+                        <h2>Sleeping Experiments</h2>
+                        <span className="count-badge">{sleepingObjectives.length}</span>
+                    </div>
+
+                    {isSleepingExpanded && (
+                        <LayoutGroup id="sleeping-objectives">
+                            <div className="sleeping-content experiments-grid">
+                                {(sleepingObjectives || []).map(renderObjective)}
+                            </div>
+                        </LayoutGroup>
                     )}
                 </section>
             )}

@@ -20,27 +20,44 @@ const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon'
                 content = data.includes('%') ? decodeURIComponent(data) : data;
             }
 
-            // Clean dimensions - forcing 100% scale to fill the parent wrapper
+            // Clean dimensions and inject currentColor for theme adaptation
             return content
-                .replace(/\bwidth=["'][^"']*["']/gi, '')
-                .replace(/\bheight=["'][^"']*["']/gi, '')
-                .replace(/<svg/i, '<svg width="100%" height="100%"');
+                .replace(/width=["'][^"']*["']/gi, '')
+                .replace(/height=["'][^"']*["']/gi, '')
+                .replace(/stroke=["']((?!none|currentColor)[^"']+)["']/gi, 'stroke="currentColor"')
+                .replace(/fill=["']((?!none|currentColor)[^"']+)["']/gi, 'fill="currentColor"');
         } catch (e) {
-            console.warn('NodeIcon: SVG processing failed', e);
             return null;
         }
     }, [iconUrl]);
 
     const renderIcon = () => {
         // Handle data:image URLs directly as requested
+        if (iconUrl && typeof iconUrl === 'string' && iconUrl.startsWith('data:image')) {
+            // If it's an SVG and we're NOT using the img route, processedSvg would handle it.
+            // But the user specifically asked for an <img> element to avoid raw string rendering.
+            return (
+                <img
+                    src={iconUrl}
+                    alt=""
+                    className={className}
+                    style={{
+                        width: size + 'px',
+                        height: size + 'px',
+                        objectFit: 'contain',
+                        borderRadius: '4px'
+                    }}
+                />
+            );
+        }
 
         if (processedSvg) {
             return (
                 <span
                     className={className}
                     style={{
-                        width: '100%',
-                        height: '100%',
+                        width: size + 'px',
+                        height: size + 'px',
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -58,8 +75,8 @@ const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon'
                     alt="icon"
                     className={className}
                     style={{
-                        width: '100%',
-                        height: '100%',
+                        width: size + 'px',
+                        height: size + 'px',
                         objectFit: 'contain',
                         borderRadius: '4px'
                     }}
@@ -74,8 +91,7 @@ const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon'
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                width: '100%',
-                height: '100%'
+                width: size + 'px'
             }}>
                 {emoji || defaultIcon}
             </span>

@@ -209,7 +209,6 @@ const AreaPage = () => {
     };
 
     const handleDeleteArea = async () => {
-        console.log("handleDeleteArea executing for ID:", id);
         try {
             await backbone.deleteNode(id);
             navigate('/launchpad');
@@ -387,7 +386,6 @@ const AreaPage = () => {
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        console.log("DEBUG: Delete button clicked, opening inline confirm");
                                         setIsDeleteConfirmOpen(true);
                                     }}
                                     style={{ 

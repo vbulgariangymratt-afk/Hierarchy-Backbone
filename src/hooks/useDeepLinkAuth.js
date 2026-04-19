@@ -13,37 +13,39 @@ export const useDeepLinkAuth = (setSession) => {
     let unsubscribers = [];
 
     const handleOAuthUrl = async (url) => {
-      await logToFile(`[AUTH] Deep link received: ${url}`);
+      console.log('[AUTH] Deep link received:', url);
+      await logToFile(`Deep link received: ${url}`);
+      
       try {
-        // Handle implicit flow — tokens are in the hash fragment
-        const hashString = url.includes('#') ? url.split('#')[1] : '';
-        const params = new URLSearchParams(hashString);
-        const access_token = params.get('access_token');
-        const refresh_token = params.get('refresh_token');
-        const error = params.get('error');
-
-        if (error) {
-          await logToFile(`[AUTH] OAuth error: ${error}`);
+        const urlObj = new URL(url);
+        // Safety: ensure we're not handling implicit flow fragments
+        if (urlObj.hash && urlObj.hash.includes('access_token=')) {
+          console.warn('[AUTH] Fragment callback detected! Expected PKCE code flow.');
           return;
         }
 
-        if (access_token) {
-          await logToFile(`[AUTH] Implicit flow tokens found — setting session...`);
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-          if (sessionError) {
-            await logToFile(`[AUTH] setSession FAILED: ${sessionError.message}`);
+        const code = urlObj.searchParams.get('code');
+        const error = urlObj.searchParams.get('error');
+
+        if (error) {
+          console.error('[AUTH] OAuth error:', error);
+          return;
+        }
+
+        if (code) {
+          console.log('[AUTH] PKCE code detected — exchanging for session...');
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            console.error('[AUTH] exchangeCodeForSession failed:', exchangeError.message);
             return;
           }
-          await logToFile(`[AUTH] setSession SUCCESS: ${data.session.user.email}`);
-          setSession(data.session);
-        } else {
-          await logToFile(`[AUTH] No access_token found in URL hash: ${url}`);
+          if (data?.session) {
+            console.log('[AUTH] exchangeCodeForSession SUCCESS. User:', data.session.user.email);
+            setSession(data.session);
+          }
         }
       } catch (err) {
-        await logToFile(`[AUTH] Unexpected error: ${err.message}`);
+        console.error('[AUTH] Unexpected error during deep link handling:', err);
       }
     };
 
@@ -65,19 +67,6 @@ export const useDeepLinkAuth = (setSession) => {
         }).then(unsub => {
           unsubscribers.push(unsub);
         });
-      });
-    });
-
-    // 3. Handle Rust-level deep link emission
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      logToFile('[DEEP LINK] Registering deep-link-received listener...');
-      listen('deep-link-received', (event) => {
-        logToFile('[DEEP LINK] JS received event from Rust: ' + event.payload);
-        const url = event.payload;
-        if (url) handleOAuthUrl(url);
-      }).then(unsub => {
-        logToFile('[DEEP LINK] Listener registered successfully');
-        unsubscribers.push(unsub);
       });
     });
 

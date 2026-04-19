@@ -97,6 +97,5 @@ export const selectBestLowEnergyTask = (pool, aspectStats) => {
         return 0;
     });
 
-    console.log("Newly Selected Low Energy Task:", sortedPool[0]?.name);
     return sortedPool[0];
 };

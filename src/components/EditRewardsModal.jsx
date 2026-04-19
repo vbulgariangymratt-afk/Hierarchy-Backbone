@@ -66,7 +66,6 @@ const EditRewardsModal = ({ isOpen, onClose, onSuccess }) => {
         setDeletingId(rewardId);
         try {
             await repository.delete(rewardId);
-            console.log('REWARD DELETED SUCCESSFULLY');
             await fetchRewards();
             if (onSuccess) onSuccess();
         } catch (err) {

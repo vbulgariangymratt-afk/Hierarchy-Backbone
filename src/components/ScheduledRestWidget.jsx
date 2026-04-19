@@ -10,7 +10,6 @@ const ScheduledRestWidget = () => {
     const refresh = async () => {
         let todayRest = await backbone.getTodayRest();
         if (!todayRest) {
-            console.log("ScheduledRestWidget: No suggestion found, creating...");
             await backbone.createDailyRestSuggestion();
             todayRest = await backbone.getTodayRest();
         }

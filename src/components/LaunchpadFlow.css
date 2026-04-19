@@ -151,6 +151,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px; /* Notion-like radius */
     padding: 32px;
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -169,8 +170,13 @@
 .liquid-mode .hero-execution-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow: 
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
+    animation: webkit-blur-jitter 0.1s infinite;
+    will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
 .liquid-mode.dark .hero-skill-card, 
@@ -306,7 +312,7 @@
 [data-theme="light"][data-background-mode="solid"] .hero-execution-card {
     background: var(--color-bg-card);
     border-color: var(--color-border);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="light"][data-background-mode="solid"] .flow-skill-chip {
@@ -383,4 +389,36 @@
     border: 1px dashed var(--color-border);
     background: var(--alpha-low);
     text-align: center;
+}
+
+/* Strategic/Tactical task cards (Energy 3-5) */
+.level-3-task-card {
+    padding: 20px 24px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    textAlign: left;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.liquid-mode .level-3-task-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    box-shadow: 
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
+    animation: webkit-blur-jitter 0.1s infinite;
+    will-change: backdrop-filter, -webkit-backdrop-filter;
+}
+
+.level-3-task-card.is-selected {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    transform: translateY(-2px);
 }

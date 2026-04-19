@@ -1,0 +1,344 @@
+.maintenance-center-container {
+    padding: 60px 40px;
+    max-width: 1400px;
+    margin: 0 auto;
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+.maintenance-center-header {
+    margin-bottom: 60px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    margin-bottom: 24px;
+    transition: all 0.2s ease;
+}
+
+.liquid-mode .header-badge {
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    animation: webkit-blur-jitter 0.1s infinite;
+    will-change: backdrop-filter, -webkit-backdrop-filter;
+}
+
+.liquid-mode.dark .header-badge {
+    background: transparent !important;
+}
+
+.maintenance-center-header h1 {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+}
+
+.maintenance-center-header p {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 580px;
+    margin: 0 auto 40px auto;
+    line-height: 1.6;
+}
+
+/* ── Search Bar ───────────────────────────────────────────────────── */
+.search-bar-container {
+    width: 100%;
+    max-width: 500px;
+}
+
+.search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 18px;
+    color: var(--text-tertiary);
+    opacity: 0.5;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px 48px;
+    color: var(--text-primary);
+    font-size: 15px;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-mode .search-input-wrapper input {
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    animation: webkit-blur-jitter 0.1s infinite;
+    will-change: backdrop-filter, -webkit-backdrop-filter;
+}
+
+.liquid-mode.dark .search-input-wrapper input {
+    background: transparent !important;
+}
+
+.search-input-wrapper input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.03);
+}
+
+.clear-search {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.clear-search:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* ── Sections ─────────────────────────────────────────────────── */
+.maintenance-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+}
+
+.maintenance-section-group {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.section-label {
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    margin-left: 4px;
+    opacity: 0.6;
+}
+
+.skills-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.skill-selection-card {
+    position: relative;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.015);
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+}
+
+.liquid-mode .skill-selection-card {
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
+    animation: webkit-blur-jitter 0.1s infinite;
+    will-change: backdrop-filter, -webkit-backdrop-filter;
+    overflow: visible; /* Allow shadow to breathe if needed */
+}
+
+.liquid-mode.dark .skill-selection-card {
+    background: transparent !important;
+}
+
+.skill-selection-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.skill-selection-card.selected {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.card-selection-indicator {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.checkbox-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.checkbox-circle.checked {
+    background: #fff;
+    border-color: #fff;
+    color: #000;
+}
+
+.card-main-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.skill-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    position: relative;
+}
+
+.health-dot {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #000;
+    z-index: 2;
+}
+
+.health-dot.blue { background: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.3); }
+.health-dot.orange { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
+.health-dot.grey { background: #6b7280; }
+
+.selected .skill-icon-wrap {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.skill-details {
+    flex: 1;
+}
+
+.skill-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.selected .skill-name {
+    color: #fff;
+}
+
+.skill-badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.focus-badge {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-active-badge {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-primary);
+    padding: 1px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.skill-selection-card.focus-protected {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+
+/* ── Loading / Empty States ───────────────────────────────────────── */
+.maintenance-center-loading {
+    display: flex;
+    height: 60vh;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top-color: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: fmc-spin 0.8s linear infinite;
+}
+
+@keyframes fmc-spin {
+    to { transform: rotate(360deg); }
+}
+
+.no-skills-found, .grid-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-tertiary);
+    font-size: 15px;
+}

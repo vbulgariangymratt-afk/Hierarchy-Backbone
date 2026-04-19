@@ -51,7 +51,6 @@ const resizeImage = (file) =>
  */
 const WallpaperSlot = ({ label, value, onChange, inputId }) => {
     // LOG B-0: confirm WallpaperSlot is mounted and received onChange
-    console.log("LOG B-0: WallpaperSlot mounted/rendered", { label, hasOnChange: typeof onChange === 'function' });
 
     // Bridge local typing with the external context value
     const [localValue, setLocalValue] = useState(value || '');
@@ -77,7 +76,6 @@ const WallpaperSlot = ({ label, value, onChange, inputId }) => {
 
         try {
             const dataUrl = await resizeImage(file);
-            console.log("LOG B-1: file processed, calling onChange", { dataUrl: dataUrl.slice(0, 40) });
             if (typeof onChange !== 'function') { console.error('LOG B-1 ERROR: onChange is not a function', onChange); return; }
             onChange(dataUrl);
         } catch (err) {
@@ -133,7 +131,6 @@ const WallpaperSlot = ({ label, value, onChange, inputId }) => {
                     onChange={(e) => {
                         const newVal = e.target.value;
                         setLocalValue(newVal);
-                        console.log("LOG B-2: URL input changed", { value: newVal, hasOnChange: typeof onChange === 'function' });
                         if (typeof onChange === 'function') {
                             onChange(newVal);
                         }

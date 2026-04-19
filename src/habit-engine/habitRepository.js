@@ -6,7 +6,6 @@ export const createHabitRepository = () => {
     const notify = () => subscribers.forEach(callback => callback(habits));
 
     const instanceId = Math.random().toString(36).substr(2, 5);
-    console.log(`HabitRepo: NEW INSTANCE CREATED [ID:${instanceId}]`);
 
     // Internal helper to get current authenticated user
     const getUserId = async () => {
@@ -63,11 +62,9 @@ export const createHabitRepository = () => {
         initialize: async () => {
             if (initPromise) return initPromise;
             initPromise = (async () => {
-                console.log(`HabitRepo [ID:${instanceId}]: Initializing from Supabase...`);
                 try {
                     const userId = await getUserId();
                     if (!userId) {
-                        console.warn('HabitRepo: No user authenticated.');
                         return;
                     }
 
@@ -92,7 +89,6 @@ export const createHabitRepository = () => {
                             updatedAt: row.updated_at
                         };
                     });
-                    console.log(`HabitRepo [ID:${instanceId}]: Loaded ${habits.length} habits from Supabase`);
                     notify(); // Ensure subscribers are notified after initial load
                 } catch (e) {
                     console.error('Failed to load Habit data from Supabase:', e);
@@ -103,7 +99,6 @@ export const createHabitRepository = () => {
         },
 
         reinitialize: async () => {
-            console.log(`HabitRepo [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
             initPromise = null;
             return await instance.initialize();
         },
@@ -145,7 +140,6 @@ export const createHabitRepository = () => {
                 if (error) throw error;
 
                 habits = habits.filter(h => h.id !== id);
-                console.log(`HabitRepo: Habit removed from Supabase. New size: ${habits.length}`);
                 notify();
             } catch (e) {
                 console.error('Failed to delete habit from Supabase:', e);
@@ -153,7 +147,6 @@ export const createHabitRepository = () => {
         },
 
         reset: () => {
-            console.log(`HabitRepo [ID:${instanceId}]: RESETTING Repository State`);
             initPromise = null;
             habits = [];
             notify();

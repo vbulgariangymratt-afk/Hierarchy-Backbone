@@ -22,29 +22,20 @@ const FocusCenterPage = () => {
     useEffect(() => {
         const loadSkills = async () => {
             try {
-                console.log('[DEBUG] Starting loadSkills');
                 setLoadingSkills(true);
                 
                 // Ensure backbone is initialized before asking for nodes
-                console.log('[FocusCenter] Ensuring backbone is ready...');
                 await backbone.initialize();
-                console.log('[DEBUG] Backbone ready');
                 
-                console.log('[FocusCenter] Fetching all nodes...');
                 const nodes = await backbone.getAllNodes();
-                console.log('[DEBUG] Total nodes returned:', nodes.length);
-                console.log('[DEBUG] Node types found:', [...new Set(nodes.map(n => n.type))]);
+                {};
                 
                 const skills = nodes.filter(n => n.type === NodeTypes.SKILL);
-                console.log('[DEBUG] Skills after filter:', skills.length);
-                console.log('[DEBUG] NodeTypes.SKILL value is:', NodeTypes.SKILL);
                 
                 if (skills.length === 0) {
-                    console.warn('[FocusCenter] No skills found — query returned 0 results.');
                 }
                 
                 setAllSkills(skills);
-                console.log('[FocusCenter] Skills loaded:', skills.length);
             } catch (err) {
                 console.error('[FocusCenter] Failed to load skills:', err);
             } finally {

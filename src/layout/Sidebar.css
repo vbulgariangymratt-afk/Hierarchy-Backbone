@@ -82,7 +82,16 @@
 }
 
 /* Mode Specific Backgrounds */
-.liquid-mode .sidebar,
+.liquid-mode .sidebar {
+    background: rgba(255, 255, 255, 0.07);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    box-shadow:
+        4px 0 24px rgba(0, 0, 0, 0.20),
+        inset 1px 0 0 rgba(255, 255, 255, 0.12);
+}
+
 .wallpaper-mode .sidebar {
     background: rgba(255, 255, 255, 0.07);
     border-right: 1px solid rgba(255, 255, 255, 0.12);
@@ -93,8 +102,14 @@
         inset 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
-.liquid-mode .sidebar {
+@keyframes sidebar-blur-ticker {
+    0% { opacity: 0.999; }
+    100% { opacity: 1; }
+}
+
+.sidebar.liquid-mode {
     animation: sidebar-blur-ticker 1ms linear infinite alternate;
+    will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
 /* NEUTRAL & DARK SYNC: Pure Vibrancy Look */
@@ -117,8 +132,9 @@
 
 
 
-.liquid-mode.light .sidebar {
-    background: rgba(255, 255, 255, 0.6);
+.liquid-mode.light .sidebar,
+.wallpaper-mode.light .sidebar {
+    background: rgba(255, 255, 255, 0.25) !important;
     border-color: rgba(0, 0, 0, 0.1);
     box-shadow:
         0 12px 48px rgba(0, 0, 0, 0.10),
@@ -133,15 +149,7 @@
     -webkit-backdrop-filter: none !important;
 }
 
-@keyframes sidebar-blur-ticker {
-    0% {
-        opacity: 0.999;
-    }
 
-    100% {
-        opacity: 1;
-    }
-}
 
 /* Top-edge reflection sheen */
 .liquid-mode .sidebar::before {
@@ -615,29 +623,14 @@
 }
 
 .area-dot {
-    width: 6px;
-    height: 6px;
-    background-color: var(--accent-focus);
-    /* #3b82f6 */
-    border-radius: 50%;
+    width: 8px !important;
+    height: 8px !important;
+    background-color: #60a5fa !important;
+    border-radius: 50% !important;
     margin-left: auto;
-    filter: drop-shadow(0 0 4px var(--accent-focus));
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.6) !important;
     animation: sidebarDotGlow 3s infinite ease-in-out;
-}
-
-.dark.solid-mode .area-dot {
-    background: #ffffff;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-}
-
-.light.solid-mode .area-dot {
-    background: #000000;
-}
-
-.liquid-mode .area-dot,
-.wallpaper-mode .area-dot {
-    background-color: var(--text-primary);
-    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
 }
 
 @keyframes sidebarDotGlow {
@@ -703,6 +696,17 @@
     opacity: 0.65;
 }
 
+/* Ensure status dots always shine through nav-item 'quiet' mode */
+.nav-item .btn-icon:has(.health-dot),
+.nav-item .btn-icon:has(.area-dot),
+.nav-item .btn-icon:has(.btn-status-indicator),
+.nav-item .btn-icon:has(.btn-status-dot) {
+    opacity: 1 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 .nav-item:hover {
     background: var(--alpha-low);
     color: var(--text-primary);
@@ -742,8 +746,8 @@
 .nav-item .btn-icon img,
 .nav-item .btn-icon svg,
 .nav-item .btn-icon span {
-    width: 100%;
-    height: 100%;
+    max-width: 14px;
+    max-height: 14px;
 }
 
 /* Animations */
@@ -1109,17 +1113,6 @@
     padding: 0 2px;
 }
 
-.pilot-skill-group.completed-skill-dimmed {
-    opacity: 0.35 !important;
-    filter: grayscale(0.4) saturate(0.6);
-    transition: var(--transition-smooth);
-}
-
-.pilot-skill-group.completed-skill-dimmed:hover {
-    opacity: 0.8 !important;
-    filter: none;
-}
-
 /* ── Pilot skill label (clickable, navigates to skill) ── */
 .pilot-skill-label {
     display: flex;
@@ -1275,49 +1268,37 @@
 }
 
 /* Unified Health Dots (Engagement) */
-.health-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+.health-dot,
+.area-dot,
+.btn-status-indicator,
+.btn-status-dot {
+    width: 8px !important;
+    height: 8px !important;
+    border-radius: 50% !important;
     flex-shrink: 0;
-    margin: 0; /* Clear margins, spacing handled by parent container's gap */
+    margin: 0;
     transition: var(--transition-smooth);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     cursor: help;
 }
 
-.health-dot.blue {
-    background-color: #3b82f6; /* recently engaged */
-    box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
-    animation: healthDotPulse 4s infinite ease-in-out;
+.health-dot.blue, 
+.area-dot, 
+.btn-status-indicator.active, 
+.btn-status-dot.active {
+    background-color: #60a5fa !important;
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.6) !important;
 }
 
 .health-dot.orange {
-    background-color: #f59e0b; /* cooling down */
-    box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
+    background-color: #fb923c !important;
+    box-shadow: 0 0 8px rgba(251, 146, 60, 0.5) !important;
 }
 
 .health-dot.grey {
-    background-color: #6b7280; /* neglected */
-    opacity: 0.5;
-}
-
-/* Theme / Mode overrides */
-.liquid-mode .health-dot.blue,
-.wallpaper-mode .health-dot.blue {
-    background-color: #60a5fa;
-    box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
-}
-
-.liquid-mode .health-dot.orange,
-.wallpaper-mode .health-dot.orange {
-    background-color: #fb923c;
-    box-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
-}
-
-.liquid-mode .health-dot.grey,
-.wallpaper-mode .health-dot.grey {
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: none !important;
+    opacity: 0.5 !important;
 }
 
 @keyframes healthDotPulse {
@@ -1351,8 +1332,9 @@
    line-height: 1 !important;
 }
 
-/* ── LIGHT MODE THEME OVERRIDES ── */
-.light .sidebar {
+.light.solid-mode .sidebar,
+.light .sidebar:not(.liquid-mode):not(.wallpaper-mode) {
+    background: rgba(255, 255, 255, 0.45) !important;
     --text-craft-primary: var(--text-primary);
     --text-craft-secondary: var(--text-secondary);
     --text-craft-tertiary: var(--text-tertiary);
@@ -1421,6 +1403,12 @@
     transition: opacity 0.5s ease, filter 0.5s ease;
 }
 
+/* Exception: Keep life pulses visible in ghosting modes */
+.sidebar.low-energy-ghosting .health-dot {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
 /* Exceptions: Keep Launchpad and Energy Selector high contrast */
 .sidebar.low-energy-ghosting .nav-item[href="/launchpad"],
 .sidebar.low-energy-ghosting .energy-selector-container,
@@ -1433,11 +1421,9 @@
 }
 
 /* Maintenance habits in Spotlight stay focused */
-.sidebar.low-energy-ghosting .maintenance-section,
-.sidebar.low-energy-ghosting .maintenance-section .section-title-container {
-    opacity: 1 !important;
-    filter: none !important;
-    pointer-events: auto !important;
+.sidebar.low-energy-ghosting .maintenance-section {
+    opacity: 1;
+    filter: none;
 }
 
 .sidebar.low-energy-ghosting .pilot-spotlight-list {
@@ -1447,9 +1433,8 @@
 
 /* Mute the background of habits that aren't the top 2 if they somehow appear */
 .sidebar.low-energy-ghosting .pilot-skill-group {
-    opacity: 1;
-    filter: none;
-    pointer-events: auto !important;
+    opacity: 0.3;
+    filter: grayscale(0.8);
 }
 
 /* Journal and Timeline are now exceptions above */
@@ -1530,7 +1515,8 @@
 .liquid-mode.light .sidebar .section-title-static,
 .liquid-mode.light .sidebar .segmented-control-label,
 .liquid-mode.light .sidebar .hryvnia-amount,
-.liquid-mode.light .sidebar .mode-toggle-btn {
+.liquid-mode.light .sidebar .mode-toggle-btn,
+.liquid-mode.light .sidebar .header-action-btn {
     color: rgba(0, 0, 0, 0.9) !important;
     font-weight: 600 !important;
     text-transform: none !important;
@@ -1539,13 +1525,17 @@
     opacity: 1 !important;
 }
 
+.liquid-mode.light .sidebar .header-action-btn:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+    color: #000000 !important;
+}
+
 /* PAGES / LINKS: Match unselected energy pill rendered color rgb(129,126,125) */
 .liquid-mode.light .sidebar .nav-item,
 .liquid-mode.light .sidebar .settings-btn,
 .liquid-mode.light .sidebar .theme-toggle-sidebar,
 .liquid-mode.light .sidebar .pilot-skill-label,
-.liquid-mode.light .sidebar .hryvnia-icon,
-.liquid-mode.light .sidebar .btn-text {
+.liquid-mode.light .sidebar .hryvnia-icon {
     color: rgb(129, 126, 125) !important; 
     font-weight: 400 !important;
     background: transparent !important;
@@ -1564,7 +1554,7 @@
 .liquid-mode.light .sidebar .nav-item .btn-icon,
 .liquid-mode.light .sidebar .mode-toggle-btn .btn-icon,
 .liquid-mode.light .sidebar .pilot-skill-label .btn-icon {
-    color: rgb(129, 126, 125) !important;
+    color: inherit !important;
     opacity: 1 !important;
 }
 
@@ -1591,16 +1581,12 @@
     border-radius: 100px !important;
 }
 
-/* 4. Status Dots: Kept at 0.7 Opacity */
+/* 4. Status Dots: Consistent with Dark Mode */
 .liquid-mode.light .sidebar .health-dot,
 .liquid-mode.light .sidebar .area-dot,
 .liquid-mode.light .sidebar .btn-status-indicator,
 .liquid-mode.light .sidebar .btn-status-dot {
-    opacity: 0.7 !important;
-    filter: none !important;
-    box-shadow: none !important;
-    animation: none !important;
-    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    opacity: 1 !important;
 }
 
 /* Universal Button Text Sync (Go to focus mode) */
@@ -1687,4 +1673,40 @@
 .liquid-mode.light .sidebar .app-icon,
 .solid-mode.light .sidebar .app-icon {
     filter: none !important;
+}
+
+/* ── Theme Sync Toggle (Segmented) ── */
+.theme-sync-toggle {
+  display: flex;
+  gap: 3px;
+  background: var(--alpha-low, rgba(0,0,0,0.08));
+  border-radius: 10px;
+  padding: 3px;
+  width: calc(100% - var(--item-column-inset));
+  margin: 8px auto 12px;
+}
+
+.theme-sync-option {
+  flex: 1;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.theme-sync-option.active {
+  background: var(--alpha-med, white);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+[data-theme="dark"] .theme-sync-option.active {
+  background: rgba(255,255,255,0.15);
+  color: var(--text-primary);
 }

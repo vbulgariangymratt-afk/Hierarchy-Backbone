@@ -47,8 +47,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
             const allNodes = await backbone.getAllNodes() || [];
             const allHabits = habitService.getAllHabits() || [];
 
-            console.log("\n--- [DETAILED DIAGNOSTIC] Snapshot Computation ---");
-            console.log(`Window: ${startOfDay} (${startOfDayDate.toLocaleString()}) to ${endOfDay} (${endOfDayDate.toLocaleString()})`);
 
             let totalFocusSeconds = 0;
             let taskFocusSeconds = 0;
@@ -66,7 +64,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
 
             const taskNodes = allNodes.filter(n => n.type === 'TASK');
 
-            console.log(`[Diagnostic] Filtering DONE tasks for window: ${dateStr}`);
             taskNodes.forEach(task => {
                 const meta = task.metadata || {};
                 const isDone = meta.status === 'DONE';
@@ -76,7 +73,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                 const completedDateStr = completedAt ? new Date(completedAt).toLocaleDateString('en-CA') : 'N/A';
                 const wasDoneInWindow = completedAt >= startOfDay && completedAt < endOfDay;
 
-                console.log(`- Task: "${task.name}" | completedAt: ${completedAt} (${completedDateStr}) | In Window? ${wasDoneInWindow}`);
 
                 const sessions = meta.sessions || [];
                 const completedToday = sessions.filter(s => s.status === 'completed' && s.endTime >= startOfDay && s.endTime < endOfDay);
@@ -96,7 +92,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
             });
 
             if (doneTasksTodayCount > 0) {
-                console.log(`[Journal Capture] Tasks Done Today: ${doneTasksTodayCount}, with focus: ${doneTasksTodayWithCompletedSessionsCount}, Deep Work: ${Math.round(taskFocusSeconds/60)}m`);
             }
 
             // (Processing habits & drivers)
@@ -128,7 +123,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                 }
             });
 
-            console.log("\n--- [END DIAGNOSTIC] ---\n");
 
             return {
                 deepWorkMinutes: Math.round(taskFocusSeconds / 60),
@@ -137,7 +131,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                 dominantDriver
             };
         } catch (error) {
-            console.warn("JournalService: Failed to compute snapshot metrics:", error);
             return defaults;
         }
     };
@@ -165,7 +158,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                 const preferManual = localStorage.getItem('pref_manual_sleep') === 'true';
                 const hasManualRecord = entry.biological?.manualOverride || (entry.biological?.sleepStartTime && !entry.biological?.sleepDetectedAutomatically);
                 if (preferManual && hasManualRecord) {
-                    console.log("JournalService: Skipping auto-sleep detection (Manual preference enabled + manual record exists)");
                     return;
                 }
 
@@ -181,11 +173,9 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                             sleepDetectedAutomatically: true
                         }
                     });
-                    console.log(`JournalService: Automatic sleep detected. Duration: ${sleepDurationMinutes}m`);
                 }
             }
         } catch (error) {
-            console.warn("JournalService: Error during automatic sleep detection:", error);
         }
     };
 
@@ -199,7 +189,10 @@ export const JournalService = (journalRepository, backbone, habitService) => {
             await journalRepository.updateMetadata({ firstAppOpenTime: now });
 
             // Setup "Heartbeat" to track lastAppCloseTime (closest proxy for web)
-            setInterval(() => {
+            if (journalService._heartbeatInterval) {
+                clearInterval(journalService._heartbeatInterval);
+            }
+            journalService._heartbeatInterval = setInterval(() => {
                 journalRepository.updateMetadata({ lastAppCloseTime: Date.now() });
             }, 60000); // Every minute
         },
@@ -239,7 +232,6 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                     notes: ""
                 };
                 await journalRepository.save(entry);
-                console.log(`JournalService: Lazy created entry for ${dateStr}`);
             }
 
             // Always compute fresh snapshots on fetch

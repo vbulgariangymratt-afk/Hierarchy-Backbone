@@ -1,12 +1,9 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { supabase } from '../lib/supabase';
 import { fetchWallpaperConfig, saveWallpaperConfig } from '../lib/wallpaperService';
 
 const ThemeContext = createContext();
-
-const isTauri = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
-
 
 // ─── Default wallpaper config shape ──────────────────────────────────────────
 const DEFAULT_WALLPAPER_CONFIG = {
@@ -35,7 +32,6 @@ const migrateWallpaperConfig = (raw) => {
         return { ...raw, backgroundMode, wallpapers: { ...raw.wallpapers, pages } };
     }
 
-    console.log('[ThemeContext] Migrating legacy wallpaper format');
     return {
         ...DEFAULT_WALLPAPER_CONFIG,
         backgroundMode: raw.backgroundMode || 'solid',
@@ -174,7 +170,6 @@ export const ThemeProvider = ({ children }) => {
 
     // ─── Debounced Supabase save whenever wallpaperConfig/backgroundMode changes ─────────────
     useEffect(() => {
-        console.log("Save effect fired", { currentUser, wallpaperConfig, backgroundMode });
 
         // Skip saving back to Supabase if this change originated from a remote load
         if (isLoadingFromSupabase.current) {
@@ -216,16 +211,22 @@ export const ThemeProvider = ({ children }) => {
 
     // ─── System theme listener ────────────────────────────────────────────────
     useEffect(() => {
-        const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-        const handleChange = () => {
-            const current = mediaQuery.matches ? "dark" : "light";
-            setSystemTheme(current);
-            if (themePreference === "system") {
-                document.documentElement.setAttribute("data-theme", current);
-            }
+        let unlisten;
+        const setupListener = async () => {
+            const { listen } = await import("@tauri-apps/api/event");
+            unlisten = await listen("system-appearance-changed", (event) => {
+                const isDark = event.payload;
+                const current = isDark ? "dark" : "light";
+                setSystemTheme(current);
+                if (themePreference === "system") {
+                    document.documentElement.setAttribute("data-theme", current);
+                }
+            });
         };
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
+        setupListener();
+        return () => {
+            if (unlisten) unlisten();
+        };
     }, [themePreference]);
 
     // ─── DOM & localStorage persistence ──────────────────────────────────────
@@ -239,19 +240,15 @@ export const ThemeProvider = ({ children }) => {
     useEffect(() => {
         // Liquid Mode (Full window transparency)
         if (backgroundMode === 'liquid') {
-            if (isTauri) {
-                // For neutral mode, we pass null to Rust to allow natural vibrancy
-                const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
-                invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
-                    console.error("Failed to enable glass:", err)
-                );
-            }
+            // For neutral mode, we pass null to Rust to allow natural vibrancy
+            const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
+            invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
+                console.error("Failed to enable glass:", err)
+            );
         } else {
-            if (isTauri) {
-                invoke('disable_liquid_glass').catch(err =>
-                    console.error("Failed to disable glass:", err)
-                );
-            }
+            invoke('disable_liquid_glass').catch(err =>
+                console.error("Failed to disable glass:", err)
+            );
         }
 
         const root = document.documentElement;
@@ -304,7 +301,6 @@ export const ThemeProvider = ({ children }) => {
 
     // ─── Wallpaper setters (scope-aware) ─────────────────────────────────────
     const setLightWallpaper = (url, page = null) => {
-        console.log("LOG A: setLightWallpaper called", { url, page });
         setWallpaperConfig(prev => {
             if (page) {
                 return {
@@ -326,7 +322,6 @@ export const ThemeProvider = ({ children }) => {
     };
 
     const setDarkWallpaper = (url, page = null) => {
-        console.log("LOG A: setDarkWallpaper called", { url, page });
         setWallpaperConfig(prev => {
             if (page) {
                 return {
@@ -366,30 +361,31 @@ export const ThemeProvider = ({ children }) => {
     const wallpaper = wallpaperConfig.wallpapers.global;
     const wallpaperScope = wallpaperConfig.wallpaperScope;
 
-    return (
-        <ThemeContext.Provider value={{
-            theme: resolvedTheme,
-            themePreference,
-            setTheme,
-            toggleTheme,
-            backgroundMode,
-            setBackgroundMode,
-            wallpaper,
-            wallpaperConfig,
-            wallpaperScope,
-            setWallpaperScope,
-            setLightWallpaper,
-            setDarkWallpaper,
-            clearWallpaper,
-            // Sync status (optional: show in UI)
-            isSyncing,
-            syncError,
-            showCompletedTasks,
-            setShowCompletedTasks,
-            isMultipleWallpapersMode,
-            setIsMultipleWallpapersMode,
-        }}>
+    const themeValue = useMemo(() => ({
+        theme: resolvedTheme,
+        themePreference,
+        setTheme,
+        toggleTheme,
+        backgroundMode,
+        setBackgroundMode,
+        wallpaper,
+        wallpaperConfig,
+        wallpaperScope,
+        setWallpaperScope,
+        setLightWallpaper,
+        setDarkWallpaper,
+        clearWallpaper,
+        // Sync status (optional: show in UI)
+        isSyncing,
+        syncError,
+        showCompletedTasks,
+        setShowCompletedTasks,
+        isMultipleWallpapersMode,
+        setIsMultipleWallpapersMode,
+    }), [resolvedTheme, themePreference, backgroundMode, wallpaper, wallpaperConfig, wallpaperScope, isSyncing, syncError, showCompletedTasks, isMultipleWallpapersMode]);
 
+    return (
+        <ThemeContext.Provider value={themeValue}>
             {children}
         </ThemeContext.Provider>
     );

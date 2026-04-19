@@ -9,6 +9,8 @@ import './SettingsPage.css';
 const SettingsPage = () => {
     const [user, setUser] = useState(null);
     const {
+        themePreference,
+        setTheme,
         backgroundMode,
         setBackgroundMode,
         wallpaperConfig,
@@ -27,17 +29,23 @@ const SettingsPage = () => {
         maintenanceSkillIds,
         maintenanceEnabled,
         updateMaintenanceSkillIds,
-        toggleMaintenanceEnabled
+        toggleMaintenanceEnabled,
+        activeExperimentLimit,
+        updateActiveExperimentLimit,
+        dbSupportsExperimentLimit,
+        healthDotStyle,
+        updateHealthDotStyle,
+        blurQuality,
+        updateBlurQuality,
     } = useSettings();
 
     const [allSkills, setAllSkills] = useState([]);
+    const [manualSleep, setManualSleep] = useState(localStorage.getItem('pref_manual_sleep') === 'true');
 
     const global = wallpaperConfig.wallpapers.global;
 
     useEffect(() => {
-        console.log('[SettingsPage] Mounted, checking initial auth state...');
         supabase.auth.getUser().then(({ data: { user } }) => {
-            console.log('[SettingsPage] Initial user from getUser():', user ? user.email : 'null');
             setUser(user);
         });
 
@@ -45,12 +53,10 @@ const SettingsPage = () => {
         backbone.getNodesByType(NodeTypes.SKILL).then(setAllSkills);
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log('[SettingsPage] Auth state changed event:', event, 'User:', session?.user?.email ?? 'null');
             setUser(session?.user ?? null);
         });
 
         return () => {
-            console.log('[SettingsPage] Unmounting, unsubscribing from auth changes');
             subscription.unsubscribe();
         };
     }, []);
@@ -74,6 +80,28 @@ const SettingsPage = () => {
                     {syncError && !isSyncing && <span className="sync-indicator error">Sync failed</span>}
                 </h2>
                 <div className="settings-card">
+
+                    {/* Unified Appearance Toggle */}
+                    <div className="settings-section">
+                        <p className="settings-section-label">Appearance</p>
+                        <div className="theme-sync-toggle">
+                            {[
+                                { value: "light", label: "Light" },
+                                { value: "system", label: "System" },
+                                { value: "dark", label: "Dark" },
+                            ].map(({ value, label }) => (
+                                <button
+                                    key={value}
+                                    className={`theme-sync-option ${themePreference === value ? "active" : ""}`}
+                                    onClick={() => setTheme(value)}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="notion-divider" style={{ margin: '16px 0', opacity: 0.2 }} />
 
                     {/* Background Mode Control */}
                     <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
@@ -99,6 +127,49 @@ const SettingsPage = () => {
                             </button>
                         </div>
                     </div>
+                    {/* Status Dot Style Control */}
+                    <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
+                        <div className="appearance-row-label">Status Dot Style</div>
+                        <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
+                            <button
+                                className={`segmented-control-item ${healthDotStyle === 'glowing' ? 'active' : ''}`}
+                                onClick={() => updateHealthDotStyle('glowing')}
+                            >
+                                Glowing
+                            </button>
+                            <button
+                                className={`segmented-control-item ${healthDotStyle === 'static' ? 'active' : ''}`}
+                                onClick={() => updateHealthDotStyle('static')}
+                            >
+                                Static
+                            </button>
+                        </div>
+                    </div>
+
+                    {backgroundMode === 'liquid' && (
+                        <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
+                            <div className="appearance-row-label">Liquid Mode Quality</div>
+                            <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
+                                Performance keeps 60fps on all devices. Quality enables full live blur.
+                            </p>
+                            <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
+                                <button
+                                    className={`segmented-control-item ${blurQuality === 'performance' ? 'active' : ''}`}
+                                    onClick={() => updateBlurQuality('performance')}
+                                >
+                                    Performance
+                                </button>
+                                <button
+                                    className={`segmented-control-item ${blurQuality === 'quality' ? 'active' : ''}`}
+                                    onClick={() => updateBlurQuality('quality')}
+                                >
+                                    Quality
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="notion-divider" style={{ margin: '8px 0', opacity: 0.15 }} />
 
                     {backgroundMode === 'wallpaper' && (
                         <>
@@ -176,8 +247,39 @@ const SettingsPage = () => {
                 </div>
             </section>
 
-            {/* ── Keep It Alive Section (Maintenance) ────────────────────── */}
+            {/* ── Experiments Section ─────────────────────────────────── */}
             <section className="settings-section">
+                <h2 className="settings-section-title">Experiments</h2>
+                <div className="settings-card">
+                    <div className="appearance-row">
+                        <div>
+                            <div className="appearance-row-label">Active Experiment Limit</div>
+                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: 0 }}>
+                                Maximum number of active experiments allowed per skill.
+                            </p>
+                        </div>
+                        <div className="limit-input-container">
+                            <input 
+                                type="number" 
+                                min="1" 
+                                max="10"
+                                className={`settings-number-input ${!dbSupportsExperimentLimit ? 'disabled' : ''}`}
+                                value={activeExperimentLimit || 1}
+                                disabled={!dbSupportsExperimentLimit}
+                                onChange={(e) => updateActiveExperimentLimit(e.target.value)}
+                            />
+                            {!dbSupportsExperimentLimit && (
+                                <p className="appearance-hint error" style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+                                    Database column missing. Limits will not persist.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Keep It Alive Section (Maintenance) ────────────────────── */}
+            <section className="settings-section" id="maintenance">
                 <h2 className="settings-section-title">Keep It Alive (Maintenance)</h2>
                 <div className="settings-card">
                     <div className="appearance-row" style={{ marginBottom: '20px' }}>
@@ -245,13 +347,10 @@ const SettingsPage = () => {
                         <label className="toggle-switch">
                             <input
                                 type="checkbox"
-                                checked={localStorage.getItem('pref_manual_sleep') === 'true'}
+                                checked={manualSleep}
                                 onChange={(e) => {
                                     localStorage.setItem('pref_manual_sleep', e.target.checked);
-                                    // Force re-render if needed, but since it's a simple toggle, 
-                                    // we can just use local state to track it for immediate feedback.
-                                    window.dispatchEvent(new Event('storage'));
-                                    setUser({ ...user }); // Dummy update to trigger re-render
+                                    setManualSleep(e.target.checked);
                                 }}
                             />
                             <span className="toggle-slider"></span>
@@ -317,10 +416,8 @@ const SettingsPage = () => {
                             <button
                                 className="login-btn"
                                 onClick={async () => {
-                                    console.log('[SettingsPage] Login button clicked');
                                     try {
                                         await loginWithGoogle();
-                                        console.log('[SettingsPage] loginWithGoogle execution finished');
                                     } catch (err) {
                                         console.error('[SettingsPage] Login button error:', err);
                                     }

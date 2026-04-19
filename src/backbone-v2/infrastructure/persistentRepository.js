@@ -28,12 +28,10 @@ export const createPersistentRepository = () => {
             return;
         }
 
-        console.log(`Repository [ID:${instanceId}]: Persisting to Supabase. User: ${userId}. Nodes:`, nodes);
 
         try {
             // Transform nodes for Supabase
             const nodesToUpsert = (Array.isArray(nodes) ? nodes : [nodes]).map(node => {
-                console.log('[DEBUG REPO] Upserting node:', node.id, 'metadata.status:', node.metadata?.status);
                 return {
                     id: node.id,
                     user_id: userId,
@@ -50,25 +48,22 @@ export const createPersistentRepository = () => {
                 .upsert(nodesToUpsert);
 
             if (error) throw error;
-            console.log(`Repository [ID:${instanceId}]: Synced to Supabase`);
         } catch (e) {
             console.error('Failed to persist to Supabase:', e);
         }
     };
 
     const listeners = new Set();
-    const notify = () => listeners.forEach(l => l());
+    const notify = (changedId = null) => listeners.forEach(l => l(changedId));
     let initPromise = null;
 
     const initialize = async () => {
         if (initPromise) return initPromise;
 
         initPromise = (async () => {
-            console.log(`Repository [ID:${instanceId}]: Loading from Supabase...`);
             try {
                 const userId = await getUserId();
                 if (!userId) {
-                    console.warn('Repository: No user authenticated. Initializing empty storage.');
                     storage = [];
                     return;
                 }
@@ -91,8 +86,7 @@ export const createPersistentRepository = () => {
                     updatedAt: row.updated_at
                 }));
 
-                console.log(`Repository [ID:${instanceId}]: Loaded ${storage.length} nodes from Supabase`);
-                notify();
+                notify(null);
             } catch (e) {
                 console.error('Failed to load V2 data from Supabase:', e);
                 storage = [];
@@ -103,7 +97,6 @@ export const createPersistentRepository = () => {
     };
 
     const reinitialize = async () => {
-        console.log(`Repository [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
         initPromise = null;
         return await initialize();
     };
@@ -128,7 +121,7 @@ export const createPersistentRepository = () => {
             }
             const snapshot = JSON.parse(JSON.stringify(node));
             await persist(snapshot);
-            notify();
+            notify(node.id);
             return node;
         },
 
@@ -155,13 +148,12 @@ export const createPersistentRepository = () => {
                 };
                 
                 if (id === 'TASK-1774556587495-5ltn0' || updatedNode.type === 'TASK') {
-                    console.log(`[DEBUG Repository] Final merged metadata sessions:`, updatedNode.metadata?.sessions?.length || 0);
                 }
 
                 storage[index] = updatedNode;
                 const snapshot = JSON.parse(JSON.stringify(updatedNode));
                 await persist(snapshot);
-                notify();
+                notify(id);
                 return storage[index];
             }
             throw new Error(`Node with ID ${id} not found.`);
@@ -206,7 +198,7 @@ export const createPersistentRepository = () => {
             if (error) throw error;
 
             storage = storage.filter(n => n.id !== id);
-            notify();
+            notify(id);
         },
 
         clear: async () => {
@@ -222,17 +214,16 @@ export const createPersistentRepository = () => {
                 if (error) throw error;
 
                 storage = [];
-                notify();
+                notify(null);
             } catch (e) {
                 console.error('Failed to clear nodes from Supabase:', e);
             }
         },
 
         reset: () => {
-            console.log(`Repository [ID:${instanceId}]: RESETTING Repository State`);
             initPromise = null;
             storage = [];
-            notify();
+            notify(null);
         }
     };
 };

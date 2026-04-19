@@ -30,7 +30,6 @@ export const createHabitService = (repository, auraService, backbone) => {
     const _reportCompletion = async (habit) => {
         if (!backbone) return;
 
-        console.log(`HabitService: reporting completion for habit ${habit.id} to Backbone`);
 
         // 1. Increment global daily completions (exactly once)
         await backbone.incrementDailyCompletionCount();
@@ -90,7 +89,6 @@ export const createHabitService = (repository, auraService, backbone) => {
         },
 
         createHabit: async (linkedSkillId, ifTrigger, mveAction, frequencyType = 'daily', targetCount = 1) => {
-            console.log(`HabitService: createHabit called for ${linkedSkillId} | Freq: ${frequencyType} ${targetCount}x`);
 
             const defaultEvolutionConfig = {
                 thresholds: [8, 30, 60, 100, 150],
@@ -126,7 +124,6 @@ export const createHabitService = (repository, auraService, backbone) => {
                 sessions: []
             };
             const added = await repository.add(newHabit);
-            console.log(`HabitService: Habit persisted with ADHD+MDD Evolution Config.`);
             return added;
         },
 

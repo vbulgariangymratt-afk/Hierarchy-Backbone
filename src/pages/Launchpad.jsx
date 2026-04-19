@@ -76,7 +76,6 @@ const Launchpad = () => {
     }, [maintenanceSkillIds, maintenanceEnabled]);
 
     const handleStartDay = useCallback(async (selectedAreaIds) => {
-        console.log("Launchpad (Controller): Starting day with selected areas:", selectedAreaIds);
         await backbone.saveSelectedAreas(selectedAreaIds);
         await backbone.trackFocusMode(true);
     }, [backbone]);
@@ -94,7 +93,6 @@ const Launchpad = () => {
     const handleHabitComplete = useCallback(async (habitId) => {
         // The HabitCard now handles its own completeHabit call to capture friction.
         // We just need to wait for the repository to notify us (handled by subscription).
-        console.log("Launchpad: Habit completion detected for", habitId);
     }, []);
 
     if (data.loading) {

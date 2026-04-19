@@ -144,33 +144,23 @@
     opacity: 0 !important;
 }
 
-.dark.solid-mode .mini-launchpad-modal .modal-content {
-    background: transparent !important;
-    border: none !important;
-}
-
-.light.solid-mode .mini-launchpad-modal .modal-content {
-    background: #ffffff !important;
-    border: none !important;
-}
-
-.liquid-mode.dark .mini-launchpad-modal .modal-content {
+/* Remove unwanted square/border around task list */
+.mini-launchpad-modal .modal-content {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
 }
 
 .modal-header {
     display: flex;
-    flex-direction: column; /* Center header elements vertically */
-    align-items: center;    /* Center header elements horizontally */
-    text-align: center;
+    align-items: flex-start;
     gap: 16px;
-    margin-bottom: 24px;    /* Spatial separation */
+    margin-bottom: 24px;
     position: relative;
-    border-bottom: none !important; /* Delete dividers */
+    border-bottom: none;
     padding-bottom: 0;
 }
 
@@ -196,26 +186,12 @@
     border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-.title-group {
-    width: 100%;
-    text-align: center;
-}
-
 .title-group h2 {
-    margin: 0 0 12px 0;
+    margin: 0 0 10px 0;
     font-size: 22px;
     font-weight: 700;
     color: white;
     letter-spacing: -0.02em;
-    transition: font-size 0.3s ease;
-    width: 100%;
-    text-align: center;
-}
-
-.energy-level-3 .title-group h2 {
-    font-size: 32px;
-    letter-spacing: -0.04em;
-    margin-bottom: 16px;
 }
 
 .light.solid-mode .title-group h2 {
@@ -223,22 +199,20 @@
 }
 
 .becoming-statement {
-    margin: 0;
+    margin: 0 0 8px 0;
     font-size: 15px;
     font-weight: 400;
     color: var(--text-secondary);
-    line-height: 1.5;
-    opacity: 0.9;
-    display: inline-block;
-    width: 100%;
+    line-height: 1.4;
+    opacity: 1;
 }
 
 .label-subtle {
     font-weight: 600;
     color: var(--text-tertiary);
-    text-transform: none; /* Flow as one continuous line */
-    font-size: 15px;      /* Match surrounding text size */
-    letter-spacing: 0;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.08em;
     margin-right: 4px;
 }
 
@@ -252,6 +226,13 @@
     color: var(--text-tertiary);
     font-style: italic;
     line-height: 1.5;
+}
+
+.modal-actions-header {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .guidance-nudge {
@@ -324,34 +305,23 @@
 .task-list {
     display: flex;
     flex-direction: column;
-    gap: 16px; /* Optimized spatial separation between pills */
+    gap: 12px;
     margin-bottom: 24px;
-    width: 100%;
-    align-items: center;
-}
-
-.energy-level-3 .task-list {
-    padding: 0 4px; /* Subtle indentation to align better with header text labels */
 }
 
 .task-button {
     background: var(--alpha-low);
     border: 1px solid var(--color-border);
-    border-radius: 18px; /* Matched rounded aesthetic */
-    padding: 20px 24px;  /* Unified internal padding */
+    border-radius: 14px;
+    padding: 16px;
     display: flex;
     align-items: center;
-    justify-content: center; /* Center-aligned task text */
+    justify-content: space-between;
     cursor: pointer;
     transition: all 0.2s ease;
     width: 100%;
-    max-width: 320px; /* Reduced width for a more compact layout */
-    text-align: center;
+    text-align: left;
     color: var(--text-primary);
-}
-
-.liquid-mode.light .task-button {
-    color: rgba(0, 0, 0, 0.45); /* Smoke effect for Liquid Light */
 }
 
 .liquid-mode.dark .task-button {

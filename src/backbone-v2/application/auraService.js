@@ -30,7 +30,6 @@ export const AuraService = (hierarchyRepository) => {
         addAura: async (skillId, amount, reason) => {
             const skill = await hierarchyRepository.getById(skillId);
             if (!skill || skill.type !== NodeTypes.SKILL) {
-                console.warn(`AuraService: Node ${skillId} is not a valid Skill.`);
                 return null;
             }
 
@@ -51,10 +50,8 @@ export const AuraService = (hierarchyRepository) => {
             await hierarchyRepository.update(skillId, updates);
 
             // Required trace logs
-            console.log(`Aura: +${amount} (${reason}) → Skill: ${skill.name}`);
 
             if (newLevel > oldLevel) {
-                console.log(`Aura Level Up → Skill: ${skill.name} → Level ${newLevel}`);
             }
 
             return { auraTotal: newAura, auraLevel: newLevel };

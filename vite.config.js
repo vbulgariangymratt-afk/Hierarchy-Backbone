@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'
 import path from 'path'
-import obfuscator from 'vite-plugin-javascript-obfuscator'
+
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -11,13 +11,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       react(),
-      isProd && obfuscator({
-        optionsPreset: 'medium-obfuscation',
-        stringArrayEncoding: ['base64'],
-        stringArrayThreshold: 0.75,
-        controlFlowFlattening: true,
-        controlFlowFlatteningThreshold: 0.5,
-      }),
+
       {
       name: 'local-persistence-handler',
       configureServer(server) {
@@ -213,14 +207,21 @@ export default defineConfig(({ mode }) => {
         });
       }
     },
-
     ].filter(Boolean),
     server: {
       historyApiFallback: true, // Allows /auth/callback to load the React app
       watch: {
         ignored: ['**/v2_data.json', '**/habit_data.json', '**/journal_data.json', '**/local_data/**']
       }
+    },
+    build: {
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn'],
+        }
+      }
     }
   }
 })
-

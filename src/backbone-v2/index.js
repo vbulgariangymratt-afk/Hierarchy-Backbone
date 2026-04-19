@@ -39,11 +39,9 @@ const getInstance = () => {
         existing.journalService = journalService;
         existing.timelineService = timelineService;
 
-        console.log('Backbone V2: Returning existing singleton from globalThis');
         return existing;
     }
 
-    console.log('Backbone V2: Initializing FRESH Singleton Environment');
 
     // 1. Initialize persistent repositories
     const repository = createPersistentRepository();
@@ -74,7 +72,6 @@ const getInstance = () => {
         habitService.initialize(),
         journalService.initialize()
     ]).then(() => {
-        console.log('Backbone V2: All systems READY');
         return true;
     }).catch(err => {
         console.error('Backbone V2: Error during system initialization', err);
@@ -94,7 +91,6 @@ const getInstance = () => {
     };
 
 
-    console.log('Backbone V2: Fresh singleton stored in globalThis');
     return globalThis[key];
 };
 
@@ -114,10 +110,8 @@ const {
 import { logToFile } from '../lib/logger';
 
 const _doReload = async () => {
-    console.log('Backbone V2: RELOADING ALL DATA...');
     
     if (!backbone || typeof backbone.initialize !== 'function') {
-        console.warn('Backbone V2: backbone not initialized, skipping reload');
         return false;
     }
 
@@ -136,7 +130,6 @@ const _doReload = async () => {
         journalService?.initialize ? journalService.initialize() : Promise.resolve()
     ]);
 
-    console.log('Backbone V2: RELOAD COMPLETE');
     await logToFile('Reload complete');
     return true;
 };
@@ -157,7 +150,6 @@ export const reloadAllData = async () => {
 
 
 export const clearAllData = () => {
-    console.log('Backbone V2: CLEARING ALL DATA (Signed Out)');
     habitRepo?.reset?.();
     repository?.reset?.();
     journalRepo?.reset?.(); // Added journalRepo for completeness if available

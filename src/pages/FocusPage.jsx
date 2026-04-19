@@ -25,7 +25,6 @@ const FocusPage = () => {
     const [ack, setAck] = useState(null);
     const [isToggled, setIsToggled] = useState(false);
     const [knobSnapped, setKnobSnapped] = useState(false);
-    const [particleAnchor, setParticleAnchor] = useState({ x: 0, y: 0 });
     const [isToggling, setIsToggling] = useState(false);
     const [isInterestMode, setIsInterestMode] = useState(false);
 
@@ -60,9 +59,6 @@ const FocusPage = () => {
     const [subSteps, setSubSteps] = useState([]);
     const [newSubStep, setNewSubStep] = useState('');
     const [showAllHistory, setShowAllHistory] = useState(false);
-    const [completionSequenceStarted, setCompletionSequenceStarted] = useState(false);
-    const completionSequenceRef = useRef(false);
-    const particleOffsetsRef = useRef([]);
     const [uninterruptedSeconds, setUninterruptedSeconds] = useState(0);
     const [checkpointToast, setCheckpointToast] = useState(null);
 
@@ -88,15 +84,10 @@ const FocusPage = () => {
     const completedSubSteps = subSteps.filter(s => s.isCompleted);
     const incompleteSubSteps = subSteps.filter(s => !s.isCompleted);
     
-    // UI Guard: If sequence is starting, keep the last completed step in the 'active' slot
-    const activeSubStep = completionSequenceStarted 
-        ? completedSubSteps[completedSubSteps.length - 1] 
-        : incompleteSubSteps[0];
+    const activeSubStep = incompleteSubSteps[0];
+    const upNextSubStep = incompleteSubSteps[1];
 
-    const upNextSubStep = completionSequenceStarted ? null : incompleteSubSteps[1];
-
-    const historyToDisplay = (showAllHistory ? completedSubSteps : completedSubSteps.slice(-3))
-        .filter(s => completionSequenceStarted ? s.id !== activeSubStep?.id : true);
+    const historyToDisplay = (showAllHistory ? completedSubSteps : completedSubSteps.slice(-3));
 
     const triggerCheckpoint = useCallback(() => {
         setCheckpointsCompleted(c => {
@@ -198,7 +189,6 @@ const FocusPage = () => {
                 );
                 const ids = todayTasks.map(t => t.id);
                 lockedTaskIdsRef.current = ids;
-                console.log(`[Focus Mode] Entered Focus Mode with ${todayTasks.length} tasks:`, ids);
             }
 
             // 1.5. Restore Persisted Session if it exists
@@ -207,7 +197,6 @@ const FocusPage = () => {
             if (savedTimerStr) {
                 try {
                     restoredTimer = JSON.parse(savedTimerStr);
-                    console.log("[Focus Mode] Found saved session in localStorage for taskId:", restoredTimer.taskId);
                 } catch (e) {
                     console.error("[Focus Mode] Failed to parse saved timer:", e);
                 }
@@ -221,7 +210,6 @@ const FocusPage = () => {
             if (restoredTimer) {
                 nextTask = fetchedNodes.find(n => n.id === restoredTimer.taskId);
                 if (nextTask) {
-                    console.log("[Focus Mode] RESTORING task from persisted state:", nextTask.name);
                     setActiveSessionId(restoredTimer.activeSessionId);
                     setIsPaused(restoredTimer.isPaused);
                     didRestore = true;
@@ -231,14 +219,11 @@ const FocusPage = () => {
                         startTimeRef.current = restoredTimer.startTime;
                         const elapsed = Math.floor((Date.now() - restoredTimer.startTime) / 1000);
                         setSeconds(elapsed);
-                        console.log(`[Focus Mode] Restored RUNNING timer. StartTime: ${restoredTimer.startTime}, Current seconds: ${elapsed}`);
                     } else {
                         setSeconds(restoredTimer.seconds || 0);
                         startTimeRef.current = restoredTimer.startTime || null;
-                        console.log(`[Focus Mode] Restored PAUSED timer. Seconds: ${restoredTimer.seconds}`);
                     }
                 } else {
-                    console.warn("[Focus Mode] Persisted task ID no longer exists. Clearing saved state.");
                     localStorage.removeItem(TIMER_PERSISTENCE_KEY);
                 }
             }
@@ -254,7 +239,6 @@ const FocusPage = () => {
             // Priority A: Specifically passed task from LaunchpadFlow
             const forcedTaskId = location.state?.taskId;
             if (forcedTaskId) {
-                console.log("FocusPage: Loading forced task ->", forcedTaskId);
                 nextTask = fetchedNodes.find(n => n.id === forcedTaskId);
                 // Clear state so subsequent loads (after task finish) don't loop the same task
                 window.history.replaceState({}, document.title);
@@ -263,7 +247,6 @@ const FocusPage = () => {
             // Priority B: Snapshot-aware Backbone flow
             if (!nextTask) {
                 // Subsequent loads in the same session - follow the locked list
-                console.log("[Focus Mode] Loading next task from locked snapshot...");
                 for (const id of lockedTaskIdsRef.current) {
                     const t = fetchedNodes.find(n => n.id === id);
                     if (t && t.metadata?.status !== TaskStatuses.DONE) {
@@ -322,7 +305,6 @@ const FocusPage = () => {
 
     useEffect(() => {
         if (startTimeRef.current !== null) {
-            console.log("[Focus Mode] Skipping loadNextTask \u2014 timer is already running");
             return;
         }
         loadNextTask();
@@ -331,11 +313,9 @@ const FocusPage = () => {
 
     // Timer Interval — drift-proof via Date.now()
     useEffect(() => {
-        console.log(`[DEBUG TIMER] useEffect for timer triggered. isPaused: ${isPaused}, activeSessionId: ${activeSessionId}`);
         if (!isPaused && activeSessionId) {
             // Set startTimeRef only if not already anchored (don't reset on re-renders)
             if (startTimeRef.current === null) {
-                console.log(`[DEBUG TIMER] Anchoring startTimeRef.current. current seconds: ${seconds}`);
                 startTimeRef.current = Date.now() - (seconds * 1000);
             }
 
@@ -352,7 +332,6 @@ const FocusPage = () => {
                 }
             };
 
-            console.log(`[DEBUG TIMER] Creating interval. startTimeRef: ${startTimeRef.current}`);
             timerRef.current = setInterval(() => {
                 const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
@@ -395,12 +374,10 @@ const FocusPage = () => {
                 }
             }, 1000);
         } else {
-            if (timerRef.current) console.log(`[DEBUG TIMER] Clearing interval (isPaused or no activeSessionId)`);
             clearInterval(timerRef.current);
             timerRef.current = null;
         }
         return () => {
-            if (timerRef.current) console.log(`[DEBUG TIMER] Cleaning up interval on unmount/dep change`);
             clearInterval(timerRef.current);
             timerRef.current = null;
         };
@@ -420,15 +397,13 @@ const FocusPage = () => {
     }, [isPaused, activeSessionId, task?.id]);
 
     useEffect(() => {
-        console.log('[DEBUG LIFESTYLE] FocusPage mounted');
-        return () => console.log('[DEBUG LIFESTYLE] FocusPage UNmounted');
+        return () => {};
     }, []);
 
     const formatTime = (totalSeconds) => formatTimer(totalSeconds);
 
 
     const handleStartSession = useCallback(async () => {
-        console.log(`[DEBUG FocusPage] handleStartSession called. activeSessionId: ${activeSessionId}, seconds: ${seconds}`);
         if (activeSessionId) {
             // Resuming: re-anchor clock based on current elapsed seconds so drift-proof calc is correct
             startTimeRef.current = Date.now() - (seconds * 1000);
@@ -441,9 +416,7 @@ const FocusPage = () => {
 
     const startBackboneSession = useCallback(async (pleasureValue) => {
         try {
-            console.log(`[DEBUG FocusPage] startBackboneSession START for task: ${task.id} | Sensory: ${sensoryState}`);
             const sess = await backbone.startSession(task.id, 10, pleasureValue, 0, sensoryState);
-            console.log(`[DEBUG FocusPage] startBackboneSession SUCCESS. New session ID: ${sess.id}`);
             setActiveSessionId(sess.id);
             // Anchor the clock — this is the only place we set startTimeRef for a fresh session
             startTimeRef.current = Date.now();
@@ -471,7 +444,6 @@ const FocusPage = () => {
     }, [task, location.state?.autoStart, hasAutoStarted, handleStartSession]);
 
     const handlePauseSession = () => {
-        console.log(`[DEBUG FocusPage] handlePauseSession called. activeSessionId: ${activeSessionId}`);
         if (!activeSessionId) return;
         setIsPaused(true);
         setUninterruptedSeconds(0);
@@ -484,7 +456,6 @@ const FocusPage = () => {
             const currentTaskId = task.id;
             const currentSessionId = activeSessionId;
 
-            console.log(`[DEBUG FocusPage] completeBackboneSession START. Task: ${currentTaskId}, Session: ${currentSessionId}`);
 
             // 1. SOFT RELOAD Logic: Mark MVE completed on the parent objective if in low energy
             if (energyLevel <= 2 && currentTaskId) {
@@ -492,7 +463,6 @@ const FocusPage = () => {
                 if (parentAspect && parentAspect.type === NodeTypes.ASPECT) {
                     const parentExperiment = allNodes.find(n => n.id === parentAspect.parentId);
                     if (parentExperiment && parentExperiment.type === NodeTypes.OBJECTIVE) {
-                        console.log(`[Soft Reload] Marking MVE reached for experiment: ${parentExperiment.name}`);
                         const now = Date.now();
                         await backbone.updateNode(parentExperiment.id, {
                             metadata: {
@@ -514,30 +484,24 @@ const FocusPage = () => {
             if (preventLoad) {
                 // When completing a task, WAIT for the session save to finish
                 // so it doesn't race with proceedWithTaskCompletion
-                console.log(`[DEBUG FocusPage] Awaiting session completion for taskId: ${currentTaskId}`);
                 await backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery);
-                console.log(`[DEBUG FocusPage] Session completion AWAITED successfully`);
             } else {
                 // Normal pause/stop — fire and forget is fine
-                console.log(`[DEBUG FocusPage] Background session completion START. sessionId: ${currentSessionId}`);
                 backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery)
-                    .then(() => console.log(`[DEBUG FocusPage] Background session completion SUCCESS for ${currentSessionId}`))
+                    .then(() => {}
                     .catch(err => console.error("[DEBUG FocusPage] completeSession background error:", err));
 
                 // 2. INSTANT UI: Trigger Momentum Loop immediately
                 if (energyLevel <= 2 && !isNavigatingAway && nextSuggestedTask) {
-                    console.log(`[DEBUG FocusPage] Triggering Momentum Loop`);
                     setShowMomentum(true);
                     return;
                 }
 
                 // Standard flow
                 if (isNavigatingAway) {
-                    console.log(`[DEBUG FocusPage] Navigating away to ${previousRoute || '/launchpad'}`);
                     backbone.trackFocusMode(false).catch(console.error);
                     navigate(previousRoute || '/launchpad');
                 } else {
-                    console.log(`[DEBUG FocusPage] Loading next task`);
                     loadNextTask();
                 }
             }
@@ -574,8 +538,6 @@ const FocusPage = () => {
                 console.time("taskCompleteTransition");
                 try {
                     // Start async work
-                    console.log("[FOCUS DEBUG] Completing task:", task.name, "ID:", task.id, "Status will be:", TaskStatuses.DONE);
-                    console.log(`[DEBUG FocusPage] Sending PATCH update (no metadata spread) for ${task.id}`);
                     
                     const taskUpdatePromise = task.metadata?.itemType === 'REPETITION'
                         ? backbone.incrementTaskRepetition(task.id)
@@ -589,14 +551,10 @@ const FocusPage = () => {
                     // Fetch allNodes needed for identity savoring BEFORE the timeout finishes
                     const allNodes = await backbone.getAllNodes();
 
-                    console.log(`[Focus Mode] Task Completed: ${task.name} (${task.id})`);
                     await taskUpdatePromise;
                     
-                    console.log('[DEBUG COMPLETE] updateNode called for:', task.id);
                     const verifyByGrep = await backbone.getAllNodes();
                     const verify = verifyByGrep.find(n => n.id === task.id);
-                    console.log('[DEBUG COMPLETE] Status immediately after update:', verify?.metadata?.status);
-                    console.log('[DEBUG COMPLETE] Full metadata after update:', JSON.stringify(verify?.metadata));
 
                     // Trigger Reward Animation: +1 Aura & +1 Hryvnia for Task Completion
                     if (rewardRef.current) {
@@ -666,69 +624,13 @@ const FocusPage = () => {
             return;
         }
 
-        // Guard against double-firing
-        if (completionSequenceRef.current) return;
-
-        // Measure the real center of the toggle track to anchor particles perfectly
-        if (toggleContainerRef.current) {
-            const rect = toggleContainerRef.current.getBoundingClientRect();
-            setParticleAnchor({
-                x: rect.width / 2,
-                y: rect.height / 2,
-            });
-        }
-
-        // Snap the knob immediately — this is instant, no waiting
+        // Snap the knob immediately
         setKnobSnapped(true);
 
-        // === VICTORY LAP ===
-        // 1. Seed stable particle positions with quadrant-based spawning geometry
-        const TOGGLE_WIDTH = 96;  // updated px width
-        const TOGGLE_HEIGHT = 38; // updated px height
-
-        particleOffsetsRef.current = Array.from({ length: 18 }, (_, i) => {
-            const isTopLeft = i < 9;
-            // Origin: randomized within the relevant quadrant
-            const originX = isTopLeft
-                ? -(Math.random() * TOGGLE_WIDTH * 0.5)
-                : (Math.random() * TOGGLE_WIDTH * 0.5);
-            const originY = isTopLeft
-                ? -(Math.random() * TOGGLE_HEIGHT * 0.5)
-                : (Math.random() * TOGGLE_HEIGHT * 0.5);
-
-            // Velocity: explode outward from origin
-            const angle = isTopLeft
-                ? Math.PI + Math.random() * Math.PI * 0.8  // upper-left arc
-                : Math.random() * Math.PI * 0.8;             // lower-right arc
-            const speed = 60 + Math.random() * 80;
-
-            return {
-                originX,
-                originY,
-                targetX: originX + Math.cos(angle) * speed,
-                targetY: originY + Math.sin(angle) * speed,
-                size: 10 + Math.random() * 8,  // Scaled down slightly
-                duration: 0.5 + Math.random() * 0.3,
-                delay: i * 0.018,  // 18ms stagger
-            };
-        });
-
-        // 2. Lock UI and start animation
-        completionSequenceRef.current = true;
-        setCompletionSequenceStarted(true);
-
-        // 3. Wait 1000ms — let the animation breathe
-        setTimeout(() => {
-            setIsPaused(true);
-            setPendingTaskComplete(true);
-            setShowSummary(true);
-
-            // Drop the guard 50ms after modal opens
-            setTimeout(() => {
-                completionSequenceRef.current = false;
-                setCompletionSequenceStarted(false);
-            }, 50);
-        }, 1000);
+        // Transition to summary
+        setIsPaused(true);
+        setPendingTaskComplete(true);
+        setShowSummary(true);
 
     }, [task, isToggling, activeSessionId, showSummary, handleSummarySubmit, proceedWithTaskCompletion]);
 
@@ -748,7 +650,6 @@ const FocusPage = () => {
             return;
         }
         try {
-            console.log("[Focus Mode] Exited Focus Mode session.");
             await backbone.trackFocusMode(false);
         } catch (error) {
             console.error("Failed to exit focus mode:", error);
@@ -760,17 +661,21 @@ const FocusPage = () => {
         if (!task) return;
         
         try {
-            console.log("[HIGH ENERGY SAVE] applying PATCH update taskId:", task.id);
-            const updatedNode = await backbone.updateNode(task.id, { metadata: { highEnergy: true } });
+            const updatedNode = await backbone.updateNode(task.id, { 
+                metadata: { 
+                    highEnergy: true,
+                    isToday: false 
+                } 
+            });
             
-            // Explicitly sync the local task state so the UI reflects the metadata change
-            setTask(updatedNode);
+            // Move to next task immediately
+            setTask(null);
+            loadNextTask();
         } catch (err) {
             console.error("[HIGH ENERGY SAVE] ERROR - Failed to save for high energy:", err);
         }
     };
 
-    console.log("Current task:", task);
 
 
     if (loading && !task) {
@@ -973,7 +878,7 @@ const FocusPage = () => {
                                     >
                                         ✓
                                     </motion.div>
-                                    {/* Particle Burst removed - relocated to main toggle */}
+                                    {/* Sub-step Completion Sequence */}
                                 </div>
                                 <div className="substep-text" style={{ fontWeight: 600, color: 'var(--focus-color-focus)' }}>{activeSubStep.text}</div>
                             </Reorder.Item>
@@ -1056,42 +961,6 @@ const FocusPage = () => {
                             style={{ zIndex: 2 }}
                         />
                     </motion.div>
-
-                    {/* Victory Lap — Quadrant Physics Burst (Measured Anchor) */}
-                    {completionSequenceStarted && particleOffsetsRef.current.map((p, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ 
-                                x: particleAnchor.x + p.originX, 
-                                y: particleAnchor.y + p.originY, 
-                                opacity: 1, 
-                                scale: 0 
-                            }}
-                            animate={{ 
-                                x: particleAnchor.x + p.targetX, 
-                                y: particleAnchor.y + p.targetY, 
-                                opacity: 0,
-                                scale: [0, 1.5, 0.2]
-                            }}
-                            transition={{ 
-                                duration: p.duration,
-                                ease: "easeOut",
-                                delay: p.delay
-                            }}
-                            style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: `${p.size}px`,
-                                height: `${p.size}px`,
-                                borderRadius: '50%',
-                                background: '#FFFFFF',
-                                pointerEvents: 'none',
-                                zIndex: 1,
-                                filter: 'blur(2px) brightness(1.8) drop-shadow(0 0 10px rgba(255,255,255,0.8))'
-                            }}
-                        />
-                    ))}
                 </div>
             </footer>
 

@@ -30,27 +30,22 @@ export const useAppInitialization = (setSession) => {
   const [repositoriesReady, setRepositoriesReady] = useState(false);
 
   useEffect(() => {
-    console.log('[App Init] Core lifecycle starting...');
 
     const initApp = async () => {
       // ENSURE backbone is ready before anything else
       if (!backbone || typeof backbone.initialize !== 'function') {
-        console.warn('[App Init] Backbone not ready or missing initialize method — bootstrapping...');
       }
 
       try {
-        console.log('[App Init] Waiting for backbone.initialize()...');
         await backbone.initialize();
         
         // --- STEP 1: Initial hydration from cache/database ---
         const allNodes = await backbone.getAllNodes();
         initializeNodes(allNodes);
 
-        console.log('[App Init] Backbone READY');
         
         // --- STEP 2: Client-side session recovery ---
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        console.log('[AUTH] Initial session:', initialSession ? initialSession.user.email : 'None');
         
         // Set this BEFORE registering the auth listener so the startup
         // SIGNED_IN event is treated as a token refresh, not a new login
@@ -65,7 +60,6 @@ export const useAppInitialization = (setSession) => {
 
         // --- STEP 3: Listen for system-level auth state changes ---
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          console.log('[AUTH] Event:', event, newSession ? `User: ${newSession.user.email}` : 'None');
           
           setSession(newSession);
 
@@ -74,7 +68,6 @@ export const useAppInitialization = (setSession) => {
             const isNewUser = newSession.user.id !== _lastKnownUid;
             
             if (isNewUser && !_isReloading) {
-              console.log('[App] SIGNED_IN (New User) — Reloading all data...');
               _isReloading = true;
               _lastKnownUid = newSession.user.id;
               setRepositoriesReady(false);
@@ -88,13 +81,11 @@ export const useAppInitialization = (setSession) => {
                 setRepositoriesReady(true);
               }
             } else {
-              console.log('[App] SIGNED_IN (Token Refresh or Reload in progress) — skipping redundant reload.');
             }
           }
 
 
           if (event === 'SIGNED_OUT') {
-            console.log('[App] SIGNED_OUT — clearing all local caches...');
             _lastKnownUid = null;
             clearAllData();
             initializeNodes([]); // Clear the Zustand store

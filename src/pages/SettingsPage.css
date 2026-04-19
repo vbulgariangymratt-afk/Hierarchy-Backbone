@@ -58,8 +58,8 @@
 .liquid-mode .settings-card {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -317,6 +317,30 @@
     font-style: italic;
 }
 
+.settings-number-input {
+    background: var(--alpha-low, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    width: 60px;
+    outline: none;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.settings-number-input:focus {
+    border-color: var(--color-accent);
+    background: var(--alpha-medium);
+}
+
+.settings-number-input::-webkit-inner-spin-button,
+.settings-number-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
 /* ============================
    SYNC INDICATOR
    ============================ */
@@ -523,4 +547,47 @@ input:checked + .toggle-slider:before {
     letter-spacing: 0.5px;
     color: var(--text-muted);
     margin-top: 2px;
+}
+
+/* Appearance Sync Toggle */
+.appearance-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Theme Sync Toggle (Segmented) */
+.theme-sync-toggle {
+  display: flex;
+  gap: 3px;
+  background: var(--alpha-low, rgba(0,0,0,0.08));
+  border-radius: 10px;
+  padding: 3px;
+  width: 100%;
+}
+
+.theme-sync-option {
+  flex: 1;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.theme-sync-option.active {
+  background: var(--alpha-med, white);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+[data-theme="dark"] .theme-sync-option.active {
+  background: rgba(255,255,255,0.15);
+  color: var(--text-primary);
 }

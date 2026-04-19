@@ -54,25 +54,15 @@
 }
 
 .skill-header {
-    margin-bottom: 24px; /* Spatial Separation */
-    position: relative;
-    border-bottom: none !important; /* Delete Dividers */
-    padding-bottom: 0;
+    margin-bottom: 60px;
 }
 
 .skill-title {
-    font-size: 32px;
+    font-size: 40px;
     font-weight: 800;
     color: var(--text-primary);
     margin: 0;
-    letter-spacing: -1.5px;
-    margin-bottom: 8px;
-    transition: font-size 0.3s ease;
-}
-
-.energy-level-3 .skill-title {
-    font-size: 52px;
-    letter-spacing: -1.5px;
+    letter-spacing: -0.5px;
 }
 
 .skill-identity-row {
@@ -84,12 +74,12 @@
 }
 
 .identity-prefix {
+    font-size: 13px;
     font-weight: 700;
-    color: var(--text-tertiary);
-    text-transform: none; /* Flow as one continuous line */
-    font-size: 1rem;       /* Match surrounding text size */
-    margin-right: 8px;
-    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.5;
 }
 
 .skill-identity-input {
@@ -135,6 +125,8 @@
 }
 
 /* Suggested Focus Section Box Dissolved */
+
+
 
 .suggestions-label {
     display: block;
@@ -722,74 +714,61 @@
 }
 
 .aspect-card {
-    /* Liquid Glass host - Position and Layout */
     position: relative;
-    border-radius: 12px; /* Matched to Skill cards */
+    border-radius: 12px;
     padding: 24px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     gap: 20px;
     height: auto;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease;
     z-index: 1;
-}
-
-.solid-mode .aspect-card {
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
 }
 
 .liquid-mode .aspect-card {
     backdrop-filter: blur(22px) saturate(140%);
     -webkit-backdrop-filter: blur(22px) saturate(140%);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+.liquid-mode.dark .aspect-card {
+    background: transparent;
+}
 /* Isolated Glass Background Layer */
 .aspect-card::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
     border-radius: inherit;
-    box-shadow:
-        0 10px 40px rgba(0, 0, 0, 0.35),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4);
     pointer-events: none;
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.liquid-mode.dark .aspect-card::before {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-}
 
-.solid-mode .aspect-card::before {
+.solid-mode .aspect-card {
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
 }
-
-.dark.solid-mode .aspect-card::before {
+.dark.solid-mode .aspect-card {
     background: var(--color-bg-secondary);
     border: 1px solid rgba(255, 255, 255, 0.04);
     box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
 }
-
-.light.solid-mode .aspect-card::before {
+.light.solid-mode .aspect-card {
     background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.wallpaper-mode .aspect-card::before {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-}
 
 /* Removed duplicate sheen block */
 
@@ -804,7 +783,7 @@
     box-shadow:
         0 18px 56px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px) translateZ(0);
+    transform: translateY(-2px);
 }
 
 .liquid-mode.dark .aspect-card:hover {
@@ -821,15 +800,7 @@
     transform: translateY(-2px);
 }
 
-.dark.solid-mode .aspect-card:hover::before {
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.4);
-}
 
-.light.solid-mode .aspect-card:hover::before {
-    border-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
-}
 
 .aspect-card.drag-over {
     background: rgba(59, 130, 246, 0.1);
@@ -844,10 +815,6 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.dark.solid-mode .aspect-card.is-active::before {
-    border-color: rgba(255, 255, 255, 0.06);
-    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
-}
 
 .aspect-card.is-done {
     border: 2px solid rgba(59, 130, 246, 0.6) !important;
@@ -1586,6 +1553,7 @@
     border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 16px;
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -1595,7 +1563,7 @@
 }
 
 .light.solid-mode .habit-card-minimal {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Softer for light mode */
 }
 
 .habit-edit-input {
@@ -1687,9 +1655,11 @@
 .liquid-mode .habit-card-minimal {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -2769,39 +2739,58 @@
 }
 
 .sleeping-section {
-    margin-top: 40px;
+    margin-top: 100px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-top: 32px;
+    padding-top: 48px;
 }
 
-.section-header-row.collapsible {
+.section-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 12px;
     cursor: pointer;
+    margin-bottom: 32px;
     user-select: none;
     transition: opacity 0.2s ease;
 }
 
-.section-header-row.collapsible:hover {
+.section-header:hover {
     opacity: 0.7;
 }
 
-.collapse-arrow {
-    color: var(--text-secondary);
+.section-header h2 {
     font-size: 14px;
-    transition: transform 0.2s ease;
+    font-weight: 700;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+    margin: 0;
 }
 
-.collapse-arrow.expanded {
-    transform: rotate(90deg);
+.dark.solid-mode .section-header h2 {
+    color: #ffffff;
+}
+
+.count-badge {
+    font-size: 11px;
+    font-weight: 800;
+    background: var(--alpha-low);
+    color: var(--text-secondary);
+    padding: 3px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    opacity: 0.6;
+}
+
+.experiments-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .sleeping-content {
-    margin-top: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    margin-top: 0;
 }
 
 /* Limit Modal Styles - Reused and refined */
@@ -3752,31 +3741,21 @@
     margin-top: 12px;
 }
 
-/* Novelty Sprint UI */
-.novelty-sprint-glow {
-    animation: noveltySkillGlow 8s infinite alternate ease-in-out;
-}
+/* Novelty Sprint UI - Glow Removed */
 
-@keyframes noveltySkillGlow {
-    0% {
-        box-shadow: inset 0 0 0px 0px rgba(139, 92, 246, 0);
-    }
-
-    100% {
-        box-shadow: inset 0 0 120px -50px rgba(139, 92, 246, 0.15);
-    }
-}
 
 .novelty-banner {
-    background: rgba(139, 92, 246, 0.1);
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    padding: 14px 20px;
+    margin-bottom: 32px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    color: #a78bfa;
+    gap: 16px;
+    color: var(--text-primary);
     font-size: 14px;
     font-weight: 500;
 }
@@ -3786,14 +3765,14 @@
 }
 
 .novelty-highlight {
-    border: 1px solid rgba(139, 92, 246, 0.4) !important;
-    box-shadow: 0 4px 20px -4px rgba(139, 92, 246, 0.15) !important;
+    border: 1px solid var(--color-accent) !important;
+    box-shadow: 0 4px 20px -4px rgba(59, 130, 246, 0.15) !important;
     transform: translateY(-2px);
     transition: all 0.3s ease;
 }
 
 .novelty-badge {
-    background: #8b5cf6;
+    background: var(--color-accent);
     color: white;
     font-size: 10px;
     font-weight: 800;
@@ -3806,13 +3785,13 @@
 .novelty-sprint-action {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px dashed rgba(139, 92, 246, 0.2);
+    border-top: 1px dashed var(--alpha-low);
 }
 
 .novelty-sprint-btn {
-    background: rgba(139, 92, 246, 0.1);
-    color: #a78bfa;
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: var(--alpha-low);
+    color: var(--text-primary);
+    border: 1px solid var(--color-border);
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 12px;
@@ -3823,7 +3802,7 @@
 }
 
 .novelty-sprint-btn:hover {
-    background: rgba(139, 92, 246, 0.2);
+    background: var(--alpha-med);
 }
 
 
@@ -3982,16 +3961,19 @@
 
 /* EXPIRY DECISION CARD */
 .expiry-decision-card {
-    background: var(--color-bg-card);
+    background: var(--alpha-low);
     border: 1px solid var(--color-border);
     border-left: 4px solid var(--color-accent);
     border-radius: 16px;
     padding: 24px;
     margin-top: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     overflow: hidden;
     width: 100%;
 }
+
 
 .expiry-tag {
     font-size: 0.7rem;
@@ -4082,4 +4064,11 @@
 [data-theme="light"][data-background-mode="solid"] .challenge-card-title,
 [data-theme="light"][data-background-mode="solid"] .challenge-banner-icon {
     color: var(--text-primary);
+}
+
+/* ── Blur Quality: Performance Mode ─────────────────────── */
+html[data-blur-quality="performance"].liquid-mode .aspect-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.07) !important;
 }

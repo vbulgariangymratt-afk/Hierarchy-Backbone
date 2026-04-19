@@ -39,21 +39,18 @@ export const useAppLifecycle = () => {
 
   // Diagnostic Lifecycle Logging
   useEffect(() => {
-    console.log('[DEBUG LIFESTYLE] App component mounted');
     
     const handleVisibilityChange = () => {
-      console.log(`[DEBUG LIFESTYLE] Visibility changed: ${document.visibilityState}`);
     };
     
-    const handleWindowFocus = () => console.log('[DEBUG LIFESTYLE] Window GAINED focus');
-    const handleWindowBlur = () => console.log('[DEBUG LIFESTYLE] Window LOST focus');
+    const handleWindowFocus = () => {};
+    const handleWindowBlur = () => {};
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleWindowFocus);
     window.addEventListener('blur', handleWindowBlur);
 
     return () => {
-      console.log('[DEBUG LIFESTYLE] App component UNmounting');
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleWindowFocus);
       window.removeEventListener('blur', handleWindowBlur);

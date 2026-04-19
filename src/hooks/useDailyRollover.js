@@ -16,7 +16,6 @@ export const useDailyRollover = (repositoriesReady) => {
       const lastRun = localStorage.getItem("lastRolloverDate");
 
       if (lastRun !== today) {
-        console.log("[Rollover] New day detected. Starting daily rollover...");
         try {
           const allNodes = await backbone.getAllNodes();
           const tomorrowTasks = allNodes.filter(n => 
@@ -24,7 +23,6 @@ export const useDailyRollover = (repositoriesReady) => {
           );
 
           if (tomorrowTasks.length > 0) {
-            console.log(`[Rollover] Found ${tomorrowTasks.length} tasks to roll over from tomorrow to today.`);
             
             // Process in parallel to minimize UI impact
             await Promise.all(tomorrowTasks.map(task => 
@@ -37,18 +35,14 @@ export const useDailyRollover = (repositoriesReady) => {
               })
             ));
             
-            console.log("[Rollover] Successfully rolled over tasks.");
           } else {
-            console.log("[Rollover] No tomorrow tasks found to roll over.");
           }
           
           localStorage.setItem("lastRolloverDate", today);
-          console.log("[Rollover] Last run date updated to:", today);
         } catch (err) {
           console.error("[Rollover] Failed to complete daily rollover:", err);
         }
       } else {
-        console.log("[Rollover] Rollover already ran today:", today);
       }
     };
     

@@ -35,7 +35,7 @@ const SVG_ICONS = {
 
 const Sidebar = ({ onSkillClick }) => {
     const navigate = useNavigate();
-    const { theme, toggleTheme, backgroundMode, setBackgroundMode } = useTheme();
+    const { theme, themePreference, setTheme, backgroundMode, setBackgroundMode } = useTheme();
 
     
     // --- ZUSTAND SELECTORS ---
@@ -128,7 +128,7 @@ const Sidebar = ({ onSkillClick }) => {
             );
             linked.forEach(h => {
                 if (!habitList.find(x => x.id === h.id)) {
-                    habitList.push(h);
+                    habitList.push({ ...h, _maintenanceSkillId: skillId });
                 }
             });
         });
@@ -152,30 +152,45 @@ const Sidebar = ({ onSkillClick }) => {
     // ---------------------------------------------------------------------------
     const { spotlightHabits, pilotLightHabits, skillsWithNoHabits, skillCompletionMap, displayMaintenanceSkills } = useMemo(() => {
         if (!maintenanceEnabled || (allMaintenanceHabits.length === 0 && maintenanceSkills.length === 0)) {
-            return { 
-                spotlightHabits: [], 
-                pilotLightHabits: [], 
-                skillsWithNoHabits: [], 
-                skillCompletionMap: {}, 
-                displayMaintenanceSkills: [] 
-            };
+            return { spotlightHabits: [], pilotLightHabits: [], skillsWithNoHabits: [], skillCompletionMap: {}, displayMaintenanceSkills: [] };
         }
 
         // Hide completed habits from the drawer unless still due
         const dueHabits = allMaintenanceHabits.filter(h => !habitService.getHabitProgress(h).isDone);
+        
+        // Track completion status for each skill (if all its habits are done)
+        const skillCompletionMap = {};
+        maintenanceSkills.forEach(skill => {
+            const habits = allMaintenanceHabits.filter(h => 
+                (h.linkedSkillIds && h.linkedSkillIds.includes(skill.id)) ||
+                h.linkedSkillId === skill.id
+            );
+            
+            if (habits.length === 0) {
+                skillCompletionMap[skill.id] = false;
+            } else {
+                skillCompletionMap[skill.id] = habits.every(h => habitService.getHabitProgress(h).isDone);
+            }
+        });
 
         // Skills that have absolutely NO habits at all (use full list for check)
         const skillsWithNoHabits = maintenanceSkills.filter(
-            skill => !allMaintenanceHabits.some(h => 
-                h.linkedSkillIds?.includes(skill.id) || h.linkedSkillId === skill.id
-            )
+            skill => !allMaintenanceHabits.some(h => h._maintenanceSkillId === skill.id)
         );
 
+        // Sorting Logic for Display: Unfinished skills first
+        const displayMaintenanceSkills = [...maintenanceSkills].sort((a, b) => {
+            const aDone = skillCompletionMap[a.id] ? 1 : 0;
+            const bDone = skillCompletionMap[b.id] ? 1 : 0;
+            return aDone - bDone;
+        });
 
+        if (dueHabits.length === 0) {
+            return { spotlightHabits: [], pilotLightHabits: [], skillsWithNoHabits, skillCompletionMap, displayMaintenanceSkills };
+        }
 
         // --- Use dueHabits for the rest of the sorting/picking logic ---
         const sorted = [...dueHabits].sort((a, b) => {
-
             const aTs = a.lastCompletedAt ? new Date(a.lastCompletedAt).getTime() : 0;
             const bTs = b.lastCompletedAt ? new Date(b.lastCompletedAt).getTime() : 0;
             return aTs - bTs; // ascending => most neglected first
@@ -190,16 +205,12 @@ const Sidebar = ({ onSkillClick }) => {
         const pinnedIds = new Set(pinned.map(h => h.id));
         const remaining = sorted.filter(h => !pinnedIds.has(h.id));
 
-
         // Fill remaining spotlight slots:
-        // slot 0 = most neglected (remains from sorted asc)
-        // slots 1..2 = most recently completed (sorted desc)
         const available = remaining;
         const mostNeglected = available[0] ? [available[0]] : [];
         const mostNeglectedId = mostNeglected[0]?.id;
 
         const afterNeglected = available.filter(h => h.id !== mostNeglectedId);
-        // Sort desc by lastCompletedAt to get recently completed
         const recentlyCompleted = [...afterNeglected].sort((a, b) => {
             const aTs = a.lastCompletedAt ? new Date(a.lastCompletedAt).getTime() : 0;
             const bTs = b.lastCompletedAt ? new Date(b.lastCompletedAt).getTime() : 0;
@@ -215,40 +226,12 @@ const Sidebar = ({ onSkillClick }) => {
 
         let spotlightHabits = [...pinned, ...autoSpotlight].slice(0, 3);
         
-        // --- Low Energy (1-2) Override: Only show top 2 easiest ---
         if (energyLevel <= 2) {
             spotlightHabits = spotlightHabits.slice(0, 2);
         }
 
         const spotlightIds = new Set(spotlightHabits.map(h => h.id));
-
-        // Pilot lights = everything else, grouped by skill (preserve skill order)
         const pilotLightHabits = allMaintenanceHabits.filter(h => !spotlightIds.has(h.id));
-
-        // Calculate if each maintenance skill is fully completed (all habits done)
-        const skillCompletionMap = {};
-        maintenanceSkills.forEach(skill => {
-            const habits = allMaintenanceHabits.filter(h => 
-                h.linkedSkillIds?.includes(skill.id) || h.linkedSkillId === skill.id
-            );
-            if (habits.length === 0) {
-                skillCompletionMap[skill.id] = false;
-            } else {
-                skillCompletionMap[skill.id] = habits.every(h => habitService.getHabitProgress(h).isDone);
-            }
-        });
-
-        // Pre-sort skills so that fully completed ones go to the bottom in Energy Level 2
-        let displayMaintenanceSkills = [...maintenanceSkills];
-        if (energyLevel === 2) {
-            displayMaintenanceSkills.sort((a, b) => {
-                const aDone = skillCompletionMap[a.id];
-                const bDone = skillCompletionMap[b.id];
-                if (aDone && !bDone) return 1;
-                if (!aDone && bDone) return -1;
-                return 0;
-            });
-        }
 
         return { spotlightHabits, pilotLightHabits, skillsWithNoHabits, skillCompletionMap, displayMaintenanceSkills };
     }, [allMaintenanceHabits, maintenanceSkills, maintenanceEnabled, pinnedSpotlightIds, energyLevel]);
@@ -258,16 +241,8 @@ const Sidebar = ({ onSkillClick }) => {
         const map = {};
         maintenanceSkills.forEach(s => { map[s.id] = []; });
         pilotLightHabits.forEach(h => {
-            // Check both linkedSkillIds array and singular linkedSkillId
-            const sids = [...(h.linkedSkillIds || []), h.linkedSkillId].filter(Boolean);
-            sids.forEach(sid => {
-                if (map[sid]) {
-                    // Avoid duplicate habits in the same skill group
-                    if (!map[sid].find(x => x.id === h.id)) {
-                        map[sid].push(h);
-                    }
-                }
-            });
+            const sid = h._maintenanceSkillId;
+            if (map[sid]) map[sid].push(h);
         });
         return map;
     }, [pilotLightHabits, maintenanceSkills]);
@@ -359,23 +334,21 @@ const Sidebar = ({ onSkillClick }) => {
     };
 
     return (
-        <aside className={`sidebar ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''}`} data-tauri-drag-region>
+        <aside className={`sidebar ${backgroundMode}-mode ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''}`} data-tauri-drag-region>
             <div className={`sidebar-scroll-content ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
                 <div className="sidebar-top">
-                    {energyLevel > 1 && (
-                        <button
-                            className="mode-toggle-btn"
-                            onClick={toggleMode}
-                            disabled={storeLoading}
-                        >
-                            <div className="btn-icon mode-toggle-icon">
-                                <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
-                            </div>
-                            <span className="btn-text">
-                                {isFocusMode ? 'Go to planning' : 'Go to focus mode'}
-                            </span>
-                        </button>
-                    )}
+                    <button
+                        className="mode-toggle-btn"
+                        onClick={toggleMode}
+                        disabled={storeLoading}
+                    >
+                        <div className="btn-icon mode-toggle-icon">
+                            <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
+                        </div>
+                        <span className="btn-text">
+                            {isFocusMode ? 'Go to planning' : 'Go to focus mode'}
+                        </span>
+                    </button>
                     
                     {/* Energy Level Selector */}
                     <div className="energy-selector-container">
@@ -430,7 +403,8 @@ const Sidebar = ({ onSkillClick }) => {
                                 </NavLink>
 
 
-                                {energyLevel > 2 && (
+                                {/* FOCUS SLOTS SECTION (Partially visible in Energy 2, hidden in Energy 1) */}
+                                {energyLevel >= 2 && (
                                     <div className={`sidebar-section focus-slots-section ${energyLevel === 2 ? 'ghosted-focus' : ''}`}>
                                         <div className="section-title-container">
                                             <span className="section-title-static">Focus</span>
@@ -494,13 +468,24 @@ const Sidebar = ({ onSkillClick }) => {
                                 )}
 
                                 {/* KEEP IT ALIVE — Pilot Light Drawer */}
-                                {energyLevel > 1 && maintenanceEnabled && maintenanceSkillIds.length > 0 && (
+                                {maintenanceEnabled && maintenanceSkillIds.length > 0 && (
                                     <div className="sidebar-section maintenance-section">
                                         <div
                                             className="section-title-container"
                                             onClick={toggleMaintenance}
                                         >
                                             <span className="section-title-static">Keep it alive</span>
+                                            <Link 
+                                                to="/maintenance-center" 
+                                                className="header-action-btn"
+                                                onClick={(e) => e.stopPropagation()}
+                                                title="Manage Maintenance Skills"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                                                </svg>
+                                            </Link>
                                         </div>
 
                                         {/* Pilot Light Drawer forced expanded in low energy */}
@@ -514,9 +499,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                             <SidebarSpotlightCard 
                                                                 key={h.id}
                                                                 habit={h}
-                                                                skill={maintenanceSkills.find(s => 
-                                                                    h.linkedSkillIds?.includes(s.id) || h.linkedSkillId === s.id
-                                                                )}
+                                                                skill={maintenanceSkills.find(s => s.id === h._maintenanceSkillId)}
                                                                 isCompleting={completingHabitId === h.id}
                                                                 onNavigate={navigate}
                                                                 onComplete={handleHabitComplete}
@@ -525,36 +508,21 @@ const Sidebar = ({ onSkillClick }) => {
                                                     </div>
                                                 )}
 
-                                                {/* DIAGNOSTIC LOG */}
-                                                {(() => {
-                                                    console.log('[Sidebar Maintenance Debug]', displayMaintenanceSkills.map(s => ({
-                                                        name: s.name,
-                                                        isDone: skillCompletionMap[s.id],
-                                                        habits: allMaintenanceHabits.filter(h => 
-                                                            h.linkedSkillIds?.includes(s.id) || h.linkedSkillId === s.id
-                                                        ).map(h => ({
-                                                            trigger: h.ifTrigger,
-                                                            isDone: habitService.getHabitProgress(h).isDone
-                                                        }))
-                                                    })));
-                                                    return null;
-                                                })()}
-                                                {displayMaintenanceSkills.map(skill => {
+
+                                                {maintenanceSkills.map(skill => {
                                                     const isSkillDone = skillCompletionMap[skill.id];
                                                     const skillPilots = pilotLightsBySkill[skill.id] || [];
                                                     const hasNoHabits = skillsWithNoHabits.some(s => s.id === skill.id);
                                                     // Skip rendering this group if it has neither pilots nor no-habits fallback
                                                     // (all its habits are in spotlight)
-                                                    const inSpotlight = spotlightHabits.filter(h => 
-                                                        h.linkedSkillIds?.includes(skill.id) || h.linkedSkillId === skill.id
-                                                    );
+                                                    const inSpotlight = spotlightHabits.filter(h => h._maintenanceSkillId === skill.id);
                                                     if (!hasNoHabits && skillPilots.length === 0 && inSpotlight.length > 0) return null;
 
                                                     // Don't render a pilot group if all habits are in spotlight and there's no fallback
                                                     if (!hasNoHabits && skillPilots.length === 0) return null;
 
                                                     return (
-                                                        <div key={skill.id} className={`pilot-skill-group ${energyLevel === 2 && isSkillDone ? 'completed-skill-dimmed' : ''}`}>
+                                                        <div key={skill.id} className="pilot-skill-group">
                                                             <div
                                                                 className="pilot-skill-label"
                                                                 onClick={() => navigate(`/skill/${skill.id}`)}
@@ -575,7 +543,9 @@ const Sidebar = ({ onSkillClick }) => {
 
                                                             <div className="pilot-chips">
                                                                 {hasNoHabits ? (
-                                                                    null
+                                                                    <div className="pilot-fallback">
+                                                                        Open this skill for {formatDuration(2, 'minutes')}
+                                                                    </div>
                                                                 ) : (
                                                                     skillPilots.map(h => {
                                                                         const prog = habitService.getHabitProgress(h);
@@ -604,6 +574,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                         {energyLevel <= 2 && maintenanceSkills.length > 0 ? (
                                                             <div className="low-energy-instruction">
                                                                 <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Open: {maintenanceSkills[0].name}</div>
+                                                                <div style={{ fontSize: '11px', opacity: 0.6 }}>Just 2 minutes of focus.</div>
                                                             </div>
                                                         ) : (
                                                             "Everything is alive today."
@@ -616,7 +587,7 @@ const Sidebar = ({ onSkillClick }) => {
                                 )}
 
                                 {/* Collapsible Life Areas Section */}
-                                {energyLevel > 3 && (
+                                {energyLevel >= 3 && (
                                     <div className="sidebar-section life-areas-section">
                                         <div
                                             className="section-title-container"
@@ -720,71 +691,43 @@ const Sidebar = ({ onSkillClick }) => {
                     </nav>
                 </div>
 
-                {energyLevel > 3 && (
-                    <div className="hryvnia-display">
-                        <span className="hryvnia-icon">₴</span>
-                        <span className="hryvnia-amount">{hryvniaBalance}</span>
-                    </div>
-                )}
+                <div className="hryvnia-display">
+                    <span className="hryvnia-icon">₴</span>
+                    <span className="hryvnia-amount">{hryvniaBalance}</span>
+                </div>
 
                 <div className="sidebar-bottom">
 
                     {energyLevel > 3 && (
                         <>
-                            {/* Theme Toggle Button */}
-                            <button className="nav-item theme-toggle-sidebar" onClick={toggleTheme}>
-                                <span className="btn-icon">
-                                    <NodeIcon 
-                                        iconUrl={theme === 'dark' ? SVG_ICONS.MOON : SVG_ICONS.SUN} 
-                                        size={16} 
-                                    />
-                                </span>
-                                <span className="btn-text">
-                                    {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
-                                </span>
-                            </button>
-
                             {/* Unified Appearance Segmented Control */}
-                            <div className="segmented-control-container">
-                                <label className="segmented-control-label">Appearance</label>
-                                <div className="segmented-control">
+                            <div className="theme-sync-toggle">
+                                {[
+                                    { value: "light", label: "Light" },
+                                    { value: "system", label: "System" },
+                                    { value: "dark", label: "Dark" },
+                                ].map(({ value, label }) => (
                                     <button
-                                        title="Solid background mode"
-                                        className={`segmented-control-item ${backgroundMode === 'solid' ? 'active' : ''}`}
-                                        onClick={() => setBackgroundMode('solid')}
+                                        key={value}
+                                        className={`theme-sync-option ${themePreference === value ? "active" : ""}`}
+                                        onClick={() => setTheme(value)}
                                     >
-                                        Solid
+                                        {label}
                                     </button>
-                                    <button
-                                        title="Liquid glass background mode"
-                                        className={`segmented-control-item ${backgroundMode === 'liquid' ? 'active' : ''}`}
-                                        onClick={() => setBackgroundMode('liquid')}
-                                    >
-                                        Liquid
-                                    </button>
-                                    <button
-                                        title="Wallpaper background mode"
-                                        className={`segmented-control-item ${backgroundMode === 'wallpaper' ? 'active' : ''}`}
-                                        onClick={() => setBackgroundMode('wallpaper')}
-                                    >
-                                        Wallpaper
-                                    </button>
-                                </div>
+                                ))}
                             </div>
 
-                            {/* Conditional wallpaper URL inputs */}
-                            <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />
                         </>
                     )}
 
-                    {energyLevel > 3 && (
-                        <Link to="/settings" className="nav-item settings-btn">
-                            <span className="btn-icon">
-                                <NodeIcon iconUrl={SVG_ICONS.SETTINGS} size={16} />
-                            </span>
-                            <span className="btn-text">Settings</span>
-                        </Link>
-                    )}
+                    <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />
+
+                    <Link to="/settings" className="nav-item settings-btn">
+                        <span className="btn-icon">
+                            <NodeIcon iconUrl={SVG_ICONS.SETTINGS} size={16} />
+                        </span>
+                        <span className="btn-text">Settings</span>
+                    </Link>
                 </div>
             </div>
         </aside>

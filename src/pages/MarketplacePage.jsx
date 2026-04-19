@@ -63,7 +63,6 @@ const MarketplacePage = () => {
             const success = await backbone.redeemReward(rewardId);
             if (success) {
                 // Balance and rewards will update via subscription
-                console.log("Purchase successful!");
             } else {
                 alert("Insufficient Hryvnia");
             }

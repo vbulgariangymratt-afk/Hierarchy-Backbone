@@ -18,7 +18,6 @@ export async function logToFile(message) {
             create: true
         });
         
-        console.log('[FILE_LOG SUCCESS]', logLine.trim());
     } catch (err) {
         console.error('[FILE_LOG ERROR]', err);
         // Fallback to console if file logging fails

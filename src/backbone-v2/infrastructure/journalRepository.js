@@ -109,11 +109,9 @@ export const createJournalRepository = () => {
     const initialize = async () => {
         if (initPromise) return initPromise;
         initPromise = (async () => {
-            console.log(`JournalRepo [ID:${instanceId}]: Initializing from Supabase...`);
             try {
                 const userId = await getUserId();
                 if (!userId) {
-                    console.warn('JournalRepo: No user authenticated.');
                     return;
                 }
 
@@ -164,7 +162,6 @@ export const createJournalRepository = () => {
     };
 
     const reinitialize = async () => {
-        console.log(`JournalRepo [ID:${instanceId}]: FORCED RE-INITIALIZATION`);
         initPromise = null;
         return await initialize();
     };
@@ -236,7 +233,6 @@ export const createJournalRepository = () => {
         },
 
         reset: () => {
-            console.log(`JournalRepo [ID:${instanceId}]: RESETTING Repository State`);
             initPromise = null;
             storage = {
                 entries: [],

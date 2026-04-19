@@ -12,7 +12,6 @@ export const useDevAuthPoller = (setSession) => {
     // Return early if not in development mode
     if (!import.meta.env.DEV) return;
 
-    console.log('[AUTH] Dev mode: starting OAuth callback poller...');
 
     const poll = async () => {
       try {
@@ -20,7 +19,6 @@ export const useDevAuthPoller = (setSession) => {
         const json = await res.json();
 
         if (json.url) {
-          console.log('[AUTH] Callback URL received from poller:', json.url);
 
           const urlObj = new URL('http://localhost:5173' + json.url);
           const code = urlObj.searchParams.get('code');
@@ -32,14 +30,12 @@ export const useDevAuthPoller = (setSession) => {
           }
 
           if (code) {
-            console.log('[AUTH] Exchanging code for session...');
             const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
             if (exchangeError) {
               console.error('[AUTH] exchangeCodeForSession failed:', exchangeError.message);
               return;
             }
             if (data?.session) {
-              console.log('[AUTH] Login successful! User:', data.session.user.email);
               setSession(data.session);
             }
           }

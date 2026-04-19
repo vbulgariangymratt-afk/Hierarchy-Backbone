@@ -25,6 +25,27 @@
     /* Sharper definition */
 }
 
+/* --- LIQUID & WALLPAPER MODE (GLASS SIDEBAR) --- */
+.liquid-mode .sidebar,
+.wallpaper-mode .sidebar {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 
+        10px 0 30px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.liquid-mode.light .sidebar,
+.wallpaper-mode.light .sidebar {
+    background: rgba(255, 255, 255, 0.25);
+    border-right-color: rgba(255, 255, 255, 0.55);
+    box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.6),
+        10px 0 30px rgba(0, 0, 0, 0.04);
+}
+
 /* Make interactive elements clickable (not draggable) */
 .user-profile,
 .sidebar-content,
