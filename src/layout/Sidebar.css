@@ -1437,6 +1437,13 @@
     filter: grayscale(0.8);
 }
 
+.sidebar.energy-level-2 .pilot-skill-group,
+.sidebar.energy-level-2 .maintenance-section .section-title-container {
+    opacity: 1 !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
 /* Journal and Timeline are now exceptions above */
 
 /* Energy 1 logic (survival) */

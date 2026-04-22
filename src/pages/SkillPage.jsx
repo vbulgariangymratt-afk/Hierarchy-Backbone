@@ -1375,9 +1375,12 @@ const SkillPage = () => {
     }, []);
 
     const toggleTask = useCallback((taskId) => {
-        setExpandedTaskIds(prev =>
-            prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
-        );
+        console.log('[SkillPage] toggleTask called with:', taskId);
+        setExpandedTaskIds(prev => {
+            const next = prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId];
+            console.log('[SkillPage] expandedTaskIds changing from', prev, 'to', next);
+            return next;
+        });
     }, []);
 
     const handleAttachReward = useCallback(async (taskId, rewardId) => {
@@ -1404,6 +1407,17 @@ const SkillPage = () => {
             console.error("Failed to remove reward:", error);
         }
     }, [allNodes, fetchData]);
+
+    const handleSaveMVE = useCallback(async (taskId, mveText) => {
+        try {
+            await backbone.updateNode(taskId, {
+                metadata: { mve: mveText || null }
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Failed to save MVE:", error);
+        }
+    }, [fetchData]);
 
     const toggleShowMore = useCallback((e, stageId) => {
         e.stopPropagation();
@@ -2126,7 +2140,8 @@ const SkillPage = () => {
                                     <span className="day-info" style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
                                         Day {timeInfo.days}{obj.metadata?.durationInDays ? `/${obj.metadata.durationInDays}d` : ''}
                                     </span>
-                                    {/* Temporarily hiding MVE stealth icon
+                                )}
+                                {/* Temporarily hiding MVE stealth icon
                                     energyLevel >= 3 && obj.metadata?.mve && (
                                         <>
                                             <span style={{ opacity: 0.1, width: '1px', height: '10px', background: 'currentColor' }}></span>
@@ -2176,38 +2191,6 @@ const SkillPage = () => {
                                     </button>
                                 </div>
                             </div>
-
-                            <div className="objective-status-actions">
-                                <select 
-                                    className="objective-status-selector"
-                                    value={obj.metadata?.status || (obj.metadata?.isSleeping ? 'SLEEPING' : (obj.metadata?.isArchived ? 'COMPLETED' : 'ACTIVE'))}
-                                    onChange={(e) => handleStatusUpdate(obj, e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                >
-                                    <option value="ACTIVE">Active</option>
-                                    <option value="SLEEPING">Sleeping</option>
-                                    <option value="COMPLETED">Completed</option>
-                                    <option value="ROTATING">Paused</option>
-                                </select>
-                                
-                                <button 
-                                    className="trash-experiment-btn"
-                                    title="Delete Experiment"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteObjective(obj);
-                                    }}
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
                         </div>
                     )}
                     {/* Temporarily hiding MVE portal for Energy <= 2
@@ -2465,7 +2448,11 @@ const SkillPage = () => {
                                                                 return tasks.length > 0 && tasks.every(t => t.metadata?.status === TaskStatuses.DONE) && creatingTaskForAspectId !== a.id;
                                                             });
                                                             const isCompletedAspectsExpanded = collapsedCompletedAspects[obj.id] === true;
-                                                            const aspectsForMasonry = energyLevel >= 4 ? pendingAspects : aspectsToRender;
+                                                            const aspectsForMasonry = energyLevel >= 4 
+                                                                ? (creatingTaskForAspectId 
+                                                                    ? [...new Set([...pendingAspects, aspects.find(a => a.id === creatingTaskForAspectId)].filter(Boolean))]
+                                                                    : pendingAspects)
+                                                                : aspectsToRender;
                                     
                                                             aspectsForMasonry.forEach(aspect => {
                                                                 const isCreatingTask = creatingTaskForAspectId === aspect.id;
@@ -2613,6 +2600,7 @@ const SkillPage = () => {
                                                                                             onSetSelectingRewardForTaskId={setIsSelectingRewardForTaskId}
                                                                                             onRemoveReward={handleRemoveReward}
                                                                                             onAttachReward={handleAttachReward}
+                                                                                            onSaveMVE={handleSaveMVE}
                                                                                             />
                                                                                         ))}
                                                                                 </AnimatePresence>
@@ -2723,14 +2711,6 @@ const SkillPage = () => {
                                                                     >
                                                                         {rightColumn}
                                                                     </div>
-                                                                    {energyLevel !== 3 && (
-                                                                        <div 
-                                                                            className="masonry-column" 
-                                                                            style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}
-                                                                        >
-                                                                            {rightColumn}
-                                                                        </div>
-                                                                    )}
                                                                     {/* Completed Aspects section */}
                                                                     {energyLevel >= 4 && completedAspects.length > 0 && (
                                                                         <div style={{ width: '100%', marginTop: '8px' }}>

@@ -7,25 +7,25 @@ import { NodeTypes, TaskStatuses } from '../backbone-v2/domain/entities';
 export const getAspectStats = (allNodes) => {
     const stats = new Map();
     allNodes.forEach(node => {
-        if (
-            node.type === NodeTypes.TASK &&
-            node.metadata?.status === TaskStatuses.DONE
-        ) {
+        if (node.type === NodeTypes.TASK) {
             const aspectId = node.parentId;
+            const current = stats.get(aspectId) || {
+                totalTime: 0,
+                doneCount: 0,
+                totalCount: 0
+            };
+
+            const isDone = node.metadata?.status === TaskStatuses.DONE;
             const sessions = node.metadata?.sessions || [];
             const totalTime = sessions.reduce(
                 (acc, s) => acc + (s.actualDuration ?? 0),
                 0
             );
 
-            const current = stats.get(aspectId) || {
-                totalTime: 0,
-                count: 0
-            };
-
             stats.set(aspectId, {
                 totalTime: current.totalTime + totalTime,
-                count: current.count + 1
+                doneCount: current.doneCount + (isDone ? 1 : 0),
+                totalCount: current.totalCount + 1
             });
         }
     });
@@ -35,8 +35,8 @@ export const getAspectStats = (allNodes) => {
 export const getAspectAvgTime = (aspectId, aspectStats) => {
     if (!aspectStats) return Infinity;
     const stat = aspectStats.get(aspectId);
-    if (!stat || stat.count === 0) return Infinity;
-    return stat.totalTime / stat.count;
+    if (!stat || stat.doneCount === 0) return Infinity;
+    return stat.totalTime / stat.doneCount;
 };
 
 export const scoreLowEnergyTask = (task, aspectStats) => {

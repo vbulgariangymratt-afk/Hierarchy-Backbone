@@ -25,11 +25,14 @@ const SortableTaskRow = React.memo(({
     isSelectingRewardForTaskId,
     onSetSelectingRewardForTaskId,
     onRemoveReward,
-    onAttachReward
+    onAttachReward,
+    onSaveMVE
 }) => {
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
     const [draftName, setDraftName] = useState(task.name);
+    const [mveDraft, setMveDraft] = useState(task.metadata?.mve || '');
+    const [mveSaving, setMveSaving] = useState(false);
     const inputRef = useRef(null);
     
     // Dragging disabled
@@ -74,6 +77,30 @@ const SortableTaskRow = React.memo(({
         }
     };
 
+    const handleSaveMVE = async () => {
+        const trimmed = mveDraft.trim();
+        if (trimmed === (task.metadata?.mve || '')) return; // No change
+        setMveSaving(true);
+        try {
+            await onSaveMVE(task.id, trimmed);
+        } catch (err) {
+            console.error('Failed to save MVE:', err);
+        } finally {
+            setMveSaving(false);
+        }
+    };
+
+    const handleMveKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.blur();
+        }
+        if (e.key === 'Escape') {
+            setMveDraft(task.metadata?.mve || '');
+            e.target.blur();
+        }
+    };
+
     const statusInfo = getTaskStatusInfo(task);
     const isDone = task.metadata?.status === TaskStatuses.DONE;
     const dependencyId = task.metadata?.dependsOnTaskId;
@@ -99,8 +126,10 @@ const SortableTaskRow = React.memo(({
             id={`task-${task.id}`}
             className={`task-row-container ${isExpanded ? 'is-expanded' : ''} ${isDragging ? 'is-dragging-ghost' : ''}`}
             onClick={(e) => { 
+                console.log('[SortableTaskRow] clicked, isEditing:', isEditing, 'taskId:', task.id);
                 if (!isEditing) {
                     e.stopPropagation(); 
+                    console.log('[SortableTaskRow] calling onToggleTask with:', task.id);
                     onToggleTask(task.id); 
                 }
             }}
@@ -216,8 +245,25 @@ const SortableTaskRow = React.memo(({
 
             {isExpanded && (
                 <div className="task-expanded-content" onClick={(e) => e.stopPropagation()}>
-                    <div className="micro-reward-section">
-                        <span className="expanded-label-small">Micro Reward</span>
+
+                    {/* ── MVE Section ── */}
+                    <div className="task-submenu-section">
+                        <span className="expanded-label-small">⚡ Min. Viable Effort</span>
+                        <input
+                            className="mve-input"
+                            type="text"
+                            value={mveDraft}
+                            onChange={(e) => setMveDraft(e.target.value)}
+                            onBlur={handleSaveMVE}
+                            onKeyDown={handleMveKeyDown}
+                            placeholder="e.g. Just open the file for 2 min…"
+                        />
+                        {mveSaving && <span className="mve-saving-indicator">Saving…</span>}
+                    </div>
+
+                    {/* ── Micro Reward Section ── */}
+                    <div className="task-submenu-section micro-reward-section">
+                        <span className="expanded-label-small">🍬 Micro Reward</span>
                         {rewardId ? (
                             <div className="reward-info-block">
                                 {reward ? (
@@ -279,7 +325,8 @@ const SortableTaskRow = React.memo(({
         </div>
     );
 }, (prev, next) => {
-    return (
+    const shouldSkipRender = (
+        prev.isExpanded === next.isExpanded &&
         prev.task.id === next.task.id &&
         prev.task.name === next.task.name &&
         prev.task.updatedAt === next.task.updatedAt &&
@@ -289,12 +336,14 @@ const SortableTaskRow = React.memo(({
         prev.task.metadata?.currentUnits === next.task.metadata?.currentUnits &&
         prev.task.metadata?.targetUnits === next.task.metadata?.targetUnits &&
         prev.task.metadata?.rewardId === next.task.metadata?.rewardId &&
+        prev.task.metadata?.mve === next.task.metadata?.mve &&
         prev.isSelectingRewardForTaskId === next.isSelectingRewardForTaskId &&
-        prev.expandedTaskIds.includes(prev.task.id) === next.expandedTaskIds.includes(next.task.id) &&
         (prev.activeChallengeHighlight?.taskId === prev.task.id) === (next.activeChallengeHighlight?.taskId === next.task.id) &&
         prev.activeChallengeHighlight?.type === next.activeChallengeHighlight?.type &&
         prev.skill?.metadata?.pinchState === next.skill?.metadata?.pinchState
     );
+    console.log('[Memo] prev.isExpanded:', prev.isExpanded, 'next.isExpanded:', next.isExpanded, 'skipping render:', shouldSkipRender);
+    return shouldSkipRender;
 });
 
 export default SortableTaskRow;

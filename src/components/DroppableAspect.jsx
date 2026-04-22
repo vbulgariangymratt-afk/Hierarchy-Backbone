@@ -50,9 +50,12 @@ const DroppableAspect = React.memo(({
         </motion.div>
     );
 }, (prev, next) => {
+    const childrenSame = prev.children === next.children;
+    const aspectSame = prev.aspect.id === next.aspect.id && prev.aspect.name === next.aspect.name;
+    console.log('[DroppableAspect] comparator ran — childrenSame:', childrenSame, 'aspectSame:', aspectSame);
     return (
-        prev.aspect.id === next.aspect.id &&
-        prev.aspect.name === next.aspect.name &&
+        childrenSame &&
+        aspectSame &&
         prev.isUntouched === next.isUntouched &&
         prev.isNoveltyHighlighted === next.isNoveltyHighlighted &&
         prev.isExpanded === next.isExpanded &&

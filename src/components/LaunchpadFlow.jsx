@@ -8,6 +8,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useBackboneStore } from '../store/backboneStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getAspectStats, getAspectAvgTime, scoreLowEnergyTask, selectBestLowEnergyTask } from '../utils/taskScoring';
+import { getSkillEngagementStatus } from '../utils/engagementUtils';
 import './LaunchpadFlow.css';
 
 /**
@@ -133,6 +134,49 @@ const LaunchpadFlow = () => {
     const [lowEnergySafeStates, setLowEnergySafeStates] = useState({}); // { taskId: boolean }
     const [newAspectName, setNewAspectName] = useState("");
     const [initiationTask, setInitiationTask] = useState(null);
+    const [highEnergyIndex, setHighEnergyIndex] = useState(0);
+    const [energy2HabitIndex, setEnergy2HabitIndex] = useState(0);
+    const [energy1HabitIndex, setEnergy1HabitIndex] = useState(0);
+    const [energy1SubStep, setEnergy1SubStep] = useState('initial'); // 'initial', 'redirection', 'habits', 'skills', 'aspects', 'tasks'
+    const [e1SkillIndex, setE1SkillIndex] = useState(0);
+    const [e1AspectIndex, setE1AspectIndex] = useState(0);
+    const [e1TaskIndex, setE1TaskIndex] = useState(0);
+    const [e1SelectedSkillId, setE1SelectedSkillId] = useState(null);
+    const [e1SelectedAspectId, setE1SelectedAspectId] = useState(null);
+    const [energy2SubStep, setEnergy2SubStep] = useState('initial');
+    const [e2SpotlightHabit, setE2SpotlightHabit] = useState(null);
+    const [e2SkillIndex, setE2SkillIndex] = useState(0);
+    const [e2AspectIndex, setE2AspectIndex] = useState(0);
+    const [e2TaskIndex, setE2TaskIndex] = useState(0);
+    const [e2SelectedSkillId, setE2SelectedSkillId] = useState(null);
+    const [e2SelectedAspectId, setE2SelectedAspectId] = useState(null);
+    const [isEnergy3Expanded, setIsEnergy3Expanded] = useState(false);
+    const [energy3TaskIndex, setEnergy3TaskIndex] = useState(0);
+    const [isEnergy3SwitchingSkill, setIsEnergy3SwitchingSkill] = useState(false);
+    const [energy3SkillIndex, setEnergy3SkillIndex] = useState(0);
+    const [energy3SkillOverride, setEnergy3SkillOverride] = useState(null);
+    const [isEnergy3SwitchingHabit, setIsEnergy3SwitchingHabit] = useState(false);
+    const [energy3HabitIndex, setEnergy3HabitIndex] = useState(0);
+    const [isEnergy3ExplorePath, setIsEnergy3ExplorePath] = useState(false);
+    const [e3ActiveSkillIndex, setE3ActiveSkillIndex] = useState(0);
+    const [e3ActiveSelectedSkillId, setE3ActiveSelectedSkillId] = useState(null);
+    const [e3ActiveAspectIndex, setE3ActiveAspectIndex] = useState(0);
+    const [e3ActiveSelectedAspectId, setE3ActiveSelectedAspectId] = useState(null);
+    const [e3ActiveTaskIndex, setE3ActiveTaskIndex] = useState(0);
+    const [e3ActiveSubStep, setE3ActiveSubStep] = useState('skills');
+    const [energy3SearchQuery, setEnergy3SearchQuery] = useState("");
+    const [showEnergy3Search, setShowEnergy3Search] = useState(false);
+
+    // --- PREP FLOW STATE (Energy 4+: "Prepare everything for your future self") ---
+    const [prepSubStep, setPrepSubStep] = useState('areas'); // 'areas' | 'skills' | 'experiments' | 'aspects' | 'task-input' | 'micro-action'
+    const [prepSelectedArea, setPrepSelectedArea] = useState(null);
+    const [prepSelectedSkill, setPrepSelectedSkill] = useState(null);
+    const [prepSelectedExperiment, setPrepSelectedExperiment] = useState(null);
+    const [prepSelectedAspect, setPrepSelectedAspect] = useState(null);
+    const [prepNewTaskInput, setPrepNewTaskInput] = useState('');
+    const [prepCreatedTask, setPrepCreatedTask] = useState(null); // task just created, waiting for micro-action
+    const [prepMicroActionInput, setPrepMicroActionInput] = useState('');
+    const [prepTasksAddedToAspect, setPrepTasksAddedToAspect] = useState([]); // track tasks added in current aspect session
 
     const toggleSkill = (skillId) => {
         setSelectedSkills(prev => {
@@ -156,6 +200,14 @@ const LaunchpadFlow = () => {
         const completed = sessions.filter(s => s.status === 'completed');
         return completed.reduce((acc, s) => acc + (s.actualDuration || 0), 0);
     };
+
+    const getAvgFriction = useCallback((habit) => {
+        const completions = habit.completions || [];
+        if (completions.length === 0) return 2; // Default to medium (score 2)
+        const scores = { light: 1, medium: 2, heavy: 3 };
+        const sum = completions.reduce((acc, c) => acc + (scores[c.friction] || 2), 0);
+        return sum / completions.length;
+    }, []);
 
     useEffect(() => {
         if (selectedSkills.length === 0) {
@@ -244,15 +296,10 @@ const LaunchpadFlow = () => {
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [lowEnergyTask, setLowEnergyTask] = useState(null);
-    const [momentumTask, setMomentumTask] = useState(null);
-    const [resilienceTask, setResilienceTask] = useState(null);
-    const [showOtherPaths, setShowOtherPaths] = useState(false);
     const [showLowEnergyAlternatives, setShowLowEnergyAlternatives] = useState(false);
 
-    const [showEnergy1Panel, setShowEnergy1Panel] = useState(false);
-    const [showEnergy1Skills, setShowEnergy1Skills] = useState(false);
-    const [showEnergy1Search, setShowEnergy1Search] = useState(false);
-    const [energy1SearchQuery, setEnergy1SearchQuery] = useState("");
+
+
 
     const handleEnergy1SwapTask = () => {
         if (!lowEnergyTask) return;
@@ -272,31 +319,7 @@ const LaunchpadFlow = () => {
         }
     };
 
-    const handleEnergy1SwitchSkill = (skillId) => {
-        const tasksForSkill = allNodes.filter(n => {
-            if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
-            const s = getSkillFromTask(n, nodeMap);
-            return s?.id === skillId;
-        });
-        
-        if (tasksForSkill.length > 0) {
-            const random = tasksForSkill[Math.floor(Math.random() * tasksForSkill.length)];
-            setLowEnergyTask(random);
-        }
-        setShowEnergy1Skills(false);
-        setShowEnergy1Panel(false);
-    };
 
-    const energy1SearchResults = useMemo(() => {
-        if (!energy1SearchQuery.trim()) return [];
-        const activeIds = focusSlots || [];
-        const tasks = allNodes.filter(n => {
-            if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
-            const s = getSkillFromTask(n, nodeMap);
-            return s && activeIds.includes(s.id);
-        });
-        return tasks.filter(t => t.name.toLowerCase().includes(energy1SearchQuery.toLowerCase())).slice(0, 7);
-    }, [allNodes, nodeMap, getSkillFromTask, focusSlots, energy1SearchQuery]);
 
     const maintenanceHabitGroups = useMemo(() => {
         if (!maintenanceEnabled || !maintenanceSkillIds || maintenanceSkillIds.length === 0) return [];
@@ -319,6 +342,28 @@ const LaunchpadFlow = () => {
             return null;
         }).filter(g => g !== null);
     }, [maintenanceEnabled, maintenanceSkillIds, nodeMap, habitTrigger, allNodes.length]);
+    
+    const energy2HabitsPool = useMemo(() => {
+        const pool = maintenanceHabitGroups.flatMap(group => 
+            group.habits.map(h => ({
+                ...h,
+                skillName: group.skill.name
+            }))
+        );
+        // Sort by least friction completion on average
+        return [...pool].sort((a, b) => getAvgFriction(a) - getAvgFriction(b));
+    }, [maintenanceHabitGroups, getAvgFriction]);
+
+    const energy1HabitsPool = useMemo(() => {
+        const pool = maintenanceHabitGroups.flatMap(group => 
+            group.habits.map(h => ({
+                ...h,
+                skillName: group.skill.name
+            }))
+        );
+        // Sort by least friction completion on average
+        return [...pool].sort((a, b) => getAvgFriction(a) - getAvgFriction(b));
+    }, [maintenanceHabitGroups, getAvgFriction]);
 
     const handleHabitComplete = useCallback(async (habitId) => {
         try {
@@ -390,101 +435,318 @@ const LaunchpadFlow = () => {
         });
     }, [allNodes]);
 
+    
+    const tripleRecommendation = useMemo(() => {
+        if (allNodes.length === 0) return [];
+        
+        const activeIds = focusSlots || [];
+        const pendingTasks = allNodes.filter(n => 
+            n.type === NodeTypes.TASK && 
+            n.metadata?.status !== TaskStatuses.DONE
+        );
+
+        if (energy3SkillOverride) {
+            // If we have an override, get 3 tasks from ONLY that skill
+            const skillTasks = pendingTasks.filter(t => {
+                const s = getSkillFromTask(t, nodeMap);
+                return s?.id === energy3SkillOverride;
+            });
+
+            const tasksWithScores = skillTasks.map(t => {
+                const stats = aspectStats.get(t.parentId);
+                const rate = stats && stats.totalCount > 0 ? (stats.doneCount / stats.totalCount) : 0;
+                const isToday = t.metadata?.isToday ? 1 : 0;
+                const isInProgress = t.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+                const updatedAt = t.updatedAt || 0;
+                return { task: t, rate, isToday, isInProgress, updatedAt };
+            });
+
+            tasksWithScores.sort((a, b) => {
+                if (b.rate !== a.rate) return b.rate - a.rate;
+                if (b.isToday !== a.isToday) return b.isToday - a.isToday;
+                if (b.isInProgress !== a.isInProgress) return b.isInProgress - a.isInProgress;
+                return b.updatedAt - a.updatedAt;
+            });
+
+            return tasksWithScores.slice(0, 3).map(c => c.task);
+        }
+
+        // Standard logic: 1 task per different skill
+        const skillToTasks = new Map();
+        pendingTasks.forEach(t => {
+            const s = getSkillFromTask(t, nodeMap);
+            if (s && activeIds.includes(s.id)) {
+                if (!skillToTasks.has(s.id)) {
+                    skillToTasks.set(s.id, []);
+                }
+                skillToTasks.get(s.id).push(t);
+            }
+        });
+
+        const skillCandidates = [];
+        skillToTasks.forEach((tasksInSkill, skillId) => {
+            const tasksWithScores = tasksInSkill.map(t => {
+                const stats = aspectStats.get(t.parentId);
+                const rate = stats && stats.totalCount > 0 ? (stats.doneCount / stats.totalCount) : 0;
+                const isToday = t.metadata?.isToday ? 1 : 0;
+                const isInProgress = t.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+                const updatedAt = t.updatedAt || 0;
+                return { task: t, rate, isToday, isInProgress, updatedAt };
+            });
+
+            tasksWithScores.sort((a, b) => {
+                if (b.rate !== a.rate) return b.rate - a.rate;
+                if (b.isToday !== a.isToday) return b.isToday - a.isToday;
+                if (b.isInProgress !== a.isInProgress) return b.isInProgress - a.isInProgress;
+                return b.updatedAt - a.updatedAt;
+            });
+
+            skillCandidates.push(tasksWithScores[0]);
+        });
+
+        skillCandidates.sort((a, b) => {
+            if (b.rate !== a.rate) return b.rate - a.rate;
+            if (b.isToday !== a.isToday) return b.isToday - a.isToday;
+            return b.updatedAt - a.updatedAt;
+        });
+
+        return skillCandidates.slice(0, 3).map(c => c.task);
+    }, [allNodes, focusSlots, nodeMap, getSkillFromTask, aspectStats, energy3SkillOverride]);
+    
+    const energy2Pool = useMemo(() => {
+        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.isToday && n.metadata?.status !== TaskStatuses.DONE);
+        // Sort by oldest first
+        return tasks.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    }, [allNodes]);
+
+    const energy1Pool = useMemo(() => {
+        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.isToday && n.metadata?.status !== TaskStatuses.DONE);
+        // Sort by oldest first
+        return tasks.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    }, [allNodes]);
+
     // --- ENERGY 1-2 SPECIFIC TASK SELECTION ---
     useEffect(() => {
         if (energyLevel > 2) return;
+        // Keep lowEnergyTask in sync with the primary pool task
+        const pool = energyLevel === 1 ? energy1Pool : energy2Pool;
+        if (pool && pool.length > 0) {
+            setLowEnergyTask(pool[0]);
+        }
+    }, [energyLevel, energy1Pool, energy2Pool]);
 
-        // 1. SURVIVAL (Energy 1) - Single best MVE strictly driven by slot priority
-        if (energyLevel === 1 && !lowEnergyTask) {
-            console.log('[E1 SELECTION] focusSlots:', focusSlots);
-            console.log('[E1 SELECTION] allNodes count:', allNodes.length);
-            console.log('[E1 SELECTION] pending tasks:', allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.status !== TaskStatuses.DONE).length);
-            console.log('[E1 SELECTION] aspectStats:', aspectStats);
+    const activeFocusSkills = useMemo(() => {
+        if (!focusSlots) return [];
+        return focusSlots.map(id => nodeMap.get(id)).filter(s => !!s);
+    }, [focusSlots, nodeMap]);
 
-            for (const skillId of (focusSlots || [])) {
-                if (!skillId) continue;
-                const skillTasks = allNodes.filter(n => {
-                    if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
-                    const s = getSkillFromTask(n, nodeMap);
-                    
-                    // Only log it if the exact slot check runs, but because this loops over every pending task for every slot, we might spam the console heavily. 
-                    // To follow the user's explicit instructions, we will log it exactly as requested.
-                    console.log('[E1 SELECTION] task:', n.name, 'skill found:', s?.id, 'matches:', s?.id === skillId);
-                    return s?.id === skillId;
-                });
-                console.log(`[E1 SELECTION] slot ${skillId} task count:`, skillTasks.length);
+    const e1AspectsPool = useMemo(() => {
+        if (!e1SelectedSkillId) return [];
+        // Get aspects from active experiments inside this skill
+        const aspects = allNodes.filter(n => {
+            if (n.type !== NodeTypes.ASPECT) return false;
+            const objective = nodeMap.get(n.parentId);
+            if (!objective || objective.type !== NodeTypes.OBJECTIVE || objective.metadata?.status !== 'ACTIVE') return false;
+            return objective.parentId === e1SelectedSkillId;
+        });
+
+        // Sort by lowest average task completion time
+        return aspects.sort((a, b) => {
+            const timeA = getAspectAvgTime(a.id, aspectStats);
+            const timeB = getAspectAvgTime(b.id, aspectStats);
+            return timeA - timeB;
+        });
+    }, [e1SelectedSkillId, allNodes, nodeMap, aspectStats]);
+
+    const e1TasksPool = useMemo(() => {
+        if (!e1SelectedAspectId) return [];
+        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.parentId === e1SelectedAspectId && n.metadata?.status !== TaskStatuses.DONE);
+        // Sort by IN_PROGRESS first
+        return tasks.sort((a, b) => {
+            const aProg = a.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+            const bProg = b.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+            return bProg - aProg;
+        });
+    }, [e1SelectedAspectId, allNodes]);
+
+    const e2AspectsPool = useMemo(() => {
+        if (!e2SelectedSkillId) return [];
+        // Get aspects from active experiments inside this skill
+        const aspects = allNodes.filter(n => {
+            if (n.type !== NodeTypes.ASPECT) return false;
+            const objective = nodeMap.get(n.parentId);
+            if (!objective || objective.type !== NodeTypes.OBJECTIVE || objective.metadata?.status !== 'ACTIVE') return false;
+            return objective.parentId === e2SelectedSkillId;
+        });
+
+        // Sort by lowest average task completion time
+        return aspects.sort((a, b) => {
+            const timeA = getAspectAvgTime(a.id, aspectStats);
+            const timeB = getAspectAvgTime(b.id, aspectStats);
+            return timeA - timeB;
+        });
+    }, [e2SelectedSkillId, allNodes, nodeMap, aspectStats]);
+
+    const e2TasksPool = useMemo(() => {
+        if (!e2SelectedAspectId) return [];
+        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.parentId === e2SelectedAspectId && n.metadata?.status !== TaskStatuses.DONE);
+        // Sort by IN_PROGRESS first
+        return tasks.sort((a, b) => {
+            const aProg = a.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+            const bProg = b.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+            return bProg - aProg;
+        });
+    }, [e2SelectedAspectId, allNodes]);
+
+    const activeNonFocusSkills = useMemo(() => {
+        const focusIds = focusSlots || [];
+        const maintenanceIds = maintenanceSkillIds || [];
+        return allNodes.filter(n => {
+            if (n.type !== NodeTypes.SKILL) return false;
+            if (n.metadata?.isSleeping) return false;
+            if (n.metadata?.sleepUntil && new Date(n.metadata.sleepUntil) > new Date()) return false;
+            if (n.metadata?.status === 'SLEEPING') return false;
+            if (focusIds.includes(n.id)) return false;
+            if (maintenanceIds.includes(n.id)) return false;
+            return true;
+        });
+    }, [allNodes, focusSlots, maintenanceSkillIds]);
+
+    const e3ActiveAspectsPool = useMemo(() => {
+        if (!e3ActiveSelectedSkillId) return [];
+        const aspects = allNodes.filter(n => {
+            if (n.type !== NodeTypes.ASPECT) return false;
+            const objective = nodeMap.get(n.parentId);
+            if (!objective || objective.type !== NodeTypes.OBJECTIVE || objective.metadata?.status !== 'ACTIVE') return false;
+            return objective.parentId === e3ActiveSelectedSkillId;
+        });
+        return aspects.sort((a, b) => {
+            const timeA = getAspectAvgTime(a.id, aspectStats);
+            const timeB = getAspectAvgTime(b.id, aspectStats);
+            return timeA - timeB;
+        });
+    }, [e3ActiveSelectedSkillId, allNodes, nodeMap, aspectStats]);
+
+    const e3ActiveTasksPool = useMemo(() => {
+        if (!e3ActiveSelectedAspectId) return [];
+        const tasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.parentId === e3ActiveSelectedAspectId && n.metadata?.status !== TaskStatuses.DONE);
+        return tasks.sort((a, b) => {
+            const aProg = a.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+            const bProg = b.metadata?.status === TaskStatuses.IN_PROGRESS ? 1 : 0;
+            return bProg - aProg;
+        });
+    }, [e3ActiveSelectedAspectId, allNodes]);
+
+    // --- PREP FLOW DATA ---
+    // Life areas, sorted by recent task activity (most active first)
+    const prepLifeAreas = useMemo(() => {
+        const areas = allNodes.filter(n => n.type === NodeTypes.LIFE_AREA);
+        // Count tasks completed in the last 30 days per area
+        const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
+        const activityCount = {};
+        allNodes.forEach(n => {
+            if (n.type !== NodeTypes.TASK) return;
+            const completedAt = n.metadata?.completedAt ? new Date(n.metadata.completedAt).getTime() : null;
+            if (!completedAt || now - completedAt > THIRTY_DAYS) return;
+            // Walk up: task -> aspect -> objective -> skill -> area
+            const aspect = nodeMap.get(n.parentId);
+            const objective = nodeMap.get(aspect?.parentId);
+            const skill = nodeMap.get(objective?.parentId);
+            const area = nodeMap.get(skill?.parentId);
+            if (area && area.type === NodeTypes.LIFE_AREA) {
+                activityCount[area.id] = (activityCount[area.id] || 0) + 1;
             }
+        });
+        return [...areas].sort((a, b) => (activityCount[b.id] || 0) - (activityCount[a.id] || 0));
+    }, [allNodes, nodeMap]);
 
-            const activeIds = focusSlots || [];
-            if (activeIds.length === 0) {
-                setLowEnergyTask('EMPTY_STATE');
-            } else {
-                const allPendingTasks = allNodes.filter(n => 
-                    n.type === NodeTypes.TASK && 
-                    n.metadata?.status !== TaskStatuses.DONE
-                );
+    // Skills within a selected area — focus skills first, then active non-focus, then maintenance
+    const prepSkillsForArea = useMemo(() => {
+        if (!prepSelectedArea) return { focusSkills: [], activeSkills: [] };
+        const focusIds = focusSlots || [];
+        const maintenanceIds = maintenanceSkillIds || [];
+        const skillsInArea = allNodes.filter(n => {
+            if (n.type !== NodeTypes.SKILL) return false;
+            if (n.parentId !== prepSelectedArea.id) return false;
+            if (n.metadata?.isSleeping) return false;
+            if (n.metadata?.sleepUntil && new Date(n.metadata.sleepUntil) > new Date()) return false;
+            if (n.metadata?.status === 'SLEEPING') return false;
+            return true;
+        });
+        const focusSkills = skillsInArea.filter(s => focusIds.includes(s.id));
+        // Active = not sleeping, not focus, not maintenance
+        const activeSkills = skillsInArea.filter(s => !focusIds.includes(s.id) && !maintenanceIds.includes(s.id));
+        return { focusSkills, activeSkills };
+    }, [prepSelectedArea, allNodes, focusSlots, maintenanceSkillIds]);
 
-                let selectedTask = null;
+    // Experiments (OBJECTIVE nodes) within a selected skill — active at top, paused/sleeping below
+    const prepExperimentsForSkill = useMemo(() => {
+        if (!prepSelectedSkill) return { active: [], paused: [] };
+        const objectives = allNodes.filter(n => n.type === NodeTypes.OBJECTIVE && n.parentId === prepSelectedSkill.id);
+        const active = objectives.filter(o => o.metadata?.status === 'ACTIVE');
+        const paused = objectives.filter(o => o.metadata?.status === 'SLEEPING' || o.metadata?.status === 'ROTATING' || (o.metadata?.status && o.metadata.status !== 'ACTIVE' && o.metadata.status !== 'ACHIEVED' && o.metadata.status !== 'ARCHIVED' && o.metadata.status !== 'COMPLETED'));
+        return { active, paused };
+    }, [prepSelectedSkill, allNodes]);
 
-                for (const skillId of activeIds) {
-                    if (!skillId) continue;
+    // Aspects within a selected experiment
+    const prepAspectsForExperiment = useMemo(() => {
+        if (!prepSelectedExperiment) return [];
+        return allNodes.filter(n => n.type === NodeTypes.ASPECT && n.parentId === prepSelectedExperiment.id);
+    }, [prepSelectedExperiment, allNodes]);
 
-                    const skillTasks = allPendingTasks.filter(t => {
-                        const s = getSkillFromTask(t, nodeMap);
-                        return s?.id === skillId;
-                    });
+    // Helper: reset prep flow back to start
+    const resetPrepFlow = () => {
+        setPrepSubStep('areas');
+        setPrepSelectedArea(null);
+        setPrepSelectedSkill(null);
+        setPrepSelectedExperiment(null);
+        setPrepSelectedAspect(null);
+        setPrepNewTaskInput('');
+        setPrepCreatedTask(null);
+        setPrepMicroActionInput('');
+        setPrepTasksAddedToAspect([]);
+    };
 
-                    if (skillTasks.length > 0) {
-                        const sortedSkillTasks = [...skillTasks].sort((a, b) => {
-                            const avgTimeA = getAspectAvgTime(a.parentId, aspectStats);
-                            const avgTimeB = getAspectAvgTime(b.parentId, aspectStats);
-
-                            if (avgTimeA !== avgTimeB) {
-                                return avgTimeA - avgTimeB;
-                            }
-
-                            const isTodayA = a.metadata?.isToday === true;
-                            const isTodayB = b.metadata?.isToday === true;
-                            if (isTodayA && !isTodayB) return -1;
-                            if (!isTodayA && isTodayB) return 1;
-
-                            return 0;
-                        });
-
-                        selectedTask = sortedSkillTasks[0];
-                        break; 
-                    }
+    // Handler: create a task in the prep flow
+    const handlePrepCreateTask = async () => {
+        if (!prepNewTaskInput.trim() || !prepSelectedAspect) return;
+        try {
+            const newTask = await backbone.addNode({
+                name: prepNewTaskInput.trim(),
+                type: NodeTypes.TASK,
+                parentId: prepSelectedAspect.id,
+                metadata: {
+                    status: TaskStatuses.NOT_STARTED,
+                    createdAt: Date.now()
                 }
-
-                setLowEnergyTask(selectedTask || 'EMPTY_STATE');
-            }
-        }
-
-        if (energyLevel === 2) {
-            // 2. MOMENTUM (Energy 2) - Primary Focus Slot
-            if (focusSlots && focusSlots.length > 0) {
-                const primarySkillId = focusSlots[0];
-                const primaryTask = allNodes.find(n => {
-                    if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
-                    const skill = getSkillFromTask(n, nodeMap);
-                    return skill?.id === primarySkillId;
-                });
-                setMomentumTask(primaryTask);
-            }
-
-            // 3. RESILIENCE (Energy 2) - Most Neglected / Stable Habit
-            const maintenanceTasks = allNodes.filter(n => 
-                n.type === NodeTypes.TASK && 
-                n.metadata?.status !== TaskStatuses.DONE &&
-                n.metadata?.isMaintenance === true
-            ).sort((a, b) => {
-                const aTime = a.metadata?.lastCompletedAt ? new Date(a.metadata.lastCompletedAt).getTime() : 0;
-                const bTime = b.metadata?.lastCompletedAt ? new Date(b.metadata.lastCompletedAt).getTime() : 0;
-                return aTime - bTime; // oldest first
             });
-            setResilienceTask(maintenanceTasks[0] || (lowEnergyFastTasks.length > 1 ? lowEnergyFastTasks[1] : null));
+            setPrepCreatedTask(newTask);
+            setPrepNewTaskInput('');
+            setPrepSubStep('micro-action');
+        } catch (err) {
+            console.error('[PrepFlow] Create task error:', err);
         }
-    }, [energyLevel, lowEnergyFastTasks, focusSlots, allNodes, nodeMap, getSkillFromTask]);
+    };
+
+    // Handler: save micro-action and return to task input (or aspects)
+    const handlePrepSaveMicroAction = async () => {
+        if (!prepCreatedTask) return;
+        try {
+            if (prepMicroActionInput.trim()) {
+                await backbone.updateNode(prepCreatedTask.id, {
+                    metadata: { microAction: prepMicroActionInput.trim() }
+                });
+            }
+            setPrepTasksAddedToAspect(prev => [...prev, { ...prepCreatedTask, microAction: prepMicroActionInput.trim() }]);
+            setPrepCreatedTask(null);
+            setPrepMicroActionInput('');
+            // Return to task-input so they can add more tasks
+            setPrepSubStep('task-input');
+        } catch (err) {
+            console.error('[PrepFlow] Save micro-action error:', err);
+        }
+    };
 
     const activeHighEnergySkills = useMemo(() => {
         return allNodes.filter(n => {
@@ -771,8 +1033,8 @@ const LaunchpadFlow = () => {
         setStep('initiation');
     };
 
-    const handleStartSprint = () => {
-        const task = energyLevel <= 2 ? lowEnergyTask : (selectedInitiationTask || initiationTask);
+    const handleStartSprint = (specificTask) => {
+        const task = specificTask || (energyLevel <= 2 ? lowEnergyTask : (selectedInitiationTask || initiationTask));
         if (!task) return;
         
         setEnergyLevel(energyLevel);
@@ -1008,433 +1270,1111 @@ const LaunchpadFlow = () => {
                 {step === 'action' && (
                     <div className="flow-step action-step">
                         {energyLevel >= 4 ? (
-                            <div className="high-energy-view" style={{ textAlign: 'left', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                                <header style={{ marginBottom: '40px', textAlign: 'center' }}>
-                                    <h1 className="flow-title themed-flow-title">
-                                        Your battery is full. Let’s build something your future self will thank you for.
-                                    </h1>
-                                </header>
-                                {/* 1. HERO EXECUTION CARD */}
-                                {(() => {
-                                    const { heroTask } = highEnergySelectionData;
-                                    return (
-                                        <div style={{ marginBottom: '48px' }}>
-                                            <div className="hero-execution-card" style={{ 
-                                                padding: '40px 32px', 
-                                                borderRadius: '24px', 
-                                                marginBottom: '16px',
-                                                textAlign: 'center',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: '24px'
-                                            }}>
-                                                <div>
-                                                    <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '4px', opacity: 0.5 }}>
-                                                        {heroTask ? 'Best use of your energy right now' : 'Strategic Planning'}
-                                                    </h3>
-                                                    <p style={{ fontSize: '12px', fontWeight: 500, margin: '0 0 16px 0', opacity: 0.4 }}>
-                                                        {heroTask ? 'Based on your recent activity' : "Use this energy to make your future low-energy self unstoppable."}
-                                                    </p>
-                                                    <h2 style={{ fontSize: '32px', fontWeight: 700, margin: 0, lineHeight: 1.1 }}>
-                                                        {heroTask?.name || "Nothing saved for High Energy yet"}
-                                                    </h2>
-                                                </div>
+<div className="launchpad-high-energy-container" style={{ textAlign: 'center', width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
-                                                <button 
-                                                    className="flow-primary-btn" 
-                                                    style={{ width: '100%', padding: '20px', borderRadius: '16px' }}
-                                                    onClick={() => heroTask ? handleStartTask(heroTask) : setStep('high-prep')}
-                                                >
-                                                    {heroTask ? 'Start' : 'Help My Future Self (Start Breakdown)'}
-                                                </button>
+    {/* HEADER */}
+    <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#fff', marginBottom: '64px', opacity: 0.9, padding: '0 40px', lineHeight: 1.3 }}>
+        Best use of your energy right now based on your recent activity
+    </h1>
+
+    {/* 1. SPOTLIGHT CAROUSEL */}
+    <div className="carousel-wrapper" style={{ position: 'relative', width: '100%', marginBottom: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {highEnergyTasks.length > 0 ? (
+            <>
+                {highEnergyTasks.length > 1 && (
+                    <>
+                        <button
+                            onClick={() => setHighEnergyIndex(prev => (prev - 1 + highEnergyTasks.length) % highEnergyTasks.length)}
+                            style={{ position: 'absolute', left: '-80px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '56px', cursor: 'pointer', fontWeight: 200 }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                        >‹</button>
+                        <button
+                            onClick={() => setHighEnergyIndex(prev => (prev + 1) % highEnergyTasks.length)}
+                            style={{ position: 'absolute', right: '-80px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '56px', cursor: 'pointer', fontWeight: 200 }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                        >›</button>
+                    </>
+                )}
+
+                {(() => {
+                    const task = highEnergyTasks[highEnergyIndex];
+                    const skill = getSkillFromTask(task, nodeMap);
+                    const area = nodeMap.get(skill?.parentId);
+                    return (
+                        <div
+                            className="featured-card liquid-glass"
+                            style={{
+                                width: '100%',
+                                padding: '60px 40px',
+                                borderRadius: '40px',
+                                background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                boxShadow: '0 30px 60px rgba(0,0,0,0.4), inset 0 0 40px rgba(255,255,255,0.02)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                gap: '16px'
+                            }}
+                        >
+                            {/* HIGH ENERGY BADGE */}
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,200,50,0.12)', border: '1px solid rgba(255,200,50,0.25)', borderRadius: '20px', padding: '4px 14px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,200,50,0.8)' }}>
+                                ⚡ High Energy Task
+                            </div>
+
+                            {/* AREA IDENTITY */}
+                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'rgba(255,255,255,0.4)' }}>
+                                {area?.name || skill?.name || 'Untitled Area'}
+                            </div>
+
+                            {/* DUAL LAYER */}
+                            <div style={{ fontSize: '14px', fontWeight: 500, color: 'rgba(255,255,255,0.4)' }}>
+                                Just open it for 2 minutes
+                            </div>
+                            <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                                {task.name}
+                            </h2>
+
+                            {/* SKILL NAME */}
+                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                                {skill?.name || 'Untitled Skill'}
+                            </div>
+
+                            <button
+                                className="flow-primary-btn"
+                                onClick={() => handleStartTask(task)}
+                                style={{ padding: '16px 60px', borderRadius: '20px', fontSize: '18px', fontWeight: 700, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', marginTop: '16px' }}
+                            >
+                                Start
+                            </button>
+                        </div>
+                    );
+                })()}
+            </>
+        ) : (
+            <div style={{ color: '#555', fontSize: '15px' }}>No high energy tasks saved yet.</div>
+        )}
+    </div>
+
+    {/* 2. TACTICAL OPTIONS */}
+    {!isEnergy3ExplorePath && (
+        <section style={{ width: '100%', marginBottom: '40px' }}>
+            <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '32px' }}>
+                Other tactical options
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {tripleRecommendation.slice(0, energyLevel === 5 ? 3 : 2).map(task => {
+                    const skill = getSkillFromTask(task, nodeMap);
+                    const area = nodeMap.get(skill?.parentId);
+                    return (
+                        <button
+                            key={task.id}
+                            className="liquid-glass"
+                            onClick={() => handleStartTask(task)}
+                            style={{
+                                width: '100%',
+                                padding: '24px 32px',
+                                borderRadius: '24px',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s ease, background 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                        >
+                            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.4, color: '#fff' }}>
+                                {area?.name || 'Untitled Area'}
+                            </div>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: '#fff', opacity: 0.75 }}>
+                                {task.name}
+                            </div>
+                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>
+                                {skill?.name || 'Untitled Skill'}
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+        </section>
+    )}
+
+    {/* 3. PILOT LIGHT CHIPS */}
+    {energy2HabitsPool.length > 0 && (
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
+            {energy2HabitsPool.slice(0, 3).map(habit => (
+                <button
+                    key={habit.id}
+                    onClick={() => handleHabitComplete(habit.id)}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '8px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                >
+                    {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
+                </button>
+            ))}
+        </div>
+    )}
+
+    {/* 4. TRIADIC REDIRECTION */}
+    {!isEnergy3Expanded && !isEnergy3ExplorePath ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+            <button
+                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => setIsEnergy3Expanded(true)}
+            >
+                Not feeling this?
+            </button>
+            <button
+                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+                onClick={() => console.log("Rest for now clicked")}
+            >
+                I actually just need to rest today
+            </button>
+        </div>
+    ) : isEnergy3ExplorePath ? (
+        <>
+            {e3ActiveSubStep === 'skills' && (
+                <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
+                    <button className="literal-target" onClick={() => setE3ActiveSkillIndex(p => (p - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}>‹</button>
+                    <div
+                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                        onClick={() => { setE3ActiveSelectedSkillId(activeNonFocusSkills[e3ActiveSkillIndex].id); setE3ActiveSubStep('aspects'); }}
+                    >
+                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>Optional · No Pressure</div>
+                        <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
+                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Tap to explore</div>
+                    </div>
+                    <button className="literal-target" onClick={() => setE3ActiveSkillIndex(p => (p + 1) % activeNonFocusSkills.length)}>›</button>
+                </div>
+            )}
+            {e3ActiveSubStep === 'aspects' && (
+                <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
+                    <button className="literal-target" onClick={() => setE3ActiveAspectIndex(p => (p - 1 + e3ActiveAspectsPool.length) % e3ActiveAspectsPool.length)}>‹</button>
+                    <div
+                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                        onClick={() => { setE3ActiveSelectedAspectId(e3ActiveAspectsPool[e3ActiveAspectIndex].id); setE3ActiveSubStep('tasks'); }}
+                    >
+                        <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
+                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
+                    </div>
+                    <button className="literal-target" onClick={() => setE3ActiveAspectIndex(p => (p + 1) % e3ActiveAspectsPool.length)}>›</button>
+                </div>
+            )}
+            {e3ActiveSubStep === 'tasks' && (
+                <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
+                    <button className="literal-target" onClick={() => setE3ActiveTaskIndex(p => (p - 1 + e3ActiveTasksPool.length) % e3ActiveTasksPool.length)}>‹</button>
+                    <div style={{ textAlign: 'center', width: '320px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>No Pressure · Stop Anytime</div>
+                        <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
+                        <button className="flow-primary-btn" onClick={() => handleStartTask(e3ActiveTasksPool[e3ActiveTaskIndex])}>Start 2-Minute Sprint</button>
+                    </div>
+                    <button className="literal-target" onClick={() => setE3ActiveTaskIndex(p => (p + 1) % e3ActiveTasksPool.length)}>›</button>
+                </div>
+            )}
+            <button
+                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginTop: '32px' }}
+                onClick={() => { setIsEnergy3ExplorePath(false); setE3ActiveSubStep('skills'); setE3ActiveSelectedSkillId(null); setE3ActiveSelectedAspectId(null); }}
+            >
+                ← Back
+            </button>
+            <button
+                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
+                onClick={() => console.log("Rest for now clicked")}
+            >
+                I actually just need to rest today
+            </button>
+        </>
+    ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginBottom: '32px' }}>
+            <button
+                className="flow-secondary-btn liquid-glass"
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                onClick={() => setIsEnergy3SwitchingSkill(true)}
+            >
+                Stay Focused — Switch skill
+            </button>
+            <button
+                className="flow-secondary-btn liquid-glass"
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                onClick={() => { setIsEnergy3SwitchingHabit(true); setIsEnergy3Expanded(false); }}
+            >
+                Keep it Simple — Switch to habits
+            </button>
+            <button
+                className="flow-secondary-btn liquid-glass"
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                onClick={() => { setIsEnergy3ExplorePath(true); setIsEnergy3Expanded(false); setE3ActiveSubStep('skills'); }}
+            >
+                Explore Something Else
+            </button>
+            <button
+                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
+                onClick={() => console.log("Rest for now clicked")}
+            >
+                I actually just need to rest today
+            </button>
+        </div>
+    )}
+
+    {/* 5. FUTURE SELF BUTTON */}
+    <button
+        className="future-self-btn"
+        onClick={() => { resetPrepFlow(); setStep('prep-flow'); }}
+        style={{ marginTop: 'auto', padding: '16px 32px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', color: 'rgba(255,255,255,0.2)', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.border = '1px solid rgba(255,255,255,0.15)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)'; e.currentTarget.style.border = '1px solid rgba(255,255,255,0.05)'; }}
+    >
+        <span style={{ textDecoration: 'underline' }}>Prepare everything for your future self</span>
+    </button>
+</div>
+                        ) : energyLevel === 3 ? (
+                            <div className="recommended-focus-container" style={{ textAlign: 'center', width: '100%', maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '600px', justifyContent: 'center' }}>
+                                {isEnergy3SwitchingSkill ? (
+                                    <div style={{ width: '100%', maxWidth: '400px' }}>
+                                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#fff', marginBottom: '40px', opacity: 0.9 }}>Switch Focus Skill</h2>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setEnergy3SkillIndex(p => (p - 1 + focusSlots.length) % focusSlots.length)}
+                                            >‹</button>
+                                            <div
+                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                onClick={() => {
+                                                    setEnergy3SkillOverride(focusSlots[energy3SkillIndex]);
+                                                    setIsEnergy3SwitchingSkill(false);
+                                                }}
+                                            >
+                                                <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{nodeMap.get(focusSlots[energy3SkillIndex])?.name || 'Untitled Skill'}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Skill</div>
                                             </div>
-                                            {heroTask ? (
-                                                <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', opacity: 0.6, margin: 0 }}>This is the best place to push forward right now.</p>
-                                            ) : (
-                                                <p style={{ fontSize: '12px', color: '#666', textAlign: 'center', opacity: 0.6, margin: 0 }}>Tip: In Focus Mode, tap 'Save for when I have more energy' to send tasks here.</p>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setEnergy3SkillIndex(p => (p + 1) % focusSlots.length)}
+                                            >›</button>
+                                        </div>
+                                        <button
+                                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '15px', cursor: 'pointer', fontWeight: 500, marginTop: '32px' }}
+                                            onClick={() => setIsEnergy3SwitchingSkill(false)}
+                                        >
+                                            Back
+                                        </button>
+                                    </div>
+                                ) : isEnergy3SwitchingHabit ? (
+                                    <>
+                                        <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            {energy2HabitsPool.length > 1 && (
+                                                <button 
+                                                    onClick={() => setEnergy3HabitIndex(prev => (prev - 1 + energy2HabitsPool.length) % energy2HabitsPool.length)}
+                                                    style={{ position: 'absolute', left: '-30px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '32px', cursor: 'pointer', outline: 'none' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                                                >
+                                                    ‹
+                                                </button>
+                                            )}
+                                            
+                                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>
+                                                    {energy2HabitsPool[energy3HabitIndex]?.skillName || "Habit"}
+                                                </div>
+                                                <h1 style={{ fontSize: '48px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1, wordWrap: 'break-word', maxWidth: '100%' }}>
+                                                    {(() => {
+                                                        const h = energy2HabitsPool[energy3HabitIndex];
+                                                        return h?.phases?.[h?.currentPhaseLevel]?.description || h?.then || h?.target || "Ready to maintain?";
+                                                    })()}
+                                                </h1>
+                                            </div>
+
+                                            {energy2HabitsPool.length > 1 && (
+                                                <button 
+                                                    onClick={() => setEnergy3HabitIndex(prev => (prev + 1) % energy2HabitsPool.length)}
+                                                    style={{ position: 'absolute', right: '-30px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '32px', cursor: 'pointer', outline: 'none' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                                                >
+                                                    ›
+                                                </button>
                                             )}
                                         </div>
-                                    );
-                                })()}                                   {/* 2. SAVED FOR HIGH ENERGY */}
-                                <section style={{ marginBottom: '48px' }}>
-                                    <h3 style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px', fontWeight: 700 }}>Saved for High Energy</h3>
-                                    <div style={{ display: 'grid', gap: '12px' }}>
-                                        {(() => {
-                                            const { filteredList } = highEnergySelectionData;
-                                            return filteredList.length > 0 ? (
-                                                filteredList.map(task => (
-                                                    <div 
-                                                        key={task.id} 
-                                                        className="flow-item-row"
-                                                        onClick={() => handleStartTask(task)}
-                                                    >
-                                                        <span className="flow-item-name">{task.name}</span>
-                                                        <span className="flow-item-label">High Energy</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <div className="flow-empty-state">
-                                                    <p style={{ color: '#444', fontSize: '14px', margin: 0 }}>No other tasks saved for high energy yet</p>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-                                </section>
 
-                                {/* 3. BUILD MOMENTUM (SKILLS) */}
-                                <section style={{ marginBottom: '48px' }}>
-                                    <h3 style={{ fontSize: '11px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '16px', fontWeight: 700 }}>Build Momentum</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                        {activeHighEnergySkills.map(skill => {
-                                            const isExpanded = expandedMomentumSkillId === skill.id;
-                                            return (
-                                                <div key={skill.id} style={{ gridColumn: isExpanded ? 'span 2' : 'span 1' }}>
-                                                    <div 
-                                                        style={{ 
-                                                            padding: '16px', 
-                                                            borderRadius: '16px', 
-                                                            border: isExpanded ? '2px solid #fff' : '1px solid rgba(255,255,255,0.1)', 
-                                                            textAlign: 'center', 
-                                                            cursor: 'pointer',
-                                                            opacity: expandedMomentumSkillId && !isExpanded ? 0.3 : 1,
-                                                            transition: 'all 0.2s ease',
-                                                            boxShadow: isExpanded ? '0 10px 30px rgba(0,0,0,0.5)' : 'none'
-                                                        }}
-                                                        onClick={() => {
-                                                            console.log("Expanding momentum skill:", skill.name);
-                                                            setExpandedMomentumSkillId(prev => prev === skill.id ? null : skill.id);
-                                                        }}
-                                                    >
-                                                        <span style={{ color: isExpanded ? '#fff' : '#888', fontWeight: 500 }}>{skill.name}</span>
-                                                    </div>
-                                                    
-                                                    {isExpanded && (
-                                                        <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px solid #1a1a1a' }}>
-                                                            <div style={{ marginBottom: '16px' }}>
-                                                                <h4 style={{ color: '#fff', fontSize: '16px', margin: '0 0 4px 0' }}>Ready to fuel {skill.name}?</h4>
-                                                                <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>Since you're at 100%, these will have the biggest impact:</p>
-                                                            </div>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                                {(() => {
-                                                                    const tasks = getHighEnergyTasksForSkill(skill.id);
-                                                                    console.log(`Found ${tasks.length} tasks for skill ${skill.name}`);
-                                                                    return tasks.length > 0 ? (
-                                                                        tasks.map(t => (
-                                                                            <div 
-                                                                                key={t.id}
-                                                                                onClick={() => handleStartTask(t)}
-                                                                                style={{ 
-                                                                                    padding: '12px 16px', 
-                                                                                    borderRadius: '12px', 
-                                                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                                                    display: 'flex', 
-                                                                                    justifyContent: 'space-between', 
-                                                                                    alignItems: 'center', 
-                                                                                    cursor: 'pointer' 
-                                                                                }}
-                                                                            >
-                                                                                <span style={{ color: '#eee', fontSize: '14px', fontWeight: 500 }}>{t.name}</span>
-                                                                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                                                                    {t.metadata?.status === TaskStatuses.IN_PROGRESS && (
-                                                                                        <span style={{ fontSize: '9px', color: '#3b82f6', background: 'rgba(59,130,246,0.1)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase' }}>In Progress</span>
-                                                                                    )}
-                                                                                    <span style={{ fontSize: '9px', color: '#666', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, textTransform: 'uppercase' }}>High Energy</span>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))
-                                                                    ) : (
-                                                                        <p style={{ color: '#333', fontSize: '12px', textAlign: 'center', margin: '8px 0' }}>No high energy tasks available here.</p>
-                                                                    );
-                                                                })()}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </section>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '32px' }}>
+                                            <button 
+                                                className="flow-primary-btn liquid-glass" 
+                                                style={{ padding: '24px 60px', borderRadius: '24px', fontSize: '20px', fontWeight: 700, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                onClick={() => {
+                                                    const habit = energy2HabitsPool[energy3HabitIndex];
+                                                    if (habit) handleHabitComplete(habit.id);
+                                                }}
+                                            >
+                                                Complete
+                                            </button>
 
-                                {/* 4. PLANNING ACTION */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '64px', borderTop: '1px solid #1a1a1a', paddingTop: '32px' }}>
-                                    <button 
-                                        className="flow-secondary-btn" 
-                                        style={{ width: '100%', padding: '16px', fontSize: '14px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                                        onClick={() => setStep('high-prep')}
-                                    >
-                                        Prepare everything for your future low energy self
-                                    </button>
-                                </div>
-                            </div>
-                        ) : energyLevel === 3 ? (
-                            <div className="medium-energy-skill-selection" style={{ textAlign: 'left' }}>
-                                <header className="selection-header" style={{ marginBottom: '32px' }}>
-                                    <h1 className="flow-title" style={{ fontSize: '32px' }}>Becoming {heroSkill?.name || '...'}</h1>
-                                </header>
-
-                                {heroSkill && (
-                                    <div className="hero-skill-card" style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '24px' }}>
-                                        <div style={{ marginBottom: '20px' }}>
-                                            <h2 style={{ fontSize: '20px', margin: '0 0 8px 0', color: '#fff' }}>{heroSkill.name}</h2>
-                                            <p style={{ margin: 0, color: '#888', fontSize: '15px' }}>Just do: {heroTask?.name || 'Set a task'}</p>
+                                            <button 
+                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline', width: 'fit-content', margin: '0 auto' }}
+                                                onClick={() => setIsEnergy3SwitchingHabit(false)}
+                                            >
+                                                Back
+                                            </button>
                                         </div>
-                                        <button 
-                                            className="flow-primary-btn" 
-                                            style={{ width: '100%' }}
-                                            onClick={() => console.log("Start hero task navigation would go here:", heroTask?.id)}
-                                        >
-                                            Start
-                                        </button>
-                                    </div>
-                                )}
-
-                                <button 
-                                    className="flow-secondary-btn" 
-                                    style={{ width: '100%', textAlign: 'center', padding: '12px', borderRadius: '12px', textDecoration: 'none', color: '#888', marginBottom: '32px', fontSize: '14px', fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)' }}
-                                    onClick={handleSelectUsual}
-                                >
-                                    Select the usual
-                                </button>
-
-                                <div className="active-skills-group">
-                                    <h3 style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', color: '#555', marginBottom: '16px', letterSpacing: '0.05em' }}>All Active Skills</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                        {activeSkills.slice(0, 6).map(s => {
-                                            const order = getSkillOrder(s.id);
-                                            const isSelected = order > 0;
-                                            return (
-                                                <div 
-                                                    key={s.id} 
-                                                    className={`flow-skill-chip ${isSelected ? 'is-selected' : ''}`}
-                                                    onClick={() => toggleSkill(s.id)}
-                                                    style={{ 
-                                                        position: 'relative',
-                                                        transition: 'all 0.2s ease'
-                                                    }}
-                                                >
-                                                    <span style={{ fontSize: '14px', color: isSelected ? '#fff' : '#888', fontWeight: isSelected ? 700 : 500 }}>{s.name}</span>
-                                                    {order > 0 ? (
-                                                        <span style={{ 
-                                                            position: 'absolute',
-                                                            top: '-8px',
-                                                            right: '-8px',
-                                                            background: '#fff', 
-                                                            color: '#000', 
-                                                            fontSize: '11px', 
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            borderRadius: '50%', 
-                                                            fontWeight: 800,
-                                                            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                                                            zIndex: 2
-                                                        }}>
-                                                            {order}
-                                                        </span>
-                                                    ) : (
-                                                        skillMomentum[s.id] > 0 && (
-                                                            <span style={{ background: '#3b82f6', color: '#fff', fontSize: '10px', padding: '2px 6px', borderRadius: '6px', fontWeight: 700 }}>{skillMomentum[s.id]}</span>
-                                                        )
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-
-                                <div style={{ marginTop: '32px' }}>
-                                    <button 
-                                        className="flow-primary-btn" 
-                                        style={{ 
-                                            width: '100%', 
-                                            opacity: selectedSkills.length > 0 ? 1 : 0.5,
-                                            cursor: selectedSkills.length > 0 ? 'pointer' : 'not-allowed',
-                                            transform: 'scale(1)',
-                                            transition: 'transform 0.1s ease, opacity 0.2s ease'
-                                        }}
-                                        disabled={selectedSkills.length === 0}
-                                        onClick={handleStartPath}
-                                    >
-                                        Start with this path
-                                    </button>
-                                </div>
-
-                                <div className="secondary-options" style={{ marginTop: '24px' }}>
-                                    <button className="flow-secondary-btn" onClick={() => navigate('/planning')} style={{ width: '100%' }}>
-                                        Skip for now
-                                    </button>
-                                </div>
-                            </div>
-                        ) : energyLevel === 1 ? (
-                            <div className="initiation-card" style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '440px', minHeight: '420px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', transition: 'all 0.3s ease' }}>
-                                {lowEnergyTask === 'EMPTY_STATE' ? (
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                                        <h1 style={{ fontSize: '24px', color: '#fff', marginBottom: '16px' }}>No Tasks Available</h1>
-                                        <p style={{ color: '#888', fontSize: '14px', lineHeight: 1.5, maxWidth: '300px' }}>
-                                            There are no safe, low-energy tasks actively available in your current focus skills.
-                                        </p>
-                                        <button 
-                                            className="flow-secondary-btn" 
-                                            style={{ marginTop: '32px' }}
-                                            onClick={() => navigate('/focus')}
-                                        >
-                                            Manage Focus Skills
-                                        </button>
-                                    </div>
+                                    </>
                                 ) : (
                                     <>
-                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                            <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '36px', lineHeight: 1.2 }}>
-                                                {lowEnergyTask?.name}
-                                            </h1>
-                                        </div>
+                                        <h1 style={{ fontSize: '38px', fontWeight: 500, color: '#fff', marginBottom: '64px', opacity: 0.9 }}>Recommended focus</h1>
+                                        
+                                        {!isEnergy3ExplorePath && (
+                                            <div className="recommendation-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                                                {tripleRecommendation.map((task, index) => {
+                                                    const skill = getSkillFromTask(task, nodeMap);
+                                                    const area = nodeMap.get(skill?.parentId);
+                                                    const isHero = index === 0;
 
-                                        <button 
-                                            className="flow-primary-btn" 
-                                            style={{ width: '100%', marginBottom: '36px', padding: '18px', fontSize: '18px' }}
-                                            onClick={handleStartSprint}
-                                        >
-                                            Start 2-Minute Sprint
-                                        </button>
+                                                    return (
+                                                        <button
+                                                            key={task.id}
+                                                            className="recommendation-card liquid-glass"
+                                                            onClick={() => handleStartTask(task)}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: isHero ? '40px 32px' : '28px 24px',
+                                                                borderRadius: '28px',
+                                                                background: isHero ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)',
+                                                                border: isHero ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
+                                                                textAlign: 'center',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: '6px',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease',
+                                                                textDecoration: 'none',
+                                                                boxShadow: isHero ? '0 8px 32px rgba(0,0,0,0.3)' : 'none'
+                                                            }}
+                                                        >
+                                                            {/* AREA IDENTITY LABEL */}
+                                                            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.18em', opacity: isHero ? 0.5 : 0.3, color: '#fff', marginBottom: '2px' }}>
+                                                                {area?.name || skill?.name || 'Untitled Area'}
+                                                            </div>
 
-                                        <div style={{ width: '100%' }}>
-                                            {!showEnergy1Panel ? (
-                                                <button 
-                                                    className="flow-secondary-btn" 
-                                                    style={{ width: '100%', fontSize: '14px', color: '#444', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'all 0.2s ease', padding: '12px' }}
-                                                    onClick={() => setShowEnergy1Panel(true)}
+                                                            {/* TASK NAME */}
+                                                            <div style={{ fontSize: isHero ? '26px' : '22px', fontWeight: isHero ? 700 : 600, color: '#fff', opacity: isHero ? 1 : 0.85, lineHeight: 1.2 }}>
+                                                                {task.name}
+                                                            </div>
+
+                                                            {/* SKILL LABEL */}
+                                                            <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
+                                                                {energy3SkillOverride
+                                                                    ? (nodeMap.get(task.parentId)?.name || 'Untitled Aspect')
+                                                                    : (skill?.name || 'Untitled Skill')}
+                                                            </div>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
+                                        {/* PILOT LIGHT CHIPS - always visible */}
+                                        {energy2HabitsPool.length > 0 && (
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '32px' }}>
+                                                {energy2HabitsPool.slice(0, 3).map(habit => (
+                                                    <button
+                                                        key={habit.id}
+                                                        onClick={() => handleHabitComplete(habit.id)}
+                                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '8px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                                                    >
+                                                        {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* NOT FEELING THIS */}
+                                        {!isEnergy3Expanded && !isEnergy3ExplorePath ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginTop: '40px' }}>
+                                                <button
+                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    onClick={() => setIsEnergy3Expanded(true)}
                                                 >
                                                     Not feeling this?
                                                 </button>
-                                            ) : (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    {showEnergy1Skills ? (
-                                                        <>
-                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
-                                                                {focusSlots?.map(skillId => {
-                                                                    const skill = nodeMap.get(skillId);
-                                                                    if (!skill) return null;
-                                                                    return (
-                                                                        <button 
-                                                                            key={skillId} 
-                                                                            style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', fontSize: '14px', textAlign: 'center', cursor: 'pointer' }}
-                                                                            onClick={() => handleEnergy1SwitchSkill(skillId)}
-                                                                        >
-                                                                            {skill.name}
-                                                                        </button>
-                                                                    );
-                                                                })}
+                                                <button
+                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    onClick={() => console.log("Rest for now clicked")}
+                                                >
+                                                    I need to rest for now
+                                                </button>
+                                            </div>
+                                        ) : isEnergy3ExplorePath ? (
+                                            <>
+                                                {/* PATH C: EXPLORE SOMETHING ELSE */}
+                                                {e3ActiveSubStep === 'skills' && (
+                                                    <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '40px' }}>
+                                                        <button
+                                                            className="literal-target"
+                                                            onClick={() => setE3ActiveSkillIndex(p => (p - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}
+                                                        >‹</button>
+                                                        <div
+                                                            style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}
+                                                            onClick={() => {
+                                                                setE3ActiveSelectedSkillId(activeNonFocusSkills[e3ActiveSkillIndex].id);
+                                                                setE3ActiveSubStep('aspects');
+                                                            }}
+                                                        >
+                                                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                                                Optional · No Pressure
                                                             </div>
-                                                            <button style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '12px', cursor: 'pointer', marginTop: '8px' }} onClick={() => setShowEnergy1Skills(false)}>Back</button>
-                                                        </>
-                                                    ) : showEnergy1Search ? (
-                                                        <>
-                                                            <div 
-                                                                style={{ 
-                                                                    borderBottom: '1px solid rgba(255, 255, 255, 0.6)', 
-                                                                    paddingBottom: '8px', 
-                                                                    display: 'flex', 
-                                                                    alignItems: 'center', 
-                                                                    justifyContent: 'center',
-                                                                    gap: '12px',
-                                                                    marginBottom: '16px'
-                                                                }}
+                                                            <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
+                                                            <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Tap to explore</div>
+                                                        </div>
+                                                        <button
+                                                            className="literal-target"
+                                                            onClick={() => setE3ActiveSkillIndex(p => (p + 1) % activeNonFocusSkills.length)}
+                                                        >›</button>
+                                                    </div>
+                                                )}
+
+                                                {e3ActiveSubStep === 'aspects' && (
+                                                    <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '40px' }}>
+                                                        <button
+                                                            className="literal-target"
+                                                            onClick={() => setE3ActiveAspectIndex(p => (p - 1 + e3ActiveAspectsPool.length) % e3ActiveAspectsPool.length)}
+                                                        >‹</button>
+                                                        <div
+                                                            style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                            onClick={() => {
+                                                                setE3ActiveSelectedAspectId(e3ActiveAspectsPool[e3ActiveAspectIndex].id);
+                                                                setE3ActiveSubStep('tasks');
+                                                            }}
+                                                        >
+                                                            <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
+                                                            <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
+                                                        </div>
+                                                        <button
+                                                            className="literal-target"
+                                                            onClick={() => setE3ActiveAspectIndex(p => (p + 1) % e3ActiveAspectsPool.length)}
+                                                        >›</button>
+                                                    </div>
+                                                )}
+
+                                                {e3ActiveSubStep === 'tasks' && (
+                                                    <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '40px' }}>
+                                                        <button
+                                                            className="literal-target"
+                                                            onClick={() => setE3ActiveTaskIndex(p => (p - 1 + e3ActiveTasksPool.length) % e3ActiveTasksPool.length)}
+                                                        >‹</button>
+                                                        <div style={{ textAlign: 'center', width: '320px' }}>
+                                                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                                                No Pressure · Stop Anytime
+                                                            </div>
+                                                            <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
+                                                            <button
+                                                                className="flow-primary-btn"
+                                                                onClick={() => handleStartTask(e3ActiveTasksPool[e3ActiveTaskIndex])}
                                                             >
-                                                                <Search size={16} color="rgba(255, 255, 255, 0.8)" style={{ opacity: 1 }} />
+                                                                Start 2-Minute Sprint
+                                                            </button>
+                                                        </div>
+                                                        <button
+                                                            className="literal-target"
+                                                            onClick={() => setE3ActiveTaskIndex(p => (p + 1) % e3ActiveTasksPool.length)}
+                                                        >›</button>
+                                                    </div>
+                                                )}
+
+                                                <button
+                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginTop: '32px' }}
+                                                    onClick={() => {
+                                                        setIsEnergy3ExplorePath(false);
+                                                        setE3ActiveSubStep('skills');
+                                                        setE3ActiveSelectedSkillId(null);
+                                                        setE3ActiveSelectedAspectId(null);
+                                                    }}
+                                                >
+                                                    ← Back
+                                                </button>
+
+                                                <button
+                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
+                                                    onClick={() => console.log("Rest for now clicked")}
+                                                >
+                                                    I need to rest for now
+                                                </button>
+                                            </>
+                                        ) : (
+                                            /* TRIADIC CHOICE */
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginTop: '32px' }}>
+                                                {/* PATH A: Stay Focused */}
+                                                <button
+                                                    className="flow-secondary-btn liquid-glass"
+                                                    style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', transition: 'all 0.2s ease' }}
+                                                    onClick={() => setIsEnergy3SwitchingSkill(true)}
+                                                >
+                                                    Stay Focused — Switch skill
+                                                </button>
+
+                                                {/* PATH B: Keep it Simple */}
+                                                <button
+                                                    className="flow-secondary-btn liquid-glass"
+                                                    style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', transition: 'all 0.2s ease' }}
+                                                    onClick={() => {
+                                                        setIsEnergy3SwitchingHabit(true);
+                                                        setIsEnergy3Expanded(false);
+                                                    }}
+                                                >
+                                                    Keep it Simple — Switch to habits
+                                                </button>
+
+                                                {/* PATH C: Explore */}
+                                                <button
+                                                    className="flow-secondary-btn liquid-glass"
+                                                    style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', transition: 'all 0.2s ease' }}
+                                                    onClick={() => {
+                                                        setIsEnergy3ExplorePath(true);
+                                                        setIsEnergy3Expanded(false);
+                                                        setE3ActiveSubStep('skills');
+                                                    }}
+                                                >
+                                                    Explore Something Else
+                                                </button>
+
+
+                                                <button
+                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
+                                                    onClick={() => console.log("Rest for now clicked")}
+                                                >
+                                                    I need to rest for now
+                                                </button>
+
+                                                {/* Search Bar */}
+                                                <div
+                                                    style={{ marginTop: '24px', borderBottom: '1px solid rgba(255, 255, 255, 0.2)', paddingBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', transition: 'all 0.2s ease', cursor: 'text', pointerEvents: 'auto', width: '100%' }}
+                                                    onClick={() => setShowEnergy3Search(true)}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.4)'; const svg = e.currentTarget.querySelector('svg'); if (svg) svg.style.opacity = '0.7'; }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.2)'; const svg = e.currentTarget.querySelector('svg'); if (svg) svg.style.opacity = '0.4'; }}
+                                                >
+                                                    <Search size={16} color="rgba(255, 255, 255, 0.4)" style={{ opacity: 0.4, transition: 'opacity 0.2s ease' }} />
+                                                    <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '14px', textAlign: 'left' }}>Search for a task...</span>
+                                                </div>
+
+                                                {showEnergy3Search && (
+                                                    <div className="search-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '100px 20px' }} onClick={() => setShowEnergy3Search(false)}>
+                                                        <div className="search-container" style={{ width: '100%', maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+                                                            <div style={{ borderBottom: '1px solid #fff', paddingBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '40px' }}>
+                                                                <Search size={24} color="#fff" />
                                                                 <input
                                                                     autoFocus
                                                                     type="text"
-                                                                    placeholder="Search for a task..."
-                                                                    value={energy1SearchQuery}
-                                                                    onChange={(e) => setEnergy1SearchQuery(e.target.value)}
-                                                                    style={{ 
-                                                                        width: 'auto',
-                                                                        minWidth: '150px',
-                                                                        background: 'transparent', 
-                                                                        border: 'none', 
-                                                                        outline: 'none',
-                                                                        color: '#fff', 
-                                                                        fontSize: '14px', 
-                                                                        padding: 0,
-                                                                        textAlign: 'left'
-                                                                    }}
+                                                                    placeholder="Type to search tasks..."
+                                                                    value={energy3SearchQuery}
+                                                                    onChange={(e) => setEnergy3SearchQuery(e.target.value)}
+                                                                    style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '24px', outline: 'none', width: '100%' }}
                                                                 />
                                                             </div>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '150px', overflowY: 'auto' }}>
-                                                                {energy1SearchResults.map(t => (
-                                                                    <div 
-                                                                        key={t.id} 
-                                                                        onClick={() => { setLowEnergyTask(t); setShowEnergy1Search(false); setShowEnergy1Panel(false); setEnergy1SearchQuery(""); }}
-                                                                        style={{ padding: '8px 12px', color: '#ccc', fontSize: '13px', cursor: 'pointer', borderRadius: '8px', textAlign: 'left' }}
-                                                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '60vh', overflowY: 'auto' }}>
+                                                                {allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.status !== TaskStatuses.DONE && n.name.toLowerCase().includes(energy3SearchQuery.toLowerCase())).slice(0, 10).map(task => (
+                                                                    <button
+                                                                        key={task.id}
+                                                                        className="liquid-glass"
+                                                                        style={{ width: '100%', padding: '20px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', textAlign: 'left', cursor: 'pointer' }}
+                                                                        onClick={() => handleStartTask(task)}
                                                                     >
-                                                                        {t.name}
-                                                                    </div>
+                                                                        {task.name}
+                                                                    </button>
                                                                 ))}
-                                                                {energy1SearchQuery && energy1SearchResults.length === 0 && (
-                                                                    <div style={{ padding: '8px', color: '#666', fontSize: '12px', textAlign: 'center' }}>No tasks found</div>
-                                                                )}
                                                             </div>
-                                                            <button style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '12px', cursor: 'pointer', marginTop: '8px' }} onClick={() => setShowEnergy1Search(false)}>Back</button>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <button 
-                                                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', color: '#ccc', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
-                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
-                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#ccc'; }}
-                                                                onClick={() => handleEnergy1SwapTask()}
-                                                            >
-                                                                New task
-                                                            </button>
-                                                            <button 
-                                                                style={{ width: '100%', padding: '12px', background: 'transparent', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '12px', color: '#888', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'center' }}
-                                                                onMouseEnter={(e) => { e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.2)'; e.currentTarget.style.color = '#fff'; }}
-                                                                onMouseLeave={(e) => { e.currentTarget.style.border = '1px solid rgba(255, 255, 255, 0.1)'; e.currentTarget.style.color = '#888'; }}
-                                                                onClick={() => setShowEnergy1Skills(true)}
-                                                            >
-                                                                Switch skill
-                                                            </button>
-                                                            <div 
-                                                                style={{ 
-                                                                    marginTop: '32px',
-                                                                    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-                                                                    paddingBottom: '8px',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    gap: '12px',
-                                                                    transition: 'all 0.2s ease',
-                                                                    cursor: 'text',
-                                                                    pointerEvents: 'auto'
-                                                                }}
-                                                                onClick={() => setShowEnergy1Search(true)}
-                                                                onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.4)';
-                                                                    const svg = e.currentTarget.querySelector('svg');
-                                                                    if (svg) svg.style.opacity = '0.7';
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.borderBottomColor = 'rgba(255, 255, 255, 0.2)';
-                                                                    const svg = e.currentTarget.querySelector('svg');
-                                                                    if (svg) svg.style.opacity = '0.4';
-                                                                }}
-                                                            >
-                                                                <Search size={16} color="rgba(255, 255, 255, 0.4)" style={{ opacity: 0.4, transition: 'opacity 0.2s ease' }} />
-                                                                <span style={{ color: 'rgba(255, 255, 255, 0.25)', fontSize: '14px', textAlign: 'left' }}>
-                                                                    Search for a task...
-                                                                </span>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </>
                                 )}
+                            </div>
+                        ) : energyLevel === 2 ? (
+                            <div className="energy-2-flow" style={{ width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh', position: 'relative' }}>
+                                
+                                {/* IDENTITY ANCHOR */}
+                                {(() => {
+                                    let currentSkill = null;
+                                    if (energy2SubStep === 'initial') {
+                                        if (energy2Pool.length > 0) {
+                                            currentSkill = getSkillFromTask(energy2Pool[0], nodeMap);
+                                        } else if (energy2HabitsPool.length > 0) {
+                                            currentSkill = nodeMap.get(energy2HabitsPool[0].parentId);
+                                        }
+                                    } else if (energy2SubStep === 'habits') {
+                                        currentSkill = nodeMap.get(energy2HabitsPool[energy2HabitIndex]?.parentId);
+                                    } else if (energy2SubStep === 'skills') {
+                                        currentSkill = activeFocusSkills[e2SkillIndex];
+                                    } else if (energy2SubStep === 'aspects') {
+                                        currentSkill = nodeMap.get(e2SelectedSkillId);
+                                    } else if (energy2SubStep === 'tasks') {
+                                        currentSkill = nodeMap.get(e2SelectedSkillId);
+                                    }
+
+                                    if (!currentSkill) return null;
+                                    return (
+                                        <div className="identity-anchor" style={{ position: 'absolute', top: '-100px', width: '100%', textAlign: 'center', opacity: 0.8 }}>
+                                            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>Becoming</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#fff' }}>
+                                                {currentSkill.metadata?.identityAnchor || currentSkill.name}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* GO BACK ARROW */}
+                                {energy2SubStep !== 'initial' && (
+                                    <button 
+                                        onClick={() => {
+                                            if (energy2SubStep === 'redirection') setEnergy2SubStep('initial');
+                                            else if (energy2SubStep === 'habits' || energy2SubStep === 'skills') setEnergy2SubStep('redirection');
+                                            else if (energy2SubStep === 'aspects') setEnergy2SubStep('skills');
+                                            else if (energy2SubStep === 'tasks') setEnergy2SubStep('aspects');
+                                        }}
+                                        style={{ position: 'absolute', top: '-40px', left: '0', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '24px', cursor: 'pointer' }}
+                                    >
+                                        ← Back
+                                    </button>
+                                )}
+
+                                <div className="step-container" style={{ transition: 'opacity 0.3s ease', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    {energy2SubStep === 'initial' && (() => {
+                                        const inProgressTask = energy2Pool.find(t => t.metadata?.status === 'IN_PROGRESS');
+                                        const spotlightTask = e2SpotlightHabit ? null : (inProgressTask || energy2Pool[0]);
+                                        const spotlightHabit = e2SpotlightHabit || ((!inProgressTask && !energy2Pool[0]) ? energy2HabitsPool[0] : null);
+                                        const isResume = !!inProgressTask;
+                                        const pilotHabits = energy2HabitsPool.slice(0, 3);
+
+                                        return (
+                                            <div className="initiation-card liquid-glass" style={{ background: 'rgba(255,255,255,0.03)', padding: '60px 40px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', maxWidth: '440px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '32px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
+
+                                                {/* SPOTLIGHT CARD */}
+                                                {spotlightTask ? (
+                                                    <>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+                                                            {isResume && (
+                                                                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'rgba(99,179,237,0.15)', border: '1px solid rgba(99,179,237,0.3)', borderRadius: '20px', padding: '4px 12px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#63b3ed', marginBottom: '4px', width: 'fit-content', margin: '0 auto' }}>
+                                                                    ▶ Resuming
+                                                                </div>
+                                                            )}
+                                                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>
+                                                                {isResume ? 'In Progress' : "Today's Task"}
+                                                            </div>
+                                                            <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
+                                                                Just open it for 2 minutes
+                                                            </div>
+                                                            <h1 style={{ fontSize: '36px', fontWeight: 800, color: isResume ? '#63b3ed' : '#fff', margin: 0, lineHeight: 1.1 }}>
+                                                                {spotlightTask.name}
+                                                            </h1>
+                                                        </div>
+                                                        <button
+                                                            className="flow-primary-btn"
+                                                            style={{ padding: '20px', borderRadius: '16px', fontSize: '18px', background: isResume ? 'rgba(99,179,237,0.2)' : undefined, border: isResume ? '1px solid rgba(99,179,237,0.3)' : undefined }}
+                                                            onClick={() => navigate('/focus', { state: { taskId: spotlightTask.id, autoStart: true } })}
+                                                        >
+                                                            {isResume ? '▶ Resume' : 'Start 2-Minute Sprint'}
+                                                        </button>
+                                                    </>
+                                                ) : spotlightHabit ? (
+                                                    <>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>Maintenance Habit</div>
+                                                            <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)' }}>Just open it for 2 minutes</div>
+                                                            <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1 }}>
+                                                                {spotlightHabit.phases?.[spotlightHabit.currentPhaseLevel]?.description || spotlightHabit.then || "Ready to maintain?"}
+                                                            </h1>
+                                                        </div>
+                                                        <button
+                                                            className="flow-primary-btn"
+                                                            style={{ padding: '20px', borderRadius: '16px', fontSize: '18px' }}
+                                                            onClick={() => { handleHabitComplete(spotlightHabit.id); setE2SpotlightHabit(null); }}
+                                                        >
+                                                            Complete Habit
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <h1 style={{ color: '#555' }}>All Clear</h1>
+                                                )}
+
+                                                {/* PILOT LIGHT CHIPS */}
+                                                {pilotHabits.length > 1 && (
+                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                                        {pilotHabits.slice(1).map(habit => (
+                                                            <button
+                                                                key={habit.id}
+                                                                onClick={() => setE2SpotlightHabit(habit)}
+                                                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '8px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                                                            >
+                                                                {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* ESCAPE HATCH */}
+                                                <button
+                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
+                                                    onClick={() => setEnergy2SubStep('redirection')}
+                                                >
+                                                    Not feeling this?
+                                                </button>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {energy2SubStep === 'redirection' && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '320px', marginTop: '40px' }}>
+                                            <button
+                                                className="redirection-option-btn liquid-glass"
+                                                onClick={() => setEnergy2SubStep('habits')}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                            >
+                                                Maintenance habits
+                                            </button>
+                                            <button
+                                                className="redirection-option-btn liquid-glass"
+                                                onClick={() => setEnergy2SubStep('skills')}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                            >
+                                                Focus skills
+                                            </button>
+                                            <button
+                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
+                                                onClick={() => console.log("Rest for now clicked")}
+                                            >
+                                                I need to rest for now
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {energy2SubStep === 'habits' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setEnergy2HabitIndex(p => (p - 1 + energy2HabitsPool.length) % energy2HabitsPool.length)}
+                                            >‹</button>
+                                            <div style={{ textAlign: 'center', width: '320px' }}>
+                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>
+                                                    {energy2HabitsPool[energy2HabitIndex]?.phases?.[energy2HabitsPool[energy2HabitIndex]?.currentPhaseLevel]?.description || energy2HabitsPool[energy2HabitIndex]?.then || "Ready?"}
+                                                </h1>
+                                                <button className="flow-primary-btn" onClick={() => handleHabitComplete(energy2HabitsPool[energy2HabitIndex].id)}>Complete</button>
+                                            </div>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setEnergy2HabitIndex(p => (p + 1) % energy2HabitsPool.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+
+                                    {energy2SubStep === 'skills' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setE2SkillIndex(p => (p - 1 + activeFocusSkills.length) % activeFocusSkills.length)}
+                                            >‹</button>
+                                            <div
+                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}
+                                                onClick={() => {
+                                                    setE2SelectedSkillId(activeFocusSkills[e2SkillIndex].id);
+                                                    setEnergy2SubStep('aspects');
+                                                }}
+                                            >
+                                                {/* HEALTH DOT */}
+                                                {(() => {
+                                                    const skill = activeFocusSkills[e2SkillIndex];
+                                                    if (!skill) return null;
+                                                    const engagement = getSkillEngagementStatus(skill.id, allNodes, energy2HabitsPool);
+                                                    console.log('Health dot debug:', skill.name, skill.id, engagement);
+                                                    if (!engagement) return null;
+                                                    return (
+                                                        <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+                                                            <div className={`health-dot ${engagement.status}`} title={engagement.label} />
+                                                        </div>
+                                                    );
+                                                })()}
+                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{activeFocusSkills[e2SkillIndex]?.name}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Skill</div>
+                                            </div>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setE2SkillIndex(p => (p + 1) % activeFocusSkills.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+
+                                    {energy2SubStep === 'aspects' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setE2AspectIndex(p => (p - 1 + e2AspectsPool.length) % e2AspectsPool.length)}
+                                            >‹</button>
+                                            <div
+                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                onClick={() => {
+                                                    setE2SelectedAspectId(e2AspectsPool[e2AspectIndex].id);
+                                                    setEnergy2SubStep('tasks');
+                                                }}
+                                            >
+                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{e2AspectsPool[e2AspectIndex]?.name}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
+                                            </div>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setE2AspectIndex(p => (p + 1) % e2AspectsPool.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+
+                                    {energy2SubStep === 'tasks' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setE2TaskIndex(p => (p - 1 + e2TasksPool.length) % e2TasksPool.length)}
+                                            >‹</button>
+                                            <div style={{ textAlign: 'center', width: '320px' }}>
+                                                <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>
+                                                    Just open it for 2 minutes
+                                                </div>
+                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>{e2TasksPool[e2TaskIndex]?.name}</h1>
+                                                <button
+                                                    className="flow-primary-btn"
+                                                    onClick={() => navigate('/focus', { state: { taskId: e2TasksPool[e2TaskIndex].id, autoStart: true } })}
+                                                >
+                                                    Start 2-Minute Sprint
+                                                </button>
+                                            </div>
+                                            <button
+                                                className="literal-target"
+                                                onClick={() => setE2TaskIndex(p => (p + 1) % e2TasksPool.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : energyLevel === 1 ? (
+                            <div className="energy-1-flow" style={{ width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh', position: 'relative' }}>
+                                
+                                {/* IDENTITY ANCHOR */}
+                                {(() => {
+                                    let currentSkill = null;
+                                    if (energy1SubStep === 'initial') {
+                                        if (energy1Pool.length > 0) {
+                                            currentSkill = getSkillFromTask(energy1Pool[0], nodeMap);
+                                        } else if (energy1HabitsPool.length > 0) {
+                                            currentSkill = nodeMap.get(energy1HabitsPool[0].parentId);
+                                        }
+                                    } else if (energy1SubStep === 'habits') {
+                                        currentSkill = nodeMap.get(energy1HabitsPool[energy1HabitIndex]?.parentId);
+                                    } else if (energy1SubStep === 'skills') {
+                                        currentSkill = activeFocusSkills[e1SkillIndex];
+                                    } else if (energy1SubStep === 'aspects') {
+                                        currentSkill = nodeMap.get(e1SelectedSkillId);
+                                    } else if (energy1SubStep === 'tasks') {
+                                        currentSkill = nodeMap.get(e1SelectedSkillId);
+                                    }
+
+                                    if (!currentSkill) return null;
+                                    return (
+                                        <div className="identity-anchor" style={{ position: 'absolute', top: '-100px', width: '100%', textAlign: 'center', opacity: 0.8 }}>
+                                            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>Becoming</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#fff' }}>
+                                                {currentSkill.metadata?.identityAnchor || currentSkill.name}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* GO BACK ARROW */}
+                                {energy1SubStep !== 'initial' && (
+                                    <button 
+                                        onClick={() => {
+                                            if (energy1SubStep === 'redirection') setEnergy1SubStep('initial');
+                                            else if (energy1SubStep === 'habits' || energy1SubStep === 'skills') setEnergy1SubStep('redirection');
+                                            else if (energy1SubStep === 'aspects') setEnergy1SubStep('skills');
+                                            else if (energy1SubStep === 'tasks') setEnergy1SubStep('aspects');
+                                        }}
+                                        style={{ position: 'absolute', top: '-40px', left: '0', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '24px', cursor: 'pointer' }}
+                                    >
+                                        ← Back
+                                    </button>
+                                )}
+
+                                <div className="step-container" style={{ transition: 'opacity 0.3s ease', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    {energy1SubStep === 'initial' && (
+                                        <div className="initiation-card liquid-glass" style={{ background: 'rgba(255,255,255,0.03)', padding: '60px 40px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', maxWidth: '440px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '32px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
+                                            {energy1Pool.length > 0 ? (
+                                                <>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>Today's Task</div>
+                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1 }}>{energy1Pool[0].name}</h1>
+                                                    </div>
+                                                    <button 
+                                                        className="flow-primary-btn" 
+                                                        style={{ padding: '20px', borderRadius: '16px', fontSize: '18px' }}
+                                                        onClick={() => navigate('/focus', { state: { taskId: energy1Pool[0].id, autoStart: true } })}
+                                                    >
+                                                        Start 2-Minute Sprint
+                                                    </button>
+                                                </>
+                                            ) : energy1HabitsPool.length > 0 ? (
+                                                <>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>Maintenance Habit</div>
+                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1 }}>
+                                                            {energy1HabitsPool[0].phases?.[energy1HabitsPool[0].currentPhaseLevel]?.description || energy1HabitsPool[0].then || "Ready to maintain?"}
+                                                        </h1>
+                                                    </div>
+                                                    <button 
+                                                        className="flow-primary-btn" 
+                                                        style={{ padding: '20px', borderRadius: '16px', fontSize: '18px' }}
+                                                        onClick={() => handleHabitComplete(energy1HabitsPool[0].id)}
+                                                    >
+                                                        Complete Habit
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <h1 style={{ color: '#555' }}>All Clear</h1>
+                                            )}
+                                            
+                                            <button 
+                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
+                                                onClick={() => setEnergy1SubStep('redirection')}
+                                            >
+                                                Not feeling this?
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {energy1SubStep === 'redirection' && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '320px', marginTop: '40px' }}>
+                                            <button 
+                                                className="redirection-option-btn liquid-glass"
+                                                onClick={() => setEnergy1SubStep('habits')}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                            >
+                                                Maintenance habits
+                                            </button>
+                                            <button 
+                                                className="redirection-option-btn liquid-glass"
+                                                onClick={() => setEnergy1SubStep('skills')}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                            >
+                                                Focus skills
+                                            </button>
+                                            <button 
+                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
+                                                onClick={() => console.log("Rest for now clicked")}
+                                            >
+                                                I need to rest for now
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {energy1SubStep === 'habits' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setEnergy1HabitIndex(p => (p - 1 + energy1HabitsPool.length) % energy1HabitsPool.length)}
+                                            >‹</button>
+                                            
+                                            <div style={{ textAlign: 'center', width: '320px' }}>
+                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>
+                                                    {energy1HabitsPool[energy1HabitIndex]?.phases?.[energy1HabitsPool[energy1HabitIndex]?.currentPhaseLevel]?.description || energy1HabitsPool[energy1HabitIndex]?.then || "Ready?"}
+                                                </h1>
+                                                <button className="flow-primary-btn" onClick={() => handleHabitComplete(energy1HabitsPool[energy1HabitIndex].id)}>Complete</button>
+                                            </div>
+
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setEnergy1HabitIndex(p => (p + 1) % energy1HabitsPool.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+
+                                    {energy1SubStep === 'skills' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setE1SkillIndex(p => (p - 1 + activeFocusSkills.length) % activeFocusSkills.length)}
+                                            >‹</button>
+                                            
+                                            <div 
+                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                onClick={() => {
+                                                    setE1SelectedSkillId(activeFocusSkills[e1SkillIndex].id);
+                                                    setEnergy1SubStep('aspects');
+                                                }}
+                                            >
+                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{activeFocusSkills[e1SkillIndex]?.name}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Skill</div>
+                                            </div>
+
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setE1SkillIndex(p => (p + 1) % activeFocusSkills.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+
+                                    {energy1SubStep === 'aspects' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setE1AspectIndex(p => (p - 1 + e1AspectsPool.length) % e1AspectsPool.length)}
+                                            >‹</button>
+                                            
+                                            <div 
+                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                onClick={() => {
+                                                    setE1SelectedAspectId(e1AspectsPool[e1AspectIndex].id);
+                                                    setEnergy1SubStep('tasks');
+                                                }}
+                                            >
+                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{e1AspectsPool[e1AspectIndex]?.name}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
+                                            </div>
+
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setE1AspectIndex(p => (p + 1) % e1AspectsPool.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+
+                                    {energy1SubStep === 'tasks' && (
+                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setE1TaskIndex(p => (p - 1 + e1TasksPool.length) % e1TasksPool.length)}
+                                            >‹</button>
+                                            
+                                            <div style={{ textAlign: 'center', width: '320px' }}>
+                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>{e1TasksPool[e1TaskIndex]?.name}</h1>
+                                                <button 
+                                                    className="flow-primary-btn" 
+                                                    onClick={() => navigate('/focus', { state: { taskId: e1TasksPool[e1TaskIndex].id, autoStart: true } })}
+                                                >
+                                                    Start 2-Minute Sprint
+                                                </button>
+                                            </div>
+
+                                            <button 
+                                                className="literal-target"
+                                                onClick={() => setE1TaskIndex(p => (p + 1) % e1TasksPool.length)}
+                                            >›</button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div className="golden-action-card">
@@ -1789,89 +2729,447 @@ const LaunchpadFlow = () => {
                     </div>
                 )}
 
+                {/* ============================================================
+                     PREP FLOW — "Prepare everything for your future self"
+                     Steps: areas → skills → experiments → aspects → task-input → micro-action
+                ============================================================ */}
+                {step === 'prep-flow' && (
+                    <div className="flow-step" style={{ width: '100%', maxWidth: '560px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '70vh' }}>
+
+                        {/* BACK BUTTON — always visible except on 'areas' */}
+                        {prepSubStep !== 'areas' && (
+                            <button
+                                onClick={() => {
+                                    if (prepSubStep === 'skills') { setPrepSubStep('areas'); setPrepSelectedArea(null); }
+                                    else if (prepSubStep === 'experiments') { setPrepSubStep('skills'); setPrepSelectedSkill(null); }
+                                    else if (prepSubStep === 'aspects') { setPrepSubStep('experiments'); setPrepSelectedExperiment(null); setPrepTasksAddedToAspect([]); }
+                                    else if (prepSubStep === 'task-input') { setPrepSubStep('aspects'); setPrepSelectedAspect(null); setPrepTasksAddedToAspect([]); }
+                                    else if (prepSubStep === 'micro-action') { setPrepSubStep('task-input'); setPrepCreatedTask(null); setPrepMicroActionInput(''); }
+                                }}
+                                style={{ alignSelf: 'flex-start', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '15px', cursor: 'pointer', padding: '0 0 32px 0', letterSpacing: '0.02em' }}
+                            >
+                                ← Back
+                            </button>
+                        )}
+
+                        {/* STEP: AREAS */}
+                        {prepSubStep === 'areas' && (
+                            <>
+                                <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '12px' }}>
+                                        Prepare for your future self
+                                    </div>
+                                    <h1 style={{ fontSize: '30px', fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.2 }}>
+                                        Which life area do you want to set up?
+                                    </h1>
+                                </div>
+                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    {prepLifeAreas.map((area, idx) => (
+                                        <button
+                                            key={area.id}
+                                            onClick={() => { setPrepSelectedArea(area); setPrepSubStep('skills'); }}
+                                            style={{
+                                                width: '100%',
+                                                padding: idx === 0 ? '28px 32px' : '20px 32px',
+                                                borderRadius: '20px',
+                                                background: idx === 0 ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)',
+                                                border: idx === 0 ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
+                                                color: '#fff',
+                                                fontSize: idx === 0 ? '20px' : '17px',
+                                                fontWeight: idx === 0 ? 700 : 500,
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                transition: 'all 0.15s ease',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between'
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.background = idx === 0 ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)'; e.currentTarget.style.borderColor = idx === 0 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)'; }}
+                                        >
+                                            <span>{area.name}</span>
+                                            {idx === 0 && <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.06)', padding: '4px 10px', borderRadius: '10px' }}>Most Active</span>}
+                                        </button>
+                                    ))}
+                                </div>
+                                <button
+                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '14px', cursor: 'pointer', marginTop: '32px' }}
+                                    onClick={() => setStep('action')}
+                                >
+                                    ← Back to launchpad
+                                </button>
+                            </>
+                        )}
+
+                        {/* STEP: SKILLS */}
+                        {prepSubStep === 'skills' && (() => {
+                            const { focusSkills, activeSkills } = prepSkillsForArea;
+                            const hasFocus = focusSkills.length > 0;
+                            return (
+                                <>
+                                    <div style={{ textAlign: 'center', marginBottom: '40px', width: '100%' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                            {prepSelectedArea?.name}
+                                        </div>
+                                        <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#fff', margin: 0 }}>
+                                            Which skill do you want to work on?
+                                        </h1>
+                                    </div>
+
+                                    {hasFocus && (
+                                        <>
+                                            <div style={{ width: '100%', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em', color: 'rgba(255,255,255,0.3)', marginBottom: '10px' }}>
+                                                Focus Skills
+                                            </div>
+                                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px' }}>
+                                                {focusSkills.map(skill => (
+                                                    <button
+                                                        key={skill.id}
+                                                        onClick={() => { setPrepSelectedSkill(skill); setPrepSubStep('experiments'); }}
+                                                        style={{
+                                                            width: '100%', padding: '22px 28px', borderRadius: '18px',
+                                                            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.18)',
+                                                            color: '#fff', fontSize: '18px', fontWeight: 700, cursor: 'pointer',
+                                                            textAlign: 'left', transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
+                                                    >
+                                                        {skill.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {activeSkills.length > 0 && (
+                                        <>
+                                            {hasFocus && (
+                                                <div style={{ width: '100%', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em', color: 'rgba(255,255,255,0.25)', marginBottom: '10px' }}>
+                                                    Active Skills
+                                                </div>
+                                            )}
+                                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                {activeSkills.map(skill => (
+                                                    <button
+                                                        key={skill.id}
+                                                        onClick={() => { setPrepSelectedSkill(skill); setPrepSubStep('experiments'); }}
+                                                        style={{
+                                                            width: '100%', padding: '18px 28px', borderRadius: '18px',
+                                                            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                                                            color: 'rgba(255,255,255,0.8)', fontSize: '16px', fontWeight: 500, cursor: 'pointer',
+                                                            textAlign: 'left', transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; }}
+                                                    >
+                                                        {skill.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {focusSkills.length === 0 && activeSkills.length === 0 && (
+                                        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '15px', textAlign: 'center', marginTop: '40px' }}>
+                                            No active skills in this area.
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
+
+                        {/* STEP: EXPERIMENTS */}
+                        {prepSubStep === 'experiments' && (() => {
+                            const { active, paused } = prepExperimentsForSkill;
+                            return (
+                                <>
+                                    <div style={{ textAlign: 'center', marginBottom: '40px', width: '100%' }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                            {prepSelectedSkill?.name}
+                                        </div>
+                                        <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#fff', margin: 0 }}>
+                                            Which experiment are you prepping for?
+                                        </h1>
+                                    </div>
+
+                                    {active.length > 0 && (
+                                        <>
+                                            <div style={{ width: '100%', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em', color: 'rgba(255,255,255,0.3)', marginBottom: '10px' }}>
+                                                Active
+                                            </div>
+                                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px' }}>
+                                                {active.map(exp => (
+                                                    <button
+                                                        key={exp.id}
+                                                        onClick={() => { setPrepSelectedExperiment(exp); setPrepSubStep('aspects'); setPrepTasksAddedToAspect([]); }}
+                                                        style={{
+                                                            width: '100%', padding: '22px 28px', borderRadius: '18px',
+                                                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)',
+                                                            color: '#fff', fontSize: '18px', fontWeight: 600, cursor: 'pointer',
+                                                            textAlign: 'left', transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                                                    >
+                                                        {exp.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {paused.length > 0 && (
+                                        <>
+                                            <div style={{ width: '100%', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em', color: 'rgba(255,255,255,0.2)', marginBottom: '10px' }}>
+                                                Paused
+                                            </div>
+                                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                {paused.map(exp => (
+                                                    <button
+                                                        key={exp.id}
+                                                        onClick={() => { setPrepSelectedExperiment(exp); setPrepSubStep('aspects'); setPrepTasksAddedToAspect([]); }}
+                                                        style={{
+                                                            width: '100%', padding: '18px 28px', borderRadius: '18px',
+                                                            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                                                            color: 'rgba(255,255,255,0.5)', fontSize: '16px', fontWeight: 400, cursor: 'pointer',
+                                                            textAlign: 'left', transition: 'all 0.15s ease'
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#fff'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)'; }}
+                                                    >
+                                                        {exp.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {active.length === 0 && paused.length === 0 && (
+                                        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '15px', textAlign: 'center', marginTop: '40px' }}>
+                                            No experiments in this skill yet.
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()}
+
+                        {/* STEP: ASPECTS */}
+                        {prepSubStep === 'aspects' && (
+                            <>
+                                <div style={{ textAlign: 'center', marginBottom: '40px', width: '100%' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                        {prepSelectedExperiment?.name}
+                                    </div>
+                                    <h1 style={{ fontSize: '28px', fontWeight: 600, color: '#fff', margin: 0 }}>
+                                        Which aspect do you want to add tasks to?
+                                    </h1>
+                                    <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.3)', marginTop: '10px' }}>
+                                        Select an aspect, dump tasks — then come back to pick another.
+                                    </p>
+                                </div>
+
+                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+                                    {prepAspectsForExperiment.map(aspect => {
+                                        const tasksInAspect = prepTasksAddedToAspect.filter(t => {
+                                            // highlight aspects we just added tasks to
+                                            return false; // we track by aspect separately
+                                        });
+                                        return (
+                                            <button
+                                                key={aspect.id}
+                                                onClick={() => { setPrepSelectedAspect(aspect); setPrepSubStep('task-input'); setPrepTasksAddedToAspect([]); }}
+                                                style={{
+                                                    width: '100%', padding: '22px 28px', borderRadius: '18px',
+                                                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                                                    color: '#fff', fontSize: '18px', fontWeight: 500, cursor: 'pointer',
+                                                    textAlign: 'left', transition: 'all 0.15s ease',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                                                }}
+                                                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.09)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'; }}
+                                                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+                                            >
+                                                <span>{aspect.name}</span>
+                                                <span style={{ fontSize: '18px', color: 'rgba(255,255,255,0.25)' }}>›</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {prepAspectsForExperiment.length === 0 && (
+                                    <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '15px', textAlign: 'center', marginTop: '24px' }}>
+                                        No aspects in this experiment yet.
+                                    </div>
+                                )}
+
+                                <button
+                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: '14px', cursor: 'pointer', marginTop: '8px', textDecoration: 'underline' }}
+                                    onClick={() => { setStep('action'); resetPrepFlow(); }}
+                                >
+                                    Done for now
+                                </button>
+                            </>
+                        )}
+
+                        {/* STEP: TASK INPUT */}
+                        {prepSubStep === 'task-input' && (
+                            <>
+                                <div style={{ textAlign: 'center', marginBottom: '36px', width: '100%' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                        {prepSelectedExperiment?.name} · {prepSelectedAspect?.name}
+                                    </div>
+                                    <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.3 }}>
+                                        What tasks does your future self need to see here?
+                                    </h1>
+                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', marginTop: '10px' }}>
+                                        Press Enter to add each one.
+                                    </p>
+                                </div>
+
+                                <div style={{ width: '100%', marginBottom: '24px' }}>
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="Add a task..."
+                                        value={prepNewTaskInput}
+                                        onChange={(e) => setPrepNewTaskInput(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handlePrepCreateTask(); }}
+                                        style={{
+                                            width: '100%',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            borderRadius: '16px',
+                                            padding: '20px 24px',
+                                            color: '#fff',
+                                            fontSize: '18px',
+                                            outline: 'none',
+                                            transition: 'border-color 0.2s ease',
+                                            boxSizing: 'border-box'
+                                        }}
+                                        onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+                                        onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                                    />
+                                </div>
+
+                                {/* Tasks added in this session */}
+                                {prepTasksAddedToAspect.length > 0 && (
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+                                        {prepTasksAddedToAspect.map(t => (
+                                            <div key={t.id} style={{
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '12px 20px', borderRadius: '12px',
+                                                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'
+                                            }}>
+                                                <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>{t.name}</span>
+                                                {t.microAction && (
+                                                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', maxWidth: '50%', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>2min: {t.microAction}</span>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
+                                    <button
+                                        style={{
+                                            padding: '14px 40px', borderRadius: '14px',
+                                            background: prepNewTaskInput.trim() ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.12)',
+                                            color: prepNewTaskInput.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+                                            fontSize: '16px', fontWeight: 600, cursor: 'pointer'
+                                        }}
+                                        onClick={handlePrepCreateTask}
+                                        disabled={!prepNewTaskInput.trim()}
+                                    >
+                                        Add Task
+                                    </button>
+                                    <button
+                                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline' }}
+                                        onClick={() => { setPrepSubStep('aspects'); setPrepSelectedAspect(null); }}
+                                    >
+                                        Done with this aspect
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {/* STEP: MICRO-ACTION PROMPT */}
+                        {prepSubStep === 'micro-action' && (
+                            <>
+                                <div style={{ textAlign: 'center', width: '100%', marginBottom: '48px' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '16px' }}>
+                                        Task added ✓
+                                    </div>
+                                    <div style={{
+                                        padding: '24px 32px', borderRadius: '20px',
+                                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+                                        marginBottom: '32px'
+                                    }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>New Task</div>
+                                        <div style={{ fontSize: '20px', fontWeight: 600, color: '#fff' }}>{prepCreatedTask?.name}</div>
+                                    </div>
+                                    <h2 style={{ fontSize: '22px', fontWeight: 600, color: '#fff', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+                                        What is the 2-minute version of this for when you're tired?
+                                    </h2>
+                                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>
+                                        A tiny on-ramp your future self can actually start.
+                                    </p>
+                                </div>
+
+                                <div style={{ width: '100%', marginBottom: '24px' }}>
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="e.g. Just open the doc for 2 mins..."
+                                        value={prepMicroActionInput}
+                                        onChange={(e) => setPrepMicroActionInput(e.target.value)}
+                                        onKeyDown={(e) => { if (e.key === 'Enter') handlePrepSaveMicroAction(); }}
+                                        style={{
+                                            width: '100%',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            borderRadius: '16px',
+                                            padding: '20px 24px',
+                                            color: '#fff',
+                                            fontSize: '17px',
+                                            outline: 'none',
+                                            transition: 'border-color 0.2s ease',
+                                            boxSizing: 'border-box'
+                                        }}
+                                        onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)'; }}
+                                        onBlur={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', alignItems: 'center' }}>
+                                    <button
+                                        style={{
+                                            padding: '14px 40px', borderRadius: '14px',
+                                            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)',
+                                            color: '#fff', fontSize: '16px', fontWeight: 600, cursor: 'pointer'
+                                        }}
+                                        onClick={handlePrepSaveMicroAction}
+                                    >
+                                        Done
+                                    </button>
+                                    <button
+                                        style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline' }}
+                                        onClick={handlePrepSaveMicroAction}
+                                    >
+                                        Skip, no 2-minute version
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                    </div>
+                )}
+
                 {step === 'initiation' && (
                     <div className="flow-step initiation-step">
                         <div className="initiation-card" style={{ background: 'rgba(255,255,255,0.02)', padding: '40px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '440px', minHeight: '420px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', transition: 'all 0.3s ease' }}>
                             {(!showAlternatives && !showLowEnergyAlternatives) ? (
                                 <>
-
-
-                                    {/* --- ENERGY 2: BINARY CHOICE --- */}
-                                    {energyLevel === 2 && !showOtherPaths && (
-                                        <>
-                                            <h2 style={{ fontSize: '16px', color: '#666', marginBottom: '24px', fontWeight: 500 }}>
-                                                Binary Choice: Momentum or Resilience?
-                                            </h2>
-
-                                            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flex: 1 }}>
-                                                {/* Card A: Momentum */}
-                                                <div 
-                                                    className="momentum-card"
-                                                    onClick={() => navigate('/focus', { state: { taskId: momentumTask?.id, autoStart: true } })}
-                                                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease' }}
-                                                >
-                                                    <span style={{ fontSize: '10px', color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Card A: Momentum</span>
-                                                    <h3 style={{ fontSize: '18px', color: '#fff', margin: '12px 0 8px 0' }}>{momentumTask?.name || 'Primary Goal'}</h3>
-                                                    <p style={{ fontSize: '12px', color: '#444' }}>2 min sprint for your main focus.</p>
-                                                </div>
-
-                                                {/* Card B: Resilience */}
-                                                <div 
-                                                    className="resilience-card"
-                                                    onClick={() => navigate('/focus', { state: { taskId: resilienceTask?.id, autoStart: true } })}
-                                                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease' }}
-                                                >
-                                                    <span style={{ fontSize: '10px', color: '#888', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Card B: Resilience</span>
-                                                    <h3 style={{ fontSize: '18px', color: '#fff', margin: '12px 0 8px 0' }}>{resilienceTask?.name || 'Stable Habit'}</h3>
-                                                    <p style={{ fontSize: '12px', color: '#444' }}>Keep your maintenance alive.</p>
-                                                </div>
-                                            </div>
-
-                                            <button 
-                                                className="flow-secondary-btn" 
-                                                style={{ fontSize: '13px', color: '#666', marginTop: '12px' }}
-                                                onClick={() => setShowOtherPaths(true)}
-                                            >
-                                                See Other Paths
-                                            </button>
-                                        </>
-                                    )}
-
-                                    {/* --- LAYERED DISCLOSURE: OTHER PATHS --- */}
-                                    {energyLevel === 2 && showOtherPaths && (
-                                        <div style={{ textAlign: 'left', width: '100%', display: 'flex', flexDirection: 'column' }}>
-                                            <h2 style={{ fontSize: '16px', color: '#fff', marginBottom: '20px', fontWeight: 600 }}>Available MVEs</h2>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
-                                                {focusSlots.map(slotId => {
-                                                    const skill = nodeMap.get(slotId);
-                                                    const task = allNodes.find(n => {
-                                                        if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
-                                                        const s = getSkillFromTask(n, nodeMap);
-                                                        return s?.id === slotId;
-                                                    });
-                                                    if (!task) return null;
-                                                    return (
-                                                        <button 
-                                                            key={slotId}
-                                                            className="flow-task-list-item"
-                                                            onClick={() => navigate('/focus', { state: { taskId: task.id, autoStart: true } })}
-                                                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', padding: '12px 16px', borderRadius: '12px', color: '#aaa', textAlign: 'left', fontSize: '14px', cursor: 'pointer' }}
-                                                        >
-                                                            <span style={{ color: '#fff', fontWeight: 500 }}>{task.name}</span>
-                                                            <span style={{ marginLeft: '12px', fontSize: '11px', opacity: 0.5 }}>{skill?.name}</span>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            <button 
-                                                className="flow-secondary-btn" 
-                                                style={{ marginTop: '20px', fontSize: '12px' }}
-                                                onClick={() => setShowOtherPaths(false)}
-                                            >
-                                                Back to Binary Choice
-                                            </button>
-                                        </div>
-                                    )}
 
                                     {/* --- LEGACY ENERGY 3+ LOGIC --- */}
                                     {energyLevel >= 3 && (
@@ -1917,26 +3215,7 @@ const LaunchpadFlow = () => {
                                                 These are quick wins based on what you usually complete fastest.
                                             </p>
                                             
-                                            <input 
-                                                type="text"
-                                                autoFocus
-                                                placeholder="Search fast tasks..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                style={{ 
-                                                    background: 'rgba(255,255,255,0.05)', 
-                                                    border: '1px solid #222', 
-                                                    borderRadius: '12px', 
-                                                    padding: '12px 16px', 
-                                                    color: '#fff', 
-                                                    fontSize: '14px', 
-                                                    width: '100%', 
-                                                    marginBottom: '24px',
-                                                    outline: 'none',
-                                                    backdropFilter: 'blur(10px)',
-                                                    opacity: 0.8
-                                                }}
-                                            />
+
                                             
                                             <div style={{ flex: 1, display: 'grid', gap: '10px', alignContent: 'start' }}>
                                                 {activeLowEnergyAlternatives.length > 0 ? (

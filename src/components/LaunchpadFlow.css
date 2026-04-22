@@ -422,3 +422,75 @@
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     transform: translateY(-2px);
 }
+
+/* Energy 1 Refactor Styles */
+.literal-target {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: transparent;
+    border: 4px solid #fff;
+    color: #fff;
+    font-size: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    outline: none;
+}
+
+.literal-target::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60%;
+    height: 60%;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.literal-target:hover {
+    background: #fff;
+    color: #000;
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+}
+
+.literal-target:active {
+    transform: scale(0.95);
+}
+
+.redirection-option-btn {
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.redirection-option-btn:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.identity-anchor {
+    z-index: 5;
+    pointer-events: none;
+}
+
+.energy-1-flow .initiation-card {
+    min-height: 240px;
+    justify-content: center;
+}
+
+.step-container {
+    animation: step-fade-in 0.4s ease forwards;
+}
+
+@keyframes step-fade-in {
+    from { opacity: 0; filter: blur(10px); }
+    to { opacity: 1; filter: blur(0); }
+}

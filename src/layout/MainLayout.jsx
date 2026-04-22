@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation, useOutlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
 import MiniLaunchpadModal from '../components/modals/MiniLaunchpadModal';
@@ -26,7 +26,6 @@ const MainLayout = () => {
 
 
     const location = useLocation();
-    const outlet = useOutlet();
     const showBanner = safeMode && !bannerDismissed;
 
     return (
@@ -35,7 +34,7 @@ const MainLayout = () => {
             <Sidebar onSkillClick={openLaunchpad} />
             <main className="content-area">
                 <div style={{ height: '100%', width: '100%' }}>
-                    {outlet}
+                    <Outlet />
                 </div>
             </main>
 

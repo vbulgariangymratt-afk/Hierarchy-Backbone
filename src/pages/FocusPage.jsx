@@ -488,7 +488,7 @@ const FocusPage = () => {
             } else {
                 // Normal pause/stop — fire and forget is fine
                 backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery)
-                    .then(() => {}
+                    .then(() => {})
                     .catch(err => console.error("[DEBUG FocusPage] completeSession background error:", err));
 
                 // 2. INSTANT UI: Trigger Momentum Loop immediately

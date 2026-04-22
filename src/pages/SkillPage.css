@@ -2392,11 +2392,70 @@
     margin-bottom: 8px;
 }
 
-.micro-reward-section {
+/* ── Task Sub-menu Sections ─────────────────────────────────── */
+.task-submenu-section {
+    padding: 10px 12px;
+    border-radius: 8px;
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 6px;
-    padding: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.task-submenu-section:last-child {
+    margin-bottom: 0;
+}
+
+/* MVE input field */
+.mve-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 0 6px 0;
+    outline: none;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.mve-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.35;
+    font-style: italic;
+}
+
+.mve-input:focus {
+    border-bottom-color: rgba(59, 130, 246, 0.5);
+}
+
+.mve-saving-indicator {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--color-accent, #3b82f6);
+    opacity: 0.6;
+    animation: mvePulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes mvePulse {
+    from { opacity: 0.3; }
+    to   { opacity: 0.7; }
+}
+
+/* Keep the micro-reward section nested inside task-submenu-section */
+.micro-reward-section {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
 }
 
 .reward-info-block {

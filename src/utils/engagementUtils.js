@@ -61,6 +61,12 @@ export const getSkillEngagementStatus = (skillId, nodes = [], habits = []) => {
             if (time > latestEngagement) latestEngagement = time;
         }
 
+        // d) Node updated_at (catches any recent interaction)
+        if (node.updatedAt) {
+            const time = new Date(node.updatedAt).getTime();
+            if (time > latestEngagement) latestEngagement = time;
+        }
+
         // c) Focus Sessions (metadata.sessions)
         if (meta.sessions) {
             meta.sessions.forEach(session => {

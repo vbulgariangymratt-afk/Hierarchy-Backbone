@@ -502,22 +502,20 @@ const JournalPage = () => {
                                     <label style={{ fontSize: '10px', opacity: 0.6, marginBottom: '4px', display: 'block' }}>Sleep</label>
                                     <input 
                                         type="time" 
-                                        className="time-input"
+                                        className="time-input themed-input"
                                         value={sleepTime}
                                         onChange={(e) => { setSleepTime(e.target.value); setSleepSaved(false); }}
                                         disabled={isLocked || loading}
-                                        className="time-input themed-input"
                                     />
                                 </div>
                                 <div className="time-input-group">
                                     <label style={{ fontSize: '10px', opacity: 0.6, marginBottom: '4px', display: 'block' }}>Wake</label>
                                     <input 
                                         type="time" 
-                                        className="time-input"
+                                        className="time-input themed-input"
                                         value={wakeTime}
                                         onChange={(e) => { setWakeTime(e.target.value); setSleepSaved(false); }}
                                         disabled={isLocked || loading}
-                                        className="time-input themed-input"
                                     />
                                 </div>
                             </div>
@@ -606,7 +604,6 @@ const JournalPage = () => {
                                         value={med.name} 
                                         onChange={(e) => handleUpdateMedName(med.id, e.target.value)}
                                         onBlur={() => handleUpdate({ medications })} // Sync on blur
-                                        className="med-name-input"
                                         className="med-name-input themed-text-input"
                                         placeholder="Pill Name..."
                                     />

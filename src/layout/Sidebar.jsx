@@ -337,18 +337,20 @@ const Sidebar = ({ onSkillClick }) => {
         <aside className={`sidebar ${backgroundMode}-mode ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''}`} data-tauri-drag-region>
             <div className={`sidebar-scroll-content ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
                 <div className="sidebar-top">
-                    <button
-                        className="mode-toggle-btn"
-                        onClick={toggleMode}
-                        disabled={storeLoading}
-                    >
-                        <div className="btn-icon mode-toggle-icon">
-                            <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
-                        </div>
-                        <span className="btn-text">
-                            {isFocusMode ? 'Go to planning' : 'Go to focus mode'}
-                        </span>
-                    </button>
+                    {energyLevel > 1 && (
+                        <button
+                            className="mode-toggle-btn"
+                            onClick={toggleMode}
+                            disabled={storeLoading}
+                        >
+                            <div className="btn-icon mode-toggle-icon">
+                                <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
+                            </div>
+                            <span className="btn-text">
+                                {isFocusMode ? 'Go to planning' : 'Go to focus mode'}
+                            </span>
+                        </button>
+                    )}
                     
                     {/* Energy Level Selector */}
                     <div className="energy-selector-container">
@@ -404,7 +406,7 @@ const Sidebar = ({ onSkillClick }) => {
 
 
                                 {/* FOCUS SLOTS SECTION (Partially visible in Energy 2, hidden in Energy 1) */}
-                                {energyLevel >= 2 && (
+                                {energyLevel >= 3 && (
                                     <div className={`sidebar-section focus-slots-section ${energyLevel === 2 ? 'ghosted-focus' : ''}`}>
                                         <div className="section-title-container">
                                             <span className="section-title-static">Focus</span>
@@ -468,7 +470,7 @@ const Sidebar = ({ onSkillClick }) => {
                                 )}
 
                                 {/* KEEP IT ALIVE — Pilot Light Drawer */}
-                                {maintenanceEnabled && maintenanceSkillIds.length > 0 && (
+                                {energyLevel > 1 && maintenanceEnabled && maintenanceSkillIds.length > 0 && (
                                     <div className="sidebar-section maintenance-section">
                                         <div
                                             className="section-title-container"
@@ -542,11 +544,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                             </div>
 
                                                             <div className="pilot-chips">
-                                                                {hasNoHabits ? (
-                                                                    <div className="pilot-fallback">
-                                                                        Open this skill for {formatDuration(2, 'minutes')}
-                                                                    </div>
-                                                                ) : (
+                                                                {hasNoHabits ? null : (
                                                                     skillPilots.map(h => {
                                                                         const prog = habitService.getHabitProgress(h);
                                                                         return (
@@ -574,7 +572,6 @@ const Sidebar = ({ onSkillClick }) => {
                                                         {energyLevel <= 2 && maintenanceSkills.length > 0 ? (
                                                             <div className="low-energy-instruction">
                                                                 <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Open: {maintenanceSkills[0].name}</div>
-                                                                <div style={{ fontSize: '11px', opacity: 0.6 }}>Just 2 minutes of focus.</div>
                                                             </div>
                                                         ) : (
                                                             "Everything is alive today."
@@ -587,7 +584,7 @@ const Sidebar = ({ onSkillClick }) => {
                                 )}
 
                                 {/* Collapsible Life Areas Section */}
-                                {energyLevel >= 3 && (
+                                {energyLevel >= 4 && (
                                     <div className="sidebar-section life-areas-section">
                                         <div
                                             className="section-title-container"
@@ -691,10 +688,12 @@ const Sidebar = ({ onSkillClick }) => {
                     </nav>
                 </div>
 
-                <div className="hryvnia-display">
-                    <span className="hryvnia-icon">₴</span>
-                    <span className="hryvnia-amount">{hryvniaBalance}</span>
-                </div>
+                {energyLevel > 3 && (
+                    <div className="hryvnia-display">
+                        <span className="hryvnia-icon">₴</span>
+                        <span className="hryvnia-amount">{hryvniaBalance}</span>
+                    </div>
+                )}
 
                 <div className="sidebar-bottom">
 
@@ -717,17 +716,36 @@ const Sidebar = ({ onSkillClick }) => {
                                 ))}
                             </div>
 
+                            <div className="section-title-static" style={{ marginTop: '16px', marginBottom: '8px', opacity: 0.6, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Appearance</div>
+                            <div className="theme-sync-toggle">
+                                {[
+                                    { value: "solid", label: "Solid" },
+                                    { value: "liquid", label: "Liquid" },
+                                    { value: "wallpaper", label: "Wallpaper" },
+                                ].map(({ value, label }) => (
+                                    <button
+                                        key={value}
+                                        className={`theme-sync-option ${backgroundMode === value ? "active" : ""}`}
+                                        onClick={() => setBackgroundMode(value)}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+
                         </>
                     )}
 
-                    <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />
+                    {energyLevel > 3 && <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />}
 
-                    <Link to="/settings" className="nav-item settings-btn">
-                        <span className="btn-icon">
-                            <NodeIcon iconUrl={SVG_ICONS.SETTINGS} size={16} />
-                        </span>
-                        <span className="btn-text">Settings</span>
-                    </Link>
+                    {energyLevel > 3 && (
+                        <Link to="/settings" className="nav-item settings-btn">
+                            <span className="btn-icon">
+                                <NodeIcon iconUrl={SVG_ICONS.SETTINGS} size={16} />
+                            </span>
+                            <span className="btn-text">Settings</span>
+                        </Link>
+                    )}
                 </div>
             </div>
         </aside>
