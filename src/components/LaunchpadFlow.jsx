@@ -166,6 +166,7 @@ const LaunchpadFlow = () => {
     const [e3ActiveSubStep, setE3ActiveSubStep] = useState('skills');
     const [energy3SearchQuery, setEnergy3SearchQuery] = useState("");
     const [showEnergy3Search, setShowEnergy3Search] = useState(false);
+    const [e5ActiveSkillIndex, setE5ActiveSkillIndex] = useState(0);
 
     // --- PREP FLOW STATE (Energy 4+: "Prepare everything for your future self") ---
     const [prepSubStep, setPrepSubStep] = useState('areas'); // 'areas' | 'skills' | 'experiments' | 'aspects' | 'task-input' | 'micro-action'
@@ -177,6 +178,7 @@ const LaunchpadFlow = () => {
     const [prepCreatedTask, setPrepCreatedTask] = useState(null); // task just created, waiting for micro-action
     const [prepMicroActionInput, setPrepMicroActionInput] = useState('');
     const [prepTasksAddedToAspect, setPrepTasksAddedToAspect] = useState([]); // track tasks added in current aspect session
+    const [showFutureSelfToast, setShowFutureSelfToast] = useState(false);
 
     const toggleSkill = (skillId) => {
         setSelectedSkills(prev => {
@@ -297,6 +299,7 @@ const LaunchpadFlow = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [lowEnergyTask, setLowEnergyTask] = useState(null);
     const [showLowEnergyAlternatives, setShowLowEnergyAlternatives] = useState(false);
+    const [hoveredRecommendationId, setHoveredRecommendationId] = useState(null);
 
 
 
@@ -612,6 +615,20 @@ const LaunchpadFlow = () => {
         });
     }, [allNodes, focusSlots, maintenanceSkillIds]);
 
+    const e5ActiveSkillTask = useMemo(() => {
+        if (!activeNonFocusSkills.length) return null;
+        const skill = activeNonFocusSkills[e5ActiveSkillIndex % activeNonFocusSkills.length];
+        if (!skill) return null;
+        
+        const tasksForSkill = allNodes.filter(n => {
+            if (n.type !== NodeTypes.TASK || n.metadata?.status === TaskStatuses.DONE) return false;
+            const s = getSkillFromTask(n, nodeMap);
+            return s?.id === skill.id;
+        });
+        
+        return tasksForSkill[0] || null;
+    }, [activeNonFocusSkills, e5ActiveSkillIndex, allNodes, nodeMap]);
+
     const e3ActiveAspectsPool = useMemo(() => {
         if (!e3ActiveSelectedSkillId) return [];
         const aspects = allNodes.filter(n => {
@@ -735,10 +752,10 @@ const LaunchpadFlow = () => {
         try {
             if (prepMicroActionInput.trim()) {
                 await backbone.updateNode(prepCreatedTask.id, {
-                    metadata: { microAction: prepMicroActionInput.trim() }
+                metadata: { mve: prepMicroActionInput.trim() }
                 });
             }
-            setPrepTasksAddedToAspect(prev => [...prev, { ...prepCreatedTask, microAction: prepMicroActionInput.trim() }]);
+            setPrepTasksAddedToAspect(prev => [...prev, { ...prepCreatedTask, mve: prepMicroActionInput.trim() }]);
             setPrepCreatedTask(null);
             setPrepMicroActionInput('');
             // Return to task-input so they can add more tasks
@@ -1250,14 +1267,14 @@ const LaunchpadFlow = () => {
 
     const suggestion = getSuggestion(energyLevel);
 
-    // Micro-Action Logic
-    const microAction = selectedTask?.metadata?.microAction;
+    // MVE Logic
+    const mve = selectedTask?.metadata?.mve;
     const displayTitle = selectedTask 
-        ? (microAction ? microAction : `Start: ${selectedTask.name}`)
+        ? (mve ? mve : `Start: ${selectedTask.name}`)
         : suggestion.title;
     
     const displaySubtitle = selectedTask
-        ? (microAction ? `Task: ${selectedTask.name}` : suggestion.subtitle)
+        ? (mve ? `Task: ${selectedTask.name}` : suggestion.subtitle)
         : suggestion.subtitle;
 
     const displayAction = selectedTask ? "Let's Go" : suggestion.action;
@@ -1272,8 +1289,45 @@ const LaunchpadFlow = () => {
                         {energyLevel >= 4 ? (
 <div className="launchpad-high-energy-container" style={{ textAlign: 'center', width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
+    {/* FUTURE SELF BUTTON (Top placement for Energy 5) */}
+    {energyLevel === 5 && (
+        <button
+            className="future-self-btn"
+            onClick={() => { resetPrepFlow(); setStep('prep-flow'); }}
+            style={{ 
+                marginBottom: '48px', 
+                padding: '20px 48px', 
+                background: 'linear-gradient(145deg, var(--alpha-medium) 0%, var(--alpha-low) 100%)', 
+                border: '1px solid var(--color-border-active)', 
+                borderRadius: '24px', 
+                color: 'var(--text-primary)', 
+                fontSize: '18px', 
+                fontWeight: 700,
+                cursor: 'pointer', 
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+            }}
+            onMouseEnter={(e) => { 
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.background = 'linear-gradient(145deg, var(--alpha-high) 0%, var(--alpha-medium) 100%)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)';
+            }}
+            onMouseLeave={(e) => { 
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.background = 'linear-gradient(145deg, var(--alpha-medium) 0%, var(--alpha-low) 100%)';
+                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)';
+            }}
+        >
+            <span style={{ opacity: 0.9 }}>🧠</span>
+            <span>Prepare everything for your future self</span>
+        </button>
+    )}
+
     {/* HEADER */}
-    <h1 style={{ fontSize: '32px', fontWeight: 500, color: '#fff', marginBottom: '64px', opacity: 0.9, padding: '0 40px', lineHeight: 1.3 }}>
+    <h1 style={{ fontSize: '32px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '64px', opacity: 0.9, padding: '0 40px', lineHeight: 1.3 }}>
         Best use of your energy right now based on your recent activity
     </h1>
 
@@ -1309,9 +1363,9 @@ const LaunchpadFlow = () => {
                                 width: '100%',
                                 padding: '60px 40px',
                                 borderRadius: '40px',
-                                background: 'linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-                                border: '1px solid rgba(255,255,255,0.15)',
-                                boxShadow: '0 30px 60px rgba(0,0,0,0.4), inset 0 0 40px rgba(255,255,255,0.02)',
+                                background: 'linear-gradient(145deg, var(--alpha-high) 0%, var(--alpha-low) 100%)',
+                                border: '1px solid var(--color-border)',
+                                boxShadow: '0 30px 60px rgba(0,0,0,0.4), inset 0 0 40px var(--alpha-low)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 justifyContent: 'center',
@@ -1325,27 +1379,27 @@ const LaunchpadFlow = () => {
                             </div>
 
                             {/* AREA IDENTITY */}
-                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'rgba(255,255,255,0.4)' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--text-tertiary)' }}>
                                 {area?.name || skill?.name || 'Untitled Area'}
                             </div>
 
                             {/* DUAL LAYER */}
-                            <div style={{ fontSize: '14px', fontWeight: 500, color: 'rgba(255,255,255,0.4)' }}>
+                            <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>
                                 Just open it for 2 minutes
                             </div>
-                            <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+                            <h2 style={{ fontSize: '36px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
                                 {task.name}
                             </h2>
 
                             {/* SKILL NAME */}
-                            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}>
+                            <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
                                 {skill?.name || 'Untitled Skill'}
                             </div>
 
                             <button
                                 className="flow-primary-btn"
                                 onClick={() => handleStartTask(task)}
-                                style={{ padding: '16px 60px', borderRadius: '20px', fontSize: '18px', fontWeight: 700, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', marginTop: '16px' }}
+                                style={{ padding: '16px 60px', borderRadius: '20px', fontSize: '18px', fontWeight: 700, background: 'var(--alpha-low)', border: '1px solid var(--color-border)', marginTop: '16px' }}
                             >
                                 Start
                             </button>
@@ -1354,14 +1408,14 @@ const LaunchpadFlow = () => {
                 })()}
             </>
         ) : (
-            <div style={{ color: '#555', fontSize: '15px' }}>No high energy tasks saved yet.</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '15px' }}>No high energy tasks saved yet.</div>
         )}
     </div>
 
     {/* 2. TACTICAL OPTIONS */}
     {!isEnergy3ExplorePath && (
         <section style={{ width: '100%', marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '32px' }}>
+            <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '32px' }}>
                 Other tactical options
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1377,8 +1431,8 @@ const LaunchpadFlow = () => {
                                 width: '100%',
                                 padding: '24px 32px',
                                 borderRadius: '24px',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.06)',
+                                background: 'var(--alpha-low)',
+                                border: '1px solid var(--color-border)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
@@ -1386,21 +1440,135 @@ const LaunchpadFlow = () => {
                                 cursor: 'pointer',
                                 transition: 'transform 0.2s ease, background 0.2s ease'
                             }}
-                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = 'var(--alpha-medium)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--alpha-low)'; }}
                         >
-                            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.4, color: '#fff' }}>
+                            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.4, color: 'var(--text-primary)' }}>
                                 {area?.name || 'Untitled Area'}
                             </div>
-                            <div style={{ fontSize: '18px', fontWeight: 600, color: '#fff', opacity: 0.75 }}>
+                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', opacity: 0.75 }}>
                                 {task.name}
                             </div>
-                            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', fontWeight: 600 }}>
-                                {skill?.name || 'Untitled Skill'}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: 'fit-content', marginTop: '4px' }}>
+                                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                    {skill?.name || 'Untitled Skill'}
+                                </div>
+
+                                {/* AURA LEVEL INDICATOR - Energy 5 only */}
+                                {energyLevel === 5 && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px' }}>
+                                        <div style={{ flex: 1, height: '3px', background: 'var(--color-border)', borderRadius: '1.5px', overflow: 'hidden', opacity: 0.5 }}>
+                                            <div style={{ 
+                                                width: `${((skill?.metadata?.auraTotal || 0) % 12) / 12 * 100}%`, 
+                                                height: '100%', 
+                                                background: 'linear-gradient(90deg, #60a5fa, #3b82f6)', 
+                                                borderRadius: '1.5px'
+                                            }} />
+                                        </div>
+                                        <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', opacity: 0.6 }}>
+                                            Lv. {skill?.metadata?.auraLevel || (Math.floor((skill?.metadata?.auraTotal || 0) / 12) + 1)}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </button>
                     );
                 })}
+            </div>
+        </section>
+    )}
+
+    {/* ACTIVE (NON-FOCUS) SKILL TASK CARD - Energy 5 only */}
+    {energyLevel === 5 && activeNonFocusSkills.length > 0 && e5ActiveSkillTask && (
+        <section style={{ width: '100%', marginBottom: '40px' }}>
+            <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '16px' }}>
+                Active Potential
+            </h3>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                {activeNonFocusSkills.length > 1 && (
+                    <button
+                        onClick={() => setE5ActiveSkillIndex(prev => (prev - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}
+                        style={{ position: 'absolute', left: '-40px', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer', zIndex: 2 }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                    >‹</button>
+                )}
+                
+                <button
+                    className="liquid-glass"
+                    onClick={() => handleStartTask(e5ActiveSkillTask)}
+                    style={{
+                        flex: 1,
+                        padding: '24px 32px',
+                        borderRadius: '24px',
+                        background: 'linear-gradient(145deg, rgba(100, 100, 255, 0.05) 0%, rgba(100, 100, 255, 0.02) 100%)',
+                        border: '1px solid rgba(100, 100, 255, 0.2)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '4px',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                    }}
+                    onMouseEnter={(e) => { 
+                        e.currentTarget.style.transform = 'translateY(-2px)'; 
+                        e.currentTarget.style.background = 'linear-gradient(145deg, rgba(100, 100, 255, 0.1) 0%, rgba(100, 100, 255, 0.05) 100%)';
+                        e.currentTarget.style.borderColor = 'rgba(100, 100, 255, 0.4)';
+                    }}
+                    onMouseLeave={(e) => { 
+                        e.currentTarget.style.transform = 'translateY(0)'; 
+                        e.currentTarget.style.background = 'linear-gradient(145deg, rgba(100, 100, 255, 0.05) 0%, rgba(100, 100, 255, 0.02) 100%)';
+                        e.currentTarget.style.borderColor = 'rgba(100, 100, 255, 0.2)';
+                    }}
+                >
+                    <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgb(100, 150, 255)', marginBottom: '4px' }}>
+                        Active Potential
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
+                        {e5ActiveSkillTask.name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 500, marginBottom: '8px' }}>
+                        {nodeMap.get(e5ActiveSkillTask.parentId)?.name || 'Untitled Aspect'}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                            {activeNonFocusSkills[e5ActiveSkillIndex % activeNonFocusSkills.length]?.name || 'Active Skill'}
+                        </div>
+
+                        {/* AURA LEVEL INDICATOR */}
+                        {(() => {
+                            const skill = activeNonFocusSkills[e5ActiveSkillIndex % activeNonFocusSkills.length];
+                            const auraTotal = skill?.metadata?.auraTotal || 0;
+                            const auraLevel = skill?.metadata?.auraLevel || (Math.floor(auraTotal / 12) + 1);
+                            return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100px' }}>
+                                    <div style={{ flex: 1, height: '3px', background: 'var(--color-border)', borderRadius: '1.5px', overflow: 'hidden', opacity: 0.5 }}>
+                                        <div style={{ 
+                                            width: `${(auraTotal % 12) / 12 * 100}%`, 
+                                            height: '100%', 
+                                            background: 'linear-gradient(90deg, #60a5fa, #3b82f6)', 
+                                            borderRadius: '1.5px'
+                                        }} />
+                                    </div>
+                                    <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', opacity: 0.6 }}>
+                                        Lv. {auraLevel}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </button>
+
+                {activeNonFocusSkills.length > 1 && (
+                    <button
+                        onClick={() => setE5ActiveSkillIndex(prev => (prev + 1) % activeNonFocusSkills.length)}
+                        style={{ position: 'absolute', right: '-40px', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer', zIndex: 2 }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                    >›</button>
+                )}
             </div>
         </section>
     )}
@@ -1412,9 +1580,9 @@ const LaunchpadFlow = () => {
                 <button
                     key={habit.id}
                     onClick={() => handleHabitComplete(habit.id)}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '8px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                    style={{ background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--alpha-medium)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--alpha-low)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                 >
                     {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
                 </button>
@@ -1426,13 +1594,13 @@ const LaunchpadFlow = () => {
     {!isEnergy3Expanded && !isEnergy3ExplorePath ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
             <button
-                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => setIsEnergy3Expanded(true)}
             >
                 Not feeling this?
             </button>
             <button
-                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => console.log("Rest for now clicked")}
             >
                 I actually just need to rest today
@@ -1444,12 +1612,12 @@ const LaunchpadFlow = () => {
                 <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
                     <button className="literal-target" onClick={() => setE3ActiveSkillIndex(p => (p - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}>‹</button>
                     <div
-                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                         onClick={() => { setE3ActiveSelectedSkillId(activeNonFocusSkills[e3ActiveSkillIndex].id); setE3ActiveSubStep('aspects'); }}
                     >
-                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>Optional · No Pressure</div>
-                        <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
-                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Tap to explore</div>
+                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Optional · No Pressure</div>
+                        <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
+                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Tap to explore</div>
                     </div>
                     <button className="literal-target" onClick={() => setE3ActiveSkillIndex(p => (p + 1) % activeNonFocusSkills.length)}>›</button>
                 </div>
@@ -1458,11 +1626,11 @@ const LaunchpadFlow = () => {
                 <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
                     <button className="literal-target" onClick={() => setE3ActiveAspectIndex(p => (p - 1 + e3ActiveAspectsPool.length) % e3ActiveAspectsPool.length)}>‹</button>
                     <div
-                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                         onClick={() => { setE3ActiveSelectedAspectId(e3ActiveAspectsPool[e3ActiveAspectIndex].id); setE3ActiveSubStep('tasks'); }}
                     >
-                        <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
-                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
+                        <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
+                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Select Aspect</div>
                     </div>
                     <button className="literal-target" onClick={() => setE3ActiveAspectIndex(p => (p + 1) % e3ActiveAspectsPool.length)}>›</button>
                 </div>
@@ -1471,21 +1639,21 @@ const LaunchpadFlow = () => {
                 <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
                     <button className="literal-target" onClick={() => setE3ActiveTaskIndex(p => (p - 1 + e3ActiveTasksPool.length) % e3ActiveTasksPool.length)}>‹</button>
                     <div style={{ textAlign: 'center', width: '320px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>No Pressure · Stop Anytime</div>
-                        <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
+                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>No Pressure · Stop Anytime</div>
+                        <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
                         <button className="flow-primary-btn" onClick={() => handleStartTask(e3ActiveTasksPool[e3ActiveTaskIndex])}>Start 2-Minute Sprint</button>
                     </div>
                     <button className="literal-target" onClick={() => setE3ActiveTaskIndex(p => (p + 1) % e3ActiveTasksPool.length)}>›</button>
                 </div>
             )}
             <button
-                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginTop: '32px' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginTop: '32px' }}
                 onClick={() => { setIsEnergy3ExplorePath(false); setE3ActiveSubStep('skills'); setE3ActiveSelectedSkillId(null); setE3ActiveSelectedAspectId(null); }}
             >
                 ← Back
             </button>
             <button
-                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
                 onClick={() => console.log("Rest for now clicked")}
             >
                 I actually just need to rest today
@@ -1495,27 +1663,27 @@ const LaunchpadFlow = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginBottom: '32px' }}>
             <button
                 className="flow-secondary-btn liquid-glass"
-                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                 onClick={() => setIsEnergy3SwitchingSkill(true)}
             >
                 Stay Focused — Switch skill
             </button>
             <button
                 className="flow-secondary-btn liquid-glass"
-                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                 onClick={() => { setIsEnergy3SwitchingHabit(true); setIsEnergy3Expanded(false); }}
             >
                 Keep it Simple — Switch to habits
             </button>
             <button
                 className="flow-secondary-btn liquid-glass"
-                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'rgba(255,255,255,0.5)', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                 onClick={() => { setIsEnergy3ExplorePath(true); setIsEnergy3Expanded(false); setE3ActiveSubStep('skills'); }}
             >
                 Explore Something Else
             </button>
             <button
-                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
                 onClick={() => console.log("Rest for now clicked")}
             >
                 I actually just need to rest today
@@ -1523,36 +1691,38 @@ const LaunchpadFlow = () => {
         </div>
     )}
 
-    {/* 5. FUTURE SELF BUTTON */}
-    <button
-        className="future-self-btn"
-        onClick={() => { resetPrepFlow(); setStep('prep-flow'); }}
-        style={{ marginTop: 'auto', padding: '16px 32px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '20px', color: 'rgba(255,255,255,0.2)', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; e.currentTarget.style.border = '1px solid rgba(255,255,255,0.15)'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.2)'; e.currentTarget.style.border = '1px solid rgba(255,255,255,0.05)'; }}
-    >
-        <span style={{ textDecoration: 'underline' }}>Prepare everything for your future self</span>
-    </button>
+    {/* 5. FUTURE SELF BUTTON (Bottom placement for non-Energy 5) */}
+    {energyLevel !== 5 && (
+        <button
+            className="future-self-btn"
+            onClick={() => { resetPrepFlow(); setStep('prep-flow'); }}
+            style={{ marginTop: 'auto', padding: '16px 32px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '20px', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.border = '1px solid var(--color-border-active)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; e.currentTarget.style.border = '1px solid var(--color-border)'; }}
+        >
+            <span style={{ textDecoration: 'underline' }}>Prepare everything for your future self</span>
+        </button>
+    )}
 </div>
                         ) : energyLevel === 3 ? (
                             <div className="recommended-focus-container" style={{ textAlign: 'center', width: '100%', maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '600px', justifyContent: 'center' }}>
                                 {isEnergy3SwitchingSkill ? (
                                     <div style={{ width: '100%', maxWidth: '400px' }}>
-                                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#fff', marginBottom: '40px', opacity: 0.9 }}>Switch Focus Skill</h2>
+                                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '40px', opacity: 0.9 }}>Switch Focus Skill</h2>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
                                             <button
                                                 className="literal-target"
                                                 onClick={() => setEnergy3SkillIndex(p => (p - 1 + focusSlots.length) % focusSlots.length)}
                                             >‹</button>
                                             <div
-                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                                                 onClick={() => {
                                                     setEnergy3SkillOverride(focusSlots[energy3SkillIndex]);
                                                     setIsEnergy3SwitchingSkill(false);
                                                 }}
                                             >
-                                                <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{nodeMap.get(focusSlots[energy3SkillIndex])?.name || 'Untitled Skill'}</h1>
-                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Skill</div>
+                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{nodeMap.get(focusSlots[energy3SkillIndex])?.name || 'Untitled Skill'}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Select Skill</div>
                                             </div>
                                             <button
                                                 className="literal-target"
@@ -1560,7 +1730,7 @@ const LaunchpadFlow = () => {
                                             >›</button>
                                         </div>
                                         <button
-                                            style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '15px', cursor: 'pointer', fontWeight: 500, marginTop: '32px' }}
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '15px', cursor: 'pointer', fontWeight: 500, marginTop: '32px' }}
                                             onClick={() => setIsEnergy3SwitchingSkill(false)}
                                         >
                                             Back
@@ -1572,19 +1742,19 @@ const LaunchpadFlow = () => {
                                             {energy2HabitsPool.length > 1 && (
                                                 <button 
                                                     onClick={() => setEnergy3HabitIndex(prev => (prev - 1 + energy2HabitsPool.length) % energy2HabitsPool.length)}
-                                                    style={{ position: 'absolute', left: '-30px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '32px', cursor: 'pointer', outline: 'none' }}
-                                                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                                                    style={{ position: 'absolute', left: '-30px', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '32px', cursor: 'pointer', outline: 'none' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
                                                 >
                                                     ‹
                                                 </button>
                                             )}
                                             
                                             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>
+                                                <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)' }}>
                                                     {energy2HabitsPool[energy3HabitIndex]?.skillName || "Habit"}
                                                 </div>
-                                                <h1 style={{ fontSize: '48px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1, wordWrap: 'break-word', maxWidth: '100%' }}>
+                                                <h1 style={{ fontSize: '48px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1, wordWrap: 'break-word', maxWidth: '100%' }}>
                                                     {(() => {
                                                         const h = energy2HabitsPool[energy3HabitIndex];
                                                         return h?.phases?.[h?.currentPhaseLevel]?.description || h?.then || h?.target || "Ready to maintain?";
@@ -1595,9 +1765,9 @@ const LaunchpadFlow = () => {
                                             {energy2HabitsPool.length > 1 && (
                                                 <button 
                                                     onClick={() => setEnergy3HabitIndex(prev => (prev + 1) % energy2HabitsPool.length)}
-                                                    style={{ position: 'absolute', right: '-30px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '32px', cursor: 'pointer', outline: 'none' }}
-                                                    onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
+                                                    style={{ position: 'absolute', right: '-30px', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '32px', cursor: 'pointer', outline: 'none' }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
                                                 >
                                                     ›
                                                 </button>
@@ -1607,7 +1777,7 @@ const LaunchpadFlow = () => {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '32px' }}>
                                             <button 
                                                 className="flow-primary-btn liquid-glass" 
-                                                style={{ padding: '24px 60px', borderRadius: '24px', fontSize: '20px', fontWeight: 700, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                                style={{ padding: '24px 60px', borderRadius: '24px', fontSize: '20px', fontWeight: 700, background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                                                 onClick={() => {
                                                     const habit = energy2HabitsPool[energy3HabitIndex];
                                                     if (habit) handleHabitComplete(habit.id);
@@ -1617,7 +1787,7 @@ const LaunchpadFlow = () => {
                                             </button>
 
                                             <button 
-                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline', width: 'fit-content', margin: '0 auto' }}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline', width: 'fit-content', margin: '0 auto' }}
                                                 onClick={() => setIsEnergy3SwitchingHabit(false)}
                                             >
                                                 Back
@@ -1626,7 +1796,7 @@ const LaunchpadFlow = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <h1 style={{ fontSize: '38px', fontWeight: 500, color: '#fff', marginBottom: '64px', opacity: 0.9 }}>Recommended focus</h1>
+                                        <h1 style={{ fontSize: '38px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '64px', opacity: 0.9 }}>Recommended focus</h1>
                                         
                                         {!isEnergy3ExplorePath && (
                                             <div className="recommendation-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
@@ -1644,8 +1814,8 @@ const LaunchpadFlow = () => {
                                                                 width: '100%',
                                                                 padding: isHero ? '40px 32px' : '28px 24px',
                                                                 borderRadius: '28px',
-                                                                background: isHero ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)',
-                                                                border: isHero ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.08)',
+                                                                background: isHero ? 'var(--alpha-medium)' : 'var(--alpha-low)',
+                                                                border: isHero ? '1px solid var(--color-border-active)' : '1px solid var(--color-border)',
                                                                 textAlign: 'center',
                                                                 display: 'flex',
                                                                 flexDirection: 'column',
@@ -1655,19 +1825,21 @@ const LaunchpadFlow = () => {
                                                                 textDecoration: 'none',
                                                                 boxShadow: isHero ? '0 8px 32px rgba(0,0,0,0.3)' : 'none'
                                                             }}
+                                                            onMouseEnter={() => setHoveredRecommendationId(task.id)}
+                                                            onMouseLeave={() => setHoveredRecommendationId(null)}
                                                         >
                                                             {/* AREA IDENTITY LABEL */}
-                                                            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.18em', opacity: isHero ? 0.5 : 0.3, color: '#fff', marginBottom: '2px' }}>
+                                                            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.18em', opacity: isHero ? 0.5 : 0.3, color: 'var(--text-primary)', marginBottom: '2px' }}>
                                                                 {area?.name || skill?.name || 'Untitled Area'}
                                                             </div>
 
                                                             {/* TASK NAME */}
-                                                            <div style={{ fontSize: isHero ? '26px' : '22px', fontWeight: isHero ? 700 : 600, color: '#fff', opacity: isHero ? 1 : 0.85, lineHeight: 1.2 }}>
-                                                                {task.name}
+                                                            <div style={{ fontSize: isHero ? '26px' : '22px', fontWeight: isHero ? 700 : 600, color: 'var(--text-primary)', opacity: isHero ? 1 : 0.85, lineHeight: 1.2 }}>
+                                                                {(hoveredRecommendationId === task.id && task.metadata?.mve) ? task.metadata.mve : task.name}
                                                             </div>
 
                                                             {/* SKILL LABEL */}
-                                                            <div style={{ fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.3)', marginTop: '4px' }}>
+                                                            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', marginTop: '4px' }}>
                                                                 {energy3SkillOverride
                                                                     ? (nodeMap.get(task.parentId)?.name || 'Untitled Aspect')
                                                                     : (skill?.name || 'Untitled Skill')}
@@ -1685,9 +1857,9 @@ const LaunchpadFlow = () => {
                                                     <button
                                                         key={habit.id}
                                                         onClick={() => handleHabitComplete(habit.id)}
-                                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '8px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
-                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                                                        style={{ background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--alpha-medium)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--alpha-low)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                                                     >
                                                         {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
                                                     </button>
@@ -1699,13 +1871,13 @@ const LaunchpadFlow = () => {
                                         {!isEnergy3Expanded && !isEnergy3ExplorePath ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginTop: '40px' }}>
                                                 <button
-                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline' }}
                                                     onClick={() => setIsEnergy3Expanded(true)}
                                                 >
                                                     Not feeling this?
                                                 </button>
                                                 <button
-                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
+                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
                                                     onClick={() => console.log("Rest for now clicked")}
                                                 >
                                                     I need to rest for now
@@ -1721,17 +1893,17 @@ const LaunchpadFlow = () => {
                                                             onClick={() => setE3ActiveSkillIndex(p => (p - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}
                                                         >‹</button>
                                                         <div
-                                                            style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}
+                                                            style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', position: 'relative' }}
                                                             onClick={() => {
                                                                 setE3ActiveSelectedSkillId(activeNonFocusSkills[e3ActiveSkillIndex].id);
                                                                 setE3ActiveSubStep('aspects');
                                                             }}
                                                         >
-                                                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>
                                                                 Optional · No Pressure
                                                             </div>
-                                                            <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
-                                                            <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Tap to explore</div>
+                                                            <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
+                                                            <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Tap to explore</div>
                                                         </div>
                                                         <button
                                                             className="literal-target"
@@ -1753,7 +1925,7 @@ const LaunchpadFlow = () => {
                                                                 setE3ActiveSubStep('tasks');
                                                             }}
                                                         >
-                                                            <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
+                                                            <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
                                                             <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
                                                         </div>
                                                         <button
@@ -1773,7 +1945,7 @@ const LaunchpadFlow = () => {
                                                             <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
                                                                 No Pressure · Stop Anytime
                                                             </div>
-                                                            <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
+                                                            <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
                                                             <button
                                                                 className="flow-primary-btn"
                                                                 onClick={() => handleStartTask(e3ActiveTasksPool[e3ActiveTaskIndex])}
@@ -1922,8 +2094,8 @@ const LaunchpadFlow = () => {
                                     if (!currentSkill) return null;
                                     return (
                                         <div className="identity-anchor" style={{ position: 'absolute', top: '-100px', width: '100%', textAlign: 'center', opacity: 0.8 }}>
-                                            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>Becoming</div>
-                                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#fff' }}>
+                                            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                                 {currentSkill.metadata?.identityAnchor || currentSkill.name}
                                             </div>
                                         </div>
@@ -1939,7 +2111,7 @@ const LaunchpadFlow = () => {
                                             else if (energy2SubStep === 'aspects') setEnergy2SubStep('skills');
                                             else if (energy2SubStep === 'tasks') setEnergy2SubStep('aspects');
                                         }}
-                                        style={{ position: 'absolute', top: '-40px', left: '0', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '24px', cursor: 'pointer' }}
+                                        style={{ position: 'absolute', top: '-40px', left: '0', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                     >
                                         ← Back
                                     </button>
@@ -1965,14 +2137,14 @@ const LaunchpadFlow = () => {
                                                                     ▶ Resuming
                                                                 </div>
                                                             )}
-                                                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>
+                                                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)' }}>
                                                                 {isResume ? 'In Progress' : "Today's Task"}
                                                             </div>
-                                                            <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>
-                                                                Just open it for 2 minutes
+                                                            <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                                                                {spotlightTask.metadata?.mve ? `Task: ${spotlightTask.name}` : "Just open it for 2 minutes"}
                                                             </div>
-                                                            <h1 style={{ fontSize: '36px', fontWeight: 800, color: isResume ? '#63b3ed' : '#fff', margin: 0, lineHeight: 1.1 }}>
-                                                                {spotlightTask.name}
+                                                            <h1 style={{ fontSize: '36px', fontWeight: 800, color: isResume ? '#63b3ed' : 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
+                                                                {spotlightTask.metadata?.mve || spotlightTask.name}
                                                             </h1>
                                                         </div>
                                                         <button
@@ -1986,9 +2158,9 @@ const LaunchpadFlow = () => {
                                                 ) : spotlightHabit ? (
                                                     <>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>Maintenance Habit</div>
-                                                            <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)' }}>Just open it for 2 minutes</div>
-                                                            <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1 }}>
+                                                            <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)' }}>Maintenance Habit</div>
+                                                            <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>Just open it for 2 minutes</div>
+                                                            <h1 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
                                                                 {spotlightHabit.phases?.[spotlightHabit.currentPhaseLevel]?.description || spotlightHabit.then || "Ready to maintain?"}
                                                             </h1>
                                                         </div>
@@ -2023,7 +2195,7 @@ const LaunchpadFlow = () => {
 
                                                 {/* ESCAPE HATCH */}
                                                 <button
-                                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
+                                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
                                                     onClick={() => setEnergy2SubStep('redirection')}
                                                 >
                                                     Not feeling this?
@@ -2037,19 +2209,19 @@ const LaunchpadFlow = () => {
                                             <button
                                                 className="redirection-option-btn liquid-glass"
                                                 onClick={() => setEnergy2SubStep('habits')}
-                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
                                             >
                                                 Maintenance habits
                                             </button>
                                             <button
                                                 className="redirection-option-btn liquid-glass"
                                                 onClick={() => setEnergy2SubStep('skills')}
-                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
                                             >
                                                 Focus skills
                                             </button>
                                             <button
-                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
                                                 onClick={() => console.log("Rest for now clicked")}
                                             >
                                                 I need to rest for now
@@ -2064,7 +2236,7 @@ const LaunchpadFlow = () => {
                                                 onClick={() => setEnergy2HabitIndex(p => (p - 1 + energy2HabitsPool.length) % energy2HabitsPool.length)}
                                             >‹</button>
                                             <div style={{ textAlign: 'center', width: '320px' }}>
-                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', marginBottom: '24px' }}>
                                                     {energy2HabitsPool[energy2HabitIndex]?.phases?.[energy2HabitsPool[energy2HabitIndex]?.currentPhaseLevel]?.description || energy2HabitsPool[energy2HabitIndex]?.then || "Ready?"}
                                                 </h1>
                                                 <button className="flow-primary-btn" onClick={() => handleHabitComplete(energy2HabitsPool[energy2HabitIndex].id)}>Complete</button>
@@ -2102,7 +2274,7 @@ const LaunchpadFlow = () => {
                                                         </div>
                                                     );
                                                 })()}
-                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{activeFocusSkills[e2SkillIndex]?.name}</h1>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', margin: 0 }}>{activeFocusSkills[e2SkillIndex]?.name}</h1>
                                                 <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Skill</div>
                                             </div>
                                             <button
@@ -2125,7 +2297,7 @@ const LaunchpadFlow = () => {
                                                     setEnergy2SubStep('tasks');
                                                 }}
                                             >
-                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{e2AspectsPool[e2AspectIndex]?.name}</h1>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', margin: 0 }}>{e2AspectsPool[e2AspectIndex]?.name}</h1>
                                                 <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
                                             </div>
                                             <button
@@ -2143,9 +2315,9 @@ const LaunchpadFlow = () => {
                                             >‹</button>
                                             <div style={{ textAlign: 'center', width: '320px' }}>
                                                 <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>
-                                                    Just open it for 2 minutes
+                                                    {e2TasksPool[e2TaskIndex]?.metadata?.mve ? `Task: ${e2TasksPool[e2TaskIndex].name}` : "Just open it for 2 minutes"}
                                                 </div>
-                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>{e2TasksPool[e2TaskIndex]?.name}</h1>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', marginBottom: '24px' }}>{e2TasksPool[e2TaskIndex]?.metadata?.mve || e2TasksPool[e2TaskIndex]?.name}</h1>
                                                 <button
                                                     className="flow-primary-btn"
                                                     onClick={() => navigate('/focus', { state: { taskId: e2TasksPool[e2TaskIndex].id, autoStart: true } })}
@@ -2186,8 +2358,8 @@ const LaunchpadFlow = () => {
                                     if (!currentSkill) return null;
                                     return (
                                         <div className="identity-anchor" style={{ position: 'absolute', top: '-100px', width: '100%', textAlign: 'center', opacity: 0.8 }}>
-                                            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>Becoming</div>
-                                            <div style={{ fontSize: '20px', fontWeight: 600, color: '#fff' }}>
+                                            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
                                                 {currentSkill.metadata?.identityAnchor || currentSkill.name}
                                             </div>
                                         </div>
@@ -2215,8 +2387,12 @@ const LaunchpadFlow = () => {
                                             {energy1Pool.length > 0 ? (
                                                 <>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>Today's Task</div>
-                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1 }}>{energy1Pool[0].name}</h1>
+                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)' }}>
+                                                            {energy1Pool[0].metadata?.mve ? `Task: ${energy1Pool[0].name}` : "Today's Task"}
+                                                        </div>
+                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
+                                                            {energy1Pool[0].metadata?.mve || energy1Pool[0].name}
+                                                        </h1>
                                                     </div>
                                                     <button 
                                                         className="flow-primary-btn" 
@@ -2229,8 +2405,8 @@ const LaunchpadFlow = () => {
                                             ) : energy1HabitsPool.length > 0 ? (
                                                 <>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.3)' }}>Maintenance Habit</div>
-                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.1 }}>
+                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)' }}>Maintenance Habit</div>
+                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
                                                             {energy1HabitsPool[0].phases?.[energy1HabitsPool[0].currentPhaseLevel]?.description || energy1HabitsPool[0].then || "Ready to maintain?"}
                                                         </h1>
                                                     </div>
@@ -2247,7 +2423,7 @@ const LaunchpadFlow = () => {
                                             )}
                                             
                                             <button 
-                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
                                                 onClick={() => setEnergy1SubStep('redirection')}
                                             >
                                                 Not feeling this?
@@ -2260,19 +2436,19 @@ const LaunchpadFlow = () => {
                                             <button 
                                                 className="redirection-option-btn liquid-glass"
                                                 onClick={() => setEnergy1SubStep('habits')}
-                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
                                             >
                                                 Maintenance habits
                                             </button>
                                             <button 
                                                 className="redirection-option-btn liquid-glass"
                                                 onClick={() => setEnergy1SubStep('skills')}
-                                                style={{ padding: '32px', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                                style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
                                             >
                                                 Focus skills
                                             </button>
                                             <button 
-                                                style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
                                                 onClick={() => console.log("Rest for now clicked")}
                                             >
                                                 I need to rest for now
@@ -2288,7 +2464,7 @@ const LaunchpadFlow = () => {
                                             >‹</button>
                                             
                                             <div style={{ textAlign: 'center', width: '320px' }}>
-                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', marginBottom: '24px' }}>
                                                     {energy1HabitsPool[energy1HabitIndex]?.phases?.[energy1HabitsPool[energy1HabitIndex]?.currentPhaseLevel]?.description || energy1HabitsPool[energy1HabitIndex]?.then || "Ready?"}
                                                 </h1>
                                                 <button className="flow-primary-btn" onClick={() => handleHabitComplete(energy1HabitsPool[energy1HabitIndex].id)}>Complete</button>
@@ -2315,7 +2491,7 @@ const LaunchpadFlow = () => {
                                                     setEnergy1SubStep('aspects');
                                                 }}
                                             >
-                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{activeFocusSkills[e1SkillIndex]?.name}</h1>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', margin: 0 }}>{activeFocusSkills[e1SkillIndex]?.name}</h1>
                                                 <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Skill</div>
                                             </div>
 
@@ -2340,7 +2516,7 @@ const LaunchpadFlow = () => {
                                                     setEnergy1SubStep('tasks');
                                                 }}
                                             >
-                                                <h1 style={{ fontSize: '32px', color: '#fff', margin: 0 }}>{e1AspectsPool[e1AspectIndex]?.name}</h1>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', margin: 0 }}>{e1AspectsPool[e1AspectIndex]?.name}</h1>
                                                 <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
                                             </div>
 
@@ -2359,7 +2535,10 @@ const LaunchpadFlow = () => {
                                             >‹</button>
                                             
                                             <div style={{ textAlign: 'center', width: '320px' }}>
-                                                <h1 style={{ fontSize: '32px', color: '#fff', marginBottom: '24px' }}>{e1TasksPool[e1TaskIndex]?.name}</h1>
+                                                <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>
+                                                    {e1TasksPool[e1TaskIndex]?.metadata?.mve ? `Task: ${e1TasksPool[e1TaskIndex].name}` : "Just open it for 2 minutes"}
+                                                </div>
+                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', marginBottom: '24px' }}>{e1TasksPool[e1TaskIndex]?.metadata?.mve || e1TasksPool[e1TaskIndex]?.name}</h1>
                                                 <button 
                                                     className="flow-primary-btn" 
                                                     onClick={() => navigate('/focus', { state: { taskId: e1TasksPool[e1TaskIndex].id, autoStart: true } })}
@@ -2419,7 +2598,7 @@ const LaunchpadFlow = () => {
                                 return (
                                     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                                         <h1 className="flow-title" style={{ fontSize: '48px', marginBottom: '16px' }}>✨</h1>
-                                        <h2 style={{ fontSize: '28px', color: '#fff', marginBottom: '12px' }}>You just made {dumpedTasks.length} tasks easier for your future self</h2>
+                                        <h2 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '12px' }}>You just made {dumpedTasks.length} tasks easier for your future self</h2>
                                         <p style={{ color: '#555', fontSize: '16px', marginBottom: '40px' }}>Your future self is going to love this on-ramp.</p>
                                         <button 
                                             className="flow-primary-btn" 
@@ -2438,7 +2617,7 @@ const LaunchpadFlow = () => {
                             return (
                                 <>
                                     <header style={{ marginBottom: '40px' }}>
-                                        <h1 className="flow-title" style={{ fontSize: '28px', color: '#fff', fontWeight: 600, marginBottom: '8px' }}>
+                                        <h1 className="flow-title" style={{ fontSize: '28px', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '8px' }}>
                                             Let’s organize this for your future self
                                         </h1>
                                         <p style={{ color: '#555', fontSize: '15px' }}>Which of these belong together? ({draftTasks.length} remaining)</p>
@@ -2456,11 +2635,11 @@ const LaunchpadFlow = () => {
                                                         );
                                                     }}
                                                     style={{ 
-                                                        background: 'rgba(255,255,255,0.03)', 
+                                                        background: 'var(--alpha-low)', 
                                                         padding: '16px 20px', 
                                                         borderRadius: '16px', 
-                                                        border: isSelected ? '1px solid #fff' : '1px solid rgba(255,255,255,0.08)', 
-                                                        color: isSelected ? '#fff' : '#888',
+                                                        border: isSelected ? '1px solid var(--text-primary)' : '1px solid var(--color-border)', 
+                                                        color: isSelected ? 'var(--text-primary)' : 'var(--text-tertiary)',
                                                         fontSize: '15px',
                                                         display: 'flex',
                                                         alignItems: 'center',
@@ -2473,8 +2652,8 @@ const LaunchpadFlow = () => {
                                                         width: '20px', 
                                                         height: '20px', 
                                                         borderRadius: '6px', 
-                                                        border: '2px solid #333',
-                                                        background: isSelected ? '#fff' : 'transparent',
+                                                        border: '2px solid var(--color-border)',
+                                                        background: isSelected ? 'var(--text-primary)' : 'transparent',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center'
@@ -2488,9 +2667,9 @@ const LaunchpadFlow = () => {
                                     </div>
 
                                     {selectedDraftTaskIds.length > 0 && (
-                                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                            <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #222' }}>
-                                                <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 600, marginBottom: '4px' }}>Ready for your low-energy self?</h3>
+                                        <div style={{ background: 'var(--alpha-low)', padding: '24px', borderRadius: '24px', border: '1px solid var(--color-border)' }}>
+                                            <div style={{ marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid var(--color-border)' }}>
+                                                <h3 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600, marginBottom: '4px' }}>Ready for your low-energy self?</h3>
                                                 <p style={{ color: '#555', fontSize: '13px', marginBottom: '16px' }}>Keep it checked if this feels doable even when you're tired.</p>
                                                 
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2506,18 +2685,18 @@ const LaunchpadFlow = () => {
                                                                     alignItems: 'center', 
                                                                     justifyContent: 'space-between',
                                                                     padding: '12px 16px',
-                                                                    background: 'rgba(255,255,255,0.03)',
+                                                                    background: 'var(--alpha-low)',
                                                                     borderRadius: '12px',
                                                                     cursor: 'pointer',
-                                                                    border: '1px solid rgba(255,255,255,0.05)'
+                                                                    border: '1px solid var(--color-border)'
                                                                 }}
                                                             >
-                                                                <span style={{ fontSize: '13px', color: isSafe ? '#ccc' : '#444' }}>{task?.name}</span>
+                                                                <span style={{ fontSize: '13px', color: isSafe ? 'var(--text-primary)' : 'var(--text-muted)' }}>{task?.name}</span>
                                                                 <div style={{ 
                                                                     width: '36px', 
                                                                     height: '20px', 
                                                                     borderRadius: '20px', 
-                                                                    background: isSafe ? '#fff' : '#222', 
+                                                                    background: isSafe ? 'var(--color-accent)' : 'var(--alpha-high)', 
                                                                     position: 'relative',
                                                                     transition: 'all 0.2s ease'
                                                                 }}>
@@ -2548,11 +2727,11 @@ const LaunchpadFlow = () => {
                                                         key={aspect.id}
                                                         onClick={() => handleAssignToAspect(aspect.id)}
                                                         style={{
-                                                            background: 'rgba(255,255,255,0.05)',
-                                                            border: '1px solid rgba(255,255,255,0.1)',
+                                                            background: 'var(--alpha-low)',
+                                                            border: '1px solid var(--color-border)',
                                                             borderRadius: '12px',
                                                             padding: '10px 16px',
-                                                            color: '#fff',
+                                                            color: 'var(--text-primary)',
                                                             fontSize: '14px',
                                                             cursor: 'pointer'
                                                         }}
@@ -2571,11 +2750,11 @@ const LaunchpadFlow = () => {
                                                     onKeyDown={(e) => e.key === 'Enter' && handleCreateAndAssign()}
                                                     style={{
                                                         flex: 1,
-                                                        background: 'rgba(255,255,255,0.03)',
-                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        background: 'var(--alpha-low)',
+                                                        border: '1px solid var(--color-border)',
                                                         borderRadius: '12px',
                                                         padding: '12px 16px',
-                                                        color: '#fff',
+                                                        color: 'var(--text-primary)',
                                                         fontSize: '14px',
                                                         outline: 'none'
                                                     }}
@@ -2599,7 +2778,7 @@ const LaunchpadFlow = () => {
                 {step === 'high-refine' && (
                     <div className="flow-step high-refine-step" style={{ width: '100%', maxWidth: '600px', margin: '0 auto', textAlign: 'left' }}>
                         <header style={{ marginBottom: '40px' }}>
-                            <h1 className="flow-title" style={{ fontSize: '28px', color: '#fff', fontWeight: 600, marginBottom: '8px' }}>
+                            <h1 className="flow-title" style={{ fontSize: '28px', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '8px' }}>
                                 You're becoming {(() => {
                                     const skill = nodeMap.get(selectedExperiment?.parentId);
                                     return skill?.metadata?.becoming || skill?.name || "someone great";
@@ -2619,15 +2798,15 @@ const LaunchpadFlow = () => {
                                 onKeyDown={handleBrainDump}
                                 style={{
                                     width: '100%',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid #222',
+                                    background: 'var(--alpha-low)',
+                                    border: '1px solid var(--color-border)',
                                     borderRadius: '16px',
                                     padding: '20px 24px',
-                                    color: '#fff',
+                                    color: 'var(--text-primary)',
                                     fontSize: '18px',
                                     outline: 'none',
                                     transition: 'border-color 0.2s ease',
-                                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                                    boxShadow: 'var(--shadow-md)'
                                 }}
                             />
                         </div>
@@ -2644,11 +2823,11 @@ const LaunchpadFlow = () => {
                             }}>
                                 {dumpedTasks.map(task => (
                                     <div key={task.id} style={{ 
-                                        background: 'rgba(255,255,255,0.03)', 
+                                        background: 'var(--alpha-low)', 
                                         padding: '16px 20px', 
                                         borderRadius: '12px', 
-                                        border: '1px solid rgba(255,255,255,0.08)', 
-                                        color: '#888',
+                                        border: '1px solid var(--color-border)', 
+                                        color: 'var(--text-secondary)',
                                         fontSize: '14px',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -2697,8 +2876,8 @@ const LaunchpadFlow = () => {
                                     }}
                                     style={{ 
                                         width: '100%', 
-                                        background: 'rgba(255,255,255,0.03)', 
-                                        border: '1px solid rgba(255,255,255,0.08)', 
+                                        background: 'var(--alpha-low)', 
+                                        border: '1px solid var(--color-border)', 
                                         borderRadius: '24px', 
                                         padding: '32px 24px', 
                                         textAlign: 'left', 
@@ -2711,7 +2890,7 @@ const LaunchpadFlow = () => {
                                     onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                                     onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#222'; e.currentTarget.style.transform = 'translateY(0)'; }}
                                 >
-                                    <span style={{ fontSize: '20px', color: '#fff', fontWeight: 700 }}>{exp.name}</span>
+                                    <span style={{ fontSize: '20px', color: 'var(--text-primary)', fontWeight: 700 }}>{exp.name}</span>
                                     <span style={{ fontSize: '12px', color: '#555', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         {exp.momentum} tasks completed this week
                                     </span>
@@ -2746,7 +2925,7 @@ const LaunchpadFlow = () => {
                                     else if (prepSubStep === 'task-input') { setPrepSubStep('aspects'); setPrepSelectedAspect(null); setPrepTasksAddedToAspect([]); }
                                     else if (prepSubStep === 'micro-action') { setPrepSubStep('task-input'); setPrepCreatedTask(null); setPrepMicroActionInput(''); }
                                 }}
-                                style={{ alignSelf: 'flex-start', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: '15px', cursor: 'pointer', padding: '0 0 32px 0', letterSpacing: '0.02em' }}
+                                style={{ alignSelf: 'flex-start', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '15px', cursor: 'pointer', padding: '0 0 32px 0', letterSpacing: '0.02em' }}
                             >
                                 ← Back
                             </button>
@@ -2756,10 +2935,10 @@ const LaunchpadFlow = () => {
                         {prepSubStep === 'areas' && (
                             <>
                                 <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '12px' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
                                         Prepare for your future self
                                     </div>
-                                    <h1 style={{ fontSize: '30px', fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.2 }}>
+                                    <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
                                         Which life area do you want to set up?
                                     </h1>
                                 </div>
@@ -2793,7 +2972,7 @@ const LaunchpadFlow = () => {
                                     ))}
                                 </div>
                                 <button
-                                    style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '14px', cursor: 'pointer', marginTop: '32px' }}
+                                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', marginTop: '32px' }}
                                     onClick={() => setStep('action')}
                                 >
                                     ← Back to launchpad
@@ -3015,14 +3194,14 @@ const LaunchpadFlow = () => {
                         {prepSubStep === 'task-input' && (
                             <>
                                 <div style={{ textAlign: 'center', marginBottom: '36px', width: '100%' }}>
-                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>
                                         {prepSelectedExperiment?.name} · {prepSelectedAspect?.name}
                                     </div>
-                                    <h1 style={{ fontSize: '26px', fontWeight: 600, color: '#fff', margin: 0, lineHeight: 1.3 }}>
-                                        What tasks does your future self need to see here?
+                                    <h1 style={{ fontSize: '26px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
+                                        What is the next, physical concrete step?
                                     </h1>
                                     <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', marginTop: '10px' }}>
-                                        Press Enter to add each one.
+                                        Try to avoid vague words like “research” or “plan” and focus on concrete action verbs like: “Open, Write, Clean” etc..
                                     </p>
                                 </div>
 
@@ -3036,11 +3215,11 @@ const LaunchpadFlow = () => {
                                         onKeyDown={(e) => { if (e.key === 'Enter') handlePrepCreateTask(); }}
                                         style={{
                                             width: '100%',
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            background: 'var(--alpha-low)',
+                                            border: '1px solid var(--color-border)',
                                             borderRadius: '16px',
                                             padding: '20px 24px',
-                                            color: '#fff',
+                                            color: 'var(--text-primary)',
                                             fontSize: '18px',
                                             outline: 'none',
                                             transition: 'border-color 0.2s ease',
@@ -3061,8 +3240,8 @@ const LaunchpadFlow = () => {
                                                 background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'
                                             }}>
                                                 <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)' }}>{t.name}</span>
-                                                {t.microAction && (
-                                                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', maxWidth: '50%', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>2min: {t.microAction}</span>
+                                                {t.mve && (
+                                                    <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', maxWidth: '50%', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>2min: {t.mve}</span>
                                                 )}
                                             </div>
                                         ))}
@@ -3085,7 +3264,12 @@ const LaunchpadFlow = () => {
                                     </button>
                                     <button
                                         style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline' }}
-                                        onClick={() => { setPrepSubStep('aspects'); setPrepSelectedAspect(null); }}
+                                        onClick={() => { 
+                                            setPrepSubStep('aspects'); 
+                                            setPrepSelectedAspect(null); 
+                                            setShowFutureSelfToast(true);
+                                            setTimeout(() => setShowFutureSelfToast(false), 3500);
+                                        }}
                                     >
                                         Done with this aspect
                                     </button>
@@ -3108,7 +3292,7 @@ const LaunchpadFlow = () => {
                                         <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>New Task</div>
                                         <div style={{ fontSize: '20px', fontWeight: 600, color: '#fff' }}>{prepCreatedTask?.name}</div>
                                     </div>
-                                    <h2 style={{ fontSize: '22px', fontWeight: 600, color: '#fff', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+                                    <h2 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 8px 0', lineHeight: 1.3 }}>
                                         What is the 2-minute version of this for when you're tired?
                                     </h2>
                                     <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>
@@ -3179,7 +3363,7 @@ const LaunchpadFlow = () => {
                                             </h2>
                                             
                                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                                <h1 style={{ fontSize: '28px', color: '#fff', marginBottom: '8px', lineHeight: 1.2 }}>
+                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '8px', lineHeight: 1.2 }}>
                                                     {selectedInitiationTask?.name || initiationTask?.name}
                                                 </h1>
                                                 <p style={{ color: '#444', fontSize: '13px', marginBottom: '32px', fontWeight: 600, letterSpacing: '0.02em' }}>
@@ -3187,7 +3371,7 @@ const LaunchpadFlow = () => {
                                                 </p>
                                             </div>
 
-                                            <h3 style={{ fontSize: '20px', color: '#fff', marginBottom: '32px', fontWeight: 500 }}>Does this feel doable right now?</h3>
+                                            <h3 style={{ fontSize: '20px', color: 'var(--text-primary)', marginBottom: '32px', fontWeight: 500 }}>Does this feel doable right now?</h3>
 
                                             <button 
                                                 className="flow-primary-btn" 
@@ -3422,6 +3606,32 @@ const LaunchpadFlow = () => {
                             Cancel
                         </button>
                     </div>
+                </div>
+            )}
+            {/* FUTURE SELF TOAST */}
+            {showFutureSelfToast && (
+                <div style={{
+                    position: 'fixed',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 10001,
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    padding: '20px 40px',
+                    borderRadius: '100px',
+                    color: '#fff',
+                    fontSize: '18px',
+                    fontWeight: 500,
+                    letterSpacing: '0.02em',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+                    pointerEvents: 'none',
+                    textAlign: 'center',
+                    animation: 'prepToastFadeInOut 3.5s forwards'
+                }}>
+                    Your future self will thank you
                 </div>
             )}
         </div>

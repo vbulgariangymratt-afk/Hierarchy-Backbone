@@ -53,8 +53,8 @@ export const scoreLowEnergyTask = (task, aspectStats) => {
     // 2. Already started = easier
     if (task.metadata?.status === TaskStatuses.IN_PROGRESS) score += 3;
     
-    // 3. Has micro action = easier
-    if (task.metadata?.microAction) score += 2;
+    // 3. Has MVE (Minimum Viable Effort) = easier
+    if (task.metadata?.mve) score += 2;
     
     // 4. Fewer substeps = easier
     const stepCount = task.metadata?.subSteps?.length || 0;

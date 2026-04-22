@@ -1643,10 +1643,11 @@ const SkillPage = () => {
         }
     }, [skill?.id, skill?.metadata?.identityAnchor]);
 
+    // Focus is now handled by autoFocus in the modal/inline inputs to prevent race conditions
+
+
     useEffect(() => {
-        if (creatingTaskForAspectId && taskNameInputRef.current) {
-            setTimeout(() => taskNameInputRef.current.focus(), 50);
-        }
+        console.log("[DIAGNOSIS] creatingTaskForAspectId state:", creatingTaskForAspectId);
     }, [creatingTaskForAspectId]);
 
     useEffect(() => {
@@ -2561,7 +2562,10 @@ const SkillPage = () => {
                                                                                         value={newTaskName}
                                                                                         onChange={e => setNewTaskName(e.target.value)}
                                                                                         onKeyDown={e => handleCreateTask(e, aspect.id)}
-                                                                                        onBlur={() => setCreatingTaskForAspectId(null)}
+                                                                                         onBlur={(e) => {
+                                                                                             if (e.relatedTarget && e.relatedTarget.closest('.confirmation-modal')) return;
+                                                                                             setCreatingTaskForAspectId(null);
+                                                                                         }}
                                                                                         style={{
                                                                                             width: '100%',
                                                                                             background: 'rgba(255, 255, 255, 0.03)',
@@ -2640,6 +2644,7 @@ const SkillPage = () => {
                                                                         <button
                                                                             className="add-task-btn"
                                                                             onClick={(e) => {
+                                                                                console.log("[DIAGNOSIS] Clicked Add Task button for aspect:", aspect.id);
                                                                                 e.stopPropagation();
                                                                                 setCreatingTaskForAspectId(aspect.id);
                                                                                 setNewTaskItemType('FINITE');
