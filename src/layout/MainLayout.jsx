@@ -44,6 +44,39 @@ const MainLayout = () => {
                 onClose={() => setIsLaunchpadOpen(false)} 
                 skill={selectedSkill}
             />
+
+            {/* Temporary Test Button for Aura Animation */}
+            <button 
+                onClick={() => {
+                    const skill = useBackboneStore.getState().nodes.find(n => n.type === NodeTypes.SKILL);
+                    if (skill) {
+                        window.dispatchEvent(new CustomEvent('skill-level-up', { 
+                            detail: { skillId: skill.id } 
+                        }));
+                    }
+                }}
+                style={{
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: 9999,
+                    background: 'rgba(153, 186, 215, 0.2)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(153, 186, 215, 0.4)',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                }}
+                title="Test Aura Glow"
+            >
+                ✨
+            </button>
         </div>
     );
 };

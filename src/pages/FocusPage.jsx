@@ -67,6 +67,7 @@ const FocusPage = () => {
     const [nextSuggestedTask, setNextSuggestedTask] = useState(null);
     const [hasAutoStarted, setHasAutoStarted] = useState(false);
     const [sensoryState, setSensoryState] = useState('quiet'); // 'quiet' or 'cluttered'
+    const [levelUpCelebration, setLevelUpCelebration] = useState(null); // { level: X, fading: false }
 
 
     // Reward Animation Ref
@@ -115,6 +116,39 @@ const FocusPage = () => {
         setGlobalSessionId(activeSessionId);
     }, [activeSessionId, setIsSessionActive, setGlobalSessionId]);
 
+    // --- LEVEL UP CELEBRATION LISTENER ---
+    useEffect(() => {
+        const handleLevelUp = (e) => {
+            const { skillId, newLevel } = e.detail;
+            
+            // Only trigger if it matches the current skill
+            // (or if we want a global celebrate, but user said "proximal to action")
+            if (skill && skillId !== skill.id) return;
+
+            // Trigger visual bloom & sound
+            setLevelUpCelebration({ level: newLevel, fading: false });
+            
+            try {
+                const audio = new Audio('/Level-up chime.mp3');
+                audio.volume = 0.4;
+                audio.play();
+            } catch (err) {
+                console.warn('Focus audio failed:', err);
+            }
+
+            // Start fade out after 2.7s (total 3s duration)
+            setTimeout(() => {
+                setLevelUpCelebration(prev => prev ? { ...prev, fading: true } : null);
+                
+                // Clear completely after fade out
+                setTimeout(() => setLevelUpCelebration(null), 300);
+            }, 2700);
+        };
+
+        window.addEventListener('skill-level-up', handleLevelUp);
+        return () => window.removeEventListener('skill-level-up', handleLevelUp);
+    }, [skill]);
+
     const aspectStats = React.useMemo(() => getAspectStats(allNodes), [allNodes]);
 
     // Precompute next suggested task for instant Momentum Loop
@@ -142,9 +176,18 @@ const FocusPage = () => {
     const handleToggleSubStep = async (id) => {
         if (isDraggingSubStep.current) return;
 
-        const updated = subSteps.map(s =>
-            s.id === id ? { ...s, isCompleted: !s.isCompleted } : s
-        );
+        const now = Date.now();
+        const updated = subSteps.map(s => {
+            if (s.id === id) {
+                const isNowCompleted = !s.isCompleted;
+                return { 
+                    ...s, 
+                    isCompleted: isNowCompleted,
+                    completedAt: isNowCompleted ? now : null 
+                };
+            }
+            return s;
+        });
         setSubSteps(updated);
 
         await backbone.updateNode(task.id, {
@@ -154,7 +197,12 @@ const FocusPage = () => {
 
     const handleAddSubStep = async (e) => {
         if (e.key === 'Enter' && newSubStep.trim()) {
-            const updated = [...subSteps, { id: Date.now().toString(), text: newSubStep.trim(), isCompleted: false }];
+            const updated = [...subSteps, { 
+                id: Date.now().toString(), 
+                text: newSubStep.trim(), 
+                isCompleted: false,
+                completedAt: null 
+            }];
             setSubSteps(updated);
             setNewSubStep('');
             await backbone.updateNode(task.id, {
@@ -930,6 +978,12 @@ const FocusPage = () => {
                     title={!activeSessionId ? "Start session first" : ""}
                     style={{ position: 'relative', overflow: 'visible' }}
                 >
+                    {levelUpCelebration && <div className="aura-bloom" />}
+                    {levelUpCelebration && (
+                        <div className={`aura-level-up-label ${levelUpCelebration.fading ? 'fade-out' : 'fade-in'}`}>
+                            Aura Level Up! (Level {levelUpCelebration.level})
+                        </div>
+                    )}
                     <motion.div 
                         className={`focus-toggle-track ${isToggled ? 'active' : ''}`}
                         animate={{ 
@@ -1237,6 +1291,38 @@ const FocusPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {/* Temporary Test Button for Focus Aura Celebration */}
+            <button 
+                onClick={() => {
+                    if (skill) {
+                        window.dispatchEvent(new CustomEvent('skill-level-up', { 
+                            detail: { skillId: skill.id, newLevel: 'X' } 
+                        }));
+                    }
+                }}
+                style={{
+                    position: 'fixed',
+                    right: '32px',
+                    bottom: '80px',
+                    background: 'rgba(153, 186, 215, 0.2)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(153, 186, 215, 0.4)',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    zIndex: 9999,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                }}
+                title="Test Focus Level Up"
+            >
+                ✨
+            </button>
+
             <button 
                 className={`focus-save-energy-btn ${task.metadata?.highEnergy ? 'saved' : ''}`}
                 onClick={handleSaveForHighEnergy}
@@ -1244,6 +1330,7 @@ const FocusPage = () => {
             >
                 {task.metadata?.highEnergy ? "Saved for later" : "Save for high energy"}
             </button>
+
         </div>
     );
 };

@@ -69,7 +69,20 @@ const Sidebar = ({ onSkillClick }) => {
     const [pinnedSpotlightIds, setPinnedSpotlightIds] = useState([]);
     
     const [isScrolling, setIsScrolling] = useState(false);
+    const [glowingNodeId, setGlowingNodeId] = useState(null);
     const scrollTimeoutRef = useRef(null);
+
+    // --- CUSTOM CHIME SOUND ---
+    const playChime = useCallback(() => {
+        try {
+            const audio = new Audio('/Level-up chime.mp3');
+            audio.volume = 0.4;
+            audio.play();
+        } catch (err) {
+            console.warn('Audio playback failed:', err);
+        }
+    }, []);
+
 
     const handleScroll = useCallback(() => {
         setIsScrolling(true);
@@ -93,6 +106,37 @@ const Sidebar = ({ onSkillClick }) => {
         energyLevel, 
         updateEnergyLevel 
     } = useSettings();
+
+    // --- LEVEL UP LISTENER ---
+    useEffect(() => {
+        const handleLevelUp = (e) => {
+            const { skillId } = e.detail;
+            const skill = allNodes.find(n => n.id === skillId);
+            if (!skill) return;
+
+            // Determine Target: Skill (if focus/maintenance) or Area (parent)
+            // Use nullish coalescing to harden against uninitialized settings
+            const isFocus = (focusSlots ?? []).includes(skillId);
+            const isMaintenance = (maintenanceSkillIds ?? []).includes(skillId);
+
+            let targetId = skillId;
+            if (!isFocus && !isMaintenance) {
+                targetId = skill.parentId;
+            }
+
+            // Trigger Animation & Sound within 100ms
+            setTimeout(() => {
+                setGlowingNodeId(targetId);
+                playChime();
+                
+                // Clear after animation duration (2.1s + buffer)
+                setTimeout(() => setGlowingNodeId(null), 2200);
+            }, 50);
+        };
+
+        window.addEventListener('skill-level-up', handleLevelUp);
+        return () => window.removeEventListener('skill-level-up', handleLevelUp);
+    }, [allNodes, focusSlots, maintenanceSkillIds, playChime]);
 
     // Diagnostic log for theme debugging
     useEffect(() => {
@@ -433,7 +477,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                 return (
                                                     <div 
                                                         key={idx} 
-                                                        className={`nav-item slot-nav-item ${!slotId ? 'empty' : ''}`}
+                                                        className={`nav-item slot-nav-item ${!slotId ? 'empty' : ''} ${glowingNodeId === slotId ? 'aura-glow-active' : ''}`}
                                                         onClick={() => {
                                                             if (slotId) {
                                                                 if (onSkillClick) onSkillClick(skill);
@@ -526,7 +570,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                     return (
                                                         <div key={skill.id} className="pilot-skill-group">
                                                             <div
-                                                                className="pilot-skill-label"
+                                                                className={`pilot-skill-label ${glowingNodeId === skill.id ? 'aura-glow-active' : ''}`}
                                                                 onClick={() => navigate(`/skill/${skill.id}`)}
                                                             >
                                                                 <span className="btn-icon">
@@ -601,7 +645,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                     <NavLink
                                                         key={area.id}
                                                         to={`/area/${area.id}`}
-                                                        className={({ isActive }) => `nav-item area-item ${isActive ? 'active' : ''}`}
+                                                        className={({ isActive }) => `nav-item area-item ${isActive ? 'active' : ''} ${glowingNodeId === area.id ? 'aura-glow-active' : ''}`}
                                                     >
                                                         <div
                                                             role="button"

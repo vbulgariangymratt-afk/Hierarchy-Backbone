@@ -1461,7 +1461,7 @@ const LaunchpadFlow = () => {
                                             <div style={{ 
                                                 width: `${((skill?.metadata?.auraTotal || 0) % 12) / 12 * 100}%`, 
                                                 height: '100%', 
-                                                background: 'linear-gradient(90deg, #60a5fa, #3b82f6)', 
+                                                background: 'var(--aura-gradient)', 
                                                 borderRadius: '1.5px'
                                             }} />
                                         </div>
@@ -1548,7 +1548,7 @@ const LaunchpadFlow = () => {
                                         <div style={{ 
                                             width: `${(auraTotal % 12) / 12 * 100}%`, 
                                             height: '100%', 
-                                            background: 'linear-gradient(90deg, #60a5fa, #3b82f6)', 
+                                            background: 'var(--aura-gradient)', 
                                             borderRadius: '1.5px'
                                         }} />
                                     </div>

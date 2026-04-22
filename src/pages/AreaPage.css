@@ -772,10 +772,11 @@
 
 .aura-bar-fill {
     height: 100%;
-    background: var(--text-primary);
+    background: var(--aura-gradient);
+    background-size: 200% 100%; /* Allows for subtle animation if desired later */
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.15);
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 15px rgba(234, 157, 155, 0.2); /* Coral-tinted glow */
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy premium transition */
 }
 
 

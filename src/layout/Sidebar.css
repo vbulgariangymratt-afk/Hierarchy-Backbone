@@ -1503,7 +1503,15 @@
 .liquid-mode.light .sidebar .btn-icon,
 .liquid-mode.light .sidebar .node-icon-wrapper,
 .liquid-mode.light .sidebar .dot-placeholder,
-.liquid-mode.light .sidebar .segmented-control {
+.liquid-mode.light .sidebar .segmented-control,
+.solid-mode.light .sidebar .btn-icon,
+.solid-mode.light .sidebar .node-icon-wrapper,
+.solid-mode.light .sidebar .dot-placeholder,
+.solid-mode.light .sidebar .segmented-control,
+.wallpaper-mode.light .sidebar .btn-icon,
+.wallpaper-mode.light .sidebar .node-icon-wrapper,
+.wallpaper-mode.light .sidebar .dot-placeholder,
+.wallpaper-mode.light .sidebar .segmented-control {
     background: transparent !important;
     box-shadow: none !important;
     border: none !important;
@@ -1511,7 +1519,11 @@
 
 /* Light Mode Specific Borders for Primary Controls */
 .liquid-mode.light .sidebar .mode-toggle-btn,
-.liquid-mode.light .sidebar .energy-pills {
+.liquid-mode.light .sidebar .energy-pills,
+.solid-mode.light .sidebar .mode-toggle-btn,
+.solid-mode.light .sidebar .energy-pills,
+.wallpaper-mode.light .sidebar .mode-toggle-btn,
+.wallpaper-mode.light .sidebar .energy-pills {
     border: 1px solid rgba(0, 0, 0, 0.08) !important;
     background: rgba(0, 0, 0, 0.02) !important;
 }
@@ -1523,7 +1535,19 @@
 .liquid-mode.light .sidebar .segmented-control-label,
 .liquid-mode.light .sidebar .hryvnia-amount,
 .liquid-mode.light .sidebar .mode-toggle-btn,
-.liquid-mode.light .sidebar .header-action-btn {
+.liquid-mode.light .sidebar .header-action-btn,
+.solid-mode.light .sidebar .energy-label,
+.solid-mode.light .sidebar .section-title-static,
+.solid-mode.light .sidebar .segmented-control-label,
+.solid-mode.light .sidebar .hryvnia-amount,
+.solid-mode.light .sidebar .mode-toggle-btn,
+.solid-mode.light .sidebar .header-action-btn,
+.wallpaper-mode.light .sidebar .energy-label,
+.wallpaper-mode.light .sidebar .section-title-static,
+.wallpaper-mode.light .sidebar .segmented-control-label,
+.wallpaper-mode.light .sidebar .hryvnia-amount,
+.wallpaper-mode.light .sidebar .mode-toggle-btn,
+.wallpaper-mode.light .sidebar .header-action-btn {
     color: rgba(0, 0, 0, 0.9) !important;
     font-weight: 600 !important;
     text-transform: none !important;
@@ -1542,7 +1566,17 @@
 .liquid-mode.light .sidebar .settings-btn,
 .liquid-mode.light .sidebar .theme-toggle-sidebar,
 .liquid-mode.light .sidebar .pilot-skill-label,
-.liquid-mode.light .sidebar .hryvnia-icon {
+.liquid-mode.light .sidebar .hryvnia-icon,
+.solid-mode.light .sidebar .nav-item,
+.solid-mode.light .sidebar .settings-btn,
+.solid-mode.light .sidebar .theme-toggle-sidebar,
+.solid-mode.light .sidebar .pilot-skill-label,
+.solid-mode.light .sidebar .hryvnia-icon,
+.wallpaper-mode.light .sidebar .nav-item,
+.wallpaper-mode.light .sidebar .settings-btn,
+.wallpaper-mode.light .sidebar .theme-toggle-sidebar,
+.wallpaper-mode.light .sidebar .pilot-skill-label,
+.wallpaper-mode.light .sidebar .hryvnia-icon {
     color: rgb(129, 126, 125) !important; 
     font-weight: 400 !important;
     background: transparent !important;
@@ -1560,7 +1594,13 @@
 /* Icons inherit the exact same whisper grey */
 .liquid-mode.light .sidebar .nav-item .btn-icon,
 .liquid-mode.light .sidebar .mode-toggle-btn .btn-icon,
-.liquid-mode.light .sidebar .pilot-skill-label .btn-icon {
+.liquid-mode.light .sidebar .pilot-skill-label .btn-icon,
+.solid-mode.light .sidebar .nav-item .btn-icon,
+.solid-mode.light .sidebar .mode-toggle-btn .btn-icon,
+.solid-mode.light .sidebar .pilot-skill-label .btn-icon,
+.wallpaper-mode.light .sidebar .nav-item .btn-icon,
+.wallpaper-mode.light .sidebar .mode-toggle-btn .btn-icon,
+.wallpaper-mode.light .sidebar .pilot-skill-label .btn-icon {
     color: inherit !important;
     opacity: 1 !important;
 }
@@ -1569,7 +1609,15 @@
 .liquid-mode.light .sidebar .nav-item:hover,
 .liquid-mode.light .sidebar .settings-btn:hover,
 .liquid-mode.light .sidebar .theme-toggle-sidebar:hover,
-.liquid-mode.light .sidebar .pilot-skill-label:hover {
+.liquid-mode.light .sidebar .pilot-skill-label:hover,
+.solid-mode.light .sidebar .nav-item:hover,
+.solid-mode.light .sidebar .settings-btn:hover,
+.solid-mode.light .sidebar .theme-toggle-sidebar:hover,
+.solid-mode.light .sidebar .pilot-skill-label:hover,
+.wallpaper-mode.light .sidebar .nav-item:hover,
+.wallpaper-mode.light .sidebar .settings-btn:hover,
+.wallpaper-mode.light .sidebar .theme-toggle-sidebar:hover,
+.wallpaper-mode.light .sidebar .pilot-skill-label:hover {
     color: rgba(0, 0, 0, 0.6) !important; /* Slightly more visible on hover */
     background: rgba(0, 0, 0, 0.04) !important;
     border-radius: 100px !important;
@@ -1581,7 +1629,9 @@
 }
 
 /* Active Page: Darker ink, subtle pill */
-.liquid-mode.light .sidebar .nav-item.active {
+.liquid-mode.light .sidebar .nav-item.active,
+.solid-mode.light .sidebar .nav-item.active,
+.wallpaper-mode.light .sidebar .nav-item.active {
     background: rgba(0, 0, 0, 0.05) !important;
     color: rgba(0, 0, 0, 0.9) !important;
     font-weight: 600 !important;
@@ -1592,7 +1642,15 @@
 .liquid-mode.light .sidebar .health-dot,
 .liquid-mode.light .sidebar .area-dot,
 .liquid-mode.light .sidebar .btn-status-indicator,
-.liquid-mode.light .sidebar .btn-status-dot {
+.liquid-mode.light .sidebar .btn-status-dot,
+.solid-mode.light .sidebar .health-dot,
+.solid-mode.light .sidebar .area-dot,
+.solid-mode.light .sidebar .btn-status-indicator,
+.solid-mode.light .sidebar .btn-status-dot,
+.wallpaper-mode.light .sidebar .health-dot,
+.wallpaper-mode.light .sidebar .area-dot,
+.wallpaper-mode.light .sidebar .btn-status-indicator,
+.wallpaper-mode.light .sidebar .btn-status-dot {
     opacity: 1 !important;
 }
 
@@ -1666,13 +1724,16 @@
 .liquid-mode.light .sidebar .nav-item .btn-icon span,
 .solid-mode.light .sidebar .nav-item .btn-icon img,
 .solid-mode.light .sidebar .nav-item .btn-icon svg,
-.solid-mode.light .sidebar .nav-item .btn-icon span {
+.solid-mode.light .sidebar .nav-item .btn-icon span,
+.wallpaper-mode.light .sidebar .nav-item .btn-icon img,
+.wallpaper-mode.light .sidebar .nav-item .btn-icon svg,
+.wallpaper-mode.light .sidebar .nav-item .btn-icon span {
     max-width: 14px !important;
     max-height: 14px !important;
     width: 14px !important;
     height: 14px !important;
     stroke-width: 2 !important;
-    color: rgb(129, 126, 125) !important;
+    color: inherit !important;
     stroke: currentColor !important;
     filter: none !important;
 }
@@ -1716,4 +1777,27 @@
 [data-theme="dark"] .theme-sync-option.active {
   background: rgba(255,255,255,0.15);
   color: var(--text-primary);
+}
+
+/* ── Aura Glow Animation (Level Up) ── */
+@keyframes auraGlowSidebar {
+  0% {
+    background: transparent;
+    box-shadow: inset 0 0 0px 0px rgba(153, 186, 215, 0);
+  }
+  19% { /* Syncs with 400ms audio build-up */
+    background: rgba(153, 186, 215, 0.4);
+    box-shadow: inset 0 0 40px 5px rgba(153, 186, 215, 0.5);
+  }
+  100% {
+    background: transparent;
+    box-shadow: inset 0 0 0px 0px rgba(153, 186, 215, 0);
+  }
+}
+
+.aura-glow-active {
+  animation: auraGlowSidebar 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  z-index: 10;
+  position: relative;
+  overflow: hidden;
 }

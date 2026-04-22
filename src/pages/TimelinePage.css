@@ -245,6 +245,27 @@
     border: 1px solid var(--color-border);
 }
 
+.summary-pill.level-up-pill {
+    background: rgba(153, 186, 215, 0.15);
+    color: #99BAD7; /* Misty Blue */
+    border-color: rgba(153, 186, 215, 0.4);
+    font-weight: 800;
+}
+
+.level-up-row {
+    background: rgba(153, 186, 215, 0.08) !important;
+    border-left: 3px solid #99BAD7 !important;
+}
+
+.aura-gain-tag {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #99BAD7;
+    background: rgba(153, 186, 215, 0.1);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
 .expand-hint {
     position: absolute;
     top: 24px;
@@ -424,11 +445,24 @@
     border-left: 3px solid rgba(255, 255, 255, 0.1);
 }
 
-.duration-tag {
+.duration-tag, .parent-task-tag {
     font-size: 0.8rem;
     font-weight: 700;
     color: var(--text-secondary);
     opacity: 0.8;
+}
+
+.parent-task-tag {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    margin-left: 10px;
+}
+
+.subtask-text-timeline {
+    font-weight: 500;
+    color: var(--text-primary);
 }
 
 .journal-note-preview {

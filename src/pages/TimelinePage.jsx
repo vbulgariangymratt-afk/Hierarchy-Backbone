@@ -93,6 +93,7 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
     const totalSessions = day.focusSessions.length;
     const totalHabits = day.habitCompletions.reduce((acc, h) => acc + h.count, 0);
     const totalReps = day.repetitionActivities.reduce((acc, h) => acc + h.count, 0);
+    const totalLevelUps = day.levelUps?.length || 0;
     
     // Count unique skills (ignore 'no-skill')
     const uniqueSkillsCount = (day.skillGroups || []).filter(g => g.id !== 'no-skill').length;
@@ -114,6 +115,7 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
                     {totalTasks > 0 && <span className="summary-pill">Tasks: {totalTasks}</span>}
                     {totalSessions > 0 && <span className="summary-pill">Focus: {totalSessions}</span>}
                     {totalHabits > 0 && <span className="summary-pill">Habits: {totalHabits}</span>}
+                    {totalLevelUps > 0 && <span className="summary-pill level-up-pill">Levels: {totalLevelUps}</span>}
                 </div>
                 
                 <span className="expand-hint">
@@ -164,6 +166,7 @@ const SkillSection = ({ group, isToday }) => {
     const totalTasks = group.tasksCompleted.length;
     const totalSessions = group.focusSessions.length;
     const totalHabits = group.habitCompletions.reduce((acc, h) => acc + h.count, 0);
+    const totalSubTasks = group.subStepsCompleted?.length || 0;
 
     return (
         <div className={`skill-group-section ${isCollapsed ? 'collapsed' : ''}`}>
@@ -171,7 +174,7 @@ const SkillSection = ({ group, isToday }) => {
                 <div className="skill-group-title">
                     <h4>{group.name}</h4>
                     <span className="skill-stats-hint">
-                        ({totalTasks > 0 && `tasks: ${totalTasks}`}{totalSessions > 0 && `${totalTasks > 0 ? ', ' : ''}focus: ${totalSessions}`}{totalHabits > 0 && `${(totalTasks > 0 || totalSessions > 0) ? ', ' : ''}habits: ${totalHabits}`})
+                        ({totalTasks > 0 && `tasks: ${totalTasks}`}{totalSubTasks > 0 && `${totalTasks > 0 ? ', ' : ''}sub-tasks: ${totalSubTasks}`}{totalSessions > 0 && `${(totalTasks > 0 || totalSubTasks > 0) ? ', ' : ''}focus: ${totalSessions}`}{totalHabits > 0 && `${(totalTasks > 0 || totalSubTasks > 0 || totalSessions > 0) ? ', ' : ''}habits: ${totalHabits}`})
                     </span>
                 </div>
                 <span className="collapse-arrow">{isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</span>
@@ -184,6 +187,17 @@ const SkillSection = ({ group, isToday }) => {
                             {group.tasksCompleted.map(t => (
                                 <div key={t.id} className="item-row">
                                     <span>{t.name}</span>
+                                </div>
+                            ))}
+                        </Section>
+                    )}
+
+                    {group.subStepsCompleted?.length > 0 && (
+                        <Section title="Sub-tasks Completed">
+                            {group.subStepsCompleted.map((s, i) => (
+                                <div key={i} className="item-row">
+                                    <span className="subtask-text-timeline">{s.text}</span>
+                                    <span className="parent-task-tag">{s.taskName}</span>
                                 </div>
                             ))}
                         </Section>
@@ -219,6 +233,17 @@ const SkillSection = ({ group, isToday }) => {
                                 <div key={h.habitId} className="item-row">
                                     <span>{h.name}</span>
                                     {h.count > 1 && <span className="duration-tag">×{h.count}</span>}
+                                </div>
+                            ))}
+                        </Section>
+                    )}
+
+                    {group.levelUps.length > 0 && (
+                        <Section title="Mastery Reached">
+                            {group.levelUps.map((lu, i) => (
+                                <div key={i} className="item-row level-up-row">
+                                    <span>Mastered Level {lu.newLevel}</span>
+                                    <span className="aura-gain-tag">+20 ₴</span>
                                 </div>
                             ))}
                         </Section>

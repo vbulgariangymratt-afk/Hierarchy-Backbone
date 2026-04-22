@@ -501,3 +501,69 @@
     85% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
     100% { opacity: 0; transform: translate(-50%, -60%) scale(1.05); filter: blur(8px); }
 }
+
+/* ── Habit Completion Celebration ── */
+.habit-lingering-glow {
+    border-color: rgba(153, 186, 215, 0.6) !important;
+    box-shadow: 0 0 15px rgba(153, 186, 215, 0.15) !important;
+    transition: border-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+.habit-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background: rgba(153, 186, 215, 0.2);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    animation: habitRippleAnimation 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes habitRippleAnimation {
+    0% {
+        width: 40px;
+        height: 40px;
+        opacity: 0.8;
+    }
+    100% {
+        width: 120%;
+        height: 250%;
+        opacity: 0;
+    }
+}
+
+.habit-identity-label {
+    position: absolute;
+    top: -20px;
+    right: 10px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #99BAD7; /* Misty Blue */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.habit-identity-label.fade-in {
+    animation: habitLabelFadeIn 0.4s ease-out forwards;
+}
+
+.habit-identity-label.fade-out {
+    animation: habitLabelFadeOut 0.4s ease-in forwards;
+}
+
+@keyframes habitLabelFadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes habitLabelFadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-5px); }
+}
+

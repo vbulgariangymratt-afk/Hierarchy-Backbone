@@ -48,6 +48,7 @@ export const TimelineService = (backbone, habitService, journalService) => {
 
             const rootNode = allNodes.find(n => n.id === 'ROOT');
             const dailyRepLog = rootNode?.metadata?.dailyRepLog || {};
+            const dailyLevelUpLog = rootNode?.metadata?.dailyLevelUpLog || {};
 
             const days = [];
             let current = new Date(start);
@@ -126,6 +127,24 @@ export const TimelineService = (backbone, habitService, journalService) => {
                     }
                 }
 
+                // 6. Level Ups today
+                const dayLevelUps = dailyLevelUpLog[dateStr] || [];
+
+                // 7. Sub-steps completed today
+                let subStepsCompleted = [];
+                allNodes.filter(n => n.type === 'TASK').forEach(task => {
+                    const subSteps = task.metadata?.subSteps || [];
+                    subSteps.forEach(s => {
+                        if (s.isCompleted && s.completedAt >= dayStart && s.completedAt <= dayEnd) {
+                            subStepsCompleted.push({
+                                ...s,
+                                taskName: task.name,
+                                taskId: task.id
+                            });
+                        }
+                    });
+                });
+
                 // --- GROUPING BY SKILL ---
                 const skillGroupsMap = {};
                 const getOrCreateGroup = (skillNode) => {
@@ -138,7 +157,9 @@ export const TimelineService = (backbone, habitService, journalService) => {
                             tasksUnfinished: [],
                             focusSessions: [],
                             habitCompletions: [],
-                            repetitionActivities: []
+                            repetitionActivities: [],
+                            levelUps: [],
+                            subStepsCompleted: []
                         };
                     }
                     return skillGroupsMap[key];
@@ -171,12 +192,24 @@ export const TimelineService = (backbone, habitService, journalService) => {
                     getOrCreateGroup(skill).repetitionActivities.push(r);
                 });
 
+                dayLevelUps.forEach(lu => {
+                    const skill = allNodes.find(n => n.id === lu.skillId);
+                    getOrCreateGroup(skill).levelUps.push(lu);
+                });
+
+                subStepsCompleted.forEach(s => {
+                    const skill = findSkillAncestor(allNodes, s.taskId);
+                    getOrCreateGroup(skill).subStepsCompleted.push(s);
+                });
+
                 const skillGroups = Object.values(skillGroupsMap).filter(group => 
                     group.tasksCompleted.length > 0 || 
                     group.tasksUnfinished.length > 0 ||
                     group.focusSessions.length > 0 ||
                     group.habitCompletions.length > 0 ||
-                    group.repetitionActivities.length > 0
+                    group.repetitionActivities.length > 0 ||
+                    group.levelUps.length > 0 ||
+                    group.subStepsCompleted.length > 0
                 );
 
                 // 6. Journal Entry
@@ -190,6 +223,8 @@ export const TimelineService = (backbone, habitService, journalService) => {
                     focusSessions,
                     habitCompletions,
                     repetitionActivities,
+                    levelUps: dayLevelUps,
+                    subStepsCompleted,
                     skillGroups, // NEW: Use this for detail view
                     journalEntry: journalEntry || null
                 });

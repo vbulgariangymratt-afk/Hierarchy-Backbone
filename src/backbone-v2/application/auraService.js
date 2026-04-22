@@ -1,4 +1,5 @@
 import { NodeTypes } from '../domain/entities';
+import { supabase } from '../../lib/supabase';
 
 /**
  * Service for managing Skill Aura reinforcement.
@@ -12,8 +13,71 @@ export const AuraService = (hierarchyRepository) => {
     const calculateLevel = (auraTotal) => Math.floor((auraTotal || 0) / 12) + 1;
 
     /**
-     * Finds the ancestor Skill for any given node ID.
+     * Awards Hryvnia to the ROOT node metadata.
+     * Logic matches HierarchyService for balance consistency.
      */
+    const awardHryvniaBonus = async (amount) => {
+        const val = Number(amount);
+        if (isNaN(val) || val <= 0) return;
+
+        // Fetch latest balance from cloud to prevent stale overwrites
+        const { data: cloudRoot } = await supabase
+            .from('nodes')
+            .select('*')
+            .eq('id', 'ROOT')
+            .single();
+
+        let rootNode = cloudRoot ? {
+            id: cloudRoot.id,
+            name: cloudRoot.name,
+            type: cloudRoot.type,
+            parentId: cloudRoot.parent_id,
+            metadata: cloudRoot.metadata,
+            createdAt: cloudRoot.created_at,
+            updatedAt: cloudRoot.updated_at
+        } : await hierarchyRepository.getById('ROOT');
+
+        if (!rootNode) return;
+
+        const currentBalance = rootNode.metadata?.hryvniaBalance || 0;
+        const newBalance = currentBalance + val;
+
+        await hierarchyRepository.update('ROOT', {
+            metadata: { ...rootNode.metadata, hryvniaBalance: newBalance }
+        });
+
+        console.log(`[Aura Reward] +${val} Hryvnia awarded for Level Up`);
+    };
+
+    /**
+     * Logs the level up event for historical timeline tracking.
+     */
+    const logLevelUp = async (skillId, oldLevel, newLevel) => {
+        const root = await hierarchyRepository.getById('ROOT');
+        if (!root) return;
+
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const dailyLevelUpLog = root.metadata?.dailyLevelUpLog || {};
+        const entries = dailyLevelUpLog[todayStr] || [];
+
+        entries.push({
+            skillId,
+            oldLevel,
+            newLevel,
+            timestamp: Date.now()
+        });
+
+        await hierarchyRepository.update('ROOT', {
+            metadata: {
+                ...root.metadata,
+                dailyLevelUpLog: {
+                    ...dailyLevelUpLog,
+                    [todayStr]: entries
+                }
+            }
+        });
+    };
+
     const findSkillAncestor = async (nodeId) => {
         const node = await hierarchyRepository.getById(nodeId);
         if (!node) return null;
@@ -49,9 +113,17 @@ export const AuraService = (hierarchyRepository) => {
 
             await hierarchyRepository.update(skillId, updates);
 
-            // Required trace logs
-
+            // Level Up Logic
             if (newLevel > oldLevel) {
+                const levelsGained = newLevel - oldLevel;
+                const bonus = levelsGained * 20;
+                
+                await awardHryvniaBonus(bonus);
+                await logLevelUp(skillId, oldLevel, newLevel);
+
+                window.dispatchEvent(new CustomEvent('skill-level-up', { 
+                    detail: { skillId, newLevel, oldLevel, hryvniaAwarded: bonus } 
+                }));
             }
 
             return { auraTotal: newAura, auraLevel: newLevel };

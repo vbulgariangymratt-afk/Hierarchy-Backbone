@@ -32,10 +32,10 @@ const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon'
     }, [iconUrl]);
 
     const renderIcon = () => {
-        // Handle data:image URLs directly as requested
-        if (iconUrl && typeof iconUrl === 'string' && iconUrl.startsWith('data:image')) {
+        // Handle data:image URLs directly as requested (Non-SVG images)
+        if (iconUrl && typeof iconUrl === 'string' && iconUrl.startsWith('data:image') && !iconUrl.startsWith('data:image/svg+xml')) {
             // If it's an SVG and we're NOT using the img route, processedSvg would handle it.
-            // But the user specifically asked for an <img> element to avoid raw string rendering.
+            // But the user specifically asked for an <img> element for regular data images.
             return (
                 <img
                     src={iconUrl}

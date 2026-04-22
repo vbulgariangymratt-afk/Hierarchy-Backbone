@@ -39,6 +39,13 @@
   --text-on-light-secondary: #555555;
   --text-on-dark-primary: #ffffff;
   --text-on-dark-secondary: #e5e5e5;
+
+  /* AURA PROGRESS COLORS */
+  --aura-bg-beige: #EFE6D6;
+  --aura-bg-coral: #EA9D9B;
+  --aura-bg-teal: #082434;
+  --aura-bg-misty: #99BAD7;
+  --aura-gradient: linear-gradient(90deg, #EFE6D6 0%, #EA9D9B 45%, #99BAD7 85%, #082434 100%);
 }
 
 /* DARK MODE (Default & Explicit) */

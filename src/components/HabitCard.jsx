@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { habitService } from '../backbone-v2/index';
 import HabitEvolutionGauge from './habits/HabitEvolutionGauge';
 import { Feather, Circle, Flame, X, HelpCircle, Pencil, Save, XCircle, Dumbbell } from 'lucide-react';
+import { useBackboneStore } from '../store/backboneStore';
 
 
 const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComplete, onUpdate }) => {
@@ -9,6 +10,10 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
     const [isEditing, setIsEditing] = useState(false);
     const [isPulsing, setIsPulsing] = useState(false);
     const [eligibility, setEligibility] = useState(null);
+    const [celebration, setCelebration] = useState(null); // { identity: string, fading: false, active: false }
+    
+    // Get skill for identity reinforcement
+    const nodes = useBackboneStore(state => state.nodes);
     
     useEffect(() => {
         let isMounted = true;
@@ -38,8 +43,35 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
         try {
             setIsPulsing(true);
             setTimeout(() => setIsPulsing(false), 500);
+
+            // 1. Identity Reinforcement Logic
+            const skill = nodes.find(n => n.id === habit.parentId);
+            const identity = skill?.metadata?.wish || skill?.name || "fucking rich";
+            
+            setCelebration({ identity, fading: false, active: true });
+            
+            // 2. Audio Sync
+            try {
+                const audio = new Audio('/Level-up chime.mp3');
+                audio.volume = 0.35;
+                audio.play();
+            } catch (err) {}
+
             await habitService.completeHabit(habit.id, friction);
             setCompleting(false);
+
+            // 3. Timing Orchestration
+            // Ripple & Label (3s), Glow (5s)
+            setTimeout(() => {
+                setCelebration(prev => prev ? { ...prev, fading: true } : null);
+                setTimeout(() => setCelebration(prev => prev ? { ...prev, active: false } : null), 300);
+            }, 2700);
+
+            // Lingering glow persists for 5s
+            setTimeout(() => {
+                setCelebration(null);
+            }, 5000);
+
             if (onComplete) onComplete(habit.id);
         } catch (error) {
             console.error(error);
@@ -152,7 +184,17 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
     }
 
     return (
-        <div className={`habit-card-minimal ${progress.isDone ? "completed sage-glow" : ""} ${isPulsing ? "satisfaction-pulse" : ""}`} id={`habit-${habit.id}`}>
+        <div 
+            className={`habit-card-minimal ${progress.isDone ? "completed sage-glow" : ""} ${isPulsing ? "satisfaction-pulse" : ""} ${celebration?.active ? "habit-celebrating" : ""} ${celebration ? "habit-lingering-glow" : ""}`} 
+            id={`habit-${habit.id}`}
+            style={{ position: 'relative', overflow: 'visible' }}
+        >
+            {celebration?.active && <div className="habit-ripple" />}
+            {celebration?.active && (
+                <div className={`habit-identity-label ${celebration.fading ? 'fade-out' : 'fade-in'}`}>
+                    + Aura (Becoming {celebration.identity})
+                </div>
+            )}
             
             {/* 1. Header (Top Row) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
