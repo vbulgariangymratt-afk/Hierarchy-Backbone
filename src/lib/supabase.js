@@ -30,7 +30,7 @@ supabase.auth.onAuthStateChange((event, session) => {
     {};
 });
 
-import { openUrl } from '@tauri-apps/plugin-opener';
+
 
 export const loginWithGoogle = async () => {
     await logToFile('Starting Google login flow via loginWithGoogle()');
@@ -53,10 +53,9 @@ export const loginWithGoogle = async () => {
             console.error('[AUTH] Supabase OAuth error:', error.message);
             return { data, error };
         }
-        if (data?.url) {
-            if (isTauri) {
-                await openUrl(data.url);
-            }
+        if (isTauri && data?.url) {
+            const { openUrl } = await import('@tauri-apps/plugin-opener');
+            await openUrl(data.url);
         }
         return { data, error };
     } catch (err) {
