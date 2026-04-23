@@ -58,7 +58,7 @@ export const useDeepLinkAuth = (setSession) => {
         onOpenUrl((urls) => { urls.forEach(handleOAuthUrl); }).then(unsub => {
           unsubscribers.push(unsub);
         });
-      });
+      }).catch(err => console.warn('[DeepLink] plugin-deep-link not available:', err));
     }
 
     // 2. Handle generic Tauri URL events
@@ -72,7 +72,7 @@ export const useDeepLinkAuth = (setSession) => {
             unsubscribers.push(unsub);
           });
         });
-      });
+      }).catch(err => console.warn('[DeepLink] tauri event not available:', err));
     }
 
     return () => {
