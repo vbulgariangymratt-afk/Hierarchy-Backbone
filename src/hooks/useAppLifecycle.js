@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+
+const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
 
 /**
  * Hook to manage Tauri window maximization (on double-click in title bar zone)
@@ -10,6 +11,7 @@ export const useAppLifecycle = () => {
   useEffect(() => {
     const handleDoubleClick = async () => {
       try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const appWindow = getCurrentWindow();
         const maximized = await appWindow.isMaximized();
         if (maximized) {
@@ -28,7 +30,9 @@ export const useAppLifecycle = () => {
         // Ignore if clicking an interactive element (buttons, inputs, etc.)
         const isInteractive = e.target.closest('button, a, input, textarea, select, .no-drag, [role="button"]');
         if (!isInteractive) {
+        if (isTauri) {
           handleDoubleClick();
+        }
         }
       }
     };

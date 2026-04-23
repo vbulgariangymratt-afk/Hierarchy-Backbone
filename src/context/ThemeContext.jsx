@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+
+const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
 import { supabase } from '../lib/supabase';
 import { fetchWallpaperConfig, saveWallpaperConfig } from '../lib/wallpaperService';
 
@@ -223,7 +224,9 @@ export const ThemeProvider = ({ children }) => {
                 }
             });
         };
-        setupListener();
+        if (isTauri) {
+            setupListener();
+        }
         return () => {
             if (unlisten) unlisten();
         };
@@ -238,17 +241,22 @@ export const ThemeProvider = ({ children }) => {
     }, [resolvedTheme]);
 
     useEffect(() => {
-        // Liquid Mode (Full window transparency)
-        if (backgroundMode === 'liquid') {
-            // For neutral mode, we pass null to Rust to allow natural vibrancy
-            const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
-            invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
-                console.error("Failed to enable glass:", err)
-            );
-        } else {
-            invoke('disable_liquid_glass').catch(err =>
-                console.error("Failed to disable glass:", err)
-            );
+        if (isTauri) {
+            if (backgroundMode === 'liquid') {
+                // For neutral mode, we pass null to Rust to allow natural vibrancy
+                const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
+                import('@tauri-apps/api/core').then(({ invoke }) => {
+                    invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
+                        console.error("Failed to enable glass:", err)
+                    );
+                });
+            } else {
+                import('@tauri-apps/api/core').then(({ invoke }) => {
+                    invoke('disable_liquid_glass').catch(err =>
+                        console.error("Failed to disable glass:", err)
+                    );
+                });
+            }
         }
 
         const root = document.documentElement;

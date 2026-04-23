@@ -1,21 +1,27 @@
 import { useEffect } from 'react';
-import { getCurrentWindow, LogicalSize, LogicalPosition } from '@tauri-apps/api/window';
+
+const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
 
 const WINDOW_STATE_KEY = 'tauri-window-state';
 
 export const useWindowState = () => {
     useEffect(() => {
         // Check if running inside Tauri
-        if (typeof window === 'undefined' || !window.__TAURI_INTERNALS__) return;
+        if (!isTauri) return;
 
-        const appWindow = getCurrentWindow();
+        let appWindow;
         let saveTimeout;
 
         const restoreWindowState = async () => {
             try {
+                if (!appWindow) {
+                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                    appWindow = getCurrentWindow();
+                }
                 const savedState = localStorage.getItem(WINDOW_STATE_KEY);
                 if (savedState) {
                     const { width, height, x, y } = JSON.parse(savedState);
+                    const { LogicalSize, LogicalPosition } = await import('@tauri-apps/api/window');
 
                     if (width && height) {
                         await appWindow.setSize(new LogicalSize(width, height));
@@ -30,6 +36,10 @@ export const useWindowState = () => {
 
         const saveWindowState = async () => {
             try {
+                if (!appWindow) {
+                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                    appWindow = getCurrentWindow();
+                }
                 const factor = await appWindow.scaleFactor();
                 const size = await appWindow.innerSize();
                 const position = await appWindow.outerPosition();

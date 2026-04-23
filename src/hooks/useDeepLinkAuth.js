@@ -10,6 +10,9 @@ import { logToFile } from '../lib/logger';
  */
 export const useDeepLinkAuth = (setSession) => {
   useEffect(() => {
+    const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+    if (!isTauri) return;
+
     let unsubscribers = [];
 
     const handleOAuthUrl = async (url) => {
