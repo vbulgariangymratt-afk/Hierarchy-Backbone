@@ -39,9 +39,7 @@ export const loginWithGoogle = async () => {
 
     const redirectTo = isTauri
         ? 'backbone://auth/callback'
-        : import.meta.env.DEV
-            ? 'http://localhost:5173/auth/callback'
-            : 'https://backbone-hierarchy.vercel.app/auth/callback';
+        : 'https://backbone-hierarchy.vercel.app/auth/callback';
 
     try {
         const { data, error } = await supabase.auth.signInWithOAuth({
