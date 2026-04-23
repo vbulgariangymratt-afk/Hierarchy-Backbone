@@ -241,27 +241,29 @@ export const ThemeProvider = ({ children }) => {
     }, [resolvedTheme]);
 
     useEffect(() => {
-        if (isTauri()) {
-            if (backgroundMode === 'liquid') {
-                // For neutral mode, we pass null to Rust to allow natural vibrancy
-                const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
-                if (isTauri()) {
-                    import('@tauri-apps/api/core').then(({ invoke }) => {
-                        invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
-                            console.error("Failed to enable glass:", err)
-                        );
-                    });
-                }
-            } else {
-                if (isTauri()) {
-                    import('@tauri-apps/api/core').then(({ invoke }) => {
-                        invoke('disable_liquid_glass').catch(err =>
-                            console.error("Failed to disable glass:", err)
-                        );
-                    });
+        const applyGlassEffect = async () => {
+            if (isTauri()) {
+                if (backgroundMode === 'liquid') {
+                    // For neutral mode, we pass null to Rust to allow natural vibrancy
+                    const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
+                    try {
+                        const { invoke } = await import('@tauri-apps/api/core');
+                        await invoke('enable_liquid_glass', { theme: rustTheme });
+                    } catch (err) {
+                        console.warn('Glass effect not available:', err);
+                    }
+                } else {
+                    try {
+                        const { invoke } = await import('@tauri-apps/api/core');
+                        await invoke('disable_liquid_glass');
+                    } catch (err) {
+                        console.warn('Glass effect not available:', err);
+                    }
                 }
             }
-        }
+        };
+
+        applyGlassEffect();
 
         const root = document.documentElement;
 
