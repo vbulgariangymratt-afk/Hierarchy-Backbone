@@ -10,6 +10,7 @@ export const useAppLifecycle = () => {
   // Window Maximization Logic
   useEffect(() => {
     const handleDoubleClick = async () => {
+      if (!isTauri) return;
       try {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         const appWindow = getCurrentWindow();
@@ -30,9 +31,7 @@ export const useAppLifecycle = () => {
         // Ignore if clicking an interactive element (buttons, inputs, etc.)
         const isInteractive = e.target.closest('button, a, input, textarea, select, .no-drag, [role="button"]');
         if (!isInteractive) {
-        if (isTauri) {
           handleDoubleClick();
-        }
         }
       }
     };
