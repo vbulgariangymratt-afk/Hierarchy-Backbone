@@ -1,27 +1,13 @@
-import { writeTextFile, exists, mkdir } from '@tauri-apps/plugin-fs';
-import { BaseDirectory } from '@tauri-apps/api/path';
-
 /**
- * Universal logger that writes to a persistent file.
- * Saves to ~/Desktop/backbone_auth_log.txt as requested.
+ * Universal logger.
+ * File logging disabled as requested.
  */
 export async function logToFile(message) {
     const timestamp = new Date().toISOString();
-    const logLine = `[${timestamp}] ${message}\n`;
-
-    try {
-        const fileName = 'backbone_auth_log.txt';
-        
-        await writeTextFile(fileName, logLine, {
-            baseDir: BaseDirectory.Desktop,
-            append: true,
-            create: true
-        });
-        
-    } catch (err) {
-        console.error('[FILE_LOG ERROR]', err);
-        // Fallback to console if file logging fails
-    }
+    const logLine = `[${timestamp}] ${message}`;
+    
+    // Always log to console
+    console.log(logLine);
 }
 
 export async function logErrorToFile(context, error) {

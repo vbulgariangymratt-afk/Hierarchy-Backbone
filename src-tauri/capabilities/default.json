@@ -15,17 +15,6 @@
 
     "liquid-glass:default",
     "deep-link:default",
-    "opener:default",
-    "fs:allow-write-text-file",
-    "fs:allow-exists",
-    "fs:allow-mkdir",
-    {
-      "identifier": "fs:allow-write-text-file",
-      "allow": [{ "path": "$DESKTOP/backbone_auth_log.txt" }]
-    },
-    {
-      "identifier": "fs:allow-write-file",
-      "allow": [{ "path": "$DESKTOP/backbone_auth_log.txt" }]
-    }
+    "opener:default"
   ]
 }

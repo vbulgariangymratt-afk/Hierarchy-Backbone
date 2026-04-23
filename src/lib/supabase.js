@@ -35,37 +35,31 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 export const loginWithGoogle = async () => {
     await logToFile('Starting Google login flow via loginWithGoogle()');
 
-    // In dev mode, use localhost so the live dev session can catch the callback.
-    // In production, use the deep link protocol.
+    const isTauri = window.__TAURI__ !== undefined;
+
     const redirectTo = import.meta.env.DEV
         ? 'http://localhost:5173/auth/callback'
-        : 'backbone://auth/callback';
-
+        : isTauri
+            ? 'backbone://auth/callback'
+            : 'https://backbone-hierarchy.vercel.app/auth/callback';
 
     try {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo,
-                skipBrowserRedirect: true,
+                skipBrowserRedirect: isTauri,
             },
         });
-
-
         if (error) {
             console.error('[AUTH] Supabase OAuth error:', error.message);
             return { data, error };
         }
-
         if (data?.url) {
-            try {
+            if (isTauri) {
                 await openUrl(data.url);
-            } catch (openErr) {
-                console.error('[AUTH] Failed to open system browser:', openErr);
             }
-        } else {
         }
-
         return { data, error };
     } catch (err) {
         console.error('[AUTH] Unexpected error during OAuth flow:', err);
