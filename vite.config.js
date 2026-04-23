@@ -221,6 +221,16 @@ export default defineConfig(({ mode }) => {
           drop_console: true,
           pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn'],
         }
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-supabase': ['@supabase/supabase-js'],
+            'vendor-ui': ['framer-motion', 'lucide-react'],
+            'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/modifiers', '@dnd-kit/utilities'],
+          }
+        }
       }
     }
   }

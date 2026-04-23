@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { logToFile, logErrorToFile } from './lib/logger';
 
-import MainLayout from './layout/MainLayout';
+
+const MainLayout = lazy(() => import('./layout/MainLayout'));
 import { useWindowState } from './hooks/useWindowState';
 import { useAppLifecycle } from './hooks/useAppLifecycle';
 const Launchpad = lazy(() => import('./pages/Launchpad'));
@@ -17,8 +18,7 @@ const FocusCenterPage = lazy(() => import('./pages/FocusCenterPage'));
 const MaintenanceCenterPage = lazy(() => import('./pages/MaintenanceCenterPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 
-// Preload high-intent chunks
-import('./pages/MarketplacePage');
+// Preload high-intent chunks removed for pure lazy strategy
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { SessionProvider, useSession } from './context/SessionContext';
@@ -29,7 +29,7 @@ import KeyboardShortcuts from './components/KeyboardShortcuts';
 import { supabase } from './lib/supabase';
 import { backbone, repository, habitRepo, waitForReady, NodeTypes, reloadAllData, clearAllData } from './backbone-v2';
 import PremiumLoadingScreen from './components/loading/PremiumLoadingScreen';
-import LaunchpadFlow from './components/LaunchpadFlow';
+const LaunchpadFlow = lazy(() => import('./components/LaunchpadFlow'));
 import EnergyModeTag from './components/EnergyModeTag';
 
 import { useDevAuthPoller } from './hooks/useDevAuthPoller';
@@ -68,7 +68,7 @@ function App() {
               <KeyboardShortcuts />
               <BackgroundLayer />
               <EnergyModeTag />
-              <Suspense fallback={<div style={{ background: 'transparent' }} />}>
+              <Suspense fallback={<PremiumLoadingScreen secondaryText="Loading Perspective..." />}>
                 <Routes>
                   <Route path="/" element={<MainLayout />}>
                     <Route index element={<LaunchpadFlow />} />
