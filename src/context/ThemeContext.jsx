@@ -241,29 +241,13 @@ export const ThemeProvider = ({ children }) => {
     }, [resolvedTheme]);
 
     useEffect(() => {
-        const applyGlassEffect = async () => {
-            if (isTauri()) {
-                if (backgroundMode === 'liquid') {
-                    // For neutral mode, we pass null to Rust to allow natural vibrancy
-                    const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
-                    try {
-                        const { invoke } = await import('@tauri-apps/api/core');
-                        await invoke('enable_liquid_glass', { theme: rustTheme });
-                    } catch (err) {
-                        console.warn('Glass effect not available:', err);
-                    }
-                } else {
-                    try {
-                        const { invoke } = await import('@tauri-apps/api/core');
-                        await invoke('disable_liquid_glass');
-                    } catch (err) {
-                        console.warn('Glass effect not available:', err);
-                    }
-                }
+        if (isTauri()) {
+            if (backgroundMode === 'liquid') {
+                console.log('[Tauri] Would enable liquid glass');
+            } else {
+                console.log('[Tauri] Would disable liquid glass');
             }
-        };
-
-        applyGlassEffect();
+        }
 
         const root = document.documentElement;
 
