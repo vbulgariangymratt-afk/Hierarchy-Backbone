@@ -53,7 +53,7 @@ export const useDeepLinkAuth = (setSession) => {
     };
 
     // 1. Handle deep-link plugin (backbone://)
-    if (!import.meta.env.DEV) {
+    if (isTauri && !import.meta.env.DEV) {
       import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
         onOpenUrl((urls) => { urls.forEach(handleOAuthUrl); }).then(unsub => {
           unsubscribers.push(unsub);
@@ -62,16 +62,18 @@ export const useDeepLinkAuth = (setSession) => {
     }
 
     // 2. Handle generic Tauri URL events
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      ['tauri://url', 'app://open-url'].forEach(eventName => {
-        listen(eventName, (event) => {
-          const url = typeof event.payload === 'string' ? event.payload : event.payload?.[0];
-          if (url) handleOAuthUrl(url);
-        }).then(unsub => {
-          unsubscribers.push(unsub);
+    if (isTauri) {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        ['tauri://url', 'app://open-url'].forEach(eventName => {
+          listen(eventName, (event) => {
+            const url = typeof event.payload === 'string' ? event.payload : event.payload?.[0];
+            if (url) handleOAuthUrl(url);
+          }).then(unsub => {
+            unsubscribers.push(unsub);
+          });
         });
       });
-    });
+    }
 
     return () => {
       unsubscribers.forEach(unsub => {

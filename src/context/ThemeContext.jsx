@@ -245,17 +245,21 @@ export const ThemeProvider = ({ children }) => {
             if (backgroundMode === 'liquid') {
                 // For neutral mode, we pass null to Rust to allow natural vibrancy
                 const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
-                import('@tauri-apps/api/core').then(({ invoke }) => {
-                    invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
-                        console.error("Failed to enable glass:", err)
-                    );
-                });
+                if (isTauri) {
+                    import('@tauri-apps/api/core').then(({ invoke }) => {
+                        invoke('enable_liquid_glass', { theme: rustTheme }).catch(err =>
+                            console.error("Failed to enable glass:", err)
+                        );
+                    });
+                }
             } else {
-                import('@tauri-apps/api/core').then(({ invoke }) => {
-                    invoke('disable_liquid_glass').catch(err =>
-                        console.error("Failed to disable glass:", err)
-                    );
-                });
+                if (isTauri) {
+                    import('@tauri-apps/api/core').then(({ invoke }) => {
+                        invoke('disable_liquid_glass').catch(err =>
+                            console.error("Failed to disable glass:", err)
+                        );
+                    });
+                }
             }
         }
 
