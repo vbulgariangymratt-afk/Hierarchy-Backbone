@@ -37,10 +37,10 @@ export const loginWithGoogle = async () => {
 
     const isTauri = window.__TAURI__ !== undefined;
 
-    const redirectTo = import.meta.env.DEV
-        ? 'http://localhost:5173/auth/callback'
-        : isTauri
-            ? 'backbone://auth/callback'
+    const redirectTo = isTauri
+        ? 'backbone://auth/callback'
+        : import.meta.env.DEV
+            ? 'http://localhost:5173/auth/callback'
             : 'https://backbone-hierarchy.vercel.app/auth/callback';
 
     try {
