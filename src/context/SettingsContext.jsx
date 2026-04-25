@@ -61,6 +61,7 @@ const _cache = {
     dbSupportsExperimentLimit: true, // Track if column exists to avoid save errors
     healthDotStyle: localStorage.getItem('app-health-dot-style') || 'glowing',
     blurQuality: localStorage.getItem('app-blur-quality') || 'performance',
+    currencyName: localStorage.getItem('app-currency-name') || 'Coins',
     hasLoaded: false,
 };
 
@@ -74,6 +75,7 @@ export const SettingsProvider = ({ children }) => {
     const [activeExperimentLimit, setActiveExperimentLimitState] = useState(_cache.activeExperimentLimit);
     const [healthDotStyle, setHealthDotStyleState] = useState(_cache.healthDotStyle);
     const [blurQuality, setBlurQualityState] = useState(_cache.blurQuality);
+    const [currencyName, setCurrencyNameState] = useState(_cache.currencyName);
     const [loading, setLoading] = useState(!_cache.hasLoaded);
 
 
@@ -89,23 +91,29 @@ export const SettingsProvider = ({ children }) => {
         setLoading(true);
 
         try {
-            let { data, error } = await supabase
+            // Step 1: Try to fetch with all columns (including new ones)
+            let query = supabase
                 .from('user_settings')
-                .select('focus_slots, guided_slot_roles, energy_level, maintenance_skill_ids, maintenance_enabled, active_experiment_limit')
+                .select('*')
                 .eq('user_id', uid)
                 .single();
+            
+            let { data, error } = await query;
 
-            // Graceful fallback if the new column is missing in Supabase
-            if (error && error.message?.includes('active_experiment_limit')) {
-                // We'll trust the error message to know which one failed if we wanted to be precise, 
-                // but checking for both covers our bases.
-                const retry = await supabase
+            // Step 2: If it fails, it might be due to missing columns (legacy DB)
+            // We'll try to fallback to a minimal set of columns that we know exist
+            if (error && (error.message?.includes('active_experiment_limit') || error.message?.includes('currency_name'))) {
+                const minimalQuery = await supabase
                     .from('user_settings')
                     .select('focus_slots, guided_slot_roles, energy_level, maintenance_skill_ids, maintenance_enabled')
                     .eq('user_id', uid)
                     .single();
-                data = retry.data;
-                error = retry.error;
+                data = minimalQuery.data ? { ...minimalQuery.data, currency_name: 'Coins' } : null;
+                error = minimalQuery.error;
+                
+                if (error.message?.includes('active_experiment_limit')) {
+                    _cache.dbSupportsExperimentLimit = false;
+                }
             }
 
             if (error && error.code === 'PGRST116') {
@@ -139,6 +147,7 @@ export const SettingsProvider = ({ children }) => {
                     _cache.guidedSlotRoles = true;
                     _cache.energyLevel = 3;
                     _cache.activeExperimentLimit = 1;
+                    _cache.currencyName = 'Coins';
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
                     setFocusSlots(_cache.focusSlots);
@@ -147,6 +156,7 @@ export const SettingsProvider = ({ children }) => {
                     setGuidedSlotRoles(_cache.guidedSlotRoles);
                     setEnergyLevel(_cache.energyLevel);
                     setActiveExperimentLimitState(_cache.activeExperimentLimit);
+                    setCurrencyNameState(_cache.currencyName);
                 }
             } else if (!error && data) {
                 _cache.focusSlots = data.focus_slots || [null, null, null, null, null];
@@ -155,6 +165,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.guidedSlotRoles = data.guided_slot_roles !== undefined ? data.guided_slot_roles : true;
                 _cache.energyLevel = data.energy_level !== undefined ? data.energy_level : 3;
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
+                _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
                 setFocusSlots(_cache.focusSlots);
@@ -163,6 +174,7 @@ export const SettingsProvider = ({ children }) => {
                 setGuidedSlotRoles(_cache.guidedSlotRoles);
                 setEnergyLevel(_cache.energyLevel);
                 setActiveExperimentLimitState(_cache.activeExperimentLimit);
+                setCurrencyNameState(_cache.currencyName);
             }
         } catch (err) {
             console.error('[SettingsContext] Unexpected error during load:', err);
@@ -263,6 +275,14 @@ export const SettingsProvider = ({ children }) => {
         setBlurQualityState(quality);
         localStorage.setItem('app-blur-quality', quality);
     };
+    
+    const updateCurrencyName = (name) => {
+        const finalName = name || 'Coins';
+        _cache.currencyName = finalName;
+        setCurrencyNameState(finalName);
+        localStorage.setItem('app-currency-name', finalName);
+        saveSettings({ currency_name: finalName });
+    };
 
     // Reflect health dot style to DOM for CSS access
     useEffect(() => {
@@ -293,12 +313,14 @@ export const SettingsProvider = ({ children }) => {
                 _cache.guidedSlotRoles = true;
                 _cache.energyLevel = 3;
                 _cache.activeExperimentLimit = 1;
+                _cache.currencyName = 'Coins';
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
                 setGuidedSlotRoles(_cache.guidedSlotRoles);
                 setEnergyLevel(_cache.energyLevel);
                 setActiveExperimentLimitState(_cache.activeExperimentLimit);
+                setCurrencyNameState(_cache.currencyName);
             }
         });
 
@@ -331,11 +353,13 @@ export const SettingsProvider = ({ children }) => {
         updateHealthDotStyle,
         blurQuality,
         updateBlurQuality,
+        currencyName,
+        updateCurrencyName,
         dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, loading, refreshSettings]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, loading, refreshSettings]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>

@@ -37,6 +37,8 @@ const SettingsPage = () => {
         updateHealthDotStyle,
         blurQuality,
         updateBlurQuality,
+        currencyName = 'Coins',
+        updateCurrencyName,
     } = useSettings();
 
     const [allSkills, setAllSkills] = useState([]);
@@ -54,6 +56,9 @@ const SettingsPage = () => {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
+            if (event === 'SIGNED_IN') {
+                setTimeout(() => window.scrollTo(0, 0), 100);
+            }
         });
 
         return () => {
@@ -67,6 +72,7 @@ const SettingsPage = () => {
 
     return (
         <div className="settings-page">
+            <h1 style={{color: 'red', fontSize: '48px', textAlign: 'center', margin: '20px 0'}}>TEST 123</h1>
             <header className="settings-header">
                 <h1 className="settings-title">Settings</h1>
                 <p className="settings-subtitle">Manage your account and preferences</p>
@@ -278,65 +284,7 @@ const SettingsPage = () => {
                 </div>
             </section>
 
-            {/* ── Keep It Alive Section (Maintenance) ────────────────────── */}
-            <section className="settings-section" id="maintenance">
-                <h2 className="settings-section-title">Keep It Alive (Maintenance)</h2>
-                <div className="settings-card">
-                    <div className="appearance-row" style={{ marginBottom: '20px' }}>
-                        <div>
-                            <div className="appearance-row-label">Enable Maintenance Section</div>
-                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: 0 }}>
-                                Display Maintenance skills in their own context-aware drawer.
-                            </p>
-                        </div>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={maintenanceEnabled}
-                                onChange={(e) => toggleMaintenanceEnabled(e.target.checked)}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </div>
 
-                    <div className="maintenance-skill-selector-container">
-                        <div className="appearance-row-label" style={{ marginBottom: '12px' }}>Choose Skills to Maintain</div>
-                        <div className="maintenance-skill-list">
-                            {allSkills.map(skill => {
-                                const isActive = focusSlots.includes(skill.id);
-                                const isMaintenance = maintenanceSkillIds.includes(skill.id);
-                                
-                                return (
-                                    <div 
-                                        key={skill.id} 
-                                        className={`maintenance-skill-item ${isActive ? 'disabled' : ''} ${isMaintenance ? 'selected' : ''}`}
-                                        onClick={() => {
-                                            if (isActive) return;
-                                            
-                                            let newIds;
-                                            if (isMaintenance) {
-                                                newIds = maintenanceSkillIds.filter(id => id !== skill.id);
-                                            } else {
-                                                newIds = [...maintenanceSkillIds, skill.id];
-                                            }
-                                            updateMaintenanceSkillIds(newIds);
-                                        }}
-                                    >
-                                        <div className="maintenance-skill-checkbox">
-                                            {isMaintenance && <span className="check-icon">✓</span>}
-                                        </div>
-                                        <div className="maintenance-skill-info">
-                                            <span className="skill-name">{skill.name}</span>
-                                            {isActive && <span className="active-badge">Active Focus</span>}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        {allSkills.length === 0 && <p className="appearance-hint">No skills found in your hierarchy.</p>}
-                    </div>
-                </div>
-            </section>
 
             {/* ── Biological Tracking Section ─────────────────────────────── */}
             <section className="settings-section">
@@ -359,6 +307,50 @@ const SettingsPage = () => {
                     <p className="appearance-hint">
                         Prefer manual sleep log (auto-detection becomes secondary)
                     </p>
+                </div>
+            </section>
+
+            {/* ── Economy Section ─────────────────────────────────────── */}
+            <section className="settings-section">
+                <h2 className="settings-section-title">Economy</h2>
+                <div className="settings-card">
+                    <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
+                        <div>
+                            <div className="appearance-row-label">Currency Name</div>
+                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: '8px', borderTop: 'none', paddingTop: 0 }}>
+                                Choose a preset or set a custom name for your hard-earned currency.
+                            </p>
+                        </div>
+                        
+                        <div className="currency-presets">
+                            {['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].map(preset => (
+                                <button
+                                    key={preset}
+                                    className={`currency-preset-btn ${currencyName === preset ? 'active' : ''}`}
+                                    onClick={() => updateCurrencyName(preset)}
+                                >
+                                    {preset}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="custom-currency-container">
+                            <div className="appearance-row-label" style={{ fontSize: '11px', opacity: 0.6, marginBottom: '6px' }}>Custom Name</div>
+                            <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                                <input
+                                    type="text"
+                                    className="appearance-url-input"
+                                    placeholder="Enter custom name..."
+                                    value={!['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].includes(currencyName) ? currencyName : ''}
+                                    onChange={(e) => updateCurrencyName(e.target.value)}
+                                    style={{ flex: 1 }}
+                                />
+                                {!['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].includes(currencyName) && currencyName && (
+                                    <div className="custom-active-indicator">Active</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 

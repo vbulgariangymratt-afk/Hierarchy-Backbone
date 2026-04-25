@@ -21,7 +21,7 @@ const LaunchpadView = ({
     maintenanceHabitGroups = [],
     onHabitComplete
 }) => {
-    const { energyLevel } = useSettings();
+    const { energyLevel, currencyName } = useSettings();
     const [selectedAreaIds, setSelectedAreaIds] = useState([]);
     const [isKeepAliveExpanded, setIsKeepAliveExpanded] = useState(false);
     const isInitialized = useRef(false);
@@ -57,7 +57,7 @@ const LaunchpadView = ({
             {/* 1. FIXED HEADER SECTION */}
             <header className="launchpad-fixed-header">
                 <div className="header-stat">
-                    <span className="stat-label">Hryvnia Balance</span>
+                    <span className="stat-label">{currencyName} Balance</span>
                     <span className="stat-value hryvnia">₴{hryvniaBalance}</span>
                 </div>
             </header>

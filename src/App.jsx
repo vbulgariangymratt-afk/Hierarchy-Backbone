@@ -43,14 +43,17 @@ const LandingLog = () => {
 };
 
 function App() {
+  // 1. Desktop Window & Lifecycle Management
   useWindowState();
   useAppLifecycle();
+  
   const [session, setSession] = useState(null);
   
-  // The "Brain" hook handles initialization, auth, and real-time syncing
+  // 2. The "Brain" hook handles initialization, auth, and real-time syncing
+  // This hook returns repositoriesReady=false during login reloads.
   const { loading, repositoriesReady } = useAppInitialization(setSession);
 
-  // Background helpers
+  // 4. Background services
   useDevAuthPoller(setSession);
   useDeepLinkAuth(setSession);
   useDailyRollover(repositoriesReady);

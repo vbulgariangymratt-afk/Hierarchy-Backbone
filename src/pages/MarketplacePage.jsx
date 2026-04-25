@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSettings } from '../context/SettingsContext';
 import { backbone, repository, NodeTypes } from '../backbone-v2/index';
 import CreateRewardModal from '../components/CreateRewardModal';
 import EditRewardsModal from '../components/EditRewardsModal';
@@ -19,6 +20,7 @@ const MarketplacePage = () => {
     const [purchaseLoading, setPurchaseLoading] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const { currencyName } = useSettings();
 
     const fetchData = async () => {
         try {
@@ -64,7 +66,7 @@ const MarketplacePage = () => {
             if (success) {
                 // Balance and rewards will update via subscription
             } else {
-                alert("Insufficient Hryvnia");
+                alert(`Insufficient ${currencyName}`);
             }
         } catch (error) {
             console.error("Purchase failed:", error);
@@ -117,7 +119,7 @@ const MarketplacePage = () => {
                     <div className="hryvnia-card liquid-glass">
                         <NodeIcon iconUrl={SVG_ICONS.COIN} size={24} />
                         <div className="hryvnia-details">
-                            <span className="balance-label">Hryvnia Balance</span>
+                            <span className="balance-label">{currencyName} Balance</span>
                             <span className="balance-value">{balance}</span>
                         </div>
                     </div>
@@ -150,7 +152,7 @@ const MarketplacePage = () => {
                                         onClick={() => handleBuy(reward.id)}
                                         disabled={!canAfford || isPurchasing}
                                     >
-                                        {isPurchasing ? 'Processing...' : (canAfford ? 'Buy' : 'Insufficient Hryvnia')}
+                                        {isPurchasing ? 'Processing...' : (canAfford ? 'Buy' : `Insufficient ${currencyName}`)}
                                     </button>
                                 </div>
                             </div>

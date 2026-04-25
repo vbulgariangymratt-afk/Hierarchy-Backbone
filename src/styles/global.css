@@ -5,10 +5,12 @@
 @import './variables.css';
 @import './glass-card.css';
 
+html,
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    scroll-behavior: auto !important;
 }
 
 html,

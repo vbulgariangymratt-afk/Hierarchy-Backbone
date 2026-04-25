@@ -591,3 +591,64 @@ input:checked + .toggle-slider:before {
   background: rgba(255,255,255,0.15);
   color: var(--text-primary);
 }
+
+/* Economy Section Styles */
+.currency-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+}
+
+@media (min-width: 480px) {
+    .currency-presets {
+        grid-template-columns: repeat(6, 1fr);
+    }
+}
+
+.currency-preset-btn {
+    padding: 10px 6px;
+    background: var(--alpha-low, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.currency-preset-btn:hover {
+    background: var(--alpha-medium, rgba(255, 255, 255, 0.08));
+    border-color: var(--color-border, rgba(255, 255, 255, 0.2));
+}
+
+.currency-preset-btn.active {
+    background: var(--color-accent);
+    color: var(--color-bg-main);
+    border-color: var(--color-accent);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.custom-currency-container {
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+}
+
+.custom-active-indicator {
+    padding: 0 10px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}

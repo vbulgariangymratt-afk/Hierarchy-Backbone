@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { backbone, NodeTypes } from '../backbone-v2/index';
+import { useSettings } from '../context/SettingsContext';
 import './CreateRewardModal.css';
 
 const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
+    const { currencyName } = useSettings();
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [sensoryDescription, setSensoryDescription] = useState('');
@@ -111,7 +113,7 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Hryvnia Cost</label>
+                        <label>{currencyName} Cost</label>
                         <div className="cost-input-wrapper">
                             <span className="unit-icon">🪙</span>
                             <input
