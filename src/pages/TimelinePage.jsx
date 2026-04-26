@@ -138,7 +138,7 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
 
                             {/* Journal Pulse remains at the bottom of the day */}
                             {day.journalEntry && (
-                                <Section title="Journal Pulse">
+                                <Section title="Daily log Pulse">
                                     {day.journalEntry.activation?.morningActivationLevel && (
                                         <div className="item-row">
                                             <span>Activation</span>

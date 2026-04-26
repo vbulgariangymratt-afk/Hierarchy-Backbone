@@ -22,6 +22,7 @@ export const createPersistentRepository = () => {
             await new Promise(r => setTimeout(r, 1500));
             userId = await getUserId();
         }
+        console.log('[PERSIST] userId:', userId);
 
         if (!userId) {
             console.error(`Repository [ID:${instanceId}]: Persist FAILED - No user ID after retry`);
@@ -43,9 +44,12 @@ export const createPersistentRepository = () => {
                 };
             });
 
+            console.log('[PERSIST] attempting upsert with nodes:', nodesToUpsert);
             const { error } = await supabase
                 .from('nodes')
                 .upsert(nodesToUpsert);
+
+            console.log('[PERSIST] upsert result error:', error);
 
             if (error) throw error;
         } catch (e) {
@@ -113,6 +117,7 @@ export const createPersistentRepository = () => {
 
 
         save: async (node) => {
+            console.log('[SAVE] save() called with node:', node.id);
             const index = storage.findIndex(n => n.id === node.id);
             if (index !== -1) {
                 storage[index] = node;

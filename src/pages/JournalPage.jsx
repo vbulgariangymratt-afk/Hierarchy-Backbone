@@ -431,7 +431,7 @@ const JournalPage = () => {
             <header className="journal-header">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                        <h1>Daily Journal</h1>
+                        <h1>Daily log</h1>
                         <p className="journal-date" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {entry.date} {isLocked && <span className="locked-tag">({isPast ? 'Read-only' : 'Locked'})</span>}
                         </p>

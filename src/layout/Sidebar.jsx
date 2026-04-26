@@ -124,14 +124,12 @@ const Sidebar = ({ onSkillClick }) => {
                 targetId = skill.parentId;
             }
 
-            // Trigger Animation & Sound within 100ms
-            setTimeout(() => {
-                setGlowingNodeId(targetId);
-                playChime();
-                
-                // Clear after animation duration (2.1s + buffer)
-                setTimeout(() => setGlowingNodeId(null), 2200);
-            }, 50);
+            // Trigger Animation & Sound immediately for perfect sync
+            setGlowingNodeId(targetId);
+            playChime();
+            
+            // Clear after animation duration (2.1s + buffer)
+            setTimeout(() => setGlowingNodeId(null), 2200);
         };
 
         window.addEventListener('skill-level-up', handleLevelUp);
@@ -438,7 +436,7 @@ const Sidebar = ({ onSkillClick }) => {
                                     <span className="btn-icon">
                                         <NodeIcon iconUrl={SVG_ICONS.JOURNAL} size={16} />
                                     </span>
-                                    <span className="btn-text">Journal</span>
+                                    <span className="btn-text">Daily log</span>
                                 </NavLink>
 
                                 <NavLink to="/calendar" className={({ isActive }) => `nav-item timeline-nav ${isActive ? 'active' : ''}`}>

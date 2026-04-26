@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { logToFile } from './logger';
+import { openUrl } from '@tauri-apps/plugin-opener';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -11,7 +12,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     auth: {
         flowType: "pkce",
-        detectSessionInUrl: true,
+        detectSessionInUrl: false,
         persistSession: true,
         autoRefreshToken: true
     }
@@ -34,28 +35,27 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 export const loginWithGoogle = async () => {
     await logToFile('Starting Google login flow via loginWithGoogle()');
-
-    const isTauri = window.__TAURI__ !== undefined;
-
-    const redirectTo = isTauri
-        ? 'backbone://auth/callback'
-        : 'https://backbone-hierarchy.vercel.app/auth/callback';
-
+    const redirectTo = import.meta.env.DEV
+        ? 'http://localhost:5173/auth/callback'
+        : 'backbone://auth/callback';
     try {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
                 redirectTo,
-                skipBrowserRedirect: isTauri,
+                skipBrowserRedirect: true,
             },
         });
         if (error) {
             console.error('[AUTH] Supabase OAuth error:', error.message);
             return { data, error };
         }
-        if (isTauri && data?.url) {
-            const { openUrl } = await import('@tauri-apps/plugin-opener');
-            await openUrl(data.url);
+        if (data?.url) {
+            try {
+                await openUrl(data.url);
+            } catch (openErr) {
+                console.error('[AUTH] Failed to open system browser:', openErr);
+            }
         }
         return { data, error };
     } catch (err) {

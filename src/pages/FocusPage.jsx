@@ -125,16 +125,10 @@ const FocusPage = () => {
             // (or if we want a global celebrate, but user said "proximal to action")
             if (skill && skillId !== skill.id) return;
 
-            // Trigger visual bloom & sound
+            // Trigger visual bloom
             setLevelUpCelebration({ level: newLevel, fading: false });
             
-            try {
-                const audio = new Audio('/Level-up chime.mp3');
-                audio.volume = 0.4;
-                audio.play();
-            } catch (err) {
-                console.warn('Focus audio failed:', err);
-            }
+            // Audio is handled centrally in Sidebar.jsx to ensure sync with sidebar glow
 
             // Start fade out after 2.7s (total 3s duration)
             setTimeout(() => {

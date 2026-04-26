@@ -15,7 +15,7 @@ const resolvePageKey = (pathname) => {
 
 const PAGE_LABELS = {
     launchpad: 'Launchpad',
-    journal: 'Journal',
+    journal: 'Daily log',
     marketplace: 'Marketplace',
     area: 'Area',
 };

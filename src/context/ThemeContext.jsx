@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo } from 'react';
 
-const isTauri = () => typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+const isTauri = () => typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
 import { supabase } from '../lib/supabase';
 import { fetchWallpaperConfig, saveWallpaperConfig } from '../lib/wallpaperService';
 
@@ -219,9 +219,6 @@ export const ThemeProvider = ({ children }) => {
                 const isDark = event.payload;
                 const current = isDark ? "dark" : "light";
                 setSystemTheme(current);
-                if (themePreference === "system") {
-                    document.documentElement.setAttribute("data-theme", current);
-                }
             });
         };
         if (isTauri()) {
@@ -241,6 +238,7 @@ export const ThemeProvider = ({ children }) => {
     }, [resolvedTheme]);
 
     useEffect(() => {
+        console.log('[THEME EFFECT] backgroundMode:', backgroundMode, 'resolvedTheme:', resolvedTheme);
         const applyGlassEffect = async () => {
             if (isTauri()) {
                 if (backgroundMode === 'liquid') {
@@ -248,6 +246,7 @@ export const ThemeProvider = ({ children }) => {
                     const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
                     try {
                         const { invoke } = await import('@tauri-apps/api/core');
+                        console.log('[GLASS] calling enable_liquid_glass with theme:', rustTheme);
                         await invoke('enable_liquid_glass', { theme: rustTheme });
                     } catch (err) {
                         console.warn('Glass effect not available:', err);

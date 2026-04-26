@@ -1100,6 +1100,7 @@ export const HierarchyService = (repository, auraService) => {
          * Adds a node to the hierarchy with relational validation
          */
         addNode: async (nodeData) => {
+            console.log('[ADDNODE] addNode called');
             const { type } = nodeData;
             const parentId = nodeData.parentId ? String(nodeData.parentId) : null;
             const id = nodeData.id || `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
