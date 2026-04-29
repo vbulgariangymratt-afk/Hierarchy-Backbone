@@ -538,9 +538,9 @@
 
 .habit-identity-label {
     position: absolute;
-    top: -20px;
-    right: 10px;
-    font-size: 11px;
+    top: 10px;
+    right: 12px;
+    font-size: 10px;
     font-weight: 800;
     color: #99BAD7; /* Misty Blue */
     text-transform: uppercase;

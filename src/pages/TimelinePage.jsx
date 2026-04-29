@@ -42,18 +42,20 @@ const TimelinePage = () => {
     // Auto-focus on TODAY on load
     useEffect(() => {
         if (!loading && timelineData && scrollContainerRef.current) {
-            requestAnimationFrame(() => {
+            // Use a small timeout to ensure the DOM has fully rendered and measured
+            const timer = setTimeout(() => {
                 const scrollContainer = scrollContainerRef.current;
                 const todayCard = scrollContainer.querySelector('.day-card.is-today');
                 
                 if (todayCard) {
-                    const containerWidth = scrollContainer.offsetWidth;
-                    const cardLeft = todayCard.offsetLeft;
-                    const cardWidth = todayCard.offsetWidth;
-                    
-                    scrollContainer.scrollLeft = cardLeft - (containerWidth / 2) + (cardWidth / 2);
+                    // Align Today to the center of the view for prominence
+                    todayCard.scrollIntoView({ behavior: 'auto', inline: 'center' });
+                } else {
+                    // Fallback: scroll to the very end
+                    scrollContainer.scrollLeft = scrollContainer.scrollWidth;
                 }
-            });
+            }, 100);
+            return () => clearTimeout(timer);
         }
     }, [loading, timelineData]);
 

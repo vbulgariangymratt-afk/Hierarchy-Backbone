@@ -20,6 +20,7 @@ const FocusPage = () => {
     const [task, setTask] = useState(null);
     const [skill, setSkill] = useState(null);
     const [allNodes, setAllNodes] = useState([]);
+    const [todayTasks, setTodayTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isGlowing, setIsGlowing] = useState(false);
     const [ack, setAck] = useState(null);
@@ -66,7 +67,7 @@ const FocusPage = () => {
     const [showMomentum, setShowMomentum] = useState(false);
     const [nextSuggestedTask, setNextSuggestedTask] = useState(null);
     const [hasAutoStarted, setHasAutoStarted] = useState(false);
-    const [sensoryState, setSensoryState] = useState('quiet'); // 'quiet' or 'cluttered'
+
     const [levelUpCelebration, setLevelUpCelebration] = useState(null); // { level: X, fading: false }
 
 
@@ -224,12 +225,15 @@ const FocusPage = () => {
             const fetchedNodes = await backbone.getAllNodes();
             setAllNodes(fetchedNodes);
             // 1. Initial Snapshot Capture (only once per session)
+            const todayTasksList = fetchedNodes.filter(n => 
+                n.type === NodeTypes.TASK && 
+                n.metadata?.isToday === true &&
+                n.metadata?.status !== TaskStatuses.DONE
+            );
+            setTodayTasks(todayTasksList);
+
             if (lockedTaskIdsRef.current === null) {
-                const todayTasks = fetchedNodes.filter(n => 
-                    n.type === NodeTypes.TASK && 
-                    n.metadata?.isToday === true
-                );
-                const ids = todayTasks.map(t => t.id);
+                const ids = todayTasksList.map(t => t.id);
                 lockedTaskIdsRef.current = ids;
             }
 
@@ -345,6 +349,58 @@ const FocusPage = () => {
         }
     }, [location.state?.taskId]);
 
+    const handleSwitchTask = useCallback((direction) => {
+        if (todayTasks.length <= 1 || activeSessionId) return;
+
+        const currentIndex = todayTasks.findIndex(t => t.id === task.id);
+        let nextIndex = currentIndex + direction;
+        if (nextIndex < 0) nextIndex = todayTasks.length - 1;
+        if (nextIndex >= todayTasks.length) nextIndex = 0;
+
+        const nextTask = todayTasks[nextIndex];
+
+        // 1. Reset Session State
+        setSeconds(0);
+        setIsPaused(true);
+        setActiveSessionId(null);
+        startTimeRef.current = null;
+        localStorage.removeItem(TIMER_PERSISTENCE_KEY);
+
+        // 2. Setup Task Environment
+        setTask(nextTask);
+        
+        let parent = allNodes.find(n => n.id === nextTask.parentId);
+        while (parent && parent.type !== NodeTypes.SKILL) {
+            parent = allNodes.find(n => n.id === parent.parentId);
+        }
+        setSkill(parent);
+
+        let objNode = allNodes.find(n => n.id === nextTask.parentId);
+        while (objNode && objNode.type !== NodeTypes.OBJECTIVE) {
+            objNode = allNodes.find(n => n.id === objNode?.parentId);
+        }
+        setSafeMode(!!objNode?.metadata?.burnoutRisk);
+
+        setIsInterestMode(parent?.metadata?.pinchState === 'INTEREST');
+        setIsInterestExploring(false);
+        setWasContinued(false);
+        setCheckpointsCompleted(0);
+        setUninterruptedSeconds(0);
+        setSubSteps(nextTask.metadata?.subSteps || []);
+        setShowAllHistory(false);
+
+    }, [todayTasks, task, allNodes, activeSessionId]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (activeSessionId || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'ArrowLeft') handleSwitchTask(-1);
+            if (e.key === 'ArrowRight') handleSwitchTask(1);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handleSwitchTask, activeSessionId]);
+
     useEffect(() => {
         if (startTimeRef.current !== null) {
             return;
@@ -458,7 +514,7 @@ const FocusPage = () => {
 
     const startBackboneSession = useCallback(async (pleasureValue) => {
         try {
-            const sess = await backbone.startSession(task.id, 10, pleasureValue, 0, sensoryState);
+            const sess = await backbone.startSession(task.id, 10, pleasureValue, 0);
             setActiveSessionId(sess.id);
             // Anchor the clock — this is the only place we set startTimeRef for a fresh session
             startTimeRef.current = Date.now();
@@ -802,7 +858,15 @@ const FocusPage = () => {
                 </div>
 
                 <div className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
-                    <h1 className="focus-task-name">{task.name}</h1>
+                    <div className="focus-task-navigation">
+                        {todayTasks.length > 1 && !activeSessionId && (
+                            <button className="task-nav-btn prev" onClick={() => handleSwitchTask(-1)}>‹</button>
+                        )}
+                        <h1 className="focus-task-name">{task.name}</h1>
+                        {todayTasks.length > 1 && !activeSessionId && (
+                            <button className="task-nav-btn next" onClick={() => handleSwitchTask(1)}>›</button>
+                        )}
+                    </div>
                     
 
 
@@ -1065,9 +1129,8 @@ const FocusPage = () => {
                 <div className="focus-modal-overlay">
                     <div className="focus-modal-content">
                         <button className="focus-modal-close" onClick={() => setShowSetup(false)}>×</button>
-                        <h3>Session Intent</h3>
+                        <h3>Predicted Pleasure</h3>
                         <div className="focus-modal-group">
-                            <span className="focus-modal-label">Predicted Pleasure</span>
                             <div className="focus-scale-picker">
                                 {[0, 2, 4, 6, 8, 10].map(val => (
                                     <button
@@ -1080,25 +1143,7 @@ const FocusPage = () => {
                                 ))}
                             </div>
                         </div>
-                        <div className="focus-modal-group">
-                            <span className="focus-modal-label">Workspace Environment</span>
-                            <div className="focus-scale-picker sensory-toggle" style={{ display: 'flex', gap: '8px' }}>
-                                <button 
-                                    className={`scale-btn ${sensoryState === 'quiet' ? 'selected' : ''}`}
-                                    onClick={() => setSensoryState('quiet')}
-                                    style={{ flex: 1, padding: '12px' }}
-                                >
-                                    Quiet
-                                </button>
-                                <button 
-                                    className={`scale-btn ${sensoryState === 'cluttered' ? 'selected' : ''}`}
-                                    onClick={() => setSensoryState('cluttered')}
-                                    style={{ flex: 1, padding: '12px' }}
-                                >
-                                    Cluttered
-                                </button>
-                            </div>
-                        </div>
+
                         <button className="modal-submit-btn" onClick={() => startBackboneSession(predictedPleasure)}>
                             Begin Focus
                         </button>
@@ -1109,7 +1154,7 @@ const FocusPage = () => {
             {showSummary && (
                 <div className="focus-modal-overlay">
                     <div className="focus-modal-content">
-                        <h3>Session Closure</h3>
+
                         <div className="focus-modal-group">
                             <span className="focus-modal-label">Actual Pleasure</span>
                             <div className="focus-scale-picker">

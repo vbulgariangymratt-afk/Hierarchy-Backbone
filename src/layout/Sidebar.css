@@ -1336,7 +1336,7 @@
 
 .light.solid-mode .sidebar,
 .light .sidebar:not(.liquid-mode):not(.wallpaper-mode) {
-    background: rgba(255, 255, 255, 0.45) !important;
+    background: #ffffff !important;
     --text-craft-primary: var(--text-primary);
     --text-craft-secondary: var(--text-secondary);
     --text-craft-tertiary: var(--text-tertiary);

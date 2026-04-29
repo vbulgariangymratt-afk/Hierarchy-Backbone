@@ -3028,9 +3028,9 @@ const SkillPage = () => {
                             animate={{ height: 'auto', opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={macOSSpring}
-                            style={{ overflow: 'hidden' }}
+                            style={{ overflow: 'visible' }}
                         >
-                            <div className="habits-grid">
+                            <div className="habits-grid" style={{ padding: '24px 0' }}>
                                 {(() => {
                                     const filteredHabits = (habits || []).filter(h => {
                                         if (energyLevel === 2) {

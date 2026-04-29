@@ -187,7 +187,7 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
         <div 
             className={`habit-card-minimal ${progress.isDone ? "completed sage-glow" : ""} ${isPulsing ? "satisfaction-pulse" : ""} ${celebration?.active ? "habit-celebrating" : ""} ${celebration ? "habit-lingering-glow" : ""}`} 
             id={`habit-${habit.id}`}
-            style={{ position: 'relative', overflow: 'visible' }}
+            style={{ position: 'relative', overflow: 'hidden' }}
         >
             {celebration?.active && <div className="habit-ripple" />}
             {celebration?.active && (
@@ -294,8 +294,11 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                                 · {validCompletions >= 6 ? `${compsRemaining} more to level up` : 'In Progress'}
                             </span>
                         </div>
-                        <div style={{ width: '100%', height: '6px', background: 'var(--alpha-high)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
-                            <div className={progress.todayCount > 0 ? 'shimmer-fill' : ''} style={{ width: `${barPercentage}%`, height: '100%', background: 'linear-gradient(90deg, var(--color-accent) 0%, rgba(96, 165, 250, 0.8) 100%)', borderRadius: '3px', transition: 'width 0.4s ease' }} />
+                        <div className="habit-mastery-bar-container">
+                            <div 
+                                className={`habit-mastery-bar-fill ${progress.todayCount > 0 ? 'shimmer-fill' : ''}`} 
+                                style={{ width: `${barPercentage}%` }} 
+                            />
                         </div>
                     </div>
                 )}

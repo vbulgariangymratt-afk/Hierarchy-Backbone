@@ -1581,25 +1581,28 @@
 .habits-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
+    gap: 20px;
 }
 
 .habit-card-minimal {
-    background: var(--color-bg-card);
+    background: var(--alpha-low);
     border: 1px solid var(--color-border);
-    border-radius: 12px;
-    padding: 16px;
-    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
+    border-radius: 16px;
+    padding: 16px 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
 }
 
-.light.solid-mode .habit-card-minimal {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Softer for light mode */
+.solid-mode .habit-card-minimal {
+    background: var(--color-bg-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .habit-edit-input {
@@ -1690,13 +1693,37 @@
 
 .liquid-mode .habit-card-minimal {
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    will-change: backdrop-filter, -webkit-backdrop-filter;
     box-shadow: 
         0 8px 30px rgba(0, 0, 0, 0.28),
         inset 0 1px 0 rgba(255, 255, 255, 0.20);
-    will-change: backdrop-filter, -webkit-backdrop-filter;
+}
+
+/* Match Aspect Card Glass Highlight */
+.habit-card-minimal::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: transparent;
+    pointer-events: none;
+    z-index: 0;
+    transition: all 0.2s ease;
+}
+
+.liquid-mode .habit-card-minimal::before {
+    background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.40) 0%, 
+        rgba(255, 255, 255, 0.08) 35%, 
+        transparent 100%);
+    opacity: 0.45;
+}
+
+.liquid-mode.dark .habit-card-minimal::before {
+    display: none !important;
 }
 
 .liquid-mode.dark .habit-card-minimal {
@@ -1846,6 +1873,25 @@
     color: #fbbf24;
     opacity: 0.6;
     margin-top: 4px;
+}
+
+/* Habit Mastery Bar - Matching Skill Card Aura Style */
+.habit-mastery-bar-container {
+    width: 100%;
+    height: 8px;
+    background: var(--alpha-high);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.habit-mastery-bar-fill {
+    height: 100%;
+    background: var(--aura-gradient);
+    background-size: 200% 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(234, 157, 155, 0.2);
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .habit-card-minimal .complete-btn {
@@ -4108,15 +4154,16 @@
    ============================================================ */
 
 [data-theme="light"][data-background-mode="solid"] .habit-card-minimal {
-    background: var(--color-bg-card);
-    border-color: var(--color-border);
-    box-shadow: var(--shadow-sm);
+    background: var(--color-bg-secondary);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
     color: var(--text-primary);
 }
 
 [data-theme="light"][data-background-mode="solid"] .habit-card-minimal:hover {
-    background: var(--color-bg-card);
-    box-shadow: var(--shadow-md);
+    background: #fcfcfc;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"][data-background-mode="solid"] .edit-label {
@@ -4124,7 +4171,24 @@
 }
 
 [data-theme="light"][data-background-mode="solid"] .habit-stats-row {
-    color: var(--text-tertiary);
+    color: rgb(129, 126, 125);
+    border-top: 1px solid rgba(0, 0, 0, 0.03);
+    padding-top: 10px;
+}
+
+[data-theme="light"][data-background-mode="solid"] .habit-intention {
+    color: rgb(129, 126, 125) !important;
+}
+
+[data-theme="light"][data-background-mode="solid"] .habit-card-minimal .complete-btn {
+    background: var(--alpha-med);
+    border-color: rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
+}
+
+[data-theme="light"][data-background-mode="solid"] .habit-card-minimal .complete-btn:hover {
+    background: var(--alpha-high);
+    color: var(--text-primary);
 }
 
 [data-theme="light"][data-background-mode="solid"] .habit-custom-tooltip {
