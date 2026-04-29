@@ -39,6 +39,8 @@ const SettingsPage = () => {
         updateBlurQuality,
         currencyName = 'Coins',
         updateCurrencyName,
+        todayRemovalMode,
+        updateTodayRemovalMode,
     } = useSettings();
 
     const [allSkills, setAllSkills] = useState([]);
@@ -248,6 +250,33 @@ const SettingsPage = () => {
                             />
                             <span className="toggle-slider"></span>
                         </label>
+                    </div>
+                </div>
+            </section>
+
+            {/* ── Task Behavior Section ─────────────────────────────────── */}
+            <section className="settings-section">
+                <h2 className="settings-section-title">Task Behavior</h2>
+                <div className="settings-card">
+                    <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
+                        <div className="appearance-row-label">Today Task Auto-Removal</div>
+                        <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
+                            Choose when a task should be removed from your "Today" list.
+                        </p>
+                        <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
+                            <button
+                                className={`segmented-control-item ${todayRemovalMode === 'after_session' ? 'active' : ''}`}
+                                onClick={() => updateTodayRemovalMode('after_session')}
+                            >
+                                After Session
+                            </button>
+                            <button
+                                className={`segmented-control-item ${todayRemovalMode === 'on_completion' ? 'active' : ''}`}
+                                onClick={() => updateTodayRemovalMode('on_completion')}
+                            >
+                                On Completion
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>

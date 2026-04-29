@@ -2161,6 +2161,17 @@ export const HierarchyService = (repository, auraService) => {
             return await auraService.getTotalAuraPoints();
         },
 
+        getGlobalLevel: async () => {
+            const totalPoints = await auraService.getTotalAuraPoints();
+            return auraService.calculateLevel(totalPoints);
+        },
+
+        getSkillLevel: async (skillId) => {
+            const skill = await repository.getById(skillId);
+            if (!skill || skill.type !== NodeTypes.SKILL) return 1;
+            return auraService.calculateLevel(skill.metadata?.auraTotal || 0);
+        },
+
         getHryvniaBalance: async () => {
             const root = await repository.getById('ROOT');
             return root?.metadata?.hryvniaBalance || 0;

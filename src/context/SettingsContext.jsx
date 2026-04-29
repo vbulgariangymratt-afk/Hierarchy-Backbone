@@ -62,6 +62,7 @@ const _cache = {
     healthDotStyle: localStorage.getItem('app-health-dot-style') || 'glowing',
     blurQuality: localStorage.getItem('app-blur-quality') || 'performance',
     currencyName: localStorage.getItem('app-currency-name') || 'Coins',
+    todayRemovalMode: localStorage.getItem('app-today-removal-mode') || 'on_completion',
     hasLoaded: false,
 };
 
@@ -76,6 +77,7 @@ export const SettingsProvider = ({ children }) => {
     const [healthDotStyle, setHealthDotStyleState] = useState(_cache.healthDotStyle);
     const [blurQuality, setBlurQualityState] = useState(_cache.blurQuality);
     const [currencyName, setCurrencyNameState] = useState(_cache.currencyName);
+    const [todayRemovalMode, setTodayRemovalModeState] = useState(_cache.todayRemovalMode);
     const [loading, setLoading] = useState(!_cache.hasLoaded);
 
 
@@ -105,7 +107,7 @@ export const SettingsProvider = ({ children }) => {
             if (error && (error.message?.includes('active_experiment_limit') || error.message?.includes('currency_name'))) {
                 const minimalQuery = await supabase
                     .from('user_settings')
-                    .select('focus_slots, guided_slot_roles, energy_level, maintenance_skill_ids, maintenance_enabled')
+                    .select('focus_slots, guided_slot_roles, energy_level, maintenance_skill_ids, maintenance_enabled, today_removal_mode')
                     .eq('user_id', uid)
                     .single();
                 data = minimalQuery.data ? { ...minimalQuery.data, currency_name: 'Coins' } : null;
@@ -148,6 +150,7 @@ export const SettingsProvider = ({ children }) => {
                     _cache.energyLevel = 3;
                     _cache.activeExperimentLimit = 1;
                     _cache.currencyName = 'Coins';
+                    _cache.todayRemovalMode = 'on_completion';
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
                     setFocusSlots(_cache.focusSlots);
@@ -157,6 +160,7 @@ export const SettingsProvider = ({ children }) => {
                     setEnergyLevel(_cache.energyLevel);
                     setActiveExperimentLimitState(_cache.activeExperimentLimit);
                     setCurrencyNameState(_cache.currencyName);
+                    setTodayRemovalModeState(_cache.todayRemovalMode);
                 }
             } else if (!error && data) {
                 _cache.focusSlots = data.focus_slots || [null, null, null, null, null];
@@ -166,6 +170,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.energyLevel = data.energy_level !== undefined ? data.energy_level : 3;
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.currencyName = data.currency_name ?? 'Coins';
+                _cache.todayRemovalMode = data.today_removal_mode ?? 'on_completion';
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
                 setFocusSlots(_cache.focusSlots);
@@ -175,6 +180,7 @@ export const SettingsProvider = ({ children }) => {
                 setEnergyLevel(_cache.energyLevel);
                 setActiveExperimentLimitState(_cache.activeExperimentLimit);
                 setCurrencyNameState(_cache.currencyName);
+                setTodayRemovalModeState(_cache.todayRemovalMode);
             }
         } catch (err) {
             console.error('[SettingsContext] Unexpected error during load:', err);
@@ -284,6 +290,13 @@ export const SettingsProvider = ({ children }) => {
         saveSettings({ currency_name: finalName });
     };
 
+    const updateTodayRemovalMode = (mode) => {
+        _cache.todayRemovalMode = mode;
+        setTodayRemovalModeState(mode);
+        localStorage.setItem('app-today-removal-mode', mode);
+        saveSettings({ today_removal_mode: mode });
+    };
+
     // Reflect health dot style to DOM for CSS access
     useEffect(() => {
         document.documentElement.dataset.healthDotStyle = healthDotStyle;
@@ -314,6 +327,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.energyLevel = 3;
                 _cache.activeExperimentLimit = 1;
                 _cache.currencyName = 'Coins';
+                _cache.todayRemovalMode = 'on_completion';
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -321,6 +335,7 @@ export const SettingsProvider = ({ children }) => {
                 setEnergyLevel(_cache.energyLevel);
                 setActiveExperimentLimitState(_cache.activeExperimentLimit);
                 setCurrencyNameState(_cache.currencyName);
+                setTodayRemovalModeState(_cache.todayRemovalMode);
             }
         });
 
@@ -355,11 +370,13 @@ export const SettingsProvider = ({ children }) => {
         updateBlurQuality,
         currencyName,
         updateCurrencyName,
+        todayRemovalMode,
+        updateTodayRemovalMode,
         dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, loading, refreshSettings]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, loading, refreshSettings]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>

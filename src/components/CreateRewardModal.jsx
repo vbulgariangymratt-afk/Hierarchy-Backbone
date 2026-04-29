@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { backbone, NodeTypes } from '../backbone-v2/index';
+import { backbone, repository, NodeTypes } from '../backbone-v2/index';
 import { useSettings } from '../context/SettingsContext';
 import './CreateRewardModal.css';
 
@@ -10,8 +10,40 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
     const [sensoryDescription, setSensoryDescription] = useState('');
     const [category, setCategory] = useState('MARKETPLACE'); // 'MARKETPLACE' or 'TASK'
     const [hryvniaCost, setHryvniaCost] = useState(10);
+    const [isLevelGated, setIsLevelGated] = useState(false);
+    const [requiredLevel, setRequiredLevel] = useState(1);
+    const [requiredSkillId, setRequiredSkillId] = useState(''); // Empty string means no skill selected yet
+    const [allSkills, setAllSkills] = useState([]);
     const [iconUrl, setIconUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    React.useEffect(() => {
+        const fetchSkills = async () => {
+            const nodes = await repository.getAll();
+            const skills = nodes.filter(n => n.type === NodeTypes.SKILL);
+            setAllSkills(skills);
+            
+            // Set default skill if none selected
+            if (skills.length > 0 && !requiredSkillId) {
+                setRequiredSkillId(skills[0].id);
+            }
+        };
+        if (isOpen) fetchSkills();
+    }, [isOpen]);
+
+    const handleCostChange = (val) => {
+        const cost = Number(val);
+        setHryvniaCost(cost);
+        
+        // Smart Defaults: rewards >= 50 coins are strongly suggested to be gated
+        if (cost >= 50 && !isLevelGated) {
+            setIsLevelGated(true);
+            setRequiredLevel(Math.max(1, Math.floor(cost / 50)));
+        } else if (cost < 50 && isLevelGated && requiredLevel === Math.floor(50/50)) {
+            // Only auto-untoggle if it was at the default suggested level
+            // setIsLevelGated(false); 
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -30,6 +62,8 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                     sensoryDescription: sensoryDescription.trim(),
                     rewardCategory: category,
                     hryvniaCost: Number(hryvniaCost),
+                    requiredLevel: isLevelGated ? Number(requiredLevel) : null,
+                    requiredSkillId: isLevelGated ? requiredSkillId : null,
                     rewardTier: 1, // Default to tier 1 for now
                     iconUrl: iconUrl.trim() || null
                 }
@@ -40,6 +74,9 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
             setSensoryDescription('');
             setCategory('MARKETPLACE');
             setHryvniaCost(10);
+            setIsLevelGated(false);
+            setRequiredLevel(1);
+            setRequiredSkillId(allSkills.length > 0 ? allSkills[0].id : '');
             setIconUrl('');
 
             if (onSuccess) onSuccess();
@@ -121,9 +158,57 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                                 min="0"
                                 step="1"
                                 value={hryvniaCost}
-                                onChange={e => setHryvniaCost(e.target.value)}
+                                onChange={e => handleCostChange(e.target.value)}
                             />
                         </div>
+                    </div>
+
+                    <div className="form-group level-gate-group">
+                        <div className="gate-toggle-wrapper">
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={isLevelGated}
+                                    onChange={e => setIsLevelGated(e.target.checked)}
+                                />
+                                <span>Gate this by Aura Level?</span>
+                            </label>
+                            {hryvniaCost >= 50 && !isLevelGated && (
+                                <span className="smart-suggestion">Recommended for high-cost rewards</span>
+                            )}
+                        </div>
+
+                        {isLevelGated && (
+                            <div className="level-input-wrapper animated-fade-in">
+                                <div className="gate-settings-row">
+                                    <div className="gate-field">
+                                        <label>Required Aura Level</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="100"
+                                            value={requiredLevel}
+                                            onChange={e => setRequiredLevel(e.target.value)}
+                                            placeholder="e.g. 5"
+                                        />
+                                    </div>
+                                    <div className="gate-field">
+                                        <label>Required In</label>
+                                        <select 
+                                            value={requiredSkillId} 
+                                            onChange={e => setRequiredSkillId(e.target.value)}
+                                            className="skill-gate-select"
+                                            required={isLevelGated}
+                                        >
+                                            {allSkills.length === 0 && <option value="">No skills found</option>}
+                                            {allSkills.map(skill => (
+                                                <option key={skill.id} value={skill.id}>{skill.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-group">

@@ -8,6 +8,7 @@ import { useSession } from '../context/SessionContext';
 import { getAspectStats, scoreLowEnergyTask } from '../utils/taskScoring';
 import { formatDuration, formatTimer } from '../utils/timeUtils';
 import RewardAnimation from '../components/RewardAnimation';
+import { useSettings } from '../context/SettingsContext';
 
 
 
@@ -110,6 +111,8 @@ const FocusPage = () => {
         previousRoute,
         energyLevel
     } = useSession();
+
+    const { todayRemovalMode } = useSettings();
 
 
     useEffect(() => {
@@ -588,6 +591,16 @@ const FocusPage = () => {
                 backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery)
                     .then(() => {})
                     .catch(err => console.error("[DEBUG FocusPage] completeSession background error:", err));
+
+                // 1.5. Check for today task auto-removal
+                if (todayRemovalMode === 'after_session' && currentTaskId) {
+                    backbone.updateNode(currentTaskId, {
+                        metadata: {
+                            ...task.metadata,
+                            isToday: false
+                        }
+                    }).catch(err => console.error("[Focus Mode] Failed to auto-remove today tag:", err));
+                }
 
                 // 2. INSTANT UI: Trigger Momentum Loop immediately
                 if (energyLevel <= 2 && !isNavigatingAway && nextSuggestedTask) {

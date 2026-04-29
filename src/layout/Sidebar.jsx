@@ -104,7 +104,8 @@ const Sidebar = ({ onSkillClick }) => {
         maintenanceEnabled,
         guidedSlotRoles, 
         energyLevel, 
-        updateEnergyLevel 
+        updateEnergyLevel,
+        currencyName
     } = useSettings();
 
     // --- LEVEL UP LISTENER ---
@@ -734,6 +735,7 @@ const Sidebar = ({ onSkillClick }) => {
                     <div className="hryvnia-display">
                         <span className="hryvnia-icon">₴</span>
                         <span className="hryvnia-amount">{hryvniaBalance}</span>
+                        <span className="hryvnia-name">{currencyName}</span>
                     </div>
                 )}
 

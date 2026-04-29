@@ -124,14 +124,17 @@
 
 .hryvnia-details {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
 }
 
 .balance-label {
-    font-size: 11px;
+    font-size: 13px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .balance-value {
@@ -304,6 +307,58 @@
 
 .reward-card.insufficient .cost-value {
     color: var(--color-danger);
+}
+
+/* Locked Reward Styling */
+.reward-card.locked {
+    filter: grayscale(1) opacity(0.5);
+    cursor: not-allowed;
+    pointer-events: none; /* Disable all interactions including hover effects inside */
+    user-select: none;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.reward-card.locked:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.locked-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2px);
+    z-index: 10;
+}
+
+.lock-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.6;
+}
+
+.lock-requirement {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--alpha-high);
+    padding: 6px 16px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.reward-card.locked .reward-content,
+.reward-card.locked .reward-footer {
+    filter: blur(1px);
 }
 
 

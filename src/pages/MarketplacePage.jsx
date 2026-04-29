@@ -20,17 +20,32 @@ const MarketplacePage = () => {
     const [purchaseLoading, setPurchaseLoading] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [globalLevel, setGlobalLevel] = useState(1);
+    const [skillLevels, setSkillLevels] = useState({});
+    const [skills, setSkills] = useState([]);
     const { currencyName } = useSettings();
 
     const fetchData = async () => {
         try {
-            const [currentBalance, allNodes, rootNode] = await Promise.all([
+            const [currentBalance, allNodes, rootNode, currentLevel] = await Promise.all([
                 backbone.getHryvniaBalance(),
                 repository.getAll(),
-                repository.getById('ROOT')
+                repository.getById('ROOT'),
+                backbone.getGlobalLevel ? backbone.getGlobalLevel() : Promise.resolve(1)
             ]);
+            
+            const skillNodes = allNodes.filter(n => n.type === NodeTypes.SKILL);
+            setSkills(skillNodes);
 
+            // Pre-calculate levels for all skills
+            const levels = {};
+            for (const skill of skillNodes) {
+                levels[skill.id] = backbone.auraService?.calculateLevel(skill.metadata?.auraTotal || 0) || 1;
+            }
+            setSkillLevels(levels);
+            
             setBalance(currentBalance);
+            setGlobalLevel(currentLevel || 1);
 
             const activeIds = (rootNode?.metadata?.activeMarketplace || []).map(item => item.rewardId || item);
 
@@ -119,8 +134,8 @@ const MarketplacePage = () => {
                     <div className="hryvnia-card liquid-glass">
                         <NodeIcon iconUrl={SVG_ICONS.COIN} size={24} />
                         <div className="hryvnia-details">
-                            <span className="balance-label">{currencyName} Balance</span>
                             <span className="balance-value">{balance}</span>
+                            <span className="balance-label">{currencyName}</span>
                         </div>
                     </div>
                 </div>
@@ -130,12 +145,31 @@ const MarketplacePage = () => {
                 <div className="rewards-grid">
                     {marketplaceRewards.map(reward => {
                         const canAfford = balance >= (reward.metadata?.hryvniaCost || 0);
+                        const requiredLevel = reward.metadata?.requiredLevel;
+                        const requiredSkillId = reward.metadata?.requiredSkillId;
+                        
+                        let isLocked = false;
+                        let requirementLabel = '';
+
+                        if (requiredLevel && requiredSkillId) {
+                            const skill = skills.find(s => s.id === requiredSkillId);
+                            const currentSkillLevel = skillLevels[requiredSkillId] || 1;
+                            isLocked = currentSkillLevel < requiredLevel;
+                            requirementLabel = `${skill?.name || 'Skill'} Lvl ${requiredLevel}`;
+                        }
+
                         const isPurchasing = purchaseLoading === reward.id;
                         const tier = reward.metadata?.rewardTier;
 
                         return (
-                            <div key={reward.id} className={`reward-card liquid-glass ${!canAfford ? 'insufficient' : ''}`}>
+                            <div key={reward.id} className={`reward-card liquid-glass ${!canAfford ? 'insufficient' : ''} ${isLocked ? 'locked' : ''}`}>
                                 {tier && <div className="reward-tier">Tier {tier}</div>}
+                                {isLocked && (
+                                    <div className="locked-overlay">
+                                        <div className="lock-icon">🔒</div>
+                                        <div className="lock-requirement">{requirementLabel}</div>
+                                    </div>
+                                )}
                                 <div className="reward-content">
                                     <h3 className="reward-name">{reward.name}</h3>
                                     <p className="reward-description">
@@ -148,11 +182,11 @@ const MarketplacePage = () => {
                                         <span className="cost-value">{reward.metadata?.hryvniaCost || 0}</span>
                                     </div>
                                     <button
-                                        className={`buy-button ${!canAfford ? 'disabled' : ''}`}
-                                        onClick={() => handleBuy(reward.id)}
-                                        disabled={!canAfford || isPurchasing}
+                                        className={`buy-button ${!canAfford || isLocked ? 'disabled' : ''}`}
+                                        onClick={() => !isLocked && handleBuy(reward.id)}
+                                        disabled={!canAfford || isPurchasing || isLocked}
                                     >
-                                        {isPurchasing ? 'Processing...' : (canAfford ? 'Buy' : `Insufficient ${currencyName}`)}
+                                        {isLocked ? 'Locked' : (isPurchasing ? 'Processing...' : (canAfford ? 'Buy' : `Insufficient ${currencyName}`))}
                                     </button>
                                 </div>
                             </div>

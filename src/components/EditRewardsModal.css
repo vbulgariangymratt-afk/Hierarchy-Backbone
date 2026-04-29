@@ -259,3 +259,58 @@
     cursor: pointer;
     font-size: 12px;
 }
+
+.er-level-edit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    padding-left: 12px;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.er-level-input {
+    width: 100px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-text-main);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.er-level-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.er-skill-select {
+    width: 120px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-text-main);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.er-skill-select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.er-level-icon {
+    font-size: 14px;
+}
+
+.er-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 2px 8px;
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+}

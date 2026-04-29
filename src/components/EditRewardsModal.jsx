@@ -10,9 +10,17 @@ const EditRewardsModal = ({ isOpen, onClose, onSuccess }) => {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState(null);
     const [editPrice, setEditPrice] = useState('');
+    const [editLevel, setEditLevel] = useState('');
+    const [editSkillId, setEditSkillId] = useState('');
     const [savingId, setSavingId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
     const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+    const [allSkills, setAllSkills] = useState([]);
+
+    const fetchSkills = async () => {
+        const nodes = await repository.getAll();
+        setAllSkills(nodes.filter(n => n.type === NodeTypes.SKILL));
+    };
 
     const fetchRewards = async () => {
         setLoading(true);
@@ -30,7 +38,10 @@ const EditRewardsModal = ({ isOpen, onClose, onSuccess }) => {
     };
 
     useEffect(() => {
-        if (isOpen) fetchRewards();
+        if (isOpen) {
+            fetchRewards();
+            fetchSkills();
+        }
     }, [isOpen]);
 
     if (!isOpen) return null;
@@ -38,13 +49,20 @@ const EditRewardsModal = ({ isOpen, onClose, onSuccess }) => {
     const handleStartEdit = (reward) => {
         setEditingId(reward.id);
         setEditPrice(reward.metadata?.hryvniaCost ?? 10);
+        setEditLevel(reward.metadata?.requiredLevel ?? '');
+        setEditSkillId(reward.metadata?.requiredSkillId ?? (allSkills.length > 0 ? allSkills[0].id : ''));
     };
 
     const handleSavePrice = async (reward) => {
         setSavingId(reward.id);
         try {
             await repository.update(reward.id, {
-                metadata: { ...reward.metadata, hryvniaCost: Number(editPrice) }
+                metadata: { 
+                    ...reward.metadata, 
+                    hryvniaCost: Number(editPrice),
+                    requiredLevel: editLevel === '' ? null : Number(editLevel),
+                    requiredSkillId: editLevel === '' ? null : editSkillId
+                }
             });
             setEditingId(null);
             await fetchRewards();
@@ -111,8 +129,30 @@ const EditRewardsModal = ({ isOpen, onClose, onSuccess }) => {
                                                 value={editPrice}
                                                 onChange={e => setEditPrice(e.target.value)}
                                                 className="er-price-input"
+                                                placeholder="Cost"
                                                 autoFocus
                                             />
+                                            <div className="er-level-edit">
+                                                <span className="er-level-icon">🛡️</span>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={editLevel}
+                                                    onChange={e => setEditLevel(e.target.value)}
+                                                    className="er-level-input"
+                                                    placeholder="Lvl"
+                                                />
+                                                <select
+                                                    value={editSkillId}
+                                                    onChange={e => setEditSkillId(e.target.value)}
+                                                    className="er-skill-select"
+                                                >
+                                                    {allSkills.length === 0 && <option value="">No skills</option>}
+                                                    {allSkills.map(s => (
+                                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                             <button
                                                 className="er-save-btn"
                                                 onClick={() => handleSavePrice(reward)}
@@ -129,9 +169,18 @@ const EditRewardsModal = ({ isOpen, onClose, onSuccess }) => {
                                         </div>
                                     ) : (
                                         <div className="er-price-display">
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <NodeIcon iconUrl={BANKNOTE_SVG} size={14} />
-                                                <span className="er-price-value">{reward.metadata?.hryvniaCost ?? 0}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div className="er-stat">
+                                                    <NodeIcon iconUrl={BANKNOTE_SVG} size={14} />
+                                                    <span className="er-price-value">{reward.metadata?.hryvniaCost ?? 0}</span>
+                                                </div>
+                                                {reward.metadata?.requiredLevel && (
+                                                    <div className="er-stat">
+                                                        <span style={{ fontSize: '11px' }}>
+                                                            🛡️ {(allSkills.find(s => s.id === reward.metadata.requiredSkillId)?.name || 'Skill')} Lvl {reward.metadata.requiredLevel}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <button
                                                 className="er-edit-btn"
