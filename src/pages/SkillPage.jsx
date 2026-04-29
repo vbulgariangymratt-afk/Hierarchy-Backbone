@@ -548,7 +548,7 @@ const SkillPage = () => {
         const duration = newObjectiveDuration === '' ? null : parseInt(newObjectiveDuration);
         const accType = newObjectiveAccType;
 
-        if (!name || !theme || !mve || !accType) {
+        if (!name || !theme || !accType) {
             return;
         }
 
@@ -1946,6 +1946,8 @@ const SkillPage = () => {
                                 onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, accumulationType: e.target.value })}
                             />
                         </div>
+                        {/* MVE section hidden per user request */}
+                        {/* 
                         <div className="edit-field full-width">
                             <label>Minimum Viable Effort</label>
                             <textarea
@@ -1954,6 +1956,7 @@ const SkillPage = () => {
                                 onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, mve: e.target.value })}
                             />
                         </div>
+                        */}
                         <div className="edit-field full-width">
                             <label>Wish</label>
                             <input
@@ -2394,7 +2397,7 @@ const SkillPage = () => {
                                                                     color: 'var(--text-secondary)',
                                                                     border: '1px solid rgba(255, 255, 255, 0.05)',
                                                                     whiteSpace: 'nowrap'
-                                                                }}>Feedback and adjustment</span>
+                                                                }}>{obj.metadata?.theme || 'Feedback and adjustment'}</span>
                                                             </div>
                                                         </motion.div>
                                                     </AnimatePresence>
@@ -3175,6 +3178,8 @@ const SkillPage = () => {
                                     />
                                 </div>
                             </div>
+                            {/* MVE section hidden per user request */}
+                            {/* 
                             <div className="creation-row">
                                 <textarea
                                     placeholder="Minimum Viable Effort..."
@@ -3183,6 +3188,7 @@ const SkillPage = () => {
                                     className="form-input text-area"
                                 />
                             </div>
+                            */}
                             <div className="creation-row">
                                 <input
                                     placeholder="Wish (What do I want?)"

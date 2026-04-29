@@ -114,14 +114,24 @@ export const HierarchyService = (repository, auraService) => {
 
         const lastReset = rootNode.metadata?.lastTodayResetDate;
         if (lastReset !== todayStr) {
-            console.log(`[Daily Reset] New day detected (${todayStr}). Resetting "Today" tasks...`);
+            console.log(`[Daily Reset] New day detected (${todayStr}). Processing rollover...`);
             
             const allNodes = await repository.getAll();
-            const todayTasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.isToday);
             
+            // 1. Reset existing Today tasks
+            const todayTasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.isToday);
             for (const task of todayTasks) {
                 await repository.update(task.id, {
                     metadata: { ...task.metadata, isToday: false },
+                    updatedAt: Date.now()
+                });
+            }
+
+            // 2. Promote Tomorrow tasks to Today
+            const tomorrowTasks = allNodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.tomorrow);
+            for (const task of tomorrowTasks) {
+                await repository.update(task.id, {
+                    metadata: { ...task.metadata, isToday: true, tomorrow: false },
                     updatedAt: Date.now()
                 });
             }
@@ -130,7 +140,7 @@ export const HierarchyService = (repository, auraService) => {
                 metadata: { ...rootNode.metadata, lastTodayResetDate: todayStr },
                 updatedAt: Date.now()
             });
-            console.log(`[Daily Reset] Successfully reset ${todayTasks.length} tasks.`);
+            console.log(`[Daily Reset] Successfully reset ${todayTasks.length} and promoted ${tomorrowTasks.length} tasks.`);
         }
     }
 
@@ -1114,8 +1124,8 @@ export const HierarchyService = (repository, auraService) => {
                 metadata.sessions = [];
                 metadata.orderIndex = metadata.orderIndex || 0;
             } else if (type === NodeTypes.OBJECTIVE) {
-                if (!metadata.theme || !metadata.accumulationType || !metadata.mve) {
-                    throw new Error("Objective creation requires Theme, AccumulationType, and MVE.");
+                if (!metadata.theme || !metadata.accumulationType) {
+                    throw new Error("Objective creation requires Theme and AccumulationType.");
                 }
                 metadata.status = ObjectiveStatuses.ACTIVE;
                 metadata.isActive = true;

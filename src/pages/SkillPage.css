@@ -654,6 +654,17 @@
     color: var(--text-primary);
 }
 
+.liquid-mode .add-aspect-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    will-change: backdrop-filter, -webkit-backdrop-filter;
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
+}
+
 .liquid-mode.dark .add-aspect-btn {
     background: transparent !important;
 }
@@ -715,7 +726,7 @@
 
 .aspect-card {
     position: relative;
-    border-radius: 12px;
+    border-radius: 24px;
     padding: 24px;
     cursor: pointer;
     display: flex;
@@ -731,25 +742,41 @@
 }
 
 .liquid-mode .aspect-card {
-    backdrop-filter: blur(22px) saturate(140%);
-    -webkit-backdrop-filter: blur(22px) saturate(140%);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    will-change: backdrop-filter, -webkit-backdrop-filter;
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.20);
 }
 
 .liquid-mode.dark .aspect-card {
-    background: transparent;
+    background: transparent !important;
 }
-/* Isolated Glass Background Layer */
+/* Glass Highlight Layer */
 .aspect-card::before {
     content: "";
     position: absolute;
     inset: 0;
-    z-index: -1;
     border-radius: inherit;
+    background: transparent;
     pointer-events: none;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
+    z-index: 0;
+    transition: all 0.2s ease;
+}
+
+.liquid-mode .aspect-card::before {
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.40) 0%,
+            rgba(255, 255, 255, 0.08) 35%,
+            transparent 100%);
+    opacity: 0.45;
+}
+
+.liquid-mode.dark .aspect-card::before {
+    display: none !important;
 }
 
 
@@ -784,6 +811,15 @@
         0 18px 56px rgba(0, 0, 0, 0.4),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
+}
+
+.liquid-mode .aspect-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px) translateZ(0);
 }
 
 .liquid-mode.dark .aspect-card:hover {
@@ -4130,4 +4166,38 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* ── Light Mode Color Normalization ─────────────────────────────────── */
+/* Matching sidebar text color (rgb(129, 126, 125)) for tasks and micro sections */
+
+.light .task-main-name,
+.light .task-today-badge,
+.light .pinch-status-text,
+.light .pinch-explanation,
+.light .reward-name-inline,
+.light .expanded-label-small,
+.light .reward-main,
+.light .micro-reward-section .expanded-label-small,
+.light .reward-tier-inline,
+.liquid-mode.light .task-main-name {
+    color: rgb(129, 126, 125) !important;
+}
+
+.pinch-status-text {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    margin: 0;
+    padding: 2px 0;
+    color: #a1a1aa; /* Fallback for dark mode */
+}
+
+.pinch-explanation {
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0;
+    padding: 2px 0;
+    color: #a1a1aa; /* Fallback for dark mode */
 }

@@ -34,7 +34,6 @@ import EnergyModeTag from './components/EnergyModeTag';
 
 import { useDevAuthPoller } from './hooks/useDevAuthPoller';
 import { useDeepLinkAuth } from './hooks/useDeepLinkAuth';
-import { useDailyRollover } from './hooks/useDailyRollover';
 import { useAppInitialization } from './hooks/useAppInitialization';
 
 const LandingLog = () => {
@@ -56,7 +55,6 @@ function App() {
   // 4. Background services
   useDevAuthPoller(setSession);
   useDeepLinkAuth(setSession);
-  useDailyRollover(repositoriesReady);
 
   return (
     <ThemeProvider>

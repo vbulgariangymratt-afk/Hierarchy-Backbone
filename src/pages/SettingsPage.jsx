@@ -72,7 +72,6 @@ const SettingsPage = () => {
 
     return (
         <div className="settings-page">
-            <h1 style={{color: 'red', fontSize: '48px', textAlign: 'center', margin: '20px 0'}}>TEST 123</h1>
             <header className="settings-header">
                 <h1 className="settings-title">Settings</h1>
                 <p className="settings-subtitle">Manage your account and preferences</p>

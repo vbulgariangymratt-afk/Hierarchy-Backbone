@@ -745,9 +745,11 @@
 
 .nav-item .btn-icon img,
 .nav-item .btn-icon svg,
-.nav-item .btn-icon span {
-    max-width: 14px;
-    max-height: 14px;
+.nav-item .btn-icon .app-icon {
+    max-width: 16px;
+    max-height: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 /* Animations */
@@ -1592,15 +1594,15 @@
 }
 
 /* Icons inherit the exact same whisper grey */
-.liquid-mode.light .sidebar .nav-item .btn-icon,
-.liquid-mode.light .sidebar .mode-toggle-btn .btn-icon,
-.liquid-mode.light .sidebar .pilot-skill-label .btn-icon,
-.solid-mode.light .sidebar .nav-item .btn-icon,
-.solid-mode.light .sidebar .mode-toggle-btn .btn-icon,
-.solid-mode.light .sidebar .pilot-skill-label .btn-icon,
-.wallpaper-mode.light .sidebar .nav-item .btn-icon,
-.wallpaper-mode.light .sidebar .mode-toggle-btn .btn-icon,
-.wallpaper-mode.light .sidebar .pilot-skill-label .btn-icon {
+.liquid-mode .sidebar .nav-item .btn-icon,
+.solid-mode .sidebar .nav-item .btn-icon,
+.wallpaper-mode .sidebar .nav-item .btn-icon,
+.liquid-mode .sidebar .mode-toggle-btn .btn-icon,
+.solid-mode .sidebar .mode-toggle-btn .btn-icon,
+.wallpaper-mode .sidebar .mode-toggle-btn .btn-icon,
+.liquid-mode .sidebar .pilot-skill-label .btn-icon,
+.solid-mode .sidebar .pilot-skill-label .btn-icon,
+.wallpaper-mode .sidebar .pilot-skill-label .btn-icon {
     color: inherit !important;
     opacity: 1 !important;
 }
@@ -1719,15 +1721,15 @@
     fill: currentColor !important;
 }
 
-.liquid-mode.light .sidebar .nav-item .btn-icon img,
-.liquid-mode.light .sidebar .nav-item .btn-icon svg,
-.liquid-mode.light .sidebar .nav-item .btn-icon span,
-.solid-mode.light .sidebar .nav-item .btn-icon img,
-.solid-mode.light .sidebar .nav-item .btn-icon svg,
-.solid-mode.light .sidebar .nav-item .btn-icon span,
-.wallpaper-mode.light .sidebar .nav-item .btn-icon img,
-.wallpaper-mode.light .sidebar .nav-item .btn-icon svg,
-.wallpaper-mode.light .sidebar .nav-item .btn-icon span {
+.liquid-mode .sidebar .nav-item .btn-icon img,
+.liquid-mode .sidebar .nav-item .btn-icon svg,
+.liquid-mode .sidebar .nav-item .btn-icon .app-icon,
+.solid-mode .sidebar .nav-item .btn-icon img,
+.solid-mode .sidebar .nav-item .btn-icon svg,
+.solid-mode .sidebar .nav-item .btn-icon .app-icon,
+.wallpaper-mode .sidebar .nav-item .btn-icon img,
+.wallpaper-mode .sidebar .nav-item .btn-icon svg,
+.wallpaper-mode .sidebar .nav-item .btn-icon .app-icon {
     max-width: 14px !important;
     max-height: 14px !important;
     width: 14px !important;
