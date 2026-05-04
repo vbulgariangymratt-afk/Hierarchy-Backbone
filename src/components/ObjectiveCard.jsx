@@ -59,6 +59,12 @@ const ObjectiveCard = ({
     setNewTaskName,
     newTaskItemType,
     setNewTaskItemType,
+    newTaskUnitName,
+    setNewTaskUnitName,
+    newTaskTargetUnits,
+    setNewTaskTargetUnits,
+    newTaskDependencyId,
+    setNewTaskDependencyId,
     handleCreateTask,
     aspectShowMoreIds,
     setAspectShowMoreIds,
@@ -72,6 +78,7 @@ const ObjectiveCard = ({
     setCollapsedCompletedAspects,
     macOSSpring,
     getChildren,
+    allNodes,
     mveFocusTask
 }) => {
     if (isEditing) {
@@ -489,26 +496,14 @@ const ObjectiveCard = ({
                                                                             )}
                                                                         </div>
                                                                     </div>
-                                                                    {isCreatingTask && (
-                                                                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} style={{ padding: '0 0 16px 0', borderBottom: '1px solid var(--alpha-low)', marginBottom: '16px' }}>
-                                                                            <input
-                                                                                autoFocus
-                                                                                className="task-input-inline"
-                                                                                placeholder="Add a new mission..."
-                                                                                value={newTaskName}
-                                                                                onChange={e => setNewTaskName(e.target.value)}
-                                                                                onKeyDown={e => handleCreateTask(e, aspect.id)}
-                                                                                onBlur={() => setCreatingTaskForAspectId(null)}
-                                                                                style={{ width: '100%', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--color-primary)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '13px', fontWeight: '500', outline: 'none', padding: '10px 14px' }}
-                                                                            />
-                                                                        </motion.div>
-                                                                    )}
+                                                                    {isCreatingTask && <div style={{ height: '0px', marginBottom: '16px' }} />}
                                                                     <div className="aspect-tasks">
                                                                         <AnimatePresence>
                                                                             {aspectTasks.slice(0, visibleTasksCount).map(task => (
                                                                                 <SortableTaskRow 
                                                                                     key={task.id}
                                                                                     task={task}
+                                                                                    allNodes={allNodes}
                                                                                     isExpanded={expandedTaskIds.includes(task.id)}
                                                                                     expandedTaskIds={expandedTaskIds}
                                                                                     activeChallengeHighlight={activeChallengeHighlight}

@@ -10,6 +10,8 @@ import { formatDuration, formatTimer } from '../utils/timeUtils';
 import RewardAnimation from '../components/RewardAnimation';
 import { useSettings } from '../context/SettingsContext';
 
+const isTauri = () => typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
+
 
 
 const ACKS = ["Good.", "Nice.", "Done."];
@@ -496,6 +498,33 @@ const FocusPage = () => {
             }));
         }
     }, [isPaused, activeSessionId, task?.id]);
+
+    useEffect(() => {
+        const updateTray = async () => {
+            if (!isTauri()) return;
+            const { invoke } = await import('@tauri-apps/api/core');
+            
+            if (activeSessionId && !isPaused) {
+                const timeStr = formatTime(seconds);
+                await invoke('update_tray_timer', { time: timeStr });
+            } else if (activeSessionId && isPaused) {
+                const timeStr = `${formatTime(seconds)} (Paused)`;
+                await invoke('update_tray_timer', { time: timeStr });
+            } else {
+                await invoke('update_tray_timer', { time: null });
+            }
+        };
+
+        updateTray();
+        
+        return () => {
+            if (isTauri()) {
+                import('@tauri-apps/api/core').then(({ invoke }) => {
+                    invoke('update_tray_timer', { time: null }).catch(console.error);
+                });
+            }
+        };
+    }, [seconds, isPaused, activeSessionId]);
 
     useEffect(() => {
         return () => {};

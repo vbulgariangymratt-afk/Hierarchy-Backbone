@@ -68,6 +68,10 @@ const SkillPage = () => {
     const [aspectShowMoreIds, setAspectShowMoreIds] = useState([]);
     const [tempBecoming, setTempBecoming] = useState('');
     const [isSyncingBecoming, setIsSyncingBecoming] = useState(false);
+
+    // Dependency Search State
+    const [depSearchQuery, setDepSearchQuery] = useState('');
+    const [showDepResults, setShowDepResults] = useState(false);
     const [collapsedCompletedAspects, setCollapsedCompletedAspects] = useState({});
     const [activeHabitForEvolution, setActiveHabitForEvolution] = useState(null);
     const [isHabitsExpanded, setIsHabitsExpanded] = useState(energyLevel !== 4);
@@ -237,6 +241,26 @@ const SkillPage = () => {
         handleTaskDragStart, handleDragOver, handleDragEnd, dragActiveId, 
         isSleepingExpanded, setIsSleepingExpanded, expandedTaskIds, setExpandedTaskIds
     } = taskHandlers;
+
+    // Memoize all tasks in the skill for dependency searching
+    const allSkillTasks = useMemo(() => {
+        if (!skill || !allNodes) return [];
+        // Objectives -> Aspects -> Tasks
+        const objectives = allNodes.filter(n => n.parentId === skill.id && n.type === NodeTypes.OBJECTIVE);
+        const objIds = objectives.map(o => o.id);
+        const aspects = allNodes.filter(n => objIds.includes(n.parentId) && n.type === NodeTypes.ASPECT);
+        const aspectIds = aspects.map(a => a.id);
+        return allNodes.filter(n => aspectIds.includes(n.parentId) && n.type === NodeTypes.TASK);
+    }, [allNodes, skill]);
+
+    const filteredDepTasks = useMemo(() => {
+        if (!depSearchQuery.trim()) return [];
+        const query = depSearchQuery.toLowerCase();
+        return allSkillTasks.filter(t => 
+            t.name.toLowerCase().includes(query) && 
+            t.metadata?.status !== TaskStatuses.DONE
+        ).slice(0, 8);
+    }, [allSkillTasks, depSearchQuery]);
 
     // Inline Renaming Handlers
     const handleStartInlineEdit = useCallback((nodeId, name) => {
@@ -471,6 +495,12 @@ const SkillPage = () => {
                                     setNewTaskName={taskHandlers.setNewTaskName}
                                     newTaskItemType={taskHandlers.newTaskItemType}
                                     setNewTaskItemType={taskHandlers.setNewTaskItemType}
+                                    newTaskUnitName={taskHandlers.newTaskUnitName}
+                                    setNewTaskUnitName={taskHandlers.setNewTaskUnitName}
+                                    newTaskTargetUnits={taskHandlers.newTaskTargetUnits}
+                                    setNewTaskTargetUnits={taskHandlers.setNewTaskTargetUnits}
+                                    newTaskDependencyId={taskHandlers.newTaskDependencyId}
+                                    setNewTaskDependencyId={taskHandlers.setNewTaskDependencyId}
                                     handleCreateTask={taskHandlers.handleCreateTask}
                                     aspectShowMoreIds={aspectShowMoreIds}
                                     setAspectShowMoreIds={setAspectShowMoreIds}
@@ -484,6 +514,7 @@ const SkillPage = () => {
                                     setCollapsedCompletedAspects={setCollapsedCompletedAspects}
                                     macOSSpring={macOSSpring}
                                     getChildren={getChildren}
+                                    allNodes={allNodes}
                                 />
                             ))}
                         </div>
@@ -560,6 +591,12 @@ const SkillPage = () => {
                                         setNewTaskName={taskHandlers.setNewTaskName}
                                         newTaskItemType={taskHandlers.newTaskItemType}
                                         setNewTaskItemType={taskHandlers.setNewTaskItemType}
+                                        newTaskUnitName={taskHandlers.newTaskUnitName}
+                                        setNewTaskUnitName={taskHandlers.setNewTaskUnitName}
+                                        newTaskTargetUnits={taskHandlers.newTaskTargetUnits}
+                                        setNewTaskTargetUnits={taskHandlers.setNewTaskTargetUnits}
+                                        newTaskDependencyId={taskHandlers.newTaskDependencyId}
+                                        setNewTaskDependencyId={taskHandlers.setNewTaskDependencyId}
                                         handleCreateTask={taskHandlers.handleCreateTask}
                                         aspectShowMoreIds={aspectShowMoreIds}
                                         setAspectShowMoreIds={setAspectShowMoreIds}
@@ -573,6 +610,7 @@ const SkillPage = () => {
                                         setCollapsedCompletedAspects={setCollapsedCompletedAspects}
                                         macOSSpring={macOSSpring}
                                         getChildren={getChildren}
+                                        allNodes={allNodes}
                                     />
                                 ))}
                             </div>
@@ -586,6 +624,176 @@ const SkillPage = () => {
                     {dragActiveId ? <div className="drag-overlay-task">{allNodes.find(n => n.id === dragActiveId)?.name}</div> : null}
                 </DragOverlay>
             </DndContext>
+
+            {/* ── Task Delete Confirmation Modal ── */}
+            {taskHandlers.taskToDelete && (
+                <div
+                    className="delete-confirm-overlay"
+                    onClick={() => taskHandlers.setTaskToDelete(null)}
+                >
+                    <div
+                        className="delete-confirm-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="delete-confirm-message">
+                            Delete task <strong>"{taskHandlers.taskToDelete.name}"</strong>?
+                        </p>
+                        <div className="delete-confirm-actions">
+                            <button
+                                className="delete-confirm-cancel"
+                                onClick={() => taskHandlers.setTaskToDelete(null)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="delete-confirm-btn"
+                                onClick={taskHandlers.handleDeleteTask}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Task Creation Modal ── */}
+            {taskHandlers.creatingTaskForAspectId && (
+                <div 
+                    className="task-creation-overlay"
+                    onClick={() => taskHandlers.setCreatingTaskForAspectId(null)}
+                >
+                    <div 
+                        className="task-creation-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="task-type-tabs" style={{ marginTop: '20px' }}>
+                            <button 
+                                className={`type-tab ${taskHandlers.newTaskItemType === 'FINITE' ? 'active' : ''}`}
+                                onClick={() => taskHandlers.setNewTaskItemType('FINITE')}
+                            >
+                                One-time Task
+                            </button>
+                            <button 
+                                className={`type-tab ${taskHandlers.newTaskItemType === 'REPETITION' ? 'active' : ''}`}
+                                onClick={() => taskHandlers.setNewTaskItemType('REPETITION')}
+                            >
+                                Repeated Activity
+                            </button>
+                        </div>
+
+                        <div className="task-creation-body">
+                            <div className="creation-field">
+                                <label>Task Name</label>
+                                <input 
+                                    autoFocus
+                                    placeholder="What needs to be done?"
+                                    value={taskHandlers.newTaskName}
+                                    onChange={(e) => taskHandlers.setNewTaskName(e.target.value)}
+                                    onKeyDown={(e) => taskHandlers.handleCreateTask(e, taskHandlers.creatingTaskForAspectId)}
+                                />
+                            </div>
+
+                            {taskHandlers.newTaskItemType === 'REPETITION' && (
+                                <div className="repetition-grid">
+                                    <div className="creation-field">
+                                        <label>Target Units</label>
+                                        <input 
+                                            type="number"
+                                            placeholder="0"
+                                            value={taskHandlers.newTaskTargetUnits}
+                                            onChange={(e) => taskHandlers.setNewTaskTargetUnits(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="creation-field">
+                                        <label>Unit Name</label>
+                                        <input 
+                                            placeholder="eg: reps, mins..."
+                                            value={taskHandlers.newTaskUnitName}
+                                            onChange={(e) => taskHandlers.setNewTaskUnitName(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="creation-field">
+                                <label>Depends On (Optional)</label>
+                                {taskHandlers.newTaskDependencyId ? (
+                                    <div className="selected-dep-pill">
+                                        <span className="name">
+                                            After: {allNodes.find(n => n.id === taskHandlers.newTaskDependencyId)?.name}
+                                        </span>
+                                        <span 
+                                            className="clear" 
+                                            onClick={() => taskHandlers.setNewTaskDependencyId('')}
+                                        >
+                                            &times;
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="dep-search-container">
+                                        <input 
+                                            placeholder="Search tasks in this skill..."
+                                            value={depSearchQuery}
+                                            onChange={(e) => {
+                                                setDepSearchQuery(e.target.value);
+                                                setShowDepResults(true);
+                                            }}
+                                            onFocus={() => setShowDepResults(true)}
+                                            style={{ paddingRight: '36px' }}
+                                        />
+                                        <div className="search-icon-inline" style={{ position: 'absolute', right: '14px', top: '12px', opacity: 0.3, pointerEvents: 'none' }}>🔍</div>
+                                        
+                                        {showDepResults && filteredDepTasks.length > 0 && (
+                                            <div className="dep-search-results">
+                                                {filteredDepTasks.map(t => {
+                                                    const aspect = allNodes.find(n => n.id === t.parentId);
+                                                    const objective = allNodes.find(n => n.id === aspect?.parentId);
+                                                    return (
+                                                        <div 
+                                                            key={t.id} 
+                                                            className="dep-result-item"
+                                                            onClick={() => {
+                                                                taskHandlers.setNewTaskDependencyId(t.id);
+                                                                setDepSearchQuery('');
+                                                                setShowDepResults(false);
+                                                            }}
+                                                        >
+                                                            <div className="task-name">{t.name}</div>
+                                                            <div className="aspect-path">
+                                                                {objective?.name} › {aspect?.name}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {showDepResults && depSearchQuery.trim() && filteredDepTasks.length === 0 && (
+                                            <div className="dep-search-results" style={{ padding: '16px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', opacity: 0.6 }}>
+                                                No tasks found matching "{depSearchQuery}"
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="task-creation-footer">
+                            <button 
+                                className="task-creation-cancel"
+                                onClick={() => taskHandlers.setCreatingTaskForAspectId(null)}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                className="task-creation-confirm"
+                                onClick={(e) => taskHandlers.handleCreateTask(e, taskHandlers.creatingTaskForAspectId)}
+                            >
+                                Create Task
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

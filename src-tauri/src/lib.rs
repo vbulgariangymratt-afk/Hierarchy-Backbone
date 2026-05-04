@@ -2,6 +2,9 @@ use tauri::Manager;
 use tauri::{Emitter, Listener};
 use tauri_plugin_liquid_glass::{LiquidGlassConfig, LiquidGlassExt, GlassMaterialVariant};
 use tauri_plugin_deep_link::DeepLinkExt;
+use tauri::tray::TrayIconBuilder;
+use tauri::menu::{Menu, MenuItem};
+use tauri::image::Image;
 
 #[tauri::command]
 fn enable_liquid_glass(app: tauri::AppHandle, theme: Option<String>) {
@@ -37,6 +40,13 @@ fn disable_liquid_glass(app: tauri::AppHandle) {
   }
 }
 
+#[tauri::command]
+fn update_tray_timer(app: tauri::AppHandle, time: Option<String>) {
+    if let Some(tray) = app.tray_by_id("main_tray") {
+        let _ = tray.set_title(time);
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -44,7 +54,7 @@ pub fn run() {
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_liquid_glass::init())
-    .invoke_handler(tauri::generate_handler![enable_liquid_glass, disable_liquid_glass])
+    .invoke_handler(tauri::generate_handler![enable_liquid_glass, disable_liquid_glass, update_tray_timer])
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -53,6 +63,34 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // Initialize Tray Icon
+      let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+      let show_i = MenuItem::with_id(app, "show", "Show Backbone", true, None::<&str>)?;
+      let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+
+      let tray_icon = Image::from_bytes(include_bytes!("../icons/tray-template.png"))?;
+
+      let _tray = TrayIconBuilder::with_id("main_tray")
+          .icon(tray_icon)
+          .icon_as_template(true)
+          .menu(&menu)
+          .show_menu_on_left_click(false)
+          .on_menu_event(|app, event| {
+              match event.id.as_ref() {
+                  "quit" => {
+                      app.exit(0);
+                  }
+                  "show" => {
+                      if let Some(window) = app.get_webview_window("main") {
+                          let _ = window.show();
+                          let _ = window.set_focus();
+                      }
+                  }
+                  _ => {}
+              }
+          })
+          .build(app)?;
 
       enable_liquid_glass(app.handle().clone(), None);
 
