@@ -246,22 +246,22 @@
 }
 
 .summary-pill.level-up-pill {
-    background: rgba(153, 186, 215, 0.15);
-    color: #99BAD7; /* Misty Blue */
-    border-color: rgba(153, 186, 215, 0.4);
+    background: rgba(var(--color-accent-rgb), 0.15);
+    color: var(--color-accent);
+    border-color: rgba(var(--color-accent-rgb), 0.4);
     font-weight: 800;
 }
 
 .level-up-row {
-    background: rgba(153, 186, 215, 0.08) !important;
-    border-left: 3px solid #99BAD7 !important;
+    background: rgba(var(--color-accent-rgb), 0.08) !important;
+    border-left: 3px solid var(--color-accent) !important;
 }
 
 .aura-gain-tag {
     font-size: 0.75rem;
     font-weight: 800;
-    color: #99BAD7;
-    background: rgba(153, 186, 215, 0.1);
+    color: var(--color-accent);
+    background: rgba(var(--color-accent-rgb), 0.1);
     padding: 2px 8px;
     border-radius: 6px;
 }

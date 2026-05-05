@@ -908,7 +908,7 @@
 }
 
 .limit-modal-btn {
-    background: #3b82f6;
+    background: var(--color-accent);
     color: white;
     border: none;
     border-radius: 12px;
@@ -920,6 +920,6 @@
 }
 
 .limit-modal-btn:hover {
-    background: #2563eb;
+    background: var(--color-accent-hover, var(--color-accent));
     transform: translateY(-2px);
 }

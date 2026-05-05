@@ -203,22 +203,38 @@ const SkillPage = () => {
     const { masteryCheckTaskId, newAngleTaskId, showChallengeCard } = challengeInfo;
 
     const getObjectiveTimeInfo = useCallback((obj) => {
-        const tasks = (allNodes || []).filter(n => n.type === NodeTypes.TASK); // Simplified for extraction
         const aspects = getChildren(obj.id, NodeTypes.ASPECT);
+        const aspectIds = new Set(aspects.map(a => a.id));
+        
+        // Filter tasks to ONLY those that belong to this objective's aspects
+        const tasks = (allNodes || []).filter(n => 
+            n.type === NodeTypes.TASK && aspectIds.has(n.parentId)
+        );
+        
         const m = obj.metadata || {};
-        const todayStr = new Date().toLocaleDateString('en-CA');
         const activityDates = new Set();
 
         tasks.forEach(t => {
             if (t.metadata?.completedAt) activityDates.add(new Date(t.metadata.completedAt).toLocaleDateString('en-CA'));
-            (t.metadata?.sessions || []).forEach(s => s.endTime && activityDates.add(new Date(s.endTime).toLocaleDateString('en-CA')));
+            (t.metadata?.sessions || []).forEach(s => {
+                if (s.status === 'completed' && s.endTime) {
+                    activityDates.add(new Date(s.endTime).toLocaleDateString('en-CA'));
+                }
+            });
         });
-        if (m.mveCompletedAt) activityDates.add(new Date(m.mveCompletedAt).toLocaleDateString('en-CA'));
-        aspects.forEach(a => (a.metadata?.logs || []).forEach(l => l.timestamp && activityDates.add(new Date(l.timestamp).toLocaleDateString('en-CA'))));
 
-        const activeDaysBeforeToday = Array.from(activityDates).filter(d => d !== todayStr);
-        const displayDays = activeDaysBeforeToday.length + 1;
-        return { days: displayDays };
+        // Scoped MVE completions
+        if (m.mveCompletedAt) activityDates.add(new Date(m.mveCompletedAt).toLocaleDateString('en-CA'));
+        
+        // Scoped accumulation logs
+        aspects.forEach(a => {
+            (a.metadata?.logs || []).forEach(l => {
+                if (l.timestamp) activityDates.add(new Date(l.timestamp).toLocaleDateString('en-CA'));
+            });
+        });
+
+        // Return total unique days of activity
+        return { days: activityDates.size };
     }, [allNodes, getChildren]);
 
     const expiringObjective = useMemo(() => {

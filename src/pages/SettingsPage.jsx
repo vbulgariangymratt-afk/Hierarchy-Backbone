@@ -20,6 +20,8 @@ const SettingsPage = () => {
         setDarkWallpaper,
         isSyncing,
         syncError,
+        solidAccentColor,
+        updateSolidAccentColor,
     } = useTheme();
 
     const { 
@@ -161,6 +163,42 @@ const SettingsPage = () => {
                             </button>
                         </div>
                     </div>
+
+                    {backgroundMode === 'solid' && (
+                        <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
+                            <div className="appearance-row-label">Theme Color</div>
+                            <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
+                                Select a custom accent color for the interface.
+                            </p>
+                            <div className="accent-color-selector">
+                                {[
+                                    '#0a84ff', // Blue
+                                    '#5e5ce6', // Indigo
+                                    '#30d158', // Emerald
+                                    '#ff9f0a', // Orange
+                                    '#ff375f', // Rose
+                                    '#bf5af2', // Purple
+                                    '#ffd60a', // Gold
+                                ].map(color => (
+                                    <button
+                                        key={color}
+                                        className={`color-dot ${solidAccentColor === color ? 'active' : ''}`}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => updateSolidAccentColor(color)}
+                                    />
+                                ))}
+                                <div className="color-custom-input-wrapper">
+                                    <input
+                                        type="color"
+                                        value={solidAccentColor || '#0a84ff'}
+                                        onChange={(e) => updateSolidAccentColor(e.target.value)}
+                                        className="color-custom-picker"
+                                    />
+                                    <span className="custom-picker-label">Custom</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {backgroundMode === 'liquid' && (
                         <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>

@@ -228,7 +228,7 @@
 }
 
 .focus-toggle-container.disabled {
-    opacity: 0.1 !important;
+    opacity: 0.4 !important;
     pointer-events: none;
 }
 
@@ -327,6 +327,39 @@
 .focus-play-pause-btn.active {
     background: var(--text-primary);
     color: var(--color-bg-main);
+}
+
+.focus-ring-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    z-index: 10;
+    margin-top: 2px;
+}
+
+.focus-play-pause-btn.fused {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    background: transparent;
+    border: none;
+    font-size: 16px;
+    margin-top: -4px;
+    opacity: 0.6;
+}
+
+.focus-play-pause-btn.fused:hover {
+    transform: scale(1.1);
+    opacity: 1;
+    background: transparent;
+}
+
+.focus-play-pause-btn.fused.active {
+    background: transparent;
+    color: var(--focus-color-status);
+    opacity: 1;
 }
 
 /* Modal / Bottom Sheet */
@@ -570,6 +603,7 @@
     width: 72px;
     height: 72px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
 }
@@ -846,56 +880,74 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    background: rgba(153, 186, 215, 0.4);
-    border-radius: 50%;
+    width: 0;
+    height: 0;
+    background: transparent;
     pointer-events: none;
     z-index: 10;
-    animation: auraBloomRipple 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.aura-bloom::before,
+.aura-bloom::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 2px solid rgba(153, 186, 215, 0.3);
+    width: 20px;
+    height: 20px;
+    animation: auraBloomRipple 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.aura-bloom::after {
+    animation-delay: 0.2s;
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 @keyframes auraBloomRipple {
     0% {
-        width: 40px;
-        height: 40px;
-        opacity: 0.8;
+        width: 0;
+        height: 0;
+        opacity: 0.9;
+        border-width: 6px;
     }
     100% {
-        width: 400px;
-        height: 400px;
+        width: 800px;
+        height: 800px;
         opacity: 0;
+        border-width: 1px;
     }
 }
 
 .aura-level-up-label {
-    position: absolute;
-    top: -50px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
     white-space: nowrap;
     font-size: 14px;
     font-weight: 700;
     color: #99BAD7; /* Misty Blue */
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
     pointer-events: none;
     z-index: 20;
 }
 
 .aura-level-up-label.fade-in {
-    animation: auraLabelFadeIn 0.3s ease-out forwards;
+    animation: auraLabelFadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .aura-level-up-label.fade-out {
-    animation: auraLabelFadeOut 0.3s ease-in forwards;
+    animation: auraLabelFadeOut 0.25s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
 }
 
 @keyframes auraLabelFadeIn {
-    from { opacity: 0; transform: translate(-50%, 10px); }
-    to { opacity: 1; transform: translate(-50%, 0); }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes auraLabelFadeOut {
-    from { opacity: 1; transform: translate(-50%, 0); }
-    to { opacity: 0; transform: translate(-50%, -10px); }
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
 }

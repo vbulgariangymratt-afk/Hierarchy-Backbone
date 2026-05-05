@@ -29,7 +29,6 @@
   --color-primary: #c39a6b;
   --color-primary-hover: #b08968;
   --color-secondary: #4a90e2;
-  --color-accent: #f5a623;
   --color-success: #36b37e;
   --color-warning: #ffab00;
   --color-danger: #ff5630;
@@ -112,8 +111,6 @@
   --color-bg-secondary: #ffffff;
   --color-bg-card: #f1f1f1;
   --color-bg-sidebar-solid: #ffffff;
-  
-  --color-accent: #000000;    /* High contrast black accents */
   
   --text-primary: #111111;
   --text-secondary: #444444;

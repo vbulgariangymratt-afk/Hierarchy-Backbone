@@ -40,7 +40,10 @@ const RewardAnimation = forwardRef((props, ref) => {
                             initial={{ opacity: 0, y: 20, scale: 0.8 }}
                             animate={{ opacity: 1, y: -40, scale: 1 }}
                             exit={{ opacity: 0, y: -80, scale: 0.8 }}
-                            transition={{ duration: 1.2, ease: "easeOut" }}
+                            transition={{ 
+                                duration: 0.8, 
+                                ease: [0.16, 1, 0.3, 1] // Snappy quint-out
+                            }}
                         >
                             <span className="reward-amount">+{toast.amount} {label}</span>
                         </motion.div>

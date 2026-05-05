@@ -366,13 +366,13 @@
 }
 
 .dark.solid-mode .energy-pill.active {
-    background: #ffffff !important;
-    color: #000000 !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    background: var(--color-accent) !important;
+    color: var(--color-bg-main) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
 .light.solid-mode .energy-pill.active {
-    background: #000000 !important;
+    background: var(--color-accent) !important;
     color: #ffffff !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }

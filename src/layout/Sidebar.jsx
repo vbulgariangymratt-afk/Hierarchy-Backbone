@@ -75,11 +75,11 @@ const Sidebar = ({ onSkillClick }) => {
     // --- CUSTOM CHIME SOUND ---
     const playChime = useCallback(() => {
         try {
-            const audio = new Audio('/Level-up chime.mp3');
+            const audio = new Audio('/Level-up%20chime.mp3');
             audio.volume = 0.4;
-            audio.play();
+            audio.play().catch(err => console.warn('Audio play interrupted or blocked:', err));
         } catch (err) {
-            console.warn('Audio playback failed:', err);
+            console.warn('Audio initialization failed:', err);
         }
     }, []);
 

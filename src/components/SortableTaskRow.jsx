@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
+import { Lock, Trash2, Timer, Gift, Zap, ArrowUpRight } from 'lucide-react';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 
 const getTaskStatusInfo = (task) => {
@@ -33,7 +34,9 @@ const SortableTaskRow = React.memo(({
     const [draftName, setDraftName] = useState(task.name);
     const [mveDraft, setMveDraft] = useState(task.metadata?.mve || '');
     const [mveSaving, setMveSaving] = useState(false);
+    const [showDepHint, setShowDepHint] = useState(false);
     const inputRef = useRef(null);
+    const hintTimeoutRef = useRef(null);
     
     // Dragging disabled
     const attributes = {};
@@ -101,10 +104,21 @@ const SortableTaskRow = React.memo(({
         }
     };
 
+    const handleLockedClick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setShowDepHint(true);
+        if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+        hintTimeoutRef.current = setTimeout(() => setShowDepHint(false), 3000);
+    };
+
     const statusInfo = getTaskStatusInfo(task);
     const isDone = task.metadata?.status === TaskStatuses.DONE;
     const dependencyId = task.metadata?.dependsOnTaskId;
     const dependencyTask = dependencyId ? allNodes.find(n => n.id === dependencyId) : null;
+    const isDependencyDone = !dependencyTask || dependencyTask.metadata?.status === TaskStatuses.DONE;
+    const isLocked = dependencyId && !isDependencyDone;
+
     const isExpanded = expandedTaskIds.includes(task.id);
     const rewardId = task.metadata?.rewardId;
     const reward = rewardId ? allNodes.find(n => n.id === rewardId) : null;
@@ -115,6 +129,8 @@ const SortableTaskRow = React.memo(({
     let contrastClass = '';
     if (isDone) {
         contrastClass = 'task-ghosted';
+    } else if (isLocked) {
+        contrastClass = 'task-locked';
     } else {
         contrastClass = 'task-high-contrast';
     }
@@ -148,20 +164,24 @@ const SortableTaskRow = React.memo(({
                         }}
                         title="Start 10-minute safe session"
                     >
-                        ⏱ 10m
+                        <Timer size={13} style={{ marginRight: '4px' }} /> 10m
                     </button>
                 )}
                 {task.metadata?.itemType !== 'REPETITION' && (
                     <span
-                        className={`task-status-symbol clickable ${statusInfo.colorClass}`}
+                        className={`task-status-symbol ${isLocked ? 'locked' : 'clickable'} ${statusInfo.colorClass}`}
                         onClick={(e) => {
+                            if (isLocked) {
+                                handleLockedClick(e);
+                                return;
+                            }
                             e.stopPropagation();
                             e.preventDefault();
                             onToggleTaskStatus(task);
                         }}
-                        title={isDone ? "Mark as Not Started" : "Mark as Done"}
+                        title={isLocked ? `Locked: Complete "${dependencyTask?.name}" first` : (isDone ? "Mark as Not Started" : "Mark as Done")}
                     >
-                        {statusInfo.symbol}
+                        {isLocked ? <Lock size={12} /> : statusInfo.symbol}
                     </span>
                 )}
                 <div className="task-name-text">
@@ -194,18 +214,32 @@ const SortableTaskRow = React.memo(({
                             {task.name}
                         </span>
                     )}
+                    {showDepHint && (
+                        <div className="task-dependency-hint-float">
+                            Need: <span className="dep-name">{dependencyTask?.name || 'Prerequisite'}</span>
+                        </div>
+                    )}
                     {isChallengeTarget && challengeType === 'MASTERY' && <span className="challenge-badge mastery">Mastery Check</span>}
                     {isChallengeTarget && challengeType === 'NEW_ANGLE' && <span className="challenge-badge new-angle">New Angle</span>}
-                    {rewardId && <span className="task-reward-badge-collapsed" title={`Reward: ${reward?.name || 'Unknown'}`}>🍬</span>}
+                    {rewardId && <span className="task-reward-badge-collapsed" title={`Reward: ${reward?.name || 'Unknown'}`}><Gift size={12} /></span>}
                 </div>
 
                 <div className="task-actions-col">
-                    {!isDone && (
+                    {!isDone && !isLocked && (
                         <span
                             className={`task-today-badge ${task.metadata?.isToday ? 'active' : ''} ${task.metadata?.tomorrow ? 'tomorrow' : ''}`}
                             onClick={(e) => onAddToToday(e, task.id)}
                         >
                             {task.metadata?.tomorrow ? 'Tomorrow' : (task.metadata?.isToday ? 'Today' : 'Add to Today')}
+                        </span>
+                    )}
+                    {isLocked && (
+                        <span 
+                            className={`task-locked-badge ${showDepHint ? 'hint-active' : ''}`} 
+                            onClick={handleLockedClick}
+                            title={`Prerequisite: ${dependencyTask?.name}`}
+                        >
+                            <Lock size={10} strokeWidth={3} /> {showDepHint ? `NEED: ${dependencyTask?.name}` : 'LOCKED'}
                         </span>
                     )}
                     {task.metadata?.itemType === 'REPETITION' && (
@@ -227,7 +261,7 @@ const SortableTaskRow = React.memo(({
                         </div>
                     )}
                 </div>
-                {dependencyId && <span className="task-dependency-icon" title={`Suggested next step after: ${dependencyTask?.name}`}>↗</span>}
+                {dependencyId && !isLocked && <span className="task-dependency-icon" title={`Suggested next step after: ${dependencyTask?.name}`}><ArrowUpRight size={14} /></span>}
 
                 <button
                     className="task-delete-btn"
@@ -238,7 +272,7 @@ const SortableTaskRow = React.memo(({
                     }}
                     title="Delete Task"
                 >
-                    🗑️
+                    <Trash2 size={14} />
                 </button>
             </div>
 
@@ -247,7 +281,7 @@ const SortableTaskRow = React.memo(({
 
                     {/* ── MVE Section ── */}
                     <div className="task-submenu-section">
-                        <span className="expanded-label-small">⚡ Min. Viable Effort</span>
+                        <span className="expanded-label-small"><Zap size={11} strokeWidth={2.5} style={{ marginRight: '4px' }} /> Min. Viable Effort</span>
                         <input
                             className="mve-input"
                             type="text"
@@ -262,13 +296,13 @@ const SortableTaskRow = React.memo(({
 
                     {/* ── Micro Reward Section ── */}
                     <div className="task-submenu-section micro-reward-section">
-                        <span className="expanded-label-small">🍬 Micro Reward</span>
+                        <span className="expanded-label-small"><Gift size={11} strokeWidth={2.5} style={{ marginRight: '4px' }} /> Micro Reward</span>
                         {rewardId ? (
                             <div className="reward-info-block">
                                 {reward ? (
                                     <>
                                         <div className="reward-main">
-                                            <span className="reward-icon-inline">🍬</span>
+                                            <span className="reward-icon-inline"><Gift size={12} /></span>
                                             <span className="reward-name-inline">{reward.name}</span>
                                             <span className="reward-tier-inline">T{reward.metadata?.rewardTier || 1}</span>
                                         </div>

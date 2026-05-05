@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Pencil } from 'lucide-react';
+import { Pencil, Moon, ChevronRight } from 'lucide-react';
 import NodeIcon from './NodeIcon';
 import SortableTaskRow from './SortableTaskRow';
 import DroppableAspect from './DroppableAspect';
@@ -220,7 +220,7 @@ const ObjectiveCard = ({
                     >
                         <div className="objective-header-left" style={{ display: 'flex', alignItems: 'flex-start', marginLeft: '-38px' }}>
                             <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`} style={{ marginTop: '2px', marginRight: '8px' }}>
-                                {isSleeping ? '💤' : (obj.metadata?.iconUrl ? <NodeIcon iconUrl={obj.metadata.iconUrl} size={18} /> : '‣')}
+                                {isSleeping ? <Moon size={16} /> : (obj.metadata?.iconUrl ? <NodeIcon iconUrl={obj.metadata.iconUrl} size={18} /> : <ChevronRight size={18} />)}
                             </span>
                             <div className="objective-title-stack" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {inlineEditingNodeId === obj.id ? (
@@ -580,7 +580,9 @@ const ObjectiveCard = ({
                                                                         onClick={(e) => { e.stopPropagation(); setCollapsedCompletedAspects(prev => ({ ...prev, [obj.id]: !prev[obj.id] })); }}
                                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}
                                                                     >
-                                                                        <span style={{ fontSize: '9px', transition: 'transform 0.2s', display: 'inline-block', transform: isCompletedAspectsExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                                                                        <span style={{ fontSize: '12px', transition: 'transform 0.2s', display: 'inline-block', transform: isCompletedAspectsExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+                                                                            <ChevronRight size={14} />
+                                                                        </span>
                                                                         Completed Aspects ({completedAspects.length})
                                                                     </button>
                                                                     {isCompletedAspectsExpanded && (

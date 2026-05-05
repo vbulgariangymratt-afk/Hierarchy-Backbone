@@ -111,6 +111,33 @@ export const ThemeProvider = ({ children }) => {
         return localStorage.getItem('app-multiple-wallpapers-mode') === 'true';
     });
 
+    const [solidAccentColor, setSolidAccentColor] = useState(() => {
+        return localStorage.getItem('app-solid-accent-color') || (resolvedTheme === 'dark' ? '#0a84ff' : '#0071e3');
+    });
+
+    const hexToRgb = (hex) => {
+        if (!hex || hex.length < 7) return resolvedTheme === 'dark' ? '10, 132, 255' : '0, 113, 227';
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `${r}, ${g}, ${b}`;
+    };
+
+    useEffect(() => {
+        if (backgroundMode === 'solid' && solidAccentColor) {
+            document.documentElement.style.setProperty('--color-accent', solidAccentColor);
+            document.documentElement.style.setProperty('--color-accent-rgb', hexToRgb(solidAccentColor));
+        } else {
+            document.documentElement.style.removeProperty('--color-accent');
+            document.documentElement.style.removeProperty('--color-accent-rgb');
+        }
+    }, [solidAccentColor, backgroundMode]);
+
+    const updateSolidAccentColor = (color) => {
+        setSolidAccentColor(color);
+        localStorage.setItem('app-solid-accent-color', color);
+    };
+
 
     // Ref to track whether the current config change came from a Supabase load
     // (prevents echo-saving back what we just fetched)
@@ -395,7 +422,9 @@ export const ThemeProvider = ({ children }) => {
         setShowCompletedTasks,
         isMultipleWallpapersMode,
         setIsMultipleWallpapersMode,
-    }), [resolvedTheme, themePreference, backgroundMode, wallpaper, wallpaperConfig, wallpaperScope, isSyncing, syncError, showCompletedTasks, isMultipleWallpapersMode]);
+        solidAccentColor,
+        updateSolidAccentColor,
+    }), [resolvedTheme, themePreference, backgroundMode, wallpaper, wallpaperConfig, wallpaperScope, isSyncing, syncError, showCompletedTasks, isMultipleWallpapersMode, solidAccentColor]);
 
     return (
         <ThemeContext.Provider value={themeValue}>

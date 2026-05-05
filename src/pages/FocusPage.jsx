@@ -94,6 +94,17 @@ const FocusPage = () => {
 
     const historyToDisplay = (showAllHistory ? completedSubSteps : completedSubSteps.slice(-3));
 
+    // --- AUDIO HANDLING ---
+    const playChime = useCallback(() => {
+        try {
+            const audio = new Audio('/Level-up%20chime.mp3');
+            audio.volume = 0.4;
+            audio.play().catch(err => console.warn('Audio play interrupted or blocked:', err));
+        } catch (err) {
+            console.warn('Audio initialization failed:', err);
+        }
+    }, []);
+
     const triggerCheckpoint = useCallback(() => {
         setCheckpointsCompleted(c => {
             const nextC = c + 1;
@@ -134,7 +145,8 @@ const FocusPage = () => {
             // Trigger visual bloom
             setLevelUpCelebration({ level: newLevel, fading: false });
             
-            // Audio is handled centrally in Sidebar.jsx to ensure sync with sidebar glow
+            // Audio Chime
+            playChime();
 
             // Start fade out after 2.7s (total 3s duration)
             setTimeout(() => {
@@ -312,14 +324,14 @@ const FocusPage = () => {
                 // Find parent skill
                 let parent = fetchedNodes.find(n => n.id === nextTask.parentId);
                 while (parent && parent.type !== NodeTypes.SKILL) {
-                    parent = allNodes.find(n => n.id === parent.parentId);
+                    parent = fetchedNodes.find(n => n.id === parent.parentId);
                 }
                 setSkill(parent);
 
                 // Detect burnout safe mode from ancestor objective
                 let objNode = fetchedNodes.find(n => n.id === nextTask.parentId);
                 while (objNode && objNode.type !== NodeTypes.OBJECTIVE) {
-                    objNode = allNodes.find(n => n.id === objNode?.parentId);
+                    objNode = fetchedNodes.find(n => n.id === objNode?.parentId);
                 }
                 setSafeMode(!!objNode?.metadata?.burnoutRisk);
 
@@ -626,97 +638,90 @@ const FocusPage = () => {
     const proceedWithTaskCompletion = useCallback(async () => {
         setIsToggling(true);
 
-        // 1. Mechanical engagement delay (100ms)
-        setTimeout(() => {
-            setIsToggled(true);
+        // 1. OPTIMISTIC REWARDS: Trigger immediately after closing modal
+        if (rewardRef.current) {
+            rewardRef.current.showReward([
+                { type: 'aura', amount: 1 },
+                { type: 'hryvnia', amount: 1 }
+            ]);
+        }
 
-            // 2. Visual reinforcement states triggered mid-animation
-            setTimeout(() => {
-                setIsGlowing(true);
-                setTimeout(() => setIsGlowing(false), 450);
+        // 2. Visual reinforcement states triggered immediately
+        setIsToggled(true);
+        setIsGlowing(true);
+        setTimeout(() => setIsGlowing(false), 450);
 
-                if (Math.random() < 0.33 && !ack) {
-                    const randomAck = ACKS[Math.floor(Math.random() * ACKS.length)];
-                    setAck(randomAck);
-                    setTimeout(() => setAck(null), 1300);
-                }
-            }, 300);
+        if (Math.random() < 0.33 && !ack) {
+            const randomAck = ACKS[Math.floor(Math.random() * ACKS.length)];
+            setAck(randomAck);
+            setTimeout(() => setAck(null), 1300);
+        }
 
-            // 3. Database Execution & Transition
-            setTimeout(async () => {
-                console.time("taskCompleteTransition");
-                try {
-                    // Start async work
-                    
-                    const taskUpdatePromise = task.metadata?.itemType === 'REPETITION'
-                        ? backbone.incrementTaskRepetition(task.id)
-                        : backbone.updateNode(task.id, {
-                            metadata: {
-                                ...task.metadata,
-                                status: TaskStatuses.DONE,
-                                completedAt: Date.now(),
-                                ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})
-                            }
-                        });
-
-                    // Fetch allNodes needed for identity savoring BEFORE the timeout finishes
-                    const allNodes = await backbone.getAllNodes();
-
-                    await taskUpdatePromise;
-                    
-                    const verifyByGrep = await backbone.getAllNodes();
-                    const verify = verifyByGrep.find(n => n.id === task.id);
-
-                    // Trigger Reward Animation: +1 Aura & +1 Hryvnia for Task Completion
-                    if (rewardRef.current) {
-                        rewardRef.current.showReward([
-                            { type: 'aura', amount: 1 },
-                            { type: 'hryvnia', amount: 1 }
-                        ]);
+        // 3. Database Execution in background
+        console.time("taskCompleteTransition");
+        try {
+            const taskUpdatePromise = task.metadata?.itemType === 'REPETITION'
+                ? backbone.incrementTaskRepetition(task.id)
+                : backbone.updateNode(task.id, {
+                    metadata: {
+                        ...task.metadata,
+                        status: TaskStatuses.DONE,
+                        completedAt: Date.now(),
+                        ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})
                     }
+                });
 
+            // Parallelize fetching nodes and updating task
+            const [allNodes] = await Promise.all([
+                backbone.getAllNodes(),
+                taskUpdatePromise
+            ]);
 
-                    // Load next task after a brief pause for neurological closure
+            // Transition after a brief neurological pause (reduced from 400ms to 150ms)
+            setTimeout(() => {
+                // PASSION Identity Savoring
+                if (skill?.metadata?.pinchState === 'PASSION') {
+                    const objNode = allNodes.find(n => n.parentId === skill.id && n.type === NodeTypes.OBJECTIVE);
+                    const msg = Math.random() < 0.5
+                        ? `You are becoming someone who ${objNode?.metadata?.wish || 'pursues excellence'}.`
+                        : `This is what it looks like to become ${skill.name}.`;
+                    setSavoringIdentity(msg);
                     setTimeout(() => {
-                        // PASSION Identity Savoring
-                        if (skill?.metadata?.pinchState === 'PASSION') {
-                            const objNode = allNodes.find(n => n.parentId === skill.id && n.type === NodeTypes.OBJECTIVE);
-                            const msg = Math.random() < 0.5
-                                ? `You are becoming someone who ${objNode?.metadata?.wish || 'pursues excellence'}.`
-                                : `This is what it looks like to become ${skill.name}.`;
-                            setSavoringIdentity(msg);
-                            setTimeout(() => {
-                                setSavoringIdentity(null);
-                                loadNextTask();
-                                setPendingTaskComplete(false);
-                                console.timeEnd("taskCompleteTransition");
-                            }, 3000);
-                        } else {
-                            loadNextTask();
-                            setPendingTaskComplete(false);
-                            console.timeEnd("taskCompleteTransition");
-                        }
-                    }, 400);
-                } catch (error) {
-                    console.error("Focus mode action failed:", error);
-                    setIsToggling(false);
-                    setIsToggled(false);
-                    setKnobSnapped(false);
+                        setSavoringIdentity(null);
+                        loadNextTask();
+                        setPendingTaskComplete(false);
+                        console.timeEnd("taskCompleteTransition");
+                    }, 3000);
+                } else {
+                    loadNextTask();
                     setPendingTaskComplete(false);
                     console.timeEnd("taskCompleteTransition");
                 }
-            }, 600);
-        }, 100);
+            }, 150);
+        } catch (error) {
+            console.error("Focus mode action failed:", error);
+            setIsToggling(false);
+            setIsToggled(false);
+            setKnobSnapped(false);
+            setPendingTaskComplete(false);
+            console.timeEnd("taskCompleteTransition");
+        }
     }, [task, skill, ack, loadNextTask]);
 
 
     const handleSummarySubmit = useCallback(async () => {
-        // Step 1: Fully await the session save to prevent race conditions
-        await completeBackboneSession(pendingTaskComplete);
+        const isTaskDone = pendingTaskComplete;
         
-        // Step 2: Only then proceed to mark the task as complete/increment repetition
-        if (pendingTaskComplete) {
-            await proceedWithTaskCompletion();
+        // Start background save immediately
+        const sessionPromise = completeBackboneSession(isTaskDone);
+        
+        if (isTaskDone) {
+            // OPTIMISTIC UI: Don't await the session save before starting the visual rewards
+            proceedWithTaskCompletion();
+            // Still await the promise in the background to ensure data integrity
+            sessionPromise.catch(err => console.error("Background session save failed:", err));
+        } else {
+            await sessionPromise;
         }
     }, [completeBackboneSession, pendingTaskComplete, proceedWithTaskCompletion]);
 
@@ -820,14 +825,21 @@ const FocusPage = () => {
 
 
 
-            <header className="focus-header">
-                {skill && (
-                    <span 
-                        className="focus-skill-label" 
-                        style={{ color: 'var(--focus-color-status)' }}
-                    >
-                        {skill.name}
-                    </span>
+            <header className="focus-header" style={{ position: 'relative' }}>
+                {levelUpCelebration && <div className="aura-bloom" />}
+                {levelUpCelebration ? (
+                    <div className={`aura-level-up-label ${levelUpCelebration.fading ? 'fade-out' : 'fade-in'}`}>
+                        Aura Level Up! (Level {levelUpCelebration.level})
+                    </div>
+                ) : (
+                    skill && (
+                        <span 
+                            className="focus-skill-label" 
+                            style={{ color: 'var(--focus-color-status)' }}
+                        >
+                            {skill.name}
+                        </span>
+                    )
                 )}
             </header>
 
@@ -841,7 +853,7 @@ const FocusPage = () => {
 
                 <div className="focus-session-controls">
                     {(safeMode || (isInterestMode && !isInterestExploring)) && !wasContinued ? (
-                        /* Circular progress ring instead of digital countdown */
+                        /* Circular progress ring fused with play/pause */
                         <div className="focus-ring-timer">
                             <svg viewBox="0 0 64 64" className="focus-ring-svg">
                                 <circle cx="32" cy="32" r="28" className="focus-ring-track" />
@@ -853,21 +865,31 @@ const FocusPage = () => {
                                     style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
                                 />
                             </svg>
-                            <span className="focus-ring-label">
-                                {formatDuration(TARGET_SECONDS - seconds)}
-                            </span>
+                            <div className="focus-ring-content">
+                                <span className="focus-ring-label">
+                                    {formatDuration(TARGET_SECONDS - seconds)}
+                                </span>
+                                <button
+                                    className={`focus-play-pause-btn fused ${!isPaused ? 'active' : ''}`}
+                                    onClick={isPaused ? handleStartSession : handlePauseSession}
+                                >
+                                    {isPaused ? "▶" : "⏸"}
+                                </button>
+                            </div>
                         </div>
                     ) : (
-                        <div className={`focus-timer-display ${!isPaused ? 'active' : ''}`}>
-                            {formatTime(seconds)}
-                        </div>
+                        <>
+                            <div className={`focus-timer-display ${!isPaused ? 'active' : ''}`}>
+                                {formatTime(seconds)}
+                            </div>
+                            <button
+                                className={`focus-play-pause-btn ${!isPaused ? 'active' : ''}`}
+                                onClick={isPaused ? handleStartSession : handlePauseSession}
+                            >
+                                {isPaused ? "▶" : "⏸"}
+                            </button>
+                        </>
                     )}
-                    <button
-                        className={`focus-play-pause-btn ${!isPaused ? 'active' : ''}`}
-                        onClick={isPaused ? handleStartSession : handlePauseSession}
-                    >
-                        {isPaused ? "▶" : "⏸"}
-                    </button>
                 </div>
 
                 <div className={`focus-action-card ${isGlowing ? 'glow' : ''}`}>
@@ -1049,12 +1071,6 @@ const FocusPage = () => {
                     title={!activeSessionId ? "Start session first" : ""}
                     style={{ position: 'relative', overflow: 'visible' }}
                 >
-                    {levelUpCelebration && <div className="aura-bloom" />}
-                    {levelUpCelebration && (
-                        <div className={`aura-level-up-label ${levelUpCelebration.fading ? 'fade-out' : 'fade-in'}`}>
-                            Aura Level Up! (Level {levelUpCelebration.level})
-                        </div>
-                    )}
                     <motion.div 
                         className={`focus-toggle-track ${isToggled ? 'active' : ''}`}
                         animate={{ 
@@ -1067,7 +1083,6 @@ const FocusPage = () => {
                             style={{ width: isToggled ? '100%' : '0%' }}
                         />
                         <div className="focus-toggle-label">
-                            {isToggled ? "Confirmed" : ""}
                         </div>
                         <motion.div
                             className="focus-toggle-knob"
@@ -1346,11 +1361,25 @@ const FocusPage = () => {
             {/* Temporary Test Button for Focus Aura Celebration */}
             <button 
                 onClick={() => {
-                    if (skill) {
-                        window.dispatchEvent(new CustomEvent('skill-level-up', { 
-                            detail: { skillId: skill.id, newLevel: 'X' } 
-                        }));
+                    // 1. Trigger the celebration state logic (Aura Bloom + Label)
+                    window.dispatchEvent(new CustomEvent('skill-level-up', { 
+                        detail: { 
+                            skillId: skill?.id, 
+                            newLevel: (skill?.metadata?.level || 0) + 1 
+                        } 
+                    }));
+
+                    // 2. Also trigger rewards for full polish testing
+                    if (rewardRef.current) {
+                        rewardRef.current.showReward([
+                            { type: 'aura', amount: 5 },
+                            { type: 'hryvnia', amount: 10 }
+                        ]);
                     }
+                    
+                    // 3. Screen glow pulse
+                    setIsGlowing(true);
+                    setTimeout(() => setIsGlowing(false), 1000);
                 }}
                 style={{
                     position: 'fixed',

@@ -1374,7 +1374,7 @@ const LaunchpadFlow = () => {
                             }}
                         >
                             {/* HIGH ENERGY BADGE */}
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,200,50,0.12)', border: '1px solid rgba(255,200,50,0.25)', borderRadius: '20px', padding: '4px 14px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(255,200,50,0.8)' }}>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(var(--color-accent-rgb), 0.12)', border: '1px solid rgba(var(--color-accent-rgb), 0.25)', borderRadius: '20px', padding: '4px 14px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-accent)' }}>
                                 ⚡ High Energy Task
                             </div>
 
@@ -3427,7 +3427,7 @@ const LaunchpadFlow = () => {
                                                                         <span style={{ fontSize: '9px', background: 'rgba(100,100,100,0.1)', border: '1px solid rgba(255,255,255,0.02)', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#444', fontWeight: 800 }}>Core</span>
                                                                     )}
                                                                     {isToday && (
-                                                                        <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#aaa', fontWeight: 700 }}>Today</span>
+                                                                        <span style={{ fontSize: '9px', background: 'var(--color-accent)', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#fff', fontWeight: 800 }}>Today</span>
                                                                     )}
                                                                     {isInProgress && (
                                                                         <span style={{ fontSize: '9px', background: '#222', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#555', fontWeight: 700 }}>In Progress</span>
@@ -3489,7 +3489,7 @@ const LaunchpadFlow = () => {
                                                                 <span style={{ fontWeight: 500 }}>{alt.name}</span>
                                                                 <div style={{ display: 'flex', gap: '6px' }}>
                                                                     {isToday && (
-                                                                        <span style={{ fontSize: '9px', background: 'rgba(255,255,255,0.08)', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#aaa', fontWeight: 700 }}>Today</span>
+                                                                        <span style={{ fontSize: '9px', background: 'var(--color-accent)', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#fff', fontWeight: 800 }}>Today</span>
                                                                     )}
                                                                     {isInProgress && (
                                                                         <span style={{ fontSize: '9px', background: '#222', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#555', fontWeight: 700 }}>In Progress</span>
