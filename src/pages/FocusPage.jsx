@@ -499,37 +499,6 @@ const FocusPage = () => {
         }
     }, [isPaused, activeSessionId, task?.id]);
 
-    useEffect(() => {
-        const updateTray = async () => {
-            if (!isTauri()) return;
-            const { invoke } = await import('@tauri-apps/api/core');
-            
-            if (activeSessionId && !isPaused) {
-                const timeStr = formatTime(seconds);
-                await invoke('update_tray_timer', { time: timeStr });
-            } else if (activeSessionId && isPaused) {
-                const timeStr = `${formatTime(seconds)} (Paused)`;
-                await invoke('update_tray_timer', { time: timeStr });
-            } else {
-                await invoke('update_tray_timer', { time: null });
-            }
-        };
-
-        updateTray();
-        
-        return () => {
-            if (isTauri()) {
-                import('@tauri-apps/api/core').then(({ invoke }) => {
-                    invoke('update_tray_timer', { time: null }).catch(console.error);
-                });
-            }
-        };
-    }, [seconds, isPaused, activeSessionId]);
-
-    useEffect(() => {
-        return () => {};
-    }, []);
-
     const formatTime = (totalSeconds) => formatTimer(totalSeconds);
 
 
