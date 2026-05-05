@@ -26,7 +26,7 @@ import './SkillPage.css';
 
 import NodeIcon from '../components/NodeIcon';
 import HabitCard from '../components/HabitCard';
-import EvolutionDrillIn from '../components/EvolutionDrillIn';
+import EvolutionArchitectModal from '../components/modals/EvolutionArchitectModal';
 import useSkillPageData from '../hooks/useSkillPageData';
 import useObjectiveHandlers from '../hooks/useObjectiveHandlers';
 import useTaskHandlers from '../hooks/useTaskHandlers';
@@ -126,6 +126,11 @@ const SkillPage = () => {
         confirmDeleteObjective,
         handleUpdateObjectiveName,
         toggleObjective,
+        objectiveToDelete, setObjectiveToDelete,
+        isLimitModalOpen, setIsLimitModalOpen,
+        isConfirmSleepModalOpen, setIsConfirmSleepModalOpen,
+        pendingSleepObj, setPendingSleepObj,
+        performObjectiveToggle
     } = objectiveHandlers;
 
     const habits = useMemo(() => skillHabits, [skillHabits]);
@@ -432,14 +437,24 @@ const SkillPage = () => {
                     {(isHabitsExpanded || energyLevel !== 4) && (
                         <motion.div initial={energyLevel === 4 ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={macOSSpring}>
                             <div className="habits-grid">
-                                {(habits || []).map(habit => <HabitCard key={habit.id} habit={habit} onOpenEvolution={setActiveHabitForEvolution} onToggleActive={fetchData} onUpdate={fetchSkills} />)}
+                                {(habits || []).map(habit => <HabitCard key={habit.id} habit={habit} energyLevel={energyLevel} onOpenEvolution={setActiveHabitForEvolution} onToggleActive={fetchData} onUpdate={fetchSkills} />)}
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </section>
 
-            {activeHabitForEvolution && <EvolutionDrillIn habit={activeHabitForEvolution} skill={skill} onClose={() => setActiveHabitForEvolution(null)} onRefresh={fetchData} />}
+            {activeHabitForEvolution && (
+                <EvolutionArchitectModal 
+                    habit={activeHabitForEvolution} 
+                    skill={skill} 
+                    onClose={() => setActiveHabitForEvolution(null)} 
+                    onRefresh={() => {
+                        fetchData();
+                        fetchSkills();
+                    }} 
+                />
+            )}
 
             {activeObjectives.length > 0 && (
                 <section className="skill-section active-experiments-section">
@@ -789,6 +804,91 @@ const SkillPage = () => {
                                 onClick={(e) => taskHandlers.handleCreateTask(e, taskHandlers.creatingTaskForAspectId)}
                             >
                                 Create Task
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Experiment Delete Confirmation Modal ── */}
+            {objectiveToDelete && (
+                <div
+                    className="delete-confirm-overlay"
+                    onClick={() => setObjectiveToDelete(null)}
+                >
+                    <div
+                        className="delete-confirm-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="delete-confirm-message">
+                            Delete experiment <strong>"{objectiveToDelete.name}"</strong>?
+                            <br />
+                            <small style={{ opacity: 0.6, fontSize: '11px', marginTop: '8px', display: 'block' }}>All associated aspects and tasks will be removed.</small>
+                        </p>
+                        <div className="delete-confirm-actions">
+                            <button
+                                className="delete-confirm-cancel"
+                                onClick={() => setObjectiveToDelete(null)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="delete-confirm-btn"
+                                onClick={confirmDeleteObjective}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Experiment Limit Modal ── */}
+            {isLimitModalOpen && (
+                <div className="modal-overlay" onClick={() => setIsLimitModalOpen(false)}>
+                    <div className="confirmation-modal" onClick={e => e.stopPropagation()}>
+                        <h3>Experiment Limit Reached</h3>
+                        <p style={{ fontSize: '14px', margin: '16px 0', opacity: 0.8 }}>
+                            You can only have <strong>{activeExperimentLimit || 1}</strong> active experiment{activeExperimentLimit > 1 ? 's' : ''} at a time in this skill. 
+                            Please complete or sleep an existing one first.
+                        </p>
+                        <button 
+                            className="delete-confirm-cancel" 
+                            style={{ width: '100%', marginTop: '10px' }}
+                            onClick={() => setIsLimitModalOpen(false)}
+                        >
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Confirm Sleep Modal (14-day rule) ── */}
+            {isConfirmSleepModalOpen && (
+                <div className="modal-overlay" onClick={() => { setIsConfirmSleepModalOpen(false); setPendingSleepObj(null); }}>
+                    <div className="confirmation-modal" onClick={e => e.stopPropagation()}>
+                        <h3>Sleep Experiment Early?</h3>
+                        <p style={{ fontSize: '14px', margin: '16px 0', opacity: 0.8 }}>
+                            This experiment hasn't reached the 14-day stability threshold yet. 
+                            Are you sure you want to pause it now?
+                        </p>
+                        <div className="delete-confirm-actions">
+                            <button
+                                className="delete-confirm-cancel"
+                                onClick={() => { setIsConfirmSleepModalOpen(false); setPendingSleepObj(null); }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="delete-confirm-btn"
+                                style={{ background: 'var(--color-primary)' }}
+                                onClick={async () => {
+                                    if (pendingSleepObj) await performObjectiveToggle(pendingSleepObj);
+                                    setIsConfirmSleepModalOpen(false);
+                                    setPendingSleepObj(null);
+                                }}
+                            >
+                                Sleep Anyway
                             </button>
                         </div>
                     </div>

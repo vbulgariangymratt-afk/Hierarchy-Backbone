@@ -5,29 +5,54 @@ import { Feather, Circle, Flame, X, HelpCircle, Pencil, Save, XCircle, Dumbbell 
 import { useBackboneStore } from '../store/backboneStore';
 
 
-const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComplete, onUpdate }) => {
+const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleActive, onComplete, onUpdate }) => {
     const [completing, setCompleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isPulsing, setIsPulsing] = useState(false);
     const [eligibility, setEligibility] = useState(null);
-    const [celebration, setCelebration] = useState(null); // { identity: string, fading: false, active: false }
-    
+    const [celebration, setCelebration] = useState(null); // { identity: string, fading: false, active: false, type: 'complete' | 'levelup' }
+
     // Get skill for identity reinforcement
     const nodes = useBackboneStore(state => state.nodes);
-    
+
     useEffect(() => {
         let isMounted = true;
         const fetchElig = async () => {
             try {
                 const data = await habitService.evaluateEvolutionEligibility(habit.id);
-                if (isMounted) setEligibility(data);
+                if (isMounted) {
+                    // Check if it just became ready to evolution
+                    if (eligibility && !eligibility.evolutionReady && data.evolutionReady) {
+                        triggerLevelUpCelebration();
+                    }
+                    setEligibility(data);
+                }
             } catch (e) {
                 console.error(e);
             }
         };
         fetchElig();
         return () => { isMounted = false; };
-    }, [habit.id]);
+    }, [habit.id, habit.totalCompletions]);
+
+    const triggerLevelUpCelebration = () => {
+        const skillId = habit.linkedSkillId || (habit.linkedSkillIds && habit.linkedSkillIds[0]);
+        const skill = nodes.find(n => n.id === skillId);
+        const identity = skill?.metadata?.identityAnchor || skill?.metadata?.wish || skill?.name || "your best self";
+
+        setCelebration({ identity, fading: false, active: true, type: 'levelup' });
+
+        try {
+            const audio = new Audio('/Level-up chime.mp3');
+            audio.volume = 0.5;
+            audio.play();
+        } catch (err) { }
+
+        setTimeout(() => {
+            setCelebration(prev => prev ? { ...prev, fading: true } : null);
+            setTimeout(() => setCelebration(prev => prev ? { ...prev, active: false } : null), 400);
+        }, 4000);
+    };
 
     const [editForm, setEditForm] = useState({
         ifTrigger: habit.ifTrigger,
@@ -45,17 +70,18 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
             setTimeout(() => setIsPulsing(false), 500);
 
             // 1. Identity Reinforcement Logic
-            const skill = nodes.find(n => n.id === habit.parentId);
-            const identity = skill?.metadata?.wish || skill?.name || "fucking rich";
-            
-            setCelebration({ identity, fading: false, active: true });
-            
+            const skillId = habit.linkedSkillId || (habit.linkedSkillIds && habit.linkedSkillIds[0]);
+            const skill = nodes.find(n => n.id === skillId);
+            const identity = skill?.metadata?.identityAnchor || skill?.metadata?.wish || skill?.name || "your best self";
+
+            setCelebration({ identity, fading: false, active: true, type: 'complete' });
+
             // 2. Audio Sync
             try {
                 const audio = new Audio('/Level-up chime.mp3');
                 audio.volume = 0.35;
                 audio.play();
-            } catch (err) {}
+            } catch (err) { }
 
             await habitService.completeHabit(habit.id, friction);
             setCompleting(false);
@@ -109,10 +135,10 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                         <label className="edit-label">Identity / Intent</label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '12px', opacity: 0.4, fontWeight: 800 }}>IF</span>
-                            <input 
-                                type="text" 
-                                value={editForm.ifTrigger} 
-                                onChange={e => setEditForm({...editForm, ifTrigger: e.target.value})}
+                            <input
+                                type="text"
+                                value={editForm.ifTrigger}
+                                onChange={e => setEditForm({ ...editForm, ifTrigger: e.target.value })}
                                 className="habit-edit-input"
                                 placeholder="I sit down to work"
                             />
@@ -123,10 +149,10 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                         <label className="edit-label">Current Action (Phase {habit.currentPhaseLevel + 1})</label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontSize: '12px', color: 'rgba(96, 165, 250, 0.6)', fontWeight: 800 }}>THEN</span>
-                            <input 
-                                type="text" 
-                                value={editForm.description} 
-                                onChange={e => setEditForm({...editForm, description: e.target.value})}
+                            <input
+                                type="text"
+                                value={editForm.description}
+                                onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                                 className="habit-edit-input"
                                 placeholder="I open the hierarchy"
                             />
@@ -136,19 +162,19 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                     <div className="edit-section">
                         <label className="edit-label">Frequency Target</label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 min="1"
                                 max="100"
-                                value={editForm.targetCount} 
-                                onChange={e => setEditForm({...editForm, targetCount: e.target.value})}
+                                value={editForm.targetCount}
+                                onChange={e => setEditForm({ ...editForm, targetCount: e.target.value })}
                                 className="habit-edit-input"
                                 style={{ width: '60px', textAlign: 'center' }}
                             />
                             <span style={{ fontSize: '13px', opacity: 0.6 }}>times per</span>
-                            <select 
+                            <select
                                 value={editForm.targetPeriod}
-                                onChange={e => setEditForm({...editForm, targetPeriod: e.target.value})}
+                                onChange={e => setEditForm({ ...editForm, targetPeriod: e.target.value })}
                                 className="habit-edit-select"
                             >
                                 <option value="day">day</option>
@@ -156,7 +182,7 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                             </select>
                         </div>
                     </div>
-                    
+
                     <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
                         <button className="habit-save-btn" onClick={handleSaveEdit}>
                             <Save size={14} /> Save Changes
@@ -175,7 +201,7 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
     let requiredCompletions = 1;
     let barPercentage = 0;
     let compsRemaining = 0;
-    
+
     if (eligibility) {
         validCompletions = (habit?.completions || []).filter(c => c.friction !== 'heavy' && c.friction !== 'high' && c.friction !== 'fail').length;
         requiredCompletions = eligibility.gateStatus.lifetime.required || 1;
@@ -183,30 +209,38 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
         barPercentage = Math.min(100, (validCompletions / requiredCompletions) * 100);
     }
 
+    const isLevelUpReady = eligibility?.evolutionReady && energyLevel >= 3;
+
     return (
-        <div 
-            className={`habit-card-minimal ${progress.isDone ? "completed sage-glow" : ""} ${isPulsing ? "satisfaction-pulse" : ""} ${celebration?.active ? "habit-celebrating" : ""} ${celebration ? "habit-lingering-glow" : ""}`} 
+        <div
+            className={`habit-card-minimal ${progress.isDone ? "completed sage-glow" : ""} ${isPulsing ? "satisfaction-pulse" : ""} ${celebration?.active ? "habit-celebrating" : ""} ${celebration ? "habit-lingering-glow" : ""} ${isLevelUpReady ? "level-up-ready" : ""}`}
             id={`habit-${habit.id}`}
             style={{ position: 'relative', overflow: 'hidden' }}
         >
-            {celebration?.active && <div className="habit-ripple" />}
+            {celebration?.active && <div className={`habit-ripple ${celebration.type === 'levelup' ? 'levelup' : ''}`} />}
             {celebration?.active && (
-                <div className={`habit-identity-label ${celebration.fading ? 'fade-out' : 'fade-in'}`}>
-                    + Aura (Becoming {celebration.identity})
+                <div className={`habit-identity-label ${celebration.fading ? 'fade-out' : 'fade-in'} ${celebration.type === 'levelup' ? 'levelup' : ''}`}>
+                    {celebration.type === 'levelup' ? '✨ LEVEL UP READY ✨' : `+ Aura (Becoming ${celebration.identity})`}
+                    {celebration.type === 'levelup' && <div className="identity-reinforcement">Becoming {celebration.identity}</div>}
                 </div>
             )}
-            
+
             {/* 1. Header (Top Row) */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                 <div className="habit-intention" style={{ fontSize: '13.5px', display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '6px', overflow: 'hidden', color: 'var(--text-primary)' }}>
-                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>IF</span> 
+                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>IF</span>
                     <span style={{ fontWeight: 700, textOverflow: 'ellipsis', overflow: 'hidden' }}>{habit.ifTrigger}</span>
                     <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>THEN</span>
                     <span style={{ fontWeight: 700, textOverflow: 'ellipsis', overflow: 'hidden' }}>{currentPhase.description}</span>
                 </div>
-                
+
                 {/* Top Right: Icons & Activation Config */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
+                    {isLevelUpReady && (
+                        <button className="level-up-ready-badge" onClick={() => onOpenEvolution(habit)}>
+                            Level Up Ready
+                        </button>
+                    )}
                     <button className="habit-edit-icon-btn" onClick={() => setIsEditing(true)} title="Edit Habit">
                         <Pencil size={14} />
                     </button>
@@ -231,7 +265,7 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                     <span style={{ opacity: 0.3 }}>•</span>
                     <span>Stability: {eligibility.gateStatus.stability.completedDays}/8</span>
                     <span style={{ opacity: 0.3 }}>•</span>
-                    <span>Friction: {eligibility.gateStatus.friction.average.toFixed(1)}</span>
+                    <span>Friction: {isNaN(eligibility.gateStatus.friction.average) ? '0.0' : eligibility.gateStatus.friction.average.toFixed(1)}</span>
                     {progress.targetCount > 1 && (
                         <>
                             <span style={{ opacity: 0.3 }}>•</span>
@@ -243,7 +277,7 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
 
             {/* 3. Global Action Row (Complete Button + Mastery Bar) */}
             <div className="habit-action-evolution-row">
-                
+
                 {/* Left: Complete Button / Friction Selector */}
                 {habit.isActive && (
                     <div onClick={e => e.stopPropagation()} style={{ minWidth: completing ? '160px' : 'auto', transition: 'all 0.3s' }}>
@@ -259,14 +293,14 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                                     </button>
                                     <span className="friction-tooltip">Light (easy)</span>
                                 </div>
-                                
+
                                 <div className="friction-option-wrapper">
                                     <button onClick={() => handleComplete('medium')} className="friction-btn medium">
                                         <Flame size={14} />
                                     </button>
                                     <span className="friction-tooltip">Medium</span>
                                 </div>
-                                
+
                                 <div className="friction-option-wrapper">
                                     <button onClick={() => handleComplete('high')} className="friction-btn high">
                                         <Dumbbell size={14} />
@@ -291,19 +325,19 @@ const HabitCard = React.memo(({ habit, onOpenEvolution, onToggleActive, onComple
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                             <div className="phase-badge">Phase {habit.currentPhaseLevel + 1}</div>
                             <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-                                · {validCompletions >= 6 ? `${compsRemaining} more to level up` : 'In Progress'}
+                                · {(validCompletions >= requiredCompletions && eligibility.gateStatus.stability.completedDays >= 8) ? `${compsRemaining} more to level up` : 'In Progress'}
                             </span>
                         </div>
                         <div className="habit-mastery-bar-container">
-                            <div 
-                                className={`habit-mastery-bar-fill ${progress.todayCount > 0 ? 'shimmer-fill' : ''}`} 
-                                style={{ width: `${barPercentage}%` }} 
+                            <div
+                                className={`habit-mastery-bar-fill ${progress.todayCount > 0 ? 'shimmer-fill' : ''}`}
+                                style={{ width: `${barPercentage}%` }}
                             />
                         </div>
                     </div>
                 )}
             </div>
-            
+
         </div>
     );
 }, (prevProps, nextProps) => {

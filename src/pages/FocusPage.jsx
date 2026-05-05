@@ -683,8 +683,10 @@ const FocusPage = () => {
                         ? backbone.incrementTaskRepetition(task.id)
                         : backbone.updateNode(task.id, {
                             metadata: {
+                                ...task.metadata,
                                 status: TaskStatuses.DONE,
-                                completedAt: Date.now()
+                                completedAt: Date.now(),
+                                ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})
                             }
                         });
 

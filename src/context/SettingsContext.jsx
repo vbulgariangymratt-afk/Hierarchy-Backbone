@@ -170,9 +170,16 @@ export const SettingsProvider = ({ children }) => {
                 _cache.energyLevel = data.energy_level !== undefined ? data.energy_level : 3;
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.currencyName = data.currency_name ?? 'Coins';
-                _cache.todayRemovalMode = data.today_removal_mode ?? 'on_completion';
+                _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
+                
+                console.log('[SettingsContext] Load Success:', {
+                    currency: _cache.currencyName,
+                    todayRemoval: _cache.todayRemovalMode,
+                    limit: _cache.activeExperimentLimit
+                });
+
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -291,10 +298,12 @@ export const SettingsProvider = ({ children }) => {
     };
 
     const updateTodayRemovalMode = (mode) => {
-        _cache.todayRemovalMode = mode;
-        setTodayRemovalModeState(mode);
-        localStorage.setItem('app-today-removal-mode', mode);
-        saveSettings({ today_removal_mode: mode });
+        console.log('[SettingsContext] Updating TodayRemovalMode to:', mode);
+        const finalMode = mode || 'on_completion';
+        _cache.todayRemovalMode = finalMode;
+        setTodayRemovalModeState(finalMode);
+        localStorage.setItem('app-today-removal-mode', finalMode);
+        saveSettings({ today_removal_mode: finalMode });
     };
 
     // Reflect health dot style to DOM for CSS access

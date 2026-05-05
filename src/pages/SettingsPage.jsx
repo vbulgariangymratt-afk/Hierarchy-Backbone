@@ -43,6 +43,15 @@ const SettingsPage = () => {
         updateTodayRemovalMode,
     } = useSettings();
 
+    const [saveIndicator, setSaveIndicator] = useState(null);
+
+    const handleUpdateTodayMode = (mode) => {
+        console.log('[SettingsPage] Clicked Today Mode:', mode);
+        updateTodayRemovalMode(mode);
+        setSaveIndicator('today');
+        setTimeout(() => setSaveIndicator(null), 2000);
+    };
+
     const [allSkills, setAllSkills] = useState([]);
     const [manualSleep, setManualSleep] = useState(localStorage.getItem('pref_manual_sleep') === 'true');
 
@@ -263,19 +272,24 @@ const SettingsPage = () => {
                         <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
                             Choose when a task should be removed from your "Today" list.
                         </p>
-                        <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
+                        <div className="segmented-control" style={{ width: '100%', maxWidth: '400px', position: 'relative' }}>
                             <button
                                 className={`segmented-control-item ${todayRemovalMode === 'after_session' ? 'active' : ''}`}
-                                onClick={() => updateTodayRemovalMode('after_session')}
+                                onClick={() => handleUpdateTodayMode('after_session')}
                             >
                                 After Session
                             </button>
                             <button
                                 className={`segmented-control-item ${todayRemovalMode === 'on_completion' ? 'active' : ''}`}
-                                onClick={() => updateTodayRemovalMode('on_completion')}
+                                onClick={() => handleUpdateTodayMode('on_completion')}
                             >
                                 On Completion
                             </button>
+                            {saveIndicator === 'today' && (
+                                <span className="sync-indicator" style={{ position: 'absolute', right: '-60px', top: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>
+                                    Saved
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

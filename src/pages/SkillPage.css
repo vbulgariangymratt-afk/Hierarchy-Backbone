@@ -181,7 +181,8 @@
 }
 
 .suggestion-chip.habit {
-    border-left: 3px solid #666; /* Neutral grayscale */
+    border-left: 3px solid #666;
+    /* Neutral grayscale */
 }
 
 .dark.solid-mode .suggestion-chip.momentum,
@@ -277,7 +278,7 @@
     gap: 12px;
     cursor: pointer;
     /* Aligned perfectly with no inner bounds */
-    padding: 0 0 24px 0; 
+    padding: 0 0 24px 0;
     user-select: none;
     border-bottom: none;
     transition: none;
@@ -360,7 +361,8 @@
 }
 
 .dark.solid-mode .objective-container.is-focused .objective-title {
-    color: #ffffff; /* Remove yellow accent */
+    color: #ffffff;
+    /* Remove yellow accent */
 }
 
 .focus-pill {
@@ -491,7 +493,8 @@
 .dark.solid-mode .add-task-btn,
 .light.solid-mode .add-task-btn {
     color: var(--text-primary);
-    font-weight: 800; /* Bolder for Notch-like presence */
+    font-weight: 800;
+    /* Bolder for Notch-like presence */
     opacity: 0.8;
 }
 
@@ -755,6 +758,7 @@
 .liquid-mode.dark .aspect-card {
     background: transparent !important;
 }
+
 /* Glass Highlight Layer */
 .aspect-card::before {
     content: "";
@@ -785,11 +789,13 @@
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
 }
+
 .dark.solid-mode .aspect-card {
     background: var(--color-bg-secondary);
     border: 1px solid rgba(255, 255, 255, 0.04);
     box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
 }
+
 .light.solid-mode .aspect-card {
     background: #ffffff;
     border: 1px solid rgba(0, 0, 0, 0.06);
@@ -1004,7 +1010,8 @@
 
 .task-today-badge.tomorrow {
     opacity: 1 !important;
-    background: #a855f7; /* Purple for tomorrow */
+    background: #a855f7;
+    /* Purple for tomorrow */
     color: white;
 }
 
@@ -1020,7 +1027,7 @@
     color: var(--color-text);
     font-weight: 600;
     font-size: 14px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     z-index: 10000;
 }
 
@@ -1174,14 +1181,14 @@
     pointer-events: auto;
 }
 
-.pre-rendered-modal-overlay > .confirmation-modal {
+.pre-rendered-modal-overlay>.confirmation-modal {
     transform: translateY(10px) translateZ(0);
     transition: transform 0.15s ease-out;
     will-change: transform;
-    animation: none; 
+    animation: none;
 }
 
-.pre-rendered-modal-overlay.active > .confirmation-modal {
+.pre-rendered-modal-overlay.active>.confirmation-modal {
     transform: translateY(0) translateZ(0);
 }
 
@@ -1203,7 +1210,7 @@
         0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-/* Wallpaper Mode: Active Skills frosted glass styling */ 
+/* Wallpaper Mode: Active Skills frosted glass styling */
 .wallpaper-mode .confirmation-modal {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -1701,7 +1708,7 @@
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     will-change: backdrop-filter, -webkit-backdrop-filter;
-    box-shadow: 
+    box-shadow:
         0 8px 30px rgba(0, 0, 0, 0.28),
         inset 0 1px 0 rgba(255, 255, 255, 0.20);
 }
@@ -1719,10 +1726,10 @@
 }
 
 .liquid-mode .habit-card-minimal::before {
-    background: linear-gradient(180deg, 
-        rgba(255, 255, 255, 0.40) 0%, 
-        rgba(255, 255, 255, 0.08) 35%, 
-        transparent 100%);
+    background: linear-gradient(180deg,
+            rgba(255, 255, 255, 0.40) 0%,
+            rgba(255, 255, 255, 0.08) 35%,
+            transparent 100%);
     opacity: 0.45;
 }
 
@@ -1784,9 +1791,20 @@
 }
 
 @keyframes satisfactionGlow {
-    0% { box-shadow: 0 0 0px rgba(16, 185, 129, 0); border-color: rgba(255, 255, 255, 0.05); }
-    50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); border-color: rgba(16, 185, 129, 0.8); }
-    100% { box-shadow: 0 0 0px rgba(16, 185, 129, 0); border-color: rgba(255, 255, 255, 0.05); }
+    0% {
+        box-shadow: 0 0 0px rgba(16, 185, 129, 0);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
+        border-color: rgba(16, 185, 129, 0.8);
+    }
+
+    100% {
+        box-shadow: 0 0 0px rgba(16, 185, 129, 0);
+        border-color: rgba(255, 255, 255, 0.05);
+    }
 }
 
 .habit-card-minimal.completed {
@@ -1797,7 +1815,8 @@
 .habit-card-minimal.sage-glow {
     border-color: rgba(16, 185, 129, 0.4);
     box-shadow: 0 0 16px rgba(16, 185, 129, 0.1);
-    filter: grayscale(0); /* Override completion greyscale */
+    filter: grayscale(0);
+    /* Override completion greyscale */
 }
 
 .habit-edit-icon-btn {
@@ -1809,13 +1828,166 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     color: var(--text-secondary);
-    opacity: 0.3;
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
-.habit-edit-icon-btn, .habit-help-icon {
+.level-up-ready-badge {
+    background: rgba(141, 163, 153, 0.15);
+    /* Muted Sage */
+    color: #8DA399;
+    border: 1px solid rgba(141, 163, 153, 0.3);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: badgePulse 2s infinite ease-in-out;
+}
+
+.level-up-ready-badge:hover {
+    background: rgba(141, 163, 153, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(141, 163, 153, 0.15);
+}
+
+@keyframes badgePulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(141, 163, 153, 0.2);
+    }
+
+    50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 0 4px rgba(141, 163, 153, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(141, 163, 153, 0);
+    }
+}
+
+.habit-card-minimal.level-up-ready {
+    border-color: rgba(141, 163, 153, 0.4);
+    box-shadow: 0 0 20px rgba(141, 163, 153, 0.08);
+}
+
+.habit-ripple {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.habit-celebrating .habit-ripple {
+    animation: habitRippleEffect 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes habitRippleEffect {
+    0% {
+        width: 0;
+        height: 0;
+        opacity: 1;
+    }
+
+    40% {
+        width: 140%;
+        height: 280%;
+        opacity: 0.6;
+    }
+
+    100% {
+        width: 150%;
+        height: 300%;
+        opacity: 0;
+    }
+}
+
+.habit-identity-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    pointer-events: none;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-accent);
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.habit-identity-label.fade-in {
+    animation: labelEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.habit-identity-label.fade-out {
+    animation: labelExit 0.3s ease-in forwards;
+}
+
+@keyframes labelEnter {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -40%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes labelExit {
+    from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(0.9);
+    }
+}
+
+.habit-lingering-glow {
+    transition: all 1s ease;
+}
+
+/* Celebration Enhancements */
+.habit-ripple.levelup {
+    background: radial-gradient(circle, rgba(141, 163, 153, 0.3) 0%, transparent 70%);
+}
+
+.habit-identity-label.levelup {
+    color: #8DA399;
+    font-weight: 800;
+    font-size: 16px;
+}
+
+.habit-identity-label.levelup .identity-reinforcement {
+    font-size: 11px;
+    opacity: 0.7;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+
+.habit-edit-icon-btn,
+.habit-help-icon {
     opacity: 0.25;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     cursor: pointer;
@@ -1838,7 +2010,8 @@
     font-weight: 700;
 }
 
-.habit-edit-icon-btn:hover, .habit-help-icon:hover {
+.habit-edit-icon-btn:hover,
+.habit-help-icon:hover {
     opacity: 0.8;
     transform: translateY(-1px);
 }
@@ -1955,9 +2128,20 @@
     color: white;
 }
 
-.friction-btn.low:hover { color: #34d399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.4); }
-.friction-btn.medium:hover { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
-.friction-btn.high:hover { color: #f87171; text-shadow: 0 0 10px rgba(248, 113, 113, 0.4); }
+.friction-btn.low:hover {
+    color: #34d399;
+    text-shadow: 0 0 10px rgba(52, 211, 153, 0.4);
+}
+
+.friction-btn.medium:hover {
+    color: #fbbf24;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.friction-btn.high:hover {
+    color: #f87171;
+    text-shadow: 0 0 10px rgba(248, 113, 113, 0.4);
+}
 
 .friction-option-wrapper {
     position: relative;
@@ -2532,8 +2716,13 @@
 }
 
 @keyframes mvePulse {
-    from { opacity: 0.3; }
-    to   { opacity: 0.7; }
+    from {
+        opacity: 0.3;
+    }
+
+    to {
+        opacity: 0.7;
+    }
 }
 
 /* Keep the micro-reward section nested inside task-submenu-section */
@@ -3412,7 +3601,8 @@
     /* Completely unboxed */
     position: relative;
     padding: 0;
-    margin-bottom: 64px; /* Big gap between this 'header' and next experiments */
+    margin-bottom: 64px;
+    /* Big gap between this 'header' and next experiments */
     z-index: 1;
 }
 
@@ -4040,6 +4230,7 @@
     background: rgba(59, 130, 246, 0.15);
     color: var(--color-accent);
 }
+
 /* PINCH Analysis Station */
 .liquid-mode .pinch-analysis-station {
     background: transparent;
@@ -4099,7 +4290,8 @@
     cursor: default;
 }
 
-.edit-experiment-btn:disabled, .obj-status-btn:disabled {
+.edit-experiment-btn:disabled,
+.obj-status-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
 }
@@ -4131,10 +4323,24 @@
     letter-spacing: 1.2px;
 }
 
-.expiry-title { margin: 12px 0 8px 0; color: var(--text-primary); font-size: 1.4rem; }
-.expiry-description { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; }
+.expiry-title {
+    margin: 12px 0 8px 0;
+    color: var(--text-primary);
+    font-size: 1.4rem;
+}
 
-.expiry-actions { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.expiry-description {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.expiry-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
 
 .btn-decision-exp {
     padding: 10px 20px;
@@ -4146,12 +4352,30 @@
     transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.btn-decision-exp:hover { transform: translateY(-2px); filter: brightness(1.1); }
-.btn-decision-exp:active { transform: scale(0.96); }
+.btn-decision-exp:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
 
-.btn-decision-exp.complete { background: var(--color-success); color: white; }
-.btn-decision-exp.extend { background: var(--color-secondary); color: white; }
-.btn-decision-exp.archive { background: var(--alpha-med); color: var(--text-primary); border: 1px solid var(--color-border); }
+.btn-decision-exp:active {
+    transform: scale(0.96);
+}
+
+.btn-decision-exp.complete {
+    background: var(--color-success);
+    color: white;
+}
+
+.btn-decision-exp.extend {
+    background: var(--color-secondary);
+    color: white;
+}
+
+.btn-decision-exp.archive {
+    background: var(--alpha-med);
+    color: var(--text-primary);
+    border: 1px solid var(--color-border);
+}
 
 /* ============================================================
    SOLID LIGHT MODE OVERRIDES: HABITS & SKILL ELEMENTS
@@ -4258,7 +4482,8 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
     letter-spacing: -0.01em;
     margin: 0;
     padding: 2px 0;
-    color: #a1a1aa; /* Fallback for dark mode */
+    color: #a1a1aa;
+    /* Fallback for dark mode */
 }
 
 .pinch-explanation {
@@ -4267,7 +4492,8 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
     max-width: 600px;
     margin: 0;
     padding: 2px 0;
-    color: #a1a1aa; /* Fallback for dark mode */
+    color: #a1a1aa;
+    /* Fallback for dark mode */
 }
 
 /* ── Task Delete Confirmation Modal ──────── */
@@ -4285,8 +4511,13 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
 }
 
 @keyframes fadeInOverlay {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .delete-confirm-modal {
@@ -4304,7 +4535,7 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
 .delete-confirm-message {
     margin: 0 0 22px 0;
     font-size: 14px;
-    color: var(--text-secondary, rgba(255,255,255,0.6));
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
     line-height: 1.5;
 }
 
@@ -4322,7 +4553,7 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
 .delete-confirm-cancel {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    color: var(--text-secondary, rgba(255,255,255,0.5));
+    color: var(--text-secondary, rgba(255, 255, 255, 0.5));
     border-radius: 8px;
     padding: 8px 18px;
     font-size: 13px;
@@ -4536,8 +4767,15 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
 }
 
 @keyframes pillPop {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .selected-dep-pill .name {
@@ -4613,5 +4851,3 @@ html[data-blur-quality="performance"].liquid-mode .aspect-card {
 .task-creation-confirm:active {
     transform: translateY(0);
 }
-
-
