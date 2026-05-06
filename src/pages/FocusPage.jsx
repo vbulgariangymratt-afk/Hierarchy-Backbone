@@ -1359,50 +1359,53 @@ const FocusPage = () => {
                 )}
             </AnimatePresence>
             {/* Temporary Test Button for Focus Aura Celebration */}
-            <button 
-                onClick={() => {
-                    // 1. Trigger the celebration state logic (Aura Bloom + Label)
-                    window.dispatchEvent(new CustomEvent('skill-level-up', { 
-                        detail: { 
-                            skillId: skill?.id, 
-                            newLevel: (skill?.metadata?.level || 0) + 1 
-                        } 
-                    }));
+            {/* Hidden per user request - focus mode */}
+            {false && (
+                <button 
+                    onClick={() => {
+                        // 1. Trigger the celebration state logic (Aura Bloom + Label)
+                        window.dispatchEvent(new CustomEvent('skill-level-up', { 
+                            detail: { 
+                                skillId: skill?.id, 
+                                newLevel: (skill?.metadata?.level || 0) + 1 
+                            } 
+                        }));
 
-                    // 2. Also trigger rewards for full polish testing
-                    if (rewardRef.current) {
-                        rewardRef.current.showReward([
-                            { type: 'aura', amount: 5 },
-                            { type: 'hryvnia', amount: 10 }
-                        ]);
-                    }
-                    
-                    // 3. Screen glow pulse
-                    setIsGlowing(true);
-                    setTimeout(() => setIsGlowing(false), 1000);
-                }}
-                style={{
-                    position: 'fixed',
-                    right: '32px',
-                    bottom: '80px',
-                    background: 'rgba(153, 186, 215, 0.2)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(153, 186, 215, 0.4)',
-                    borderRadius: '50%',
-                    width: '40px',
-                    height: '40px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '18px',
-                    zIndex: 9999,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-                }}
-                title="Test Focus Level Up"
-            >
-                ✨
-            </button>
+                        // 2. Also trigger rewards for full polish testing
+                        if (rewardRef.current) {
+                            rewardRef.current.showReward([
+                                { type: 'aura', amount: 5 },
+                                { type: 'hryvnia', amount: 10 }
+                            ]);
+                        }
+                        
+                        // 3. Screen glow pulse
+                        setIsGlowing(true);
+                        setTimeout(() => setIsGlowing(false), 1000);
+                    }}
+                    style={{
+                        position: 'fixed',
+                        right: '32px',
+                        bottom: '80px',
+                        background: 'rgba(153, 186, 215, 0.2)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(153, 186, 215, 0.4)',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        zIndex: 9999,
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                    }}
+                    title="Test Focus Level Up"
+                >
+                    ✨
+                </button>
+            )}
 
             <button 
                 className={`focus-save-energy-btn ${task.metadata?.highEnergy ? 'saved' : ''}`}
