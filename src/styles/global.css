@@ -5,6 +5,12 @@
 @import './variables.css';
 @import './glass-card.css';
 
+:root {
+    --mouse-x: 0px;
+    --mouse-y: 0px;
+    --blur-quality: 16px;
+}
+
 html,
 * {
     box-sizing: border-box;
@@ -20,20 +26,7 @@ body,
     height: 100%;
 }
 
-/* ── Transparent Window Drag Region (Tauri MacOS) ────────── */
-.app-drag-region {
-    position: fixed;
-    top: 0;
-    left: var(--sidebar-width, 260px);
-    width: calc(100% - var(--sidebar-width, 260px));
-    height: 36px;
-    z-index: 9999;
-    background: transparent;
-    -webkit-app-region: drag;
-    user-select: none;
-    -webkit-user-select: none;
-    pointer-events: auto;
-}
+
 
 /* --- UI MODES: LIQUID vs SOLID --- */
 
@@ -194,6 +187,7 @@ video {
     border-radius: 18px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     transition: background 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+    transform: translateZ(0);
 }
 
 @keyframes webkit-blur-jitter {

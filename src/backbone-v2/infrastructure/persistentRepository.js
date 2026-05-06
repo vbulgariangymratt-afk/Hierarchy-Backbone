@@ -22,7 +22,6 @@ export const createPersistentRepository = () => {
             await new Promise(r => setTimeout(r, 1500));
             userId = await getUserId();
         }
-        console.log('[PERSIST] userId:', userId);
 
         if (!userId) {
             console.error(`Repository [ID:${instanceId}]: Persist FAILED - No user ID after retry`);
@@ -44,12 +43,9 @@ export const createPersistentRepository = () => {
                 };
             });
 
-            console.log('[PERSIST] attempting upsert with nodes:', nodesToUpsert);
             const { error } = await supabase
                 .from('nodes')
                 .upsert(nodesToUpsert);
-
-            console.log('[PERSIST] upsert result error:', error);
 
             if (error) throw error;
         } catch (e) {
@@ -58,7 +54,13 @@ export const createPersistentRepository = () => {
     };
 
     const listeners = new Set();
-    const notify = (changedId = null) => listeners.forEach(l => l(changedId));
+    const _typeCache = new Map();
+    const _parentCache = new Map();
+    const notify = (changedId = null) => {
+        _typeCache.clear();
+        _parentCache.clear();
+        listeners.forEach(l => l(changedId));
+    };
     let initPromise = null;
 
     const initialize = async () => {
@@ -117,7 +119,6 @@ export const createPersistentRepository = () => {
 
 
         save: async (node) => {
-            console.log('[SAVE] save() called with node:', node.id);
             const index = storage.findIndex(n => n.id === node.id);
             if (index !== -1) {
                 storage[index] = node;
@@ -173,14 +174,20 @@ export const createPersistentRepository = () => {
          * References are preserved for efficient React.memo usage.
          */
         getNodesByParent: async (parentId) => {
-            return storage.filter(n => n.parentId === parentId);
+            if (_parentCache.has(parentId)) return _parentCache.get(parentId);
+            const result = storage.filter(n => n.parentId === parentId);
+            _parentCache.set(parentId, result);
+            return result;
         },
 
         /**
          * Optimized query: Returns only nodes of specific type.
          */
         getNodesByType: async (type) => {
-            return storage.filter(n => n.type === type);
+            if (_typeCache.has(type)) return _typeCache.get(type);
+            const result = storage.filter(n => n.type === type);
+            _typeCache.set(type, result);
+            return result;
         },
 
         /**

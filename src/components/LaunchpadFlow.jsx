@@ -826,10 +826,6 @@ const LaunchpadFlow = () => {
         }
         
         // 3. LOGS
-        console.log("[HIGH ENERGY LAUNCHPAD] Total unfinished tasks with highEnergy === true globally:", highEnergyTasks.length);
-        console.log("[HIGH ENERGY LAUNCHPAD] Tasks passing current display filter:", filteredList.length);
-        console.log("[HIGH ENERGY LAUNCHPAD] Hero task chosen (most recent):", heroTask?.name || "None");
-        console.log("[HIGH ENERGY LAUNCHPAD] Skills qualifying for momentum:", activeHighEnergySkills.map(s => s.name));
 
         const mostActiveSkill = selectedSkillOverride ? nodeMap.get(selectedSkillOverride) : null;
 
@@ -882,7 +878,6 @@ const LaunchpadFlow = () => {
         });
 
         const sorted = expWithMomentum.sort((a, b) => b.momentum - a.momentum).slice(0, 3);
-        console.log("Top 3 High Energy experiments identified:", sorted.length);
         return sorted;
     }, [allNodes, nodeMap]);
 
@@ -992,11 +987,6 @@ const LaunchpadFlow = () => {
     };
 
     const primarySkillAlternatives = useMemo(() => {
-        console.log("--- Initiation Search Debug ---");
-        console.log("Selected skills:", selectedSkills);
-        console.log("First skill ID:", selectedSkills?.[0]);
-        console.log("All nodes:", allNodes.length);
-        console.log("Search query:", searchQuery);
 
         if (selectedSkills.length === 0) return [];
         const firstSkillId = selectedSkills[0];
@@ -1253,15 +1243,6 @@ const LaunchpadFlow = () => {
         navigate('/planning');
     };
 
-    // Debug logs
-    useEffect(() => {
-        if (step === 'action') {
-            console.log("LaunchpadFlow - Energy:", energyLevel);
-            console.log("LaunchpadFlow - Aspect stats:", aspectStats);
-            console.log("LaunchpadFlow - High energy saved tasks:", getHighEnergySavedTasks(tasks));
-            console.log("LaunchpadFlow - Selected task:", selectedTask);
-        }
-    }, [step, energyLevel, selectedTask, tasks, aspectStats]);
 
     if (!allNodes || allNodes.length === 0) return null;
 

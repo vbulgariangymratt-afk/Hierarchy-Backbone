@@ -162,7 +162,6 @@ const JournalPage = () => {
                     : Math.round(fallbackSeconds / 60);
 
                 if (hasActivityToday) {
-                    console.log(`[Duration] Task: ${node.name} | sessions: ${sessionSeconds}s | fallback: ${fallbackSeconds}s | total: ${totalMinutes}m`);
 
                     // Find ancestors
                     let skillNode = null;
@@ -222,13 +221,6 @@ const JournalPage = () => {
             setCompletedGroups(groups);
 
             const root = allNodes.find(n => n.id === 'ROOT');
-            console.log("[DEBUG Journal] Initialization Data:", { 
-                todayStr,
-                areaLog: logs.areaLog, 
-                repLog: logs.repLog, 
-                rootFound: !!root,
-                rootMetadata: root?.metadata 
-            });
 
             const nodeNames = {};
             allNodes.forEach(n => {
@@ -275,7 +267,6 @@ const JournalPage = () => {
 
     const handleSaveSleepManual = async () => {
         if (isLocked) return;
-        console.log('[DEBUG SleepLog] handleSaveSleepManual called', { sleepTime, wakeTime });
         if (!sleepTime || !wakeTime) {
             console.warn('[DEBUG SleepLog] Missing sleepTime or wakeTime');
             return;
@@ -295,7 +286,6 @@ const JournalPage = () => {
         }
 
         const durationMinutes = Math.round((wakeTS - sleepTS) / (60 * 1000));
-        console.log('[DEBUG SleepLog] Computed timestamps:', { sleepTS, wakeTS, durationMinutes });
 
         const biological = {
             sleepStartTime: sleepTS,
@@ -305,7 +295,6 @@ const JournalPage = () => {
             manualOverride: { sleepTime, wakeTime }
         };
 
-        console.log('[DEBUG SleepLog] Sending update:', biological);
         await handleUpdate({ biological });
         setSleepSaved(true);
     };
@@ -416,15 +405,6 @@ const JournalPage = () => {
     const isPast = selectedDateStr !== todayStr;
     const isLocked = entry.isLocked || isPast;
 
-    if (preferManualSleep) {
-        console.log('[DEBUG SleepLog] Rendering Section:', { 
-            sleepTime, 
-            wakeTime, 
-            isLocked, 
-            loading, 
-            disabled: !sleepTime || !wakeTime || isLocked || loading 
-        });
-    }
 
     return (
         <div className={`journal-page ${loading ? 'is-loading' : ''}`}>

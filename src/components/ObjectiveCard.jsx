@@ -618,4 +618,4 @@ const ObjectiveCard = ({
     );
 };
 
-export default ObjectiveCard;
+export default React.memo(ObjectiveCard);

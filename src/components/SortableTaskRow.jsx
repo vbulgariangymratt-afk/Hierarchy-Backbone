@@ -375,7 +375,6 @@ const SortableTaskRow = React.memo(({
         prev.activeChallengeHighlight?.type === next.activeChallengeHighlight?.type &&
         prev.skill?.metadata?.pinchState === next.skill?.metadata?.pinchState
     );
-    console.log('[Memo] prev.isExpanded:', prev.isExpanded, 'next.isExpanded:', next.isExpanded, 'skipping render:', shouldSkipRender);
     return shouldSkipRender;
 });
 

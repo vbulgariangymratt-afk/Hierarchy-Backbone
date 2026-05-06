@@ -90,7 +90,6 @@ export const DailyService = (repository) => {
         await repository.update('ROOT', {
             metadata: { ...metadata, dailyCompletions }
         });
-        console.log("DAILY COMPLETION COUNTER UPDATED", { dateKey: todayStr, newValue: dailyCompletions[todayStr] });
     }
 
     async function checkDailyReset() {

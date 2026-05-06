@@ -50,9 +50,6 @@ export const RewardService = (repository) => {
             });
         }
 
-        console.log(`[${label}] +${val} Hryvnia`);
-        console.log(`[${label}] Balance before: ${currentBalance}`);
-        console.log(`[${label}] Balance after: ${newBalance}`);
 
         return { awarded: val, before: currentBalance, after: newBalance };
     };
@@ -74,7 +71,6 @@ export const RewardService = (repository) => {
             });
             console.log("HierarchyService [Setup]: Created REWARD_BANK under ROOT");
         } else {
-            console.log("HierarchyService [Status]: REWARD_BANK exists");
         }
 
         // 2. Migrate existing REWARD nodes to REWARD_BANK
@@ -101,7 +97,6 @@ export const RewardService = (repository) => {
             }
         }
 
-        console.log("HierarchyService [Migration]: Migration completed successfully");
 
         // 4. Reward Categorization Migration
         const rootNode = await repository.getById('ROOT');
@@ -164,7 +159,6 @@ export const RewardService = (repository) => {
                     marketplaceLastRefilledAt: Date.now()
                 }
             });
-            console.log(`Marketplace refilled with ${selectedItems.length} items`);
         }
     };
 

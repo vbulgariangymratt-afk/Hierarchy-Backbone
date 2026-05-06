@@ -265,7 +265,6 @@ export const ThemeProvider = ({ children }) => {
     }, [resolvedTheme]);
 
     useEffect(() => {
-        console.log('[THEME EFFECT] backgroundMode:', backgroundMode, 'resolvedTheme:', resolvedTheme);
         const applyGlassEffect = async () => {
             if (isTauri()) {
                 if (backgroundMode === 'liquid') {
@@ -273,7 +272,6 @@ export const ThemeProvider = ({ children }) => {
                     const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
                     try {
                         const { invoke } = await import('@tauri-apps/api/core');
-                        console.log('[GLASS] calling enable_liquid_glass with theme:', rustTheme);
                         await invoke('enable_liquid_glass', { theme: rustTheme });
                     } catch (err) {
                         console.warn('Glass effect not available:', err);

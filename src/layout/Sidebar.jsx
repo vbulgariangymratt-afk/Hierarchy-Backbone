@@ -137,15 +137,6 @@ const Sidebar = ({ onSkillClick }) => {
         return () => window.removeEventListener('skill-level-up', handleLevelUp);
     }, [allNodes, focusSlots, maintenanceSkillIds, playChime]);
 
-    // Diagnostic log for theme debugging
-    useEffect(() => {
-        console.log('[Sidebar Diagnostic]', {
-            theme,
-            backgroundMode,
-            documentClasses: document.documentElement.className,
-            sidebarClasses: `sidebar ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel}`
-        });
-    }, [theme, backgroundMode, isFocusMode, energyLevel]);
 
     const [isMaintenanceExpanded, setIsMaintenanceExpanded] = useState(() => {
         return localStorage.getItem('sidebar_maintenance_expanded') === 'true';

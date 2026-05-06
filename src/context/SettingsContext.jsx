@@ -173,13 +173,6 @@ export const SettingsProvider = ({ children }) => {
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
-                
-                console.log('[SettingsContext] Load Success:', {
-                    currency: _cache.currencyName,
-                    todayRemoval: _cache.todayRemovalMode,
-                    limit: _cache.activeExperimentLimit
-                });
-
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -298,7 +291,6 @@ export const SettingsProvider = ({ children }) => {
     };
 
     const updateTodayRemovalMode = (mode) => {
-        console.log('[SettingsContext] Updating TodayRemovalMode to:', mode);
         const finalMode = mode || 'on_completion';
         _cache.todayRemovalMode = finalMode;
         setTodayRemovalModeState(finalMode);

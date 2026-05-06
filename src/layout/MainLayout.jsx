@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
@@ -19,10 +19,10 @@ const MainLayout = () => {
     const [selectedSkill, setSelectedSkill] = useState(null);
     const [isLaunchpadOpen, setIsLaunchpadOpen] = useState(false);
 
-    const openLaunchpad = (skill) => {
+    const openLaunchpad = useCallback((skill) => {
         setSelectedSkill(skill);
         setIsLaunchpadOpen(true);
-    };
+    }, []);
 
 
     const location = useLocation();

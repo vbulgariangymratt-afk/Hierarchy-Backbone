@@ -18,7 +18,10 @@ const FocusCenterPage = lazy(() => import('./pages/FocusCenterPage'));
 const MaintenanceCenterPage = lazy(() => import('./pages/MaintenanceCenterPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 
-// Preload high-intent chunks removed for pure lazy strategy
+// Preload high-intent chunks
+export const preloadFocus = () => import('./pages/FocusPage');
+export const preloadSkill = () => import('./pages/SkillPage');
+export const preloadLaunchpad = () => import('./pages/Launchpad');
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { SessionProvider, useSession } from './context/SessionContext';

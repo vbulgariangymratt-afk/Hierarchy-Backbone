@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { checkAutoLock } from './hierarchyHelpers';
 
 export const LifecycleService = (repository, deps = {}) => {
+    let _dailyResetInterval = null;
     const {
         ensureRewardVaultSetup,
         initializeMarketplace,
@@ -13,7 +14,6 @@ export const LifecycleService = (repository, deps = {}) => {
     const checkExpirations = async () => {
         // Disabled auto-archiving as per Step 2 of the new Expiry Flow.
         // We now handle this via UI prompts in SkillPage.jsx.
-        console.log("[Lifecycle] Expiration check skipped (Handled by UI)");
     };
 
     const completeObjective = async (objectiveId) => {
@@ -256,7 +256,10 @@ export const LifecycleService = (repository, deps = {}) => {
             if (checkDailyReset) await checkDailyReset();
 
             // Setup daily reset check heartbeat (every 5 minutes for long-running sessions)
-            setInterval(() => {
+            if (_dailyResetInterval) {
+                clearInterval(_dailyResetInterval);
+            }
+            _dailyResetInterval = setInterval(() => {
                 if (checkDailyReset) checkDailyReset();
             }, 5 * 60 * 1000);
 

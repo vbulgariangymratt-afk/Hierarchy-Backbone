@@ -3,11 +3,9 @@ import { NodeTypes, IdentityTiers } from '../domain/entities';
 export const MotivationService = (repository) => {
 
     const protectFromBurnout = async (skillId) => {
-        console.log("🔥 BURNOUT PROTECTION CHECK ENTERED");
         const skill = await repository.getById(skillId);
         if (!skill || skill.type !== NodeTypes.SKILL) return;
 
-        console.log(`DEBUG: Evaluating fatigue for skill: ${skill.name}`);
 
         const allNodes = await repository.getAll();
 
@@ -25,7 +23,6 @@ export const MotivationService = (repository) => {
 
         const tasks = getDescendantTasks(skillId);
         const now = Date.now();
-        console.log(`DEBUG: Fatigue test mode active (1d/2d windows)`);
         const sevenDaysMs = 1 * 24 * 60 * 60 * 1000; // Was 7 days
         const fourteenDaysMs = 2 * 24 * 60 * 60 * 1000; // Was 14 days
 
@@ -52,7 +49,6 @@ export const MotivationService = (repository) => {
         }
 
         const signalCompletionDrop = completionDropPct >= 0.40;
-        console.log(`DEBUG: Completion drop: ${Math.round(completionDropPct * 100)}%`);
 
         // 2️⃣ Signal: Pleasure Drop (30% drop vs 14-session baseline)
         let allSessions = [];
@@ -80,7 +76,6 @@ export const MotivationService = (repository) => {
             }
         }
         const signalPleasureDrop = pleasureDropPct >= 0.30;
-        console.log(`DEBUG: Pleasure drop: ${Math.round(pleasureDropPct * 100)}%`);
 
         // 3️⃣ Signal: Abandonment (>=3 sessions <3 mins in 7 days)
         const abandonmentSessions = allSessions.filter(s => {
@@ -91,7 +86,6 @@ export const MotivationService = (repository) => {
 
         const abandonmentCount = abandonmentSessions.length;
         const signalAbandonment = abandonmentCount >= 3;
-        console.log(`DEBUG: Abandonment count: ${abandonmentCount}`);
 
         // Fatigue Rule Check
         let triggeredCount = 0;
@@ -100,12 +94,10 @@ export const MotivationService = (repository) => {
         if (signalPleasureDrop) { triggeredCount++; activeSignals.push('PleasureDrop'); }
         if (signalAbandonment) { triggeredCount++; activeSignals.push('Abandonment'); }
 
-        console.log(`DEBUG: Fatigue signals triggered: ${triggeredCount}`);
 
         const fatigueSuggested = triggeredCount >= 2;
 
         if (fatigueSuggested) {
-            console.log(`Skill Fatigue Detected → ${skill.name}`);
             console.log(`Signals: ${activeSignals.join(' | ')}`);
         }
 
@@ -121,7 +113,6 @@ export const MotivationService = (repository) => {
             updatedAt: Date.now()
         });
 
-        console.log(`DEBUG: Persistence check: [${skill.name}] fatigueSuggested is now ${result.metadata.fatigueSuggested}`);
         return fatigueSuggested;
     };
 

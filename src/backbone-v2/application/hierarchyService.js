@@ -54,7 +54,6 @@ export const HierarchyService = (repository, auraService) => {
         getTree: async () => {
             const allNodes = await repository.getAll();
             const tree = buildTree(allNodes);
-            console.log(`HierarchyService: getTree resulting in ${tree.length} root nodes`);
             return tree;
         },
 
@@ -88,7 +87,7 @@ export const HierarchyService = (repository, auraService) => {
             });
         },
 
-        trackFocusMode: async (isActive, logger = console.log) => {
+        trackFocusMode: async (isActive, logger = () => {}) => {
             const root = await repository.getById('ROOT');
             if (!root) return;
             const now = Date.now();

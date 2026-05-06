@@ -48,7 +48,6 @@ const SettingsPage = () => {
     const [saveIndicator, setSaveIndicator] = useState(null);
 
     const handleUpdateTodayMode = (mode) => {
-        console.log('[SettingsPage] Clicked Today Mode:', mode);
         updateTodayRemovalMode(mode);
         setSaveIndicator('today');
         setTimeout(() => setSaveIndicator(null), 2000);
