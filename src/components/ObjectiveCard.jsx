@@ -24,6 +24,7 @@ const ObjectiveCard = ({
     objectiveEditForm,
     setObjectiveEditForm,
     handleUpdateObjectiveName,
+    handleStartEditObjective,
     handleSaveObjectiveEdit,
     handleDeleteObjective,
     setEditingObjectiveId,
@@ -247,7 +248,10 @@ const ObjectiveCard = ({
                         <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                             {energyLevel >= 4 && (
                                 <button
-                                    onClick={() => handleStartEditObjective(obj)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleStartEditObjective(obj);
+                                    }}
                                     className="experiment-edit-pill"
                                     style={{
                                         display: 'flex',
