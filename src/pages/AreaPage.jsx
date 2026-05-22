@@ -29,7 +29,7 @@ const AreaPage = () => {
 
     const [allNodes, setAllNodes] = useState([]);
     const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
-    const [isConfirmSleepModalOpen, setIsConfirmSleepModalOpen] = useState(false);
+    const [skillToSleep, setSkillToSleep] = useState(null);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [isSleepingSkillsCollapsed, setIsSleepingSkillsCollapsed] = useState(true);
     const [isEditingArea, setIsEditingArea] = useState(false);
@@ -164,15 +164,19 @@ const AreaPage = () => {
     const handleSleepSkill = useCallback(async (e, skill) => {
         e.preventDefault();
         e.stopPropagation();
-        if (window.confirm(`Start 5-day rest period for ${skill.name}?`)) {
-            try {
-                await backbone.sleepSkill(skill.id, 5);
-                fetchData();
-            } catch (error) {
-                console.error("Failed to sleep skill:", error);
-            }
+        setSkillToSleep(skill);
+    }, []);
+
+    const confirmSleepSkill = useCallback(async () => {
+        if (!skillToSleep) return;
+        try {
+            await backbone.sleepSkill(skillToSleep.id, 5);
+            fetchData();
+        } catch (error) {
+            console.error("Failed to sleep skill:", error);
         }
-    }, [backbone, fetchData]);
+        setSkillToSleep(null);
+    }, [skillToSleep, backbone, fetchData]);
 
     const getTierLabel = (tier) => {
         switch (tier) {
@@ -585,6 +589,36 @@ const AreaPage = () => {
                         <button className="limit-modal-btn" onClick={() => setIsLimitModalOpen(false)}>
                             Got it
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Sleep Confirm Modal */}
+            {skillToSleep && (
+                <div className="modal-overlay" onClick={() => setSkillToSleep(null)} style={{ zIndex: 10005 }}>
+                    <div className="limit-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="limit-modal-icon">
+                            <NodeIcon iconUrl={SVG_ICONS.ALERT} size={40} />
+                        </div>
+                        <p className="limit-modal-message">
+                            Start 5-day rest period for <strong style={{ color: 'var(--color-accent)' }}>{skillToSleep.name}</strong>?
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '20px', width: '100%' }}>
+                            <button 
+                                className="limit-modal-btn" 
+                                onClick={confirmSleepSkill} 
+                                style={{ flex: 1, background: '#3b82f6', border: 'none', color: 'white' }}
+                            >
+                                Yes, Rest
+                            </button>
+                            <button 
+                                className="limit-modal-btn" 
+                                onClick={() => setSkillToSleep(null)} 
+                                style={{ flex: 1, background: 'var(--alpha-medium)', border: 'none', color: 'var(--color-text)' }}
+                            >
+                                Cancel
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

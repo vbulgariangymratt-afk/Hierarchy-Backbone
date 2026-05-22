@@ -347,14 +347,15 @@ export const NodeService = (repository, auraService, deps = {}) => {
             };
 
             const descendantIds = findDescendantIds(nodeId);
+            const allIdsToDelete = [...descendantIds, nodeId];
 
-            // Delete descendants first (bottom-up is cleaner for some repos, though this one is flat)
-            for (const id of descendantIds) {
-                await repository.delete(id);
+            if (repository.deleteMany) {
+                await repository.deleteMany(allIdsToDelete);
+            } else {
+                for (const id of allIdsToDelete) {
+                    await repository.delete(id);
+                }
             }
-
-            // Delete target node
-            await repository.delete(nodeId);
 
             // Sync objective accumulation if an aspect was deleted
             const deletedNode = allNodes.find(n => n.id === nodeId);

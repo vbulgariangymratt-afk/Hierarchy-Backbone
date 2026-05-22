@@ -1436,9 +1436,9 @@
 .task-repetition-progress {
     font-size: 11px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
     padding: 0 10px;
     height: 22px;
     display: flex;
@@ -1451,9 +1451,9 @@
 }
 
 .task-repetition-add-btn {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--alpha-low);
+    color: var(--text-primary);
+    border: 1px solid var(--color-border);
     border-radius: 6px;
     width: 22px;
     height: 22px;
@@ -1468,15 +1468,15 @@
 }
 
 .task-repetition-add-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.25);
-    color: white;
+    background: var(--alpha-med);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
     transform: translateY(-1px);
 }
 
 .task-repetition-add-btn:active:not(:disabled) {
     transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--alpha-low);
 }
 
 .task-repetition-add-btn:disabled {
@@ -4536,11 +4536,7 @@
 }
 
 /* ── Blur Quality: Performance Mode ─────────────────────── */
-html[data-blur-quality="performance"].liquid-mode .aspect-card {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: rgba(255, 255, 255, 0.07) !important;
-}
+/* Overrides removed so performance mode maintains the static blur */
 
 /* ── Light Mode Color Normalization ─────────────────────────────────── */
 /* Matching sidebar text color (rgb(129, 126, 125)) for tasks and micro sections */

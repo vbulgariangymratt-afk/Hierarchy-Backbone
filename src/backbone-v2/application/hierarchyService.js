@@ -316,8 +316,14 @@ export const HierarchyService = (repository, auraService) => {
             }
 
             const cur = (task.metadata?.currentUnits || 0) + 1;
+            const repTimestamps = task.metadata?.repetitionTimestamps || [];
+            const newRepTimestamps = [...repTimestamps, Date.now()];
+
             const res = await nodeService.updateNode(taskId, {
-                metadata: { currentUnits: cur }
+                metadata: { 
+                    currentUnits: cur,
+                    repetitionTimestamps: newRepTimestamps 
+                }
             });
 
             // Update momentum (lastWorkedAt on skill ancestor)

@@ -358,6 +358,12 @@ const SortableTaskRow = React.memo(({
         </div>
     );
 }, (prev, next) => {
+    const getDepStatus = (task, allNodes) => {
+        if (!task.metadata?.dependsOnTaskId) return null;
+        const dep = allNodes.find(n => n.id === task.metadata.dependsOnTaskId);
+        return dep ? dep.metadata?.status : null;
+    };
+
     const shouldSkipRender = (
         prev.isExpanded === next.isExpanded &&
         prev.task.id === next.task.id &&
@@ -373,7 +379,8 @@ const SortableTaskRow = React.memo(({
         prev.isSelectingRewardForTaskId === next.isSelectingRewardForTaskId &&
         (prev.activeChallengeHighlight?.taskId === prev.task.id) === (next.activeChallengeHighlight?.taskId === next.task.id) &&
         prev.activeChallengeHighlight?.type === next.activeChallengeHighlight?.type &&
-        prev.skill?.metadata?.pinchState === next.skill?.metadata?.pinchState
+        prev.skill?.metadata?.pinchState === next.skill?.metadata?.pinchState &&
+        getDepStatus(prev.task, prev.allNodes) === getDepStatus(next.task, next.allNodes)
     );
     return shouldSkipRender;
 });

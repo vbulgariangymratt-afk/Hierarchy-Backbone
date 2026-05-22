@@ -154,7 +154,8 @@ export const useTaskHandlers = ({
                 if (n.id === taskId) {
                     const updatedMetadata = {
                         ...n.metadata,
-                        currentUnits: nextUnits
+                        currentUnits: nextUnits,
+                        repetitionTimestamps: [...(n.metadata?.repetitionTimestamps || []), Date.now()]
                     };
                     if (nextUnits >= targetUnits && targetUnits > 0) {
                         updatedMetadata.status = TaskStatuses.DONE;

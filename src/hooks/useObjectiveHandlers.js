@@ -88,6 +88,7 @@ export const useObjectiveHandlers = ({
     const handleStartEditObjective = useCallback((obj) => {
         setEditingObjectiveId(obj.id);
         setObjectiveEditForm({
+            name: obj.name || '',
             theme: obj.metadata?.theme || '',
             durationInDays: obj.metadata?.durationInDays ?? '',
             accumulationType: obj.metadata?.accumulationType || 'minutes',
@@ -107,10 +108,12 @@ export const useObjectiveHandlers = ({
                     ? null 
                     : parseInt(objectiveEditForm.durationInDays)
             };
+            const { name, ...metadataUpdates } = sanitizedForm;
             await backbone.updateNode(objId, {
+                name: name !== undefined ? name : allNodes.find(n => n.id === objId)?.name,
                 metadata: {
                     ...allNodes.find(n => n.id === objId)?.metadata,
-                    ...sanitizedForm
+                    ...metadataUpdates
                 }
             });
             setEditingObjectiveId(null);

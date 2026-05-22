@@ -213,6 +213,24 @@ export const createPersistentRepository = () => {
             notify(id);
         },
 
+        deleteMany: async (ids) => {
+            const userId = await getUserId();
+            if (!userId) throw new Error('Not authenticated');
+
+            if (!ids || ids.length === 0) return;
+
+            const { error } = await supabase
+                .from('nodes')
+                .delete()
+                .in('id', ids)
+                .eq('user_id', userId);
+
+            if (error) throw error;
+
+            storage = storage.filter(n => !ids.includes(n.id));
+            notify(null);
+        },
+
         clear: async () => {
             const userId = await getUserId();
             if (!userId) return;

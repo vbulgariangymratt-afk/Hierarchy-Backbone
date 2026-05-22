@@ -108,7 +108,7 @@
 }
 
 .sidebar.liquid-mode {
-    animation: sidebar-blur-ticker 1ms linear infinite alternate;
+    animation: var(--live-blur-sidebar);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 

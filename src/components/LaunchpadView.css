@@ -45,7 +45,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -54,7 +54,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -136,7 +136,7 @@
     border: 1px solid rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
     box-shadow: 
         0 8px 30px rgba(0, 0, 0, 0.28),
@@ -152,7 +152,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -526,7 +526,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -535,7 +535,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
     box-shadow: 
         0 8px 30px rgba(0, 0, 0, 0.28),
@@ -710,7 +710,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }

@@ -968,6 +968,18 @@ body.liquid-mode.neutral {
     display: none !important;
 }
 
+html.liquid-mode {
+    --live-blur-jitter: webkit-blur-jitter 0.1s infinite;
+    --live-blur-sweeper: global-paint-sweeper 1ms linear infinite alternate;
+    --live-blur-sidebar: sidebar-blur-ticker 1ms linear infinite alternate;
+}
+
+html[data-blur-quality="performance"].liquid-mode {
+    --live-blur-jitter: none;
+    --live-blur-sweeper: none;
+    --live-blur-sidebar: none;
+}
+
 .liquid-mode body::before {
     content: "";
     position: fixed;
@@ -976,7 +988,7 @@ body.liquid-mode.neutral {
     z-index: -1;
     pointer-events: none;
     background: rgba(0, 0, 0, 0.001);
-    animation: global-paint-sweeper 1ms linear infinite alternate;
+    animation: var(--live-blur-sweeper);
     will-change: background;
 }
 
@@ -984,17 +996,11 @@ body.liquid-mode.neutral {
     0% { background: rgba(0, 0, 0, 0.001); }
     100% { background: rgba(0, 0, 0, 0.002); }
 }
+
 /* ── Blur Quality: Performance Mode ─────────────────────── */
-html[data-blur-quality="performance"].liquid-mode .liquid-glass,
-html[data-blur-quality="performance"].liquid-mode .modal-content,
-html[data-blur-quality="performance"].liquid-mode .reward-modal,
-html[data-blur-quality="performance"].liquid-mode .floating-ui,
-html[data-blur-quality="performance"].liquid-mode .popover {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: rgba(255, 255, 255, 0.12) !important;
-}
+/* In Performance Mode, we keep the blur but disable the animations via the variables above. */
+/* We no longer strip the background or backdrop-filter. */
 html[data-blur-quality="performance"].liquid-mode.dark .liquid-glass,
 html[data-blur-quality="performance"].liquid-mode.dark .modal-content {
-    background: rgba(255, 255, 255, 0.07) !important;
+    background: rgba(255, 255, 255, 0.07);
 }

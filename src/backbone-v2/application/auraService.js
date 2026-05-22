@@ -100,7 +100,8 @@ export const AuraService = (hierarchyRepository) => {
             const currentAura = skill.metadata?.auraTotal || 0;
             const newAura = currentAura + amount;
 
-            const oldLevel = skill.metadata?.auraLevel || calculateLevel(currentAura);
+            // Always calculate from auraTotal — never trust stored auraLevel as it may be stale
+            const oldLevel = calculateLevel(currentAura);
             const newLevel = calculateLevel(newAura);
 
             const updates = {

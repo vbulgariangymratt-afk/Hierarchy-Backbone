@@ -80,7 +80,7 @@ const SkillPage = () => {
     const [isCreatingHabit, setIsCreatingHabit] = useState(false);
     const [newHabitTrigger, setNewHabitTrigger] = useState('');
     const [newHabitAction, setNewHabitAction] = useState('');
-    const [newHabitPeriod, setNewHabitPeriod] = useState('day');
+    const [newHabitPeriod, setNewHabitPeriod] = useState('daily');
     const [newHabitCount, setNewHabitCount] = useState(1);
 
     // Inline rename state
@@ -233,6 +233,26 @@ const SkillPage = () => {
             });
         });
 
+        // Repetition interactions saved to the master ROOT log
+        const rootNode = (allNodes || []).find(n => n.id === 'ROOT');
+        if (rootNode?.metadata?.dailyRepLog) {
+            Object.entries(rootNode.metadata.dailyRepLog).forEach(([dateStr, logs]) => {
+                for (const t of tasks) {
+                    if (logs[t.id]) {
+                        activityDates.add(dateStr);
+                        break;
+                    }
+                }
+            });
+        }
+
+        // Localized repetition interactions
+        tasks.forEach(t => {
+            (t.metadata?.repetitionTimestamps || []).forEach(ts => {
+                activityDates.add(new Date(ts).toLocaleDateString('en-CA'));
+            });
+        });
+
         // Return total unique days of activity
         return { days: activityDates.size };
     }, [allNodes, getChildren]);
@@ -307,6 +327,29 @@ const SkillPage = () => {
         try { await habitService.logCompletion(habitId); fetchData(); } 
         catch (err) { console.error("Failed to log habit completion:", err); }
     }, [fetchData]);
+
+    const handleCreateHabit = useCallback(async (e) => {
+        if (e) e.preventDefault();
+        if (!newHabitTrigger.trim() || !newHabitAction.trim()) return;
+        try {
+            await habitService.createHabit(
+                id,
+                newHabitTrigger.trim(),
+                newHabitAction.trim(),
+                newHabitPeriod,
+                newHabitCount
+            );
+            setIsCreatingHabit(false);
+            setNewHabitTrigger('');
+            setNewHabitAction('');
+            setNewHabitPeriod('daily');
+            setNewHabitCount(1);
+            fetchData();
+            fetchSkills();
+        } catch (error) {
+            console.error("Failed to create habit:", error);
+        }
+    }, [id, newHabitTrigger, newHabitAction, newHabitPeriod, newHabitCount, fetchData, fetchSkills]);
 
     const handleChallengeAction = useCallback((type) => {
         if (type === 'MASTERY' && masteryCheckTaskId) {
@@ -449,6 +492,65 @@ const SkillPage = () => {
                         </button>
                     )}
                 </header>
+                <AnimatePresence>
+                    {isCreatingHabit && isHabitsExpanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+                            animate={{ height: 'auto', opacity: 1, marginBottom: 24 }}
+                            exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+                            transition={macOSSpring}
+                            style={{ overflow: 'hidden' }}
+                        >
+                            <div className="habit-creation-inline">
+                                <div className="creation-row">
+                                    <span className="creation-prefix">IF</span>
+                                    <input 
+                                        autoFocus
+                                        placeholder="Trigger/Cue (e.g. After I pour my morning coffee...)" 
+                                        value={newHabitTrigger}
+                                        onChange={e => setNewHabitTrigger(e.target.value)}
+                                    />
+                                </div>
+                                
+                                <div className="creation-row">
+                                    <span className="creation-prefix">THEN</span>
+                                    <input 
+                                        placeholder="Action (e.g. I will write down 1 task)" 
+                                        value={newHabitAction}
+                                        onChange={e => setNewHabitAction(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="frequency-config-row">
+                                    <div className="frequency-input-group">
+                                        <span className="creation-prefix">Target:</span>
+                                        <input 
+                                            type="number" 
+                                            className="minimal-num-input" 
+                                            value={newHabitCount}
+                                            onChange={e => setNewHabitCount(parseInt(e.target.value) || 1)}
+                                            min="1"
+                                        />
+                                        <span className="frequency-sep">times per</span>
+                                        <select 
+                                            className="minimal-select"
+                                            value={newHabitPeriod}
+                                            onChange={e => setNewHabitPeriod(e.target.value)}
+                                        >
+                                            <option value="daily">Day</option>
+                                            <option value="weekly">Week</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="creation-actions">
+                                    <button className="confirm-btn" onClick={handleCreateHabit}>Create Habit</button>
+                                    <button className="cancel-btn" onClick={() => setIsCreatingHabit(false)}>Cancel</button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 <AnimatePresence>
                     {(isHabitsExpanded || energyLevel !== 4) && (
                         <motion.div initial={energyLevel === 4 ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={macOSSpring}>
@@ -679,6 +781,37 @@ const SkillPage = () => {
                             <button
                                 className="delete-confirm-btn"
                                 onClick={taskHandlers.handleDeleteTask}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Aspect Delete Confirmation Modal ── */}
+            {taskHandlers.aspectToDelete && (
+                <div
+                    className="delete-confirm-overlay"
+                    onClick={() => taskHandlers.setAspectToDelete(null)}
+                >
+                    <div
+                        className="delete-confirm-modal"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <p className="delete-confirm-message">
+                            Delete aspect <strong>"{taskHandlers.aspectToDelete.name}"</strong> and all its tasks?
+                        </p>
+                        <div className="delete-confirm-actions">
+                            <button
+                                className="delete-confirm-cancel"
+                                onClick={() => taskHandlers.setAspectToDelete(null)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="delete-confirm-btn"
+                                onClick={taskHandlers.handleDeleteAspect}
                             >
                                 Delete
                             </button>

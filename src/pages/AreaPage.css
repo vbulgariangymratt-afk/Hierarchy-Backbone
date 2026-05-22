@@ -894,6 +894,17 @@
     text-align: center;
 }
 
+.solid-mode .limit-modal {
+    background: var(--color-bg-secondary, #222);
+    border: 1px solid var(--color-border);
+    box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.light.solid-mode .limit-modal {
+    background: #ffffff;
+    box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.1);
+}
+
 .limit-modal-icon {
     font-size: 48px;
     margin-bottom: 24px;

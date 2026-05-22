@@ -36,7 +36,7 @@
     -webkit-backdrop-filter: blur(14px) saturate(140%);
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -94,7 +94,7 @@
     -webkit-backdrop-filter: blur(14px) saturate(140%);
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
@@ -181,7 +181,7 @@
     box-shadow: 
         0 8px 30px rgba(0, 0, 0, 0.28),
         inset 0 1px 0 rgba(255, 255, 255, 0.20);
-    animation: webkit-blur-jitter 0.1s infinite;
+    animation: var(--live-blur-jitter);
     will-change: backdrop-filter, -webkit-backdrop-filter;
     overflow: visible; /* Allow shadow to breathe if needed */
 }

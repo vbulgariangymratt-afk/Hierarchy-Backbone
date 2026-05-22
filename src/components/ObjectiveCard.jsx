@@ -90,8 +90,8 @@ const ObjectiveCard = ({
                         <label>Experiment Title</label>
                         <input
                             className="edit-input"
-                            value={obj.name}
-                            onChange={(e) => handleUpdateObjectiveName(obj.id, e.target.value)}
+                            value={objectiveEditForm?.name !== undefined ? objectiveEditForm.name : obj.name}
+                            onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, name: e.target.value })}
                         />
                     </div>
                     <div className="edit-field">
@@ -396,15 +396,10 @@ const ObjectiveCard = ({
                                                     let rightHeight = 0;
 
                                                     const sortedAspects = [...aspects].sort((a, b) => {
-                                                        const aTasks = getChildren(a.id, NodeTypes.TASK);
-                                                        const bTasks = getChildren(b.id, NodeTypes.TASK);
-                                                        const aToday = aTasks.some(t => t.metadata?.isToday);
-                                                        const bToday = bTasks.some(t => t.metadata?.isToday);
-                                                        if (aToday && !bToday) return -1;
-                                                        if (!aToday && bToday) return 1;
-                                                        const aFixes = aTasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
-                                                        const bFixes = bTasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
-                                                        return bFixes - aFixes;
+                                                        const timeA = a.createdAt || 0;
+                                                        const timeB = b.createdAt || 0;
+                                                        if (timeA !== timeB) return timeA - timeB;
+                                                        return a.id.localeCompare(b.id);
                                                     });
 
                                                     const aspectsToRender = energyLevel === 3 
@@ -432,9 +427,25 @@ const ObjectiveCard = ({
                                                     aspectsForMasonry.forEach(aspect => {
                                                         const isCreatingTask = creatingTaskForAspectId === aspect.id;
                                                         const rawAspectTasks = getChildren(aspect.id, NodeTypes.TASK);
-                                                        const aspectTasks = showCompletedTasks 
+                                                        const baseTasks = showCompletedTasks 
                                                             ? rawAspectTasks 
                                                             : rawAspectTasks.filter(t => t.metadata?.status !== TaskStatuses.DONE);
+                                                        
+                                                        const aspectTasks = baseTasks.sort((a, b) => {
+                                                            const aToday = a.metadata?.isToday ? 1 : 0;
+                                                            const bToday = b.metadata?.isToday ? 1 : 0;
+                                                            if (aToday !== bToday) return bToday - aToday;
+
+                                                            const aTomorrow = a.metadata?.tomorrow ? 1 : 0;
+                                                            const bTomorrow = b.metadata?.tomorrow ? 1 : 0;
+                                                            if (aTomorrow !== bTomorrow) return bTomorrow - aTomorrow;
+
+                                                            const aOrder = a.metadata?.orderIndex || 0;
+                                                            const bOrder = b.metadata?.orderIndex || 0;
+                                                            if (aOrder !== bOrder) return aOrder - bOrder;
+
+                                                            return (a.createdAt || 0) - (b.createdAt || 0);
+                                                        });
                                                         const isNoveltyHighlighted = window.unexploredAspectIds?.includes(aspect.id);
                                                         const firstIncompleteTask = aspectTasks.find(t => t.metadata?.status !== TaskStatuses.DONE);
                                                         const visibleTasksCount = aspectShowMoreIds.includes(aspect.id) ? aspectTasks.length : Math.min(aspectTasks.length, 5);
