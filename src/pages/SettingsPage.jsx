@@ -203,7 +203,7 @@ const SettingsPage = () => {
                         <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
                             <div className="appearance-row-label">Liquid Mode Quality</div>
                             <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
-                                Performance keeps 60fps on all devices. Quality enables full live blur.
+                                Performance keeps 60fps on all devices. Live Desktop Wallpaper enables full live blur (shows wallpaper movement), but performance may drop. <strong>Warning: High battery drain. Only recommended for PCs, not laptops.</strong>
                             </p>
                             <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
                                 <button
@@ -216,7 +216,7 @@ const SettingsPage = () => {
                                     className={`segmented-control-item ${blurQuality === 'quality' ? 'active' : ''}`}
                                     onClick={() => updateBlurQuality('quality')}
                                 >
-                                    Quality
+                                    Live Desktop Wallpaper
                                 </button>
                             </div>
                         </div>
