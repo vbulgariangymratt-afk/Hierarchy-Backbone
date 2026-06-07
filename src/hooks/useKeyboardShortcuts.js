@@ -39,7 +39,8 @@ export const useKeyboardShortcuts = (shortcuts) => {
         activeElement.isContentEditable
       );
 
-      if (isTyping) return;
+      // If user is typing, only allow shortcuts that use Cmd or Ctrl (since they aren't standard text input)
+      if (isTyping && !e.metaKey && !e.ctrlKey) return;
 
       // 2. Safety: Ignore repeats
       if (e.repeat) return;

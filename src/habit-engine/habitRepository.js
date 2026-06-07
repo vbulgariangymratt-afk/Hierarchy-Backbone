@@ -37,6 +37,7 @@ export const createHabitRepository = () => {
                     frequency_type: habit.frequencyType || 'daily',
                     target_count: habit.targetCount || 1,
                     is_active: habit.isActive !== false,
+                    is_sleeping: habit.isSleeping === true,
                     metadata: {
                         linkedSkillIds: habit.linkedSkillIds,
                         phases: habit.phases,
@@ -84,6 +85,7 @@ export const createHabitRepository = () => {
                             frequencyType: row.frequency_type || 'daily',
                             targetCount: row.target_count || 1,
                             isActive: row.is_active,
+                            isSleeping: row.is_sleeping,
                             ...h,
                             createdAt: row.created_at,
                             updatedAt: row.updated_at

@@ -9,7 +9,10 @@ import './TimelinePage.css';
 const TimelinePage = () => {
     const [timelineData, setTimelineData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [expandedDays, setExpandedDays] = useState({});
+    const [expandedDays, setExpandedDays] = useState(() => {
+        const todayStr = new Date().toISOString().split('T')[0];
+        return { [todayStr]: true };
+    });
     const scrollContainerRef = useRef(null);
     const navigate = useNavigate();
 
@@ -42,19 +45,19 @@ const TimelinePage = () => {
     // Auto-focus on TODAY on load
     useEffect(() => {
         if (!loading && timelineData && scrollContainerRef.current) {
-            // Use a small timeout to ensure the DOM has fully rendered and measured
+            // Increased timeout to 300ms to ensure Tauri's webview has fully painted the layout before calculating widths
             const timer = setTimeout(() => {
                 const scrollContainer = scrollContainerRef.current;
                 const todayCard = scrollContainer.querySelector('.day-card.is-today');
                 
                 if (todayCard) {
-                    // Align Today to the center of the view for prominence
-                    todayCard.scrollIntoView({ behavior: 'auto', inline: 'center' });
+                    // Simpler, more reliable scroll assignment based on offsetLeft instead of bounding rects
+                    scrollContainer.scrollLeft = todayCard.offsetLeft - (scrollContainer.clientWidth / 2) + (todayCard.clientWidth / 2);
                 } else {
                     // Fallback: scroll to the very end
                     scrollContainer.scrollLeft = scrollContainer.scrollWidth;
                 }
-            }, 100);
+            }, 300);
             return () => clearTimeout(timer);
         }
     }, [loading, timelineData]);
@@ -96,6 +99,7 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
     const totalHabits = day.habitCompletions.reduce((acc, h) => acc + h.count, 0);
     const totalReps = day.repetitionActivities.reduce((acc, h) => acc + h.count, 0);
     const totalLevelUps = day.levelUps?.length || 0;
+    const totalSubTasks = day.subStepsCompleted?.length || 0;
     
     // Count unique skills (ignore 'no-skill')
     const uniqueSkillsCount = (day.skillGroups || []).filter(g => g.id !== 'no-skill').length;
@@ -115,7 +119,9 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
                 <div className="day-summary-row">
                     {uniqueSkillsCount > 0 && <span className="summary-pill highlighted">Skills: {uniqueSkillsCount}</span>}
                     {totalTasks > 0 && <span className="summary-pill">Tasks: {totalTasks}</span>}
+                    {totalSubTasks > 0 && <span className="summary-pill">Subtasks: {totalSubTasks}</span>}
                     {totalSessions > 0 && <span className="summary-pill">Focus: {totalSessions}</span>}
+                    {totalReps > 0 && <span className="summary-pill">Activities: {totalReps}</span>}
                     {totalHabits > 0 && <span className="summary-pill">Habits: {totalHabits}</span>}
                     {totalLevelUps > 0 && <span className="summary-pill level-up-pill">Levels: {totalLevelUps}</span>}
                 </div>
@@ -194,26 +200,32 @@ const SkillSection = ({ group, isToday }) => {
                         </Section>
                     )}
 
-                    {group.subStepsCompleted?.length > 0 && (
-                        <Section title="Sub-tasks Completed">
-                            {group.subStepsCompleted.map((s, i) => (
-                                <div key={i} className="item-row">
-                                    <span className="subtask-text-timeline">{s.text}</span>
-                                    <span className="parent-task-tag">{s.taskName}</span>
-                                </div>
-                            ))}
-                        </Section>
-                    )}
+                    {group.subStepsCompleted?.length > 0 && (() => {
+                        const grouped = group.subStepsCompleted.reduce((acc, s) => {
+                            if (!acc[s.taskId]) acc[s.taskId] = { taskName: s.taskName, steps: [] };
+                            acc[s.taskId].steps.push(s);
+                            return acc;
+                        }, {});
 
-                    {isToday && group.tasksUnfinished.length > 0 && (
-                        <Section title="Resting (Deferred)">
-                            {group.tasksUnfinished.map(t => (
-                                <div key={t.id} className="item-row muted">
-                                    <span>{t.name}</span>
-                                </div>
-                            ))}
-                        </Section>
-                    )}
+                        return (
+                            <Section title="Sub-tasks Completed">
+                                {Object.values(grouped).map((g, idx) => (
+                                    <div key={idx} className="subtasks-timeline-group" style={{ marginTop: idx > 0 ? '12px' : '0' }}>
+                                        <div className="subtasks-group-title" style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '6px', fontWeight: 600 }}>
+                                            {g.taskName}
+                                        </div>
+                                        {g.steps.map((s, i) => (
+                                            <div key={i} className="item-row" style={{ paddingLeft: '8px', borderLeft: '1px solid var(--color-border)', marginLeft: '4px' }}>
+                                                <span className="subtask-text-timeline" style={{ color: 'var(--text-secondary)' }}>{s.text}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                            </Section>
+                        );
+                    })()}
+
+
 
                     {group.focusSessions.length > 0 && (
                         <Section 
@@ -252,7 +264,7 @@ const SkillSection = ({ group, isToday }) => {
                     )}
 
                     {group.repetitionActivities.length > 0 && (
-                        <Section title="Repetitions">
+                        <Section title="Activities">
                             {group.repetitionActivities.map(r => (
                                 <div key={r.taskId} className="item-row">
                                     <span>{r.name}</span>

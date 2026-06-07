@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { habitService } from '../backbone-v2/index';
 import HabitEvolutionGauge from './habits/HabitEvolutionGauge';
-import { Feather, Circle, Flame, X, HelpCircle, Pencil, Save, XCircle, Dumbbell } from 'lucide-react';
+import { Feather, Circle, Flame, X, HelpCircle, Pencil, Save, XCircle, Dumbbell, Moon, Sun } from 'lucide-react';
 import { useBackboneStore } from '../store/backboneStore';
 
 
-const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleActive, onComplete, onUpdate }) => {
+const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleActive, onComplete, onUpdate, onSleep, onDelete }) => {
+
     const [completing, setCompleting] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isPulsing, setIsPulsing] = useState(false);
@@ -190,6 +191,15 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
                         <button className="habit-cancel-btn" onClick={() => setIsEditing(false)}>
                             Cancel
                         </button>
+                        <button className="habit-cancel-btn" 
+                            style={{ marginLeft: 'auto', color: '#ff4d4f', borderColor: 'rgba(255, 77, 79, 0.2)', background: 'rgba(255, 77, 79, 0.1)' }} 
+                            onClick={() => {
+                                if (window.confirm("Are you sure you want to delete this habit? All history will be lost.")) {
+                                    onDelete?.(habit.id);
+                                }
+                            }}>
+                            Delete
+                        </button>
                     </div>
                 </div>
             </div>
@@ -225,22 +235,14 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
                 </div>
             )}
 
-            {/* 1. Header (Top Row) */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                <div className="habit-intention" style={{ fontSize: '13.5px', display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', gap: '6px', overflow: 'hidden', color: 'var(--text-primary)' }}>
-                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>IF</span>
-                    <span style={{ fontWeight: 700, textOverflow: 'ellipsis', overflow: 'hidden' }}>{habit.ifTrigger}</span>
-                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, flexShrink: 0, fontSize: '13.5px' }}>THEN</span>
-                    <span style={{ fontWeight: 700, textOverflow: 'ellipsis', overflow: 'hidden' }}>{currentPhase.description}</span>
-                </div>
-
-                {/* Top Right: Icons & Activation Config */}
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
-                    {isLevelUpReady && (
-                        <button className="level-up-ready-badge" onClick={() => onOpenEvolution(habit)}>
-                            Level Up Ready
-                        </button>
-                    )}
+            {/* Top Right: Icons (Absolute Positioned to not mess with vertical spacing) */}
+            <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '10px', alignItems: 'flex-start', zIndex: 10 }}>
+                {isLevelUpReady && (
+                    <button className="level-up-ready-badge" onClick={() => onOpenEvolution(habit)}>
+                        Level Up Ready
+                    </button>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
                     <button className="habit-edit-icon-btn" onClick={() => setIsEditing(true)} title="Edit Habit">
                         <Pencil size={14} />
                     </button>
@@ -252,10 +254,21 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
                             This system turns chores into automatic reflexes by rewarding your steady rhythm instead of demanding perfect streaks. We track Friction as technical data to help you optimize without the weight of shame.
                         </div>
                     </div>
-                    {!habit.isActive && (
-                        <span className="habit-activation-tag paused" onClick={(e) => { e.stopPropagation(); onToggleActive?.(habit); }}>Paused</span>
-                    )}
+                    <button className="habit-edit-icon-btn" onClick={(e) => { e.stopPropagation(); onSleep?.(habit); }} title={habit.isSleeping ? "Wake Habit" : "Sleep Habit"}>
+                        {habit.isSleeping ? <Sun size={14} /> : <Moon size={14} />}
+                    </button>
                 </div>
+            </div>
+
+            {/* 1. Header (Top Row) */}
+            <div className="habit-intention" style={{ fontSize: '13.5px', color: 'var(--text-primary)', lineHeight: '1.4', paddingRight: '40px' }}>
+                <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, marginRight: '6px' }}>IF</span>
+                <span style={{ fontWeight: 700, marginRight: '6px' }}>{habit.ifTrigger}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, marginRight: '6px' }}>THEN</span>
+                <span style={{ fontWeight: 700 }}>{currentPhase.description}</span>
+                {!habit.isActive && (
+                    <span className="habit-activation-tag paused" onClick={(e) => { e.stopPropagation(); onToggleActive?.(habit); }} style={{ marginLeft: '8px', display: 'inline-block' }}>Paused</span>
+                )}
             </div>
 
             {/* 2. Stats Row (Horizontal, Muted) */}

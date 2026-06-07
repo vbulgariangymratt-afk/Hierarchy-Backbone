@@ -63,6 +63,7 @@ const _cache = {
     blurQuality: localStorage.getItem('app-blur-quality') || 'performance',
     currencyName: localStorage.getItem('app-currency-name') || 'Coins',
     todayRemovalMode: localStorage.getItem('app-today-removal-mode') || 'on_completion',
+    isWhitelisted: false,
     hasLoaded: false,
 };
 
@@ -78,6 +79,7 @@ export const SettingsProvider = ({ children }) => {
     const [blurQuality, setBlurQualityState] = useState(_cache.blurQuality);
     const [currencyName, setCurrencyNameState] = useState(_cache.currencyName);
     const [todayRemovalMode, setTodayRemovalModeState] = useState(_cache.todayRemovalMode);
+    const [isWhitelisted, setIsWhitelistedState] = useState(_cache.isWhitelisted);
     const [loading, setLoading] = useState(!_cache.hasLoaded);
 
 
@@ -127,6 +129,7 @@ export const SettingsProvider = ({ children }) => {
                     maintenance_enabled: true,
                     guided_slot_roles: true,
                     energy_level: 3,
+                    is_whitelisted: false,
                     ...(_cache.dbSupportsExperimentLimit ? { active_experiment_limit: 1 } : {})
                 };
                 
@@ -151,6 +154,7 @@ export const SettingsProvider = ({ children }) => {
                     _cache.activeExperimentLimit = 1;
                     _cache.currencyName = 'Coins';
                     _cache.todayRemovalMode = 'on_completion';
+                    _cache.isWhitelisted = false;
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
                     setFocusSlots(_cache.focusSlots);
@@ -161,6 +165,7 @@ export const SettingsProvider = ({ children }) => {
                     setActiveExperimentLimitState(_cache.activeExperimentLimit);
                     setCurrencyNameState(_cache.currencyName);
                     setTodayRemovalModeState(_cache.todayRemovalMode);
+                    setIsWhitelistedState(false);
                 }
             } else if (!error && data) {
                 _cache.focusSlots = data.focus_slots || [null, null, null, null, null];
@@ -171,6 +176,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
+                _cache.isWhitelisted = data.is_whitelisted || false;
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
                 setFocusSlots(_cache.focusSlots);
@@ -181,6 +187,7 @@ export const SettingsProvider = ({ children }) => {
                 setActiveExperimentLimitState(_cache.activeExperimentLimit);
                 setCurrencyNameState(_cache.currencyName);
                 setTodayRemovalModeState(_cache.todayRemovalMode);
+                setIsWhitelistedState(_cache.isWhitelisted);
             }
         } catch (err) {
             console.error('[SettingsContext] Unexpected error during load:', err);
@@ -316,7 +323,20 @@ export const SettingsProvider = ({ children }) => {
             if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
                 const uid = session?.user?.id;
                 if (uid && uid !== _cache.uid) {
-                    loadSettings(uid);
+                    loadSettings(uid).then(() => {
+                        // Check if there's a pending whitelist to sync
+                        if (localStorage.getItem('pending_beta_whitelist') === 'true') {
+                            supabase.rpc('verify_and_whitelist_user', { input_password: 'Vg5d9Xk3' })
+                                .then(({ data, error }) => {
+                                    if (data && !error) {
+                                        console.log('[SettingsContext] Sync: Successfully applied pending beta whitelist to database.');
+                                        _cache.isWhitelisted = true;
+                                        setIsWhitelistedState(true);
+                                        localStorage.removeItem('pending_beta_whitelist');
+                                    }
+                                });
+                        }
+                    });
                 }
             } else if (event === 'SIGNED_OUT') {
                 _cache.uid = null;
@@ -329,6 +349,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.activeExperimentLimit = 1;
                 _cache.currencyName = 'Coins';
                 _cache.todayRemovalMode = 'on_completion';
+                _cache.isWhitelisted = false;
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -337,6 +358,7 @@ export const SettingsProvider = ({ children }) => {
                 setActiveExperimentLimitState(_cache.activeExperimentLimit);
                 setCurrencyNameState(_cache.currencyName);
                 setTodayRemovalModeState(_cache.todayRemovalMode);
+                setIsWhitelistedState(false);
             }
         });
 
@@ -351,6 +373,34 @@ export const SettingsProvider = ({ children }) => {
     const refreshSettings = useCallback(() => {
         if (_cache.uid) loadSettings(_cache.uid);
     }, [loadSettings]);
+
+    const applyWhitelist = async (password) => {
+        try {
+            if (_cache.uid) {
+                const { data, error } = await supabase.rpc('verify_and_whitelist_user', {
+                    input_password: password
+                });
+                if (error) throw error;
+                if (data) {
+                    _cache.isWhitelisted = true;
+                    setIsWhitelistedState(true);
+                    return { success: true, message: "Lifetime beta access unlocked!" };
+                } else {
+                    return { success: false, message: "Incorrect password." };
+                }
+            } else {
+                if (password === 'Vg5d9Xk3') {
+                    localStorage.setItem('pending_beta_whitelist', 'true');
+                    return { success: true, message: "Beta code accepted! Your lifetime access will apply as soon as you sign in." };
+                } else {
+                    return { success: false, message: "Incorrect password." };
+                }
+            }
+        } catch (err) {
+            console.error('[SettingsContext] Failed to apply whitelist:', err);
+            return { success: false, message: err.message || "An unexpected error occurred." };
+        }
+    };
 
     const settingsValue = useMemo(() => ({
         focusSlots,
@@ -373,11 +423,13 @@ export const SettingsProvider = ({ children }) => {
         updateCurrencyName,
         todayRemovalMode,
         updateTodayRemovalMode,
+        isWhitelisted,
+        applyWhitelist,
         dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, loading, refreshSettings]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, loading, refreshSettings]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>

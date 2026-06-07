@@ -608,7 +608,32 @@ const ObjectiveCard = ({
                                                                                     <div key={aspect.id} style={{ flex: '1 1 300px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '16px 20px', opacity: 0.6 }}>
                                                                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                                                             <span style={{ fontSize: '14px', fontWeight: '700' }}>{aspect.name}</span>
-                                                                                            <span style={{ fontSize: '11px' }}>{allTasks.length} done</span>
+                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                                                <span style={{ fontSize: '11px' }}>{allTasks.length} done</span>
+                                                                                                <button 
+                                                                                                    onClick={(e) => {
+                                                                                                        e.stopPropagation();
+                                                                                                        setCreatingTaskForAspectId(aspect.id);
+                                                                                                        setNewTaskItemType('FINITE');
+                                                                                                    }}
+                                                                                                    style={{
+                                                                                                        background: 'var(--alpha-high)',
+                                                                                                        border: 'none',
+                                                                                                        color: 'var(--text-primary)',
+                                                                                                        width: '24px',
+                                                                                                        height: '24px',
+                                                                                                        borderRadius: '50%',
+                                                                                                        display: 'flex',
+                                                                                                        alignItems: 'center',
+                                                                                                        justifyContent: 'center',
+                                                                                                        cursor: 'pointer',
+                                                                                                        fontSize: '14px',
+                                                                                                        fontWeight: 'bold'
+                                                                                                    }}
+                                                                                                >
+                                                                                                    +
+                                                                                                </button>
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 );

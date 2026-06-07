@@ -204,7 +204,6 @@ export const TimelineService = (backbone, habitService, journalService) => {
 
                 const skillGroups = Object.values(skillGroupsMap).filter(group => 
                     group.tasksCompleted.length > 0 || 
-                    group.tasksUnfinished.length > 0 ||
                     group.focusSessions.length > 0 ||
                     group.habitCompletions.length > 0 ||
                     group.repetitionActivities.length > 0 ||

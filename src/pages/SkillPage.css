@@ -1681,10 +1681,11 @@
     background: var(--alpha-low);
     border: 1px solid var(--color-border);
     border-radius: 16px;
-    padding: 16px 20px;
+    padding: 14px 18px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
+    justify-content: space-between;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -1768,7 +1769,7 @@
     align-items: center;
     justify-content: flex-start;
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-secondary);
     font-weight: 500;
     margin-top: -2px;
 }

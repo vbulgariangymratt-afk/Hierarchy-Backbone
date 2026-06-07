@@ -123,6 +123,20 @@ const SkillCard = React.memo(({
                     )}
                 </header>
 
+                {skill.metadata?.identityTier === 'CORE' && skill.metadata?.identityAnchor?.trim() && (
+                    <div className="skill-identity-anchor" style={{
+                        fontSize: '13px',
+                        color: 'var(--text-secondary)',
+                        fontStyle: 'italic',
+                        lineHeight: 1.4,
+                        opacity: 0.8,
+                        marginTop: '-4px',
+                        marginBottom: '-8px'
+                    }}>
+                        <span style={{ fontWeight: 600, opacity: 0.7 }}>Becoming </span>{skill.metadata.identityAnchor.trim().charAt(0).toLowerCase() + skill.metadata.identityAnchor.trim().slice(1)}
+                    </div>
+                )}
+
                 <div className="aura-display-new">
                     <div className="aura-header-row">
                         <div className="aura-badge-insignia">L{auraLevel}</div>

@@ -37,8 +37,14 @@ const KeyboardShortcuts = () => {
   }, [location.pathname, setPreviousRoute]);
 
   const shortcuts = useMemo(() => ({
-    // Open Global Settings (Cmd + ,)
-    "cmd+,": () => navigate('/settings'),
+    // Toggle Global Settings (Cmd + ,)
+    "cmd+,": () => {
+      if (location.pathname === '/settings') {
+        navigate(previousRoute || '/launchpad');
+      } else {
+        navigate('/settings');
+      }
+    },
     
     // Complete Active Session (Cmd + Enter)
     "cmd+enter": () => {

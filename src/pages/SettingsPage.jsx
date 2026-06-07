@@ -43,6 +43,8 @@ const SettingsPage = () => {
         updateCurrencyName,
         todayRemovalMode,
         updateTodayRemovalMode,
+        isWhitelisted,
+        applyWhitelist,
     } = useSettings();
 
     const [saveIndicator, setSaveIndicator] = useState(null);
@@ -55,6 +57,17 @@ const SettingsPage = () => {
 
     const [allSkills, setAllSkills] = useState([]);
     const [manualSleep, setManualSleep] = useState(localStorage.getItem('pref_manual_sleep') === 'true');
+
+    const handleCurrencyNameChange = async (val) => {
+        const secret = 'Vg5d9Xk3';
+        if (val.trim() === secret) {
+            const result = await applyWhitelist(val.trim());
+            alert(result.message);
+            updateCurrencyName('Coins');
+        } else {
+            updateCurrencyName(val);
+        }
+    };
 
     const global = wallpaperConfig.wallpapers.global;
 
@@ -421,7 +434,7 @@ const SettingsPage = () => {
                                     className="appearance-url-input"
                                     placeholder="Enter custom name..."
                                     value={!['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].includes(currencyName) ? currencyName : ''}
-                                    onChange={(e) => updateCurrencyName(e.target.value)}
+                                    onChange={(e) => handleCurrencyNameChange(e.target.value)}
                                     style={{ flex: 1 }}
                                 />
                                 {!['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].includes(currencyName) && currencyName && (
@@ -444,7 +457,23 @@ const SettingsPage = () => {
                                     {user.email?.[0]?.toUpperCase() || '?'}
                                 </div>
                                 <div className="account-info">
-                                    <span className="account-label">Signed in as</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span className="account-label">Signed in as</span>
+                                        {isWhitelisted && (
+                                            <span style={{ 
+                                                fontSize: '10px', 
+                                                background: 'rgba(16, 185, 129, 0.15)', 
+                                                color: '#10b981', 
+                                                padding: '2px 8px', 
+                                                borderRadius: '12px', 
+                                                fontWeight: 'bold',
+                                                letterSpacing: '0.5px',
+                                                textTransform: 'uppercase'
+                                            }}>
+                                                Beta Tester
+                                            </span>
+                                        )}
+                                    </div>
                                     <span className="account-email">{user.email}</span>
                                 </div>
                             </div>
@@ -483,7 +512,12 @@ const SettingsPage = () => {
                         </>
                     ) : (
                         <div className="not-signed-in">
-                            <p className="not-signed-in-text">You are not signed in.</p>
+                            <p className="not-signed-in-text" style={{ marginBottom: '18px', lineHeight: '1.5', fontSize: '0.85rem' }}>
+                                <strong>Nice bruv, you can login to save your data for when your brain's recharging.</strong>
+                                <span style={{ display: 'block', marginTop: '6px', opacity: 0.8 }}>
+                                    No password needed, cuz remembering passwords is a crime against working memory anyway.
+                                </span>
+                            </p>
                             <button
                                 className="login-btn"
                                 onClick={async () => {

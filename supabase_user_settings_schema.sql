@@ -40,3 +40,24 @@ CREATE TRIGGER update_user_settings_updated_at
   BEFORE UPDATE ON public.user_settings
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- Add is_whitelisted column to user_settings table
+ALTER TABLE public.user_settings 
+ADD COLUMN IF NOT EXISTS is_whitelisted BOOLEAN DEFAULT FALSE;
+
+-- Create secure RPC function to verify password and whitelist the user
+CREATE OR REPLACE FUNCTION verify_and_whitelist_user(input_password TEXT)
+RETURNS BOOLEAN SECURITY DEFINER AS $$
+BEGIN
+    IF input_password = 'Vg5d9Xk3' THEN
+        UPDATE public.user_settings 
+        SET is_whitelisted = TRUE 
+        WHERE user_id = auth.uid();
+        
+        RETURN TRUE;
+    END IF;
+    
+    RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql;
+

@@ -74,7 +74,8 @@ const SkillPage = () => {
     const [showDepResults, setShowDepResults] = useState(false);
     const [collapsedCompletedAspects, setCollapsedCompletedAspects] = useState({});
     const [activeHabitForEvolution, setActiveHabitForEvolution] = useState(null);
-    const [isHabitsExpanded, setIsHabitsExpanded] = useState(energyLevel !== 4);
+    const [isHabitsExpanded, setIsHabitsExpanded] = useState(energyLevel < 4);
+    const [isSleepingHabitsExpanded, setIsSleepingHabitsExpanded] = useState(false);
 
     // Create Habit State
     const [isCreatingHabit, setIsCreatingHabit] = useState(false);
@@ -133,7 +134,8 @@ const SkillPage = () => {
         performObjectiveToggle
     } = objectiveHandlers;
 
-    const habits = useMemo(() => skillHabits, [skillHabits]);
+    const activeHabits = useMemo(() => (skillHabits || []).filter(h => !h.isSleeping), [skillHabits]);
+    const sleepingHabits = useMemo(() => (skillHabits || []).filter(h => h.isSleeping), [skillHabits]);
 
     const getChildren = useCallback((parentId, type) => {
         const children = nodesByParent.get(parentId || "root") || [];
@@ -328,6 +330,26 @@ const SkillPage = () => {
         catch (err) { console.error("Failed to log habit completion:", err); }
     }, [fetchData]);
 
+    const handleToggleSleepHabit = useCallback(async (habit) => {
+        try {
+            await habitService.updateHabit(habit.id, { isSleeping: !habit.isSleeping });
+            await fetchSkills();
+            fetchData();
+        } catch (error) {
+            console.error("Failed to toggle sleep status:", error);
+        }
+    }, [fetchSkills, fetchData]);
+
+    const handleDeleteHabit = useCallback(async (habitId) => {
+        try {
+            await habitService.deleteHabit(habitId);
+            await fetchSkills();
+            fetchData();
+        } catch (error) {
+            console.error("Failed to delete habit:", error);
+        }
+    }, [fetchSkills, fetchData]);
+
     const handleCreateHabit = useCallback(async (e) => {
         if (e) e.preventDefault();
         if (!newHabitTrigger.trim() || !newHabitAction.trim()) return;
@@ -411,7 +433,7 @@ const SkillPage = () => {
         return (
             <SkillSurvivalView 
                 skill={skill} energyLevel={energyLevel} allNodes={allNodes}
-                habits={habits} navigate={navigate} handleHabitComplete={handleHabitComplete} getChildren={getChildren}
+                habits={activeHabits} navigate={navigate} handleHabitComplete={handleHabitComplete} getChildren={getChildren}
             />
         );
     }
@@ -471,9 +493,9 @@ const SkillPage = () => {
             </header>
 
             <section className="skill-section habits-skill-wrapper">
-                <header className="section-header-row" onClick={() => energyLevel === 4 && setIsHabitsExpanded(!isHabitsExpanded)}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: energyLevel === 4 ? 'pointer' : 'default' }}>
-                        {energyLevel === 4 && (
+                <header className="section-header-row" onClick={() => energyLevel >= 4 && setIsHabitsExpanded(!isHabitsExpanded)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: energyLevel >= 4 ? 'pointer' : 'default' }}>
+                        {energyLevel >= 4 && (
                             <motion.span 
                                 animate={{ rotate: isHabitsExpanded ? 90 : 0 }}
                                 style={{ display: 'inline-block', fontSize: '10px', opacity: 0.8 }}
@@ -552,11 +574,25 @@ const SkillPage = () => {
                     )}
                 </AnimatePresence>
                 <AnimatePresence>
-                    {(isHabitsExpanded || energyLevel !== 4) && (
-                        <motion.div initial={energyLevel === 4 ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={macOSSpring}>
+                    {(isHabitsExpanded || energyLevel < 4) && (
+                        <motion.div initial={energyLevel >= 4 ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={macOSSpring}>
                             <div className="habits-grid">
-                                {(habits || []).map(habit => <HabitCard key={habit.id} habit={habit} energyLevel={energyLevel} onOpenEvolution={setActiveHabitForEvolution} onToggleActive={fetchData} onUpdate={fetchSkills} />)}
+                                {activeHabits.map(habit => <HabitCard key={habit.id} habit={habit} energyLevel={energyLevel} onOpenEvolution={setActiveHabitForEvolution} onToggleActive={fetchData} onUpdate={fetchSkills} onSleep={handleToggleSleepHabit} onDelete={handleDeleteHabit} />)}
                             </div>
+                            {sleepingHabits.length > 0 && energyLevel >= 3 && (
+                                <div className="sleeping-section" style={{ marginTop: '24px' }}>
+                                    <div className="section-header" onClick={() => setIsSleepingHabitsExpanded(!isSleepingHabitsExpanded)}>
+                                         <NodeIcon iconUrl={isSleepingHabitsExpanded ? "expanded-icon-url" : "collapsed-icon-url"} size={14} />
+                                        <h2>Sleeping Habits</h2>
+                                        <span className="count-badge">{sleepingHabits.length}</span>
+                                    </div>
+                                    {isSleepingHabitsExpanded && (
+                                        <div className="sleeping-content experiments-grid" style={{ opacity: 0.6, marginTop: '16px' }}>
+                                            {sleepingHabits.map(habit => <HabitCard key={habit.id} habit={habit} energyLevel={energyLevel} onOpenEvolution={setActiveHabitForEvolution} onToggleActive={fetchData} onUpdate={fetchSkills} onSleep={handleToggleSleepHabit} onDelete={handleDeleteHabit} />)}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </motion.div>
                     )}
                 </AnimatePresence>
