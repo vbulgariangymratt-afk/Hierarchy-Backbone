@@ -52,6 +52,17 @@ export const useAppInitialization = (setSession) => {
         // SIGNED_IN event is treated as a token refresh, not a new login
         if (initialSession?.user?.id) {
           _lastKnownUid = initialSession.user.id;
+          
+          // Migrate any pending guest data on startup
+          if (repository?.migrateGuestData) {
+            await repository.migrateGuestData(initialSession.user.id);
+          }
+          if (habitRepo?.migrateGuestData) {
+            await habitRepo.migrateGuestData(initialSession.user.id);
+          }
+          if (journalRepo?.migrateGuestData) {
+            await journalRepo.migrateGuestData(initialSession.user.id);
+          }
         }
 
         setSession(initialSession);
