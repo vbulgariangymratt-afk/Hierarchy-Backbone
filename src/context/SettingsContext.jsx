@@ -64,6 +64,7 @@ const _cache = {
     currencyName: localStorage.getItem('app-currency-name') || 'Coins',
     todayRemovalMode: localStorage.getItem('app-today-removal-mode') || 'on_completion',
     isWhitelisted: false,
+    trialStartAt: null,
     hasLoaded: false,
 };
 
@@ -80,6 +81,7 @@ export const SettingsProvider = ({ children }) => {
     const [currencyName, setCurrencyNameState] = useState(_cache.currencyName);
     const [todayRemovalMode, setTodayRemovalModeState] = useState(_cache.todayRemovalMode);
     const [isWhitelisted, setIsWhitelistedState] = useState(_cache.isWhitelisted);
+    const [trialStartAt, setTrialStartAtState] = useState(_cache.trialStartAt);
     const [loading, setLoading] = useState(!_cache.hasLoaded);
 
 
@@ -130,6 +132,7 @@ export const SettingsProvider = ({ children }) => {
                     guided_slot_roles: true,
                     energy_level: 3,
                     is_whitelisted: false,
+                    trial_start_at: new Date().toISOString(),
                     ...(_cache.dbSupportsExperimentLimit ? { active_experiment_limit: 1 } : {})
                 };
                 
@@ -155,6 +158,7 @@ export const SettingsProvider = ({ children }) => {
                     _cache.currencyName = 'Coins';
                     _cache.todayRemovalMode = 'on_completion';
                     _cache.isWhitelisted = false;
+                    _cache.trialStartAt = defaults.trial_start_at;
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
                     setFocusSlots(_cache.focusSlots);
@@ -166,6 +170,7 @@ export const SettingsProvider = ({ children }) => {
                     setCurrencyNameState(_cache.currencyName);
                     setTodayRemovalModeState(_cache.todayRemovalMode);
                     setIsWhitelistedState(false);
+                    setTrialStartAtState(defaults.trial_start_at);
                 }
             } else if (!error && data) {
                 _cache.focusSlots = data.focus_slots || [null, null, null, null, null];
@@ -177,6 +182,17 @@ export const SettingsProvider = ({ children }) => {
                 _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
                 _cache.isWhitelisted = data.is_whitelisted || false;
+                
+                let trialStart = data.trial_start_at;
+                if (!trialStart) {
+                    trialStart = new Date().toISOString();
+                    supabase.from('user_settings')
+                        .update({ trial_start_at: trialStart })
+                        .eq('user_id', uid)
+                        .then(() => {});
+                }
+                _cache.trialStartAt = trialStart;
+                
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
                 setFocusSlots(_cache.focusSlots);
@@ -188,6 +204,7 @@ export const SettingsProvider = ({ children }) => {
                 setCurrencyNameState(_cache.currencyName);
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(_cache.isWhitelisted);
+                setTrialStartAtState(_cache.trialStartAt);
             }
         } catch (err) {
             console.error('[SettingsContext] Unexpected error during load:', err);
@@ -350,6 +367,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.currencyName = 'Coins';
                 _cache.todayRemovalMode = 'on_completion';
                 _cache.isWhitelisted = false;
+                _cache.trialStartAt = null;
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -359,6 +377,7 @@ export const SettingsProvider = ({ children }) => {
                 setCurrencyNameState(_cache.currencyName);
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(false);
+                setTrialStartAtState(null);
             }
         });
 
@@ -402,6 +421,17 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
+    const isTrialActive = useMemo(() => {
+        if (!trialStartAt) return true; // Guest user: local access remains unrestricted
+        const start = new Date(trialStartAt).getTime();
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        return Date.now() - start < thirtyDays;
+    }, [trialStartAt]);
+
+    const hasAccess = useMemo(() => {
+        return isWhitelisted || isTrialActive;
+    }, [isWhitelisted, isTrialActive]);
+
     const settingsValue = useMemo(() => ({
         focusSlots,
         maintenanceSkillIds,
@@ -425,11 +455,14 @@ export const SettingsProvider = ({ children }) => {
         updateTodayRemovalMode,
         isWhitelisted,
         applyWhitelist,
+        trialStartAt,
+        isTrialActive,
+        hasAccess,
         dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, loading, refreshSettings]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, trialStartAt, isTrialActive, hasAccess, loading, refreshSettings]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>

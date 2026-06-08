@@ -16,13 +16,8 @@ export const createHabitRepository = () => {
     const persist = async (habit) => {
         let userId = await getUserId();
         if (!userId) {
-            // Wait briefly for token refresh and retry once
-            await new Promise(r => setTimeout(r, 1500));
-            userId = await getUserId();
-        }
-
-        if (!userId) {
-            console.error(`HabitRepo [ID:${instanceId}]: persist() FAILED — No authenticated user after retry`);
+            // Unauthenticated guest user: save all to localStorage
+            localStorage.setItem('guest_habits', JSON.stringify(habits));
             return;
         }
 
@@ -66,6 +61,9 @@ export const createHabitRepository = () => {
                 try {
                     const userId = await getUserId();
                     if (!userId) {
+                        const localData = localStorage.getItem('guest_habits');
+                        habits = localData ? JSON.parse(localData) : [];
+                        notify();
                         return;
                     }
 
@@ -133,6 +131,14 @@ export const createHabitRepository = () => {
         },
 
         delete: async (id) => {
+            const userId = await getUserId();
+            if (!userId) {
+                habits = habits.filter(h => h.id !== id);
+                localStorage.setItem('guest_habits', JSON.stringify(habits));
+                notify();
+                return;
+            }
+
             try {
                 const { error } = await supabase
                     .from('habits')
@@ -152,6 +158,48 @@ export const createHabitRepository = () => {
             initPromise = null;
             habits = [];
             notify();
+        },
+
+        migrateGuestData: async (userId) => {
+            if (!userId) return;
+            const localData = localStorage.getItem('guest_habits');
+            if (!localData) return;
+            try {
+                const localHabits = JSON.parse(localData);
+                if (localHabits.length === 0) return;
+
+                const habitsToUpsert = localHabits.map(habit => ({
+                    id: habit.id,
+                    user_id: userId,
+                    type: habit.type || 'HABIT',
+                    if_trigger: habit.ifTrigger,
+                    frequency_type: habit.frequencyType || 'daily',
+                    target_count: habit.targetCount || 1,
+                    is_active: habit.isActive !== false,
+                    is_sleeping: habit.isSleeping === true,
+                    metadata: {
+                        linkedSkillIds: habit.linkedSkillIds,
+                        phases: habit.phases,
+                        currentPhaseLevel: habit.currentPhaseLevel,
+                        totalCompletions: habit.totalCompletions,
+                        completions: habit.completions,
+                        evolutionConfig: habit.evolutionConfig,
+                        auraPerSkill: habit.auraPerSkill,
+                        lastCompletedAt: habit.lastCompletedAt
+                    },
+                    updated_at: new Date().toISOString()
+                }));
+
+                const { error } = await supabase
+                    .from('habits')
+                    .upsert(habitsToUpsert);
+
+                if (error) throw error;
+                localStorage.removeItem('guest_habits');
+                console.log('[habitRepository] Migrated guest habits successfully.');
+            } catch (err) {
+                console.error('[habitRepository] Migration failed:', err);
+            }
         }
     };
     return instance;

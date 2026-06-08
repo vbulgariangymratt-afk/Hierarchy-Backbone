@@ -46,13 +46,8 @@ export const createJournalRepository = () => {
     const persist = async (entry) => {
         let userId = await getUserId();
         if (!userId) {
-            // Wait briefly for token refresh and retry once
-            await new Promise(r => setTimeout(r, 1500));
-            userId = await getUserId();
-        }
-
-        if (!userId) {
-            console.error(`JournalRepo [ID:${instanceId}]: persist() FAILED — No authenticated user after retry`);
+            // Unauthenticated guest user: save all to localStorage
+            localStorage.setItem('guest_journal', JSON.stringify(storage));
             return;
         }
 
@@ -112,6 +107,9 @@ export const createJournalRepository = () => {
             try {
                 const userId = await getUserId();
                 if (!userId) {
+                    const localData = localStorage.getItem('guest_journal');
+                    storage = localData ? JSON.parse(localData) : normalize(null);
+                    notify();
                     return;
                 }
 
@@ -185,8 +183,10 @@ export const createJournalRepository = () => {
             if (!storage.metadata) storage.metadata = { lastAppCloseTime: null, firstAppOpenTime: null };
             storage.metadata = { ...storage.metadata, ...updates };
 
-            // Sync metadata (this will upsert one entry with the new metadata)
-            if (storage.entries.length > 0) {
+            const userId = await getUserId();
+            if (!userId) {
+                localStorage.setItem('guest_journal', JSON.stringify(storage));
+            } else if (storage.entries.length > 0) {
                 await persist(storage.entries[0]);
             }
             notify();
@@ -242,6 +242,51 @@ export const createJournalRepository = () => {
                 }
             };
             notify();
+        },
+
+        migrateGuestData: async (userId) => {
+            if (!userId) return;
+            const localData = localStorage.getItem('guest_journal');
+            if (!localData) return;
+            try {
+                const localJournal = JSON.parse(localData);
+                const entries = localJournal.entries || [];
+                const metadata = localJournal.metadata || {};
+                
+                if (entries.length === 0) return;
+
+                const entriesToUpsert = entries.map(entry => ({
+                    id: entry.id,
+                    user_id: userId,
+                    date: entry.date,
+                    biological: entry.biological || {},
+                    activation: entry.activation || {},
+                    regulation: entry.regulation || {},
+                    medication_taken: entry.medication_taken || false,
+                    med_taken_at: entry.med_taken_at || null,
+                    dopamine_spark_at: entry.dopamine_spark_at || null,
+                    hydration_level: entry.hydration_level || 2,
+                    nutrition_level: entry.nutrition_level || 2,
+                    sugar_level: entry.sugar_level || 2,
+                    morning_activity_done: entry.morning_activity_done || false,
+                    morning_activity_at: entry.morning_activity_at || null,
+                    notes: entry.notes || '',
+                    medications: entry.medications || [],
+                    snapshots: entry.snapshots || {},
+                    metadata: metadata,
+                    updated_at: new Date().toISOString()
+                }));
+
+                const { error } = await supabase
+                    .from('journal_entries')
+                    .upsert(entriesToUpsert);
+
+                if (error) throw error;
+                localStorage.removeItem('guest_journal');
+                console.log('[journalRepository] Migrated guest journal successfully.');
+            } catch (err) {
+                console.error('[journalRepository] Migration failed:', err);
+            }
         }
     };
 };

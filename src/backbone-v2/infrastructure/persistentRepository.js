@@ -14,20 +14,14 @@ export const createPersistentRepository = () => {
         return user?.id;
     };
 
-    // Internal helper to save to cloud
+    // Internal helper to save to cloud or local storage
     const persist = async (nodes) => {
         let userId = await getUserId();
         if (!userId) {
-            // Wait briefly for token refresh and retry once
-            await new Promise(r => setTimeout(r, 1500));
-            userId = await getUserId();
-        }
-
-        if (!userId) {
-            console.error(`Repository [ID:${instanceId}]: Persist FAILED - No user ID after retry`);
+            // Unauthenticated guest user: Save to local storage
+            localStorage.setItem('guest_nodes', JSON.stringify(storage));
             return;
         }
-
 
         try {
             // Transform nodes for Supabase
@@ -70,7 +64,10 @@ export const createPersistentRepository = () => {
             try {
                 const userId = await getUserId();
                 if (!userId) {
-                    storage = [];
+                    // Load guest nodes from localStorage
+                    const localData = localStorage.getItem('guest_nodes');
+                    storage = localData ? JSON.parse(localData) : [];
+                    notify(null);
                     return;
                 }
 
@@ -199,7 +196,12 @@ export const createPersistentRepository = () => {
 
         delete: async (id) => {
             const userId = await getUserId();
-            if (!userId) throw new Error('Not authenticated');
+            if (!userId) {
+                storage = storage.filter(n => n.id !== id);
+                localStorage.setItem('guest_nodes', JSON.stringify(storage));
+                notify(id);
+                return;
+            }
 
             const { error } = await supabase
                 .from('nodes')
@@ -215,7 +217,12 @@ export const createPersistentRepository = () => {
 
         deleteMany: async (ids) => {
             const userId = await getUserId();
-            if (!userId) throw new Error('Not authenticated');
+            if (!userId) {
+                storage = storage.filter(n => !ids.includes(n.id));
+                localStorage.setItem('guest_nodes', JSON.stringify(storage));
+                notify(null);
+                return;
+            }
 
             if (!ids || ids.length === 0) return;
 
@@ -233,7 +240,12 @@ export const createPersistentRepository = () => {
 
         clear: async () => {
             const userId = await getUserId();
-            if (!userId) return;
+            if (!userId) {
+                storage = [];
+                localStorage.removeItem('guest_nodes');
+                notify(null);
+                return;
+            }
 
             try {
                 const { error } = await supabase
@@ -254,6 +266,36 @@ export const createPersistentRepository = () => {
             initPromise = null;
             storage = [];
             notify(null);
+        },
+
+        migrateGuestData: async (userId) => {
+            if (!userId) return;
+            const localData = localStorage.getItem('guest_nodes');
+            if (!localData) return;
+            try {
+                const localNodes = JSON.parse(localData);
+                if (localNodes.length === 0) return;
+
+                const nodesToUpsert = localNodes.map(node => ({
+                    id: node.id,
+                    user_id: userId,
+                    name: node.name || 'Untitled',
+                    type: node.type || 'NODE',
+                    parent_id: node.parentId,
+                    metadata: node.metadata || {},
+                    updated_at: new Date().toISOString()
+                }));
+
+                const { error } = await supabase
+                    .from('nodes')
+                    .upsert(nodesToUpsert);
+
+                if (error) throw error;
+                localStorage.removeItem('guest_nodes');
+                console.log('[persistentRepository] Migrated guest nodes successfully.');
+            } catch (err) {
+                console.error('[persistentRepository] Migration failed:', err);
+            }
         }
     };
 };

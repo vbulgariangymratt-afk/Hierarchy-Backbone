@@ -4,6 +4,7 @@ import {
   backbone, 
   repository, 
   habitRepo, 
+  journalRepo,
   NodeTypes, 
   reloadAllData, 
   clearAllData 
@@ -72,10 +73,21 @@ export const useAppInitialization = (setSession) => {
               _lastKnownUid = newSession.user.id;
               setRepositoriesReady(false);
               try {
+                // Migrate local guest data to Supabase first
+                if (repository?.migrateGuestData) {
+                  await repository.migrateGuestData(newSession.user.id);
+                }
+                if (habitRepo?.migrateGuestData) {
+                  await habitRepo.migrateGuestData(newSession.user.id);
+                }
+                if (journalRepo?.migrateGuestData) {
+                  await journalRepo.migrateGuestData(newSession.user.id);
+                }
+
                 await reloadAllData();
                 initializeNodes(await backbone.getAllNodes());
               } catch (err) {
-                console.error('[App] Reload failed after sign-in:', err);
+                console.error('[App] Reload and migration failed after sign-in:', err);
               } finally {
                 _isReloading = false;
                 setRepositoriesReady(true);
