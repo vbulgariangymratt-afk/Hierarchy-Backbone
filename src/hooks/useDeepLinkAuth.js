@@ -43,18 +43,20 @@ export const useDeepLinkAuth = (setSession) => {
         });
       });
     }
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      ['tauri://url', 'app://open-url'].forEach(eventName => {
-        listen(eventName, (event) => {
-          const url = typeof event.payload === 'string' 
-            ? event.payload 
-            : event.payload?.[0];
-          if (url) handleOAuthUrl(url);
-        }).then(unsub => {
-          unsubscribers.push(unsub);
+    if (window.__TAURI_INTERNALS__) {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        ['tauri://url', 'app://open-url'].forEach(eventName => {
+          listen(eventName, (event) => {
+            const url = typeof event.payload === 'string' 
+              ? event.payload 
+              : event.payload?.[0];
+            if (url) handleOAuthUrl(url);
+          }).then(unsub => {
+            unsubscribers.push(unsub);
+          });
         });
       });
-    });
+    }
     return () => {
       unsubscribers.forEach(unsub => {
         if (typeof unsub === 'function') unsub();
