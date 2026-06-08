@@ -52,9 +52,16 @@ export const loginWithGoogle = async () => {
         }
         if (data?.url) {
             try {
-                await openUrl(data.url);
+                // If running inside Tauri desktop app, open native browser
+                if (window.__TAURI_INTERNALS__) {
+                    await openUrl(data.url);
+                } else {
+                    // Otherwise redirect the web tab directly
+                    window.location.href = data.url;
+                }
             } catch (openErr) {
-                console.error('[AUTH] Failed to open system browser:', openErr);
+                console.error('[AUTH] Failed to open system browser, redirecting window:', openErr);
+                window.location.href = data.url;
             }
         }
         return { data, error };
