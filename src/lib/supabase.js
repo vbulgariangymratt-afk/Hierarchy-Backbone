@@ -35,9 +35,13 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 export const loginWithGoogle = async () => {
     await logToFile('Starting Google login flow via loginWithGoogle()');
-    const redirectTo = import.meta.env.DEV
+    let redirectTo = import.meta.env.DEV
         ? 'http://localhost:5173/auth/callback'
         : 'backbone://auth/callback';
+        
+    if (!window.__TAURI_INTERNALS__ && import.meta.env.DEV) {
+        redirectTo += '?mode=web';
+    }
     try {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',

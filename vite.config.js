@@ -172,7 +172,7 @@ export default defineConfig(({ mode }) => {
               res.statusCode = 500;
               res.end('[]');
             }
-          } else if (req.url && req.url.startsWith('/auth/callback')) {
+          } else if (req.url && req.url.startsWith('/auth/callback') && !req.url.includes('mode=web')) {
             // Store the full callback URL so the Tauri app can poll for it
             server._pendingOAuthCallback = req.url;
             // Return a page that closes itself
