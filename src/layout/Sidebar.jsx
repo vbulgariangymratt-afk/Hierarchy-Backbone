@@ -457,47 +457,42 @@ const Sidebar = ({ onSkillClick }) => {
                                             </Link>
                                         </div>
                                         <div className="section-content">
-                                            {focusSlots.map((slotId, idx) => {
-                                                const skill = slotSkills[slotId];
-                                                const role = SLOT_ROLES[idx];
-                                                
-                                                // Compute engagement status from pre-computed map
-                                                const engagement = slotId ? engagementMap[slotId] : null;
+                                            {focusSlots
+                                                .map((slotId, idx) => ({ slotId, idx }))
+                                                .filter(({ slotId }) => !!slotId)
+                                                .map(({ slotId, idx }) => {
+                                                    const skill = slotSkills[slotId];
+                                                    const role = SLOT_ROLES[idx];
+                                                    
+                                                    // Compute engagement status from pre-computed map
+                                                    const engagement = slotId ? engagementMap[slotId] : null;
 
-                                                return (
-                                                    <div 
-                                                        key={idx} 
-                                                        className={`nav-item slot-nav-item ${!slotId ? 'empty' : ''} ${glowingNodeId === slotId ? 'aura-glow-active' : ''}`}
-                                                        onClick={() => {
-                                                            if (slotId) {
+                                                    return (
+                                                        <div 
+                                                            key={idx} 
+                                                            className={`nav-item slot-nav-item ${glowingNodeId === slotId ? 'aura-glow-active' : ''}`}
+                                                            onClick={() => {
                                                                 if (onSkillClick) onSkillClick(skill);
                                                                 else navigate(`/skill/${slotId}`);
-                                                            } else {
-                                                                navigate('/focus-center');
-                                                            }
-                                                        }}
-                                                    >
-                                                        {/* Standardized Icon Rail Wrapper for Dots */}
-                                                        <span className="btn-icon">
-                                                            {engagement ? (
-                                                                <HealthTooltip engagement={engagement}>
-                                                                    <div className={`health-dot ${engagement.status}`} />
-                                                                </HealthTooltip>
-                                                            ) : (
-                                                                /* Empty Slot Placeholder Icon space holder */
-                                                                <div className="dot-placeholder" />
-                                                            )}
-                                                        </span>
-                                                        <span className="btn-text">
-                                                            {skill?.name || (
-                                                                guidedSlotRoles
-                                                                    ? <span className="slot-role-inline">{role.shortLabel}</span>
-                                                                    : 'Empty Slot'
-                                                            )}
-                                                        </span>
-                                                    </div>
-                                                );
-                                            })}
+                                                            }}
+                                                        >
+                                                            {/* Standardized Icon Rail Wrapper for Dots */}
+                                                            <span className="btn-icon">
+                                                                {engagement ? (
+                                                                    <HealthTooltip engagement={engagement}>
+                                                                        <div className={`health-dot ${engagement.status}`} />
+                                                                    </HealthTooltip>
+                                                                ) : (
+                                                                    /* Empty Slot Placeholder Icon space holder */
+                                                                    <div className="dot-placeholder" />
+                                                                )}
+                                                            </span>
+                                                            <span className="btn-text">
+                                                                {skill?.name}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
                                             {/* Emojis and manage button removed for header relocation */}
                                         </div>
                                     </div>
@@ -681,27 +676,15 @@ const Sidebar = ({ onSkillClick }) => {
                                                     </NavLink>
                                                 ))}
 
-                                                {isAddingArea ? (
-                                                    <input
-                                                        autoFocus
-                                                        className="new-area-input"
-                                                        placeholder="Area name..."
-                                                        value={newAreaName}
-                                                        onChange={(e) => setNewAreaName(e.target.value)}
-                                                        onKeyDown={handleCreateArea}
-                                                        onBlur={() => { setIsAddingArea(false); setNewAreaName(''); }}
-                                                    />
-                                                ) : (
-                                                    <button
-                                                        className="nav-item new-area-btn"
-                                                        onClick={() => setIsAddingArea(true)}
-                                                    >
-                                                        <span className="btn-icon">
-                                                            <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
-                                                        </span>
-                                                        <span className="btn-text">New Area</span>
-                                                    </button>
-                                                )}
+                                                <button
+                                                    className="nav-item new-area-btn"
+                                                    onClick={() => navigate('/create-life-area')}
+                                                >
+                                                    <span className="btn-icon">
+                                                        <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
+                                                    </span>
+                                                    <span className="btn-text">New Area</span>
+                                                </button>
                                             </div>
                                         )}
                                     </div>

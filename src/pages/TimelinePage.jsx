@@ -45,19 +45,18 @@ const TimelinePage = () => {
     // Auto-focus on TODAY on load
     useEffect(() => {
         if (!loading && timelineData && scrollContainerRef.current) {
-            // Increased timeout to 300ms to ensure Tauri's webview has fully painted the layout before calculating widths
+            const scrollContainer = scrollContainerRef.current;
+            // Scroll to the end immediately so the user doesn't see a delay/jump
+            scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+
             const timer = setTimeout(() => {
-                const scrollContainer = scrollContainerRef.current;
                 const todayCard = scrollContainer.querySelector('.day-card.is-today');
-                
                 if (todayCard) {
-                    // Simpler, more reliable scroll assignment based on offsetLeft instead of bounding rects
-                    scrollContainer.scrollLeft = todayCard.offsetLeft - (scrollContainer.clientWidth / 2) + (todayCard.clientWidth / 2);
+                    todayCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'end' });
                 } else {
-                    // Fallback: scroll to the very end
                     scrollContainer.scrollLeft = scrollContainer.scrollWidth;
                 }
-            }, 300);
+            }, 50);
             return () => clearTimeout(timer);
         }
     }, [loading, timelineData]);

@@ -17,15 +17,14 @@
     /* Frosted glass fill */
     background: rgba(255, 255, 255, 0.08);
 
-    /* Hair-thin luminous border */
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    /* Hair-thin subtle border */
+    border: 1px solid rgba(0, 0, 0, 0.15);
 
     /* Native blur + chromatic saturation boost */
 
-    /* Outer shadow depth + top-edge inset highlight */
+    /* Outer shadow depth */
     box-shadow:
-        0 10px 40px rgba(0, 0, 0, 0.35),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        0 10px 40px rgba(0, 0, 0, 0.35);
 
     /* GPU isolation for smooth composite */
     transform: translateZ(0);
@@ -35,32 +34,16 @@
     color: var(--color-text-main, #ffffff);
 }
 
-/* ── Top-edge highlight reflection ────────────────────────── */
+/* ── Top-edge highlight reflection (Disabled) ────────────────── */
 .glass-card::before {
     content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(180deg,
-            rgba(255, 255, 255, 0.35) 0%,
-            rgba(255, 255, 255, 0.05) 40%,
-            transparent 100%);
-    opacity: 0.4;
-    pointer-events: none;
-    z-index: 0;
+    display: none;
 }
 
-/* ── Inner specular sheen (radial caustic) ─────────────────── */
+/* ── Inner specular sheen (Radial caustic - Disabled) ─────────── */
 .glass-card::after {
     content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: radial-gradient(ellipse at 50% -10%,
-            rgba(255, 255, 255, 0.18) 0%,
-            transparent 60%);
-    pointer-events: none;
-    z-index: 0;
+    display: none;
 }
 
 /* Keep actual content above both pseudo-element layers */
@@ -72,61 +55,54 @@
 /* ── Hover lift ────────────────────────────────────────────── */
 .glass-card:hover {
     background: rgba(255, 255, 255, 0.11);
-    border-color: rgba(255, 255, 255, 0.32);
+    border-color: rgba(0, 0, 0, 0.2);
     box-shadow:
-        0 18px 56px rgba(0, 0, 0, 0.4),
-        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+        0 18px 56px rgba(0, 0, 0, 0.4);
     transform: translateY(-2px) translateZ(0);
 }
 
 /* ── Variant: Elevated (floating modals / popovers) ────────── */
 .glass-card--elevated {
     background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.30);
+    border-color: rgba(0, 0, 0, 0.2);
     box-shadow:
-        0 24px 64px rgba(0, 0, 0, 0.45),
-        inset 0 1px 1px rgba(255, 255, 255, 0.5);
+        0 24px 64px rgba(0, 0, 0, 0.45);
 }
 
 /* ── Variant: Subtle (nested cards inside panels) ──────────── */
 .glass-card--subtle {
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(0, 0, 0, 0.12);
     box-shadow:
-        0 4px 16px rgba(0, 0, 0, 0.20),
-        inset 0 1px rgba(255, 255, 255, 0.25);
+        0 4px 16px rgba(0, 0, 0, 0.20);
 }
 
 .glass-card--subtle::before {
-    opacity: 0.25;
+    display: none;
 }
 
 /* ── Variant: Sidebar panel ────────────────────────────────── */
 .glass-card--sidebar {
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(0, 0, 0, 0.15);
     box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.20),
-        inset 0 1px rgba(255, 255, 255, 0.3),
-        inset 0 -1px rgba(0, 0, 0, 0.12);
+        0 8px 24px rgba(0, 0, 0, 0.20);
 }
 
 /* ── Accent tint helpers ───────────────────────────────────── */
 .glass-card--blue {
     background: rgba(59, 130, 246, 0.10);
-    border-color: rgba(59, 130, 246, 0.30);
+    border-color: rgba(0, 0, 0, 0.15);
     box-shadow:
-        0 10px 40px rgba(59, 130, 246, 0.20),
-        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        0 10px 40px rgba(59, 130, 246, 0.20);
 }
 
 .glass-card--amber {
     background: rgba(245, 158, 11, 0.08);
-    border-color: rgba(245, 158, 11, 0.28);
+    border-color: rgba(0, 0, 0, 0.15);
     box-shadow:
-        0 10px 40px rgba(245, 158, 11, 0.15),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        0 10px 40px rgba(245, 158, 11, 0.15);
 
 }
 
@@ -135,36 +111,34 @@
 .dark.liquid-mode .glass-card,
 .dark.wallpaper-mode .glass-card {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(0, 0, 0, 0.2);
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 .dark.liquid-mode .glass-card:hover,
 .dark.wallpaper-mode .glass-card:hover {
     background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.20);
+    border-color: rgba(0, 0, 0, 0.25);
 }
 
 .dark.liquid-mode .glass-card::before,
 .dark.wallpaper-mode .glass-card::before {
-    opacity: 0.2;
+    display: none;
 }
 
 /* Elevated variant for modals/popovers in dark mode */
 .dark.liquid-mode .glass-card--elevated,
 .dark.wallpaper-mode .glass-card--elevated {
     background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(0, 0, 0, 0.25);
     box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        0 20px 50px rgba(0, 0, 0, 0.35);
 }
 
 /* Neutralize blue variant in dark mode if it clashes - Updated to be completely neutral */
 .dark.liquid-mode .glass-card--blue,
 .dark.wallpaper-mode .glass-card--blue {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(0, 0, 0, 0.25);
 }

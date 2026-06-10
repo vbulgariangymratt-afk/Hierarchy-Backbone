@@ -1,0 +1,583 @@
+/* CreateLifeAreaPage.css */
+
+.create-area-page-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+    box-sizing: border-box;
+    font-family: var(--font-family-sans);
+    overflow-y: auto;
+    transition: background var(--transition-normal);
+}
+
+/* ─── APPEARANCE MODES FOR THE WRAPPER BACKGROUND ─── */
+
+/* Solid Mode background (uses system variables for dark/light solid) */
+.solid-mode .create-area-page-wrapper {
+    background: var(--color-bg-main);
+}
+
+/* Liquid Mode: fully transparent to show system tauri vibrancy/wallpaper behind it */
+.liquid-mode .create-area-page-wrapper {
+    background: transparent;
+}
+
+/* Wallpaper Mode: fully transparent to let the app's Wallpaper BackgroundLayer show through */
+.wallpaper-mode .create-area-page-wrapper {
+    background: transparent;
+}
+
+.create-area-container {
+    width: 100%;
+    max-width: 540px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 40px;
+}
+
+/* Header & Progress Tracker */
+.create-area-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.progress-text {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-tertiary);
+}
+
+.progress-bar-track {
+    width: 120px;
+    height: 4px;
+    background: var(--focus-color-track);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-top: var(--spacing-xs);
+}
+
+.progress-bar-fill {
+    width: 20%; /* 1 of 5 levels */
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-normal);
+}
+
+.prompt-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.3;
+    margin: 0;
+    max-width: 460px;
+}
+
+/* Defaults Button Grid */
+.defaults-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.default-option-btn {
+    width: 100%;
+    height: auto;
+    min-height: 56px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-full);
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+/* Liquid / Wallpaper mode button tweaks for glass aesthetics */
+.liquid-mode .default-option-btn,
+.wallpaper-mode .default-option-btn {
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+}
+
+.default-option-btn:hover {
+    background: var(--alpha-high);
+    border-color: var(--color-accent);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Custom Text Input */
+.custom-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.custom-input-field {
+    width: 100%;
+    height: 56px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent !important;
+    border: none;
+    border-bottom: 2px solid var(--color-border);
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    font-family: var(--font-family-sans);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.custom-input-field:focus {
+    border-color: var(--color-accent);
+    box-shadow: none;
+}
+
+/* Footer / Actions */
+.create-area-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+}
+
+.safe-exit-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    padding: var(--spacing-sm) var(--spacing-md);
+    transition: color var(--transition-fast);
+    text-decoration: underline;
+}
+
+.safe-exit-btn:hover {
+    color: var(--text-primary);
+}
+
+.submit-btn {
+    width: 100%;
+    height: 50px;
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.submit-btn:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Step 2 Specific Styling */
+
+/* Verbs row styling - forced single line */
+.verbs-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--spacing-xs);
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.verb-pill-btn {
+    flex: 1;
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    padding: var(--spacing-sm) var(--spacing-sm);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    text-align: center;
+}
+
+.liquid-mode .verb-pill-btn,
+.wallpaper-mode .verb-pill-btn {
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+}
+
+.verb-pill-btn:hover {
+    background: var(--alpha-high);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+/* Composite input line with bold prefix */
+.custom-input-line-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border-bottom: 2px solid var(--color-border);
+    transition: border-color var(--transition-fast);
+    box-sizing: border-box;
+}
+
+.custom-input-line-wrapper:focus-within {
+    border-color: var(--color-accent);
+}
+
+.bold-prefix-verb {
+    font-weight: 800;
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    margin-right: var(--spacing-sm);
+    user-select: none;
+}
+
+.custom-input-field-rest {
+    flex: 1;
+    height: 56px;
+    padding: 0;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-primary);
+    font-size: var(--font-size-lg);
+    font-family: var(--font-family-sans);
+    outline: none;
+    box-sizing: border-box;
+}
+
+.sub-header-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+    margin-top: var(--spacing-xs);
+    font-weight: 500;
+}
+
+.dynamic-helper-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+    margin-top: var(--spacing-xs);
+    text-align: left;
+    display: block;
+}
+
+/* Priority Dimmer Switch styling */
+.priority-switch-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+}
+
+.priority-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-align: center;
+}
+
+.priority-switch-row {
+    display: flex;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 3px;
+    box-sizing: border-box;
+}
+
+.liquid-mode .priority-switch-row,
+.wallpaper-mode .priority-switch-row {
+    background: var(--alpha-low);
+}
+
+.priority-switch-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.priority-switch-btn.active {
+    background: var(--color-accent);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.priority-switch-btn:hover:not(.active) {
+    color: var(--text-primary);
+    background: var(--alpha-med);
+}
+
+/* Step 3 Styles */
+.sub-header-label-explanation {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-top: 18px;
+    font-weight: 500;
+    line-height: 1.5;
+    font-style: italic;
+    max-width: 100%;
+    text-align: center;
+}
+
+.step3-field-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.sub-field-helper-text {
+    font-size: var(--font-size-xs);
+    color: var(--text-tertiary);
+    margin-top: var(--spacing-xs);
+    text-align: left;
+}
+
+.deadline-switch-container {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: var(--spacing-md);
+}
+
+.deadline-question-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.deadline-pills-row {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.deadline-pill-btn {
+    flex: 1;
+    background: transparent;
+    border: 1.5px solid var(--color-border);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+    text-align: center;
+}
+
+.deadline-pill-btn.active {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.deadline-pill-btn:hover:not(.active) {
+    background: var(--alpha-high);
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.date-picker-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--spacing-sm);
+}
+
+.native-date-picker {
+    background: var(--color-bg-secondary);
+    border: 1.5px solid var(--color-border);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family-sans);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-md);
+    outline: none;
+    width: 100%;
+    max-width: 240px;
+    box-sizing: border-box;
+    transition: border-color var(--transition-fast);
+}
+
+.native-date-picker:focus {
+    border-color: var(--color-accent);
+}
+
+/* Step 4 Styles */
+.custom-textarea-field {
+    width: 100%;
+    height: 140px;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+    border: 1.5px solid var(--color-border);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    font-family: var(--font-family-sans);
+    outline: none;
+    box-sizing: border-box;
+    resize: none;
+    line-height: 1.5;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.liquid-mode .custom-textarea-field,
+.wallpaper-mode .custom-textarea-field {
+    background: var(--alpha-low);
+}
+
+.custom-textarea-field:focus {
+    border-color: var(--color-accent);
+}
+.aspect-options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.aspect-select-btn {
+    min-height: 50px;
+}
+
+/* Step 5 Styles */
+.bimodal-finish-row {
+    display: flex;
+    gap: var(--spacing-md);
+    width: 100%;
+    justify-content: center;
+}
+
+.bimodal-btn {
+    flex: 1;
+    height: 50px;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-sizing: border-box;
+}
+
+/* Solid Mode Primary */
+.solid-mode .bimodal-btn:not(.secondary) {
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+}
+.solid-mode .bimodal-btn:not(.secondary):hover {
+    background: var(--color-accent-hover, var(--color-accent));
+    transform: translateY(-1px);
+}
+
+/* Liquid / Wallpaper Mode Primary (Liquid Glass) */
+.liquid-mode .bimodal-btn:not(.secondary),
+.wallpaper-mode .bimodal-btn:not(.secondary) {
+    background: var(--alpha-low);
+    border: 1.5px solid var(--color-border);
+    color: var(--text-primary);
+}
+.liquid-mode .bimodal-btn:not(.secondary):hover,
+.wallpaper-mode .bimodal-btn:not(.secondary):hover {
+    background: var(--alpha-med);
+    border-color: var(--text-secondary);
+    transform: translateY(-1px);
+}
+
+/* Secondary Button (Keep Brain-Dumping) - Clean Glass Outline */
+.bimodal-btn.secondary {
+    background: transparent !important;
+    border: 1.5px solid var(--color-border) !important;
+    color: var(--text-secondary) !important;
+}
+
+.bimodal-btn.secondary:hover {
+    background: var(--alpha-high) !important;
+    border-color: var(--text-primary) !important;
+    color: var(--text-primary) !important;
+    transform: translateY(-1px);
+}
+
+.keep-dumping-prompt-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg-secondary);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.liquid-mode .keep-dumping-prompt-container,
+.wallpaper-mode .keep-dumping-prompt-container {
+    background: var(--alpha-low);
+}
+
+.keep-dumping-label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.keep-dumping-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    width: 100%;
+}
+
+.keep-dumping-btn {
+    flex: 1;
+    text-align: center;
+}
+
+
+
+

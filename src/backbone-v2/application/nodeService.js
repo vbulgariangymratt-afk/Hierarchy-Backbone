@@ -30,9 +30,8 @@ export const NodeService = (repository, auraService, deps = {}) => {
                 metadata.sessions = [];
                 metadata.orderIndex = metadata.orderIndex || 0;
             } else if (type === NodeTypes.OBJECTIVE) {
-                if (!metadata.theme || !metadata.accumulationType) {
-                    throw new Error("Objective creation requires Theme and AccumulationType.");
-                }
+                metadata.theme = metadata.theme || 'General';
+                metadata.accumulationType = metadata.accumulationType || 'minutes';
                 metadata.status = ObjectiveStatuses.ACTIVE;
                 metadata.isActive = true;
                 metadata.isSleeping = false;

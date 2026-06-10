@@ -17,6 +17,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const FocusCenterPage = lazy(() => import('./pages/FocusCenterPage'));
 const MaintenanceCenterPage = lazy(() => import('./pages/MaintenanceCenterPage'));
 const AuthCallback = lazy(() => import('./pages/AuthCallback'));
+const CreateLifeAreaPage = lazy(() => import('./pages/CreateLifeAreaPage'));
 
 // Preload high-intent chunks
 export const preloadFocus = () => import('./pages/FocusPage');
@@ -89,6 +90,7 @@ function App() {
                     <Route path="*" element={<LandingLog />} />
                   </Route>
                   <Route path="/focus" element={<FocusPage />} />
+                  <Route path="/create-life-area" element={<CreateLifeAreaPage />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
                 </Routes>
               </Suspense>
