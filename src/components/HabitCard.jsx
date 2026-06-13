@@ -12,6 +12,7 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
     const [isPulsing, setIsPulsing] = useState(false);
     const [eligibility, setEligibility] = useState(null);
     const [celebration, setCelebration] = useState(null); // { identity: string, fading: false, active: false, type: 'complete' | 'levelup' }
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     // Get skill for identity reinforcement
     const nodes = useBackboneStore(state => state.nodes);
@@ -184,23 +185,39 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
-                        <button className="habit-save-btn" onClick={handleSaveEdit}>
-                            <Save size={14} /> Save Changes
-                        </button>
-                        <button className="habit-cancel-btn" onClick={() => setIsEditing(false)}>
-                            Cancel
-                        </button>
-                        <button className="habit-cancel-btn" 
-                            style={{ marginLeft: 'auto', color: '#ff4d4f', borderColor: 'rgba(255, 77, 79, 0.2)', background: 'rgba(255, 77, 79, 0.1)' }} 
-                            onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this habit? All history will be lost.")) {
-                                    onDelete?.(habit.id);
-                                }
-                            }}>
-                            Delete
-                        </button>
-                    </div>
+                    {confirmingDelete ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', padding: '12px', background: 'rgba(255, 77, 79, 0.08)', borderRadius: '10px', border: '1px solid rgba(255, 77, 79, 0.2)' }}>
+                            <span style={{ fontSize: '12px', color: 'rgba(255,77,79,0.9)', fontWeight: 600 }}>Delete this habit? All history will be lost.</span>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    className="habit-cancel-btn"
+                                    style={{ color: '#ff4d4f', borderColor: 'rgba(255, 77, 79, 0.3)', background: 'rgba(255, 77, 79, 0.15)', fontWeight: 700 }}
+                                    onClick={() => { setConfirmingDelete(false); onDelete?.(habit.id); }}
+                                >
+                                    Yes, delete
+                                </button>
+                                <button className="habit-cancel-btn" onClick={() => setConfirmingDelete(false)}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                            <button className="habit-save-btn" onClick={handleSaveEdit}>
+                                <Save size={14} /> Save Changes
+                            </button>
+                            <button className="habit-cancel-btn" onClick={() => setIsEditing(false)}>
+                                Cancel
+                            </button>
+                            <button
+                                className="habit-cancel-btn"
+                                style={{ marginLeft: 'auto', color: '#ff4d4f', borderColor: 'rgba(255, 77, 79, 0.2)', background: 'rgba(255, 77, 79, 0.1)' }}
+                                onClick={() => setConfirmingDelete(true)}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         );

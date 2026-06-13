@@ -56,7 +56,7 @@ const _cache = {
     maintenanceSkillIds: [],
     maintenanceEnabled: true,
     guidedSlotRoles: true,
-    energyLevel: 3,
+    energyLevel: 5,
     activeExperimentLimit: 1,
     dbSupportsExperimentLimit: true, // Track if column exists to avoid save errors
     healthDotStyle: localStorage.getItem('app-health-dot-style') || 'glowing',
@@ -130,7 +130,7 @@ export const SettingsProvider = ({ children }) => {
                     maintenance_skill_ids: [],
                     maintenance_enabled: true,
                     guided_slot_roles: true,
-                    energy_level: 3,
+                    energy_level: 5,
                     is_whitelisted: false,
                     trial_start_at: new Date().toISOString(),
                     ...(_cache.dbSupportsExperimentLimit ? { active_experiment_limit: 1 } : {})
@@ -153,7 +153,7 @@ export const SettingsProvider = ({ children }) => {
                     _cache.maintenanceSkillIds = [];
                     _cache.maintenanceEnabled = true;
                     _cache.guidedSlotRoles = true;
-                    _cache.energyLevel = 3;
+                    _cache.energyLevel = 5;
                     _cache.activeExperimentLimit = 1;
                     _cache.currencyName = 'Coins';
                     _cache.todayRemovalMode = 'on_completion';
@@ -177,7 +177,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.maintenanceSkillIds = data.maintenance_skill_ids || [];
                 _cache.maintenanceEnabled = data.maintenance_enabled !== undefined ? data.maintenance_enabled : true;
                 _cache.guidedSlotRoles = data.guided_slot_roles !== undefined ? data.guided_slot_roles : true;
-                _cache.energyLevel = data.energy_level !== undefined ? data.energy_level : 3;
+                _cache.energyLevel = data.energy_level !== undefined ? data.energy_level : 5;
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
@@ -362,7 +362,7 @@ export const SettingsProvider = ({ children }) => {
                 _cache.maintenanceSkillIds = [];
                 _cache.maintenanceEnabled = true;
                 _cache.guidedSlotRoles = true;
-                _cache.energyLevel = 3;
+                _cache.energyLevel = 5;
                 _cache.activeExperimentLimit = 1;
                 _cache.currencyName = 'Coins';
                 _cache.todayRemovalMode = 'on_completion';

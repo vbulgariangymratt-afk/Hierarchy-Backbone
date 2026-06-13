@@ -479,18 +479,43 @@ export const useTaskHandlers = ({
         });
     }, [allNodes, setAllNodes, getChildren]);
 
-    // ─── Stubs: not yet migrated from SkillPage ───────────────────────────────
-    const handleRemoveReward = useCallback((taskId) => {
-        console.warn('[useTaskHandlers] handleRemoveReward not yet implemented', taskId);
-    }, []);
+    // ─── Reward Handlers ──────────────────────────────────────────────────────
+    const handleRemoveReward = useCallback(async (taskId) => {
+        // Optimistic UI
+        setAllNodes(prev => prev.map(n =>
+            n.id === taskId
+                ? { ...n, metadata: { ...n.metadata, rewardId: null } }
+                : n
+        ));
+        try {
+            await backbone.updateNode(taskId, { metadata: { rewardId: null } });
+        } catch (err) {
+            console.error('[useTaskHandlers] handleRemoveReward failed:', err);
+            fetchData(); // revert on failure
+        }
+    }, [setAllNodes, fetchData]);
 
-    const handleAttachReward = useCallback((taskId, reward) => {
-        console.warn('[useTaskHandlers] handleAttachReward not yet implemented', taskId, reward);
-    }, []);
+    const handleAttachReward = useCallback(async (taskId, rewardId) => {
+        // Close picker immediately
+        setIsSelectingRewardForTaskId(null);
+        // Optimistic UI
+        setAllNodes(prev => prev.map(n =>
+            n.id === taskId
+                ? { ...n, metadata: { ...n.metadata, rewardId } }
+                : n
+        ));
+        try {
+            await backbone.updateNode(taskId, { metadata: { rewardId } });
+        } catch (err) {
+            console.error('[useTaskHandlers] handleAttachReward failed:', err);
+            fetchData(); // revert on failure
+        }
+    }, [setAllNodes, setIsSelectingRewardForTaskId, fetchData]);
 
     const handleSaveMVE = useCallback((aspectId, mveText) => {
         console.warn('[useTaskHandlers] handleSaveMVE not yet implemented', aspectId, mveText);
     }, []);
+
 
     return {
         // State

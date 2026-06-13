@@ -143,7 +143,8 @@ export const createHabitRepository = () => {
                 const { error } = await supabase
                     .from('habits')
                     .delete()
-                    .eq('id', id);
+                    .eq('id', id)
+                    .eq('user_id', userId);
 
                 if (error) throw error;
 

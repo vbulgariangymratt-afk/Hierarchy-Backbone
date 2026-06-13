@@ -46,7 +46,7 @@ const SkillPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { showCompletedTasks } = useTheme();
-    const { energyLevel, activeExperimentLimit } = useSettings();
+    const { energyLevel, activeExperimentLimit, maintenanceSkillIds } = useSettings();
 
     // Drag Reorder Lock
     const isReorderingRef = useRef(false);
@@ -74,7 +74,7 @@ const SkillPage = () => {
     const [showDepResults, setShowDepResults] = useState(false);
     const [collapsedCompletedAspects, setCollapsedCompletedAspects] = useState({});
     const [activeHabitForEvolution, setActiveHabitForEvolution] = useState(null);
-    const [isHabitsExpanded, setIsHabitsExpanded] = useState(energyLevel < 4);
+    const [isHabitsExpanded, setIsHabitsExpanded] = useState(energyLevel === 3 ? (maintenanceSkillIds || []).includes(id) : energyLevel < 4);
     const [isSleepingHabitsExpanded, setIsSleepingHabitsExpanded] = useState(false);
 
     // Create Habit State
@@ -162,6 +162,19 @@ const SkillPage = () => {
     const sleepingObjectives = useMemo(() => 
         objectives.filter(o => o.metadata?.status === ObjectiveStatuses.SLEEPING || o.metadata?.isSleeping === true), 
     [objectives]);
+
+    const isKeepItAlivePage = useMemo(() => 
+        (maintenanceSkillIds || []).includes(id),
+    [maintenanceSkillIds, id]);
+    const shouldHideTasksAndExperiments = energyLevel === 3 && isKeepItAlivePage;
+
+    useEffect(() => {
+        if (energyLevel === 3) {
+            setIsHabitsExpanded(isKeepItAlivePage);
+        } else if (energyLevel < 3) {
+            setIsHabitsExpanded(true);
+        }
+    }, [energyLevel, isKeepItAlivePage]);
 
     const isNoveltySprint = skill?.metadata?.pinchState === 'NOVELTY';
     const unexploredAspectIds = useMemo(() => {
@@ -493,9 +506,9 @@ const SkillPage = () => {
             </header>
 
             <section className="skill-section habits-skill-wrapper">
-                <header className="section-header-row" onClick={() => energyLevel >= 4 && setIsHabitsExpanded(!isHabitsExpanded)}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: energyLevel >= 4 ? 'pointer' : 'default' }}>
-                        {energyLevel >= 4 && (
+                <header className="section-header-row" onClick={() => energyLevel >= 3 && setIsHabitsExpanded(!isHabitsExpanded)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: energyLevel >= 3 ? 'pointer' : 'default' }}>
+                        {energyLevel >= 3 && (
                             <motion.span 
                                 animate={{ rotate: isHabitsExpanded ? 90 : 0 }}
                                 style={{ display: 'inline-block', fontSize: '10px', opacity: 0.8 }}
@@ -574,15 +587,20 @@ const SkillPage = () => {
                     )}
                 </AnimatePresence>
                 <AnimatePresence>
-                    {(isHabitsExpanded || energyLevel < 4) && (
-                        <motion.div initial={energyLevel >= 4 ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={macOSSpring}>
+                    {(isHabitsExpanded || energyLevel < 3) && (
+                        <motion.div initial={energyLevel >= 3 ? { height: 0, opacity: 0 } : false} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={macOSSpring}>
                             <div className="habits-grid">
                                 {activeHabits.map(habit => <HabitCard key={habit.id} habit={habit} energyLevel={energyLevel} onOpenEvolution={setActiveHabitForEvolution} onToggleActive={fetchData} onUpdate={fetchSkills} onSleep={handleToggleSleepHabit} onDelete={handleDeleteHabit} />)}
                             </div>
-                            {sleepingHabits.length > 0 && energyLevel >= 3 && (
+                            {sleepingHabits.length > 0 && energyLevel >= 3 && !shouldHideTasksAndExperiments && (
                                 <div className="sleeping-section" style={{ marginTop: '24px' }}>
                                     <div className="section-header" onClick={() => setIsSleepingHabitsExpanded(!isSleepingHabitsExpanded)}>
-                                         <NodeIcon iconUrl={isSleepingHabitsExpanded ? "expanded-icon-url" : "collapsed-icon-url"} size={14} />
+                                        <motion.span 
+                                            animate={{ rotate: isSleepingHabitsExpanded ? 90 : 0 }}
+                                            style={{ display: 'inline-block', fontSize: '10px', opacity: 0.8, color: 'var(--text-secondary)' }}
+                                        >
+                                            ▶
+                                        </motion.span>
                                         <h2>Sleeping Habits</h2>
                                         <span className="count-badge">{sleepingHabits.length}</span>
                                     </div>
@@ -610,7 +628,7 @@ const SkillPage = () => {
                 />
             )}
 
-            {activeObjectives.length > 0 && (
+            {activeObjectives.length > 0 && !shouldHideTasksAndExperiments && (
                 <section className="skill-section active-experiments-section">
                     <span className="section-label">Active Experiments</span>
                     <LayoutGroup id="active-objectives">
@@ -701,7 +719,7 @@ const SkillPage = () => {
                 </section>
             )}
 
-            {sleepingObjectives.length > 0 && energyLevel >= 3 && (
+            {sleepingObjectives.length > 0 && energyLevel >= 3 && !shouldHideTasksAndExperiments && (
                 <section className="skill-section sleeping-section">
                     <div className="section-header" onClick={() => setIsSleepingExpanded(!isSleepingExpanded)}>
                          <NodeIcon iconUrl={isSleepingExpanded ? "expanded-icon-url" : "collapsed-icon-url"} size={14} />

@@ -55,28 +55,23 @@ export const getSkillEngagementStatus = (skillId, nodes = [], habits = []) => {
             if (time > latestEngagement) latestEngagement = time;
         }
 
-        // b) Momentum (lastWorkedAt)
+        // b) Pulse / Momentum work events (MVE completions, lastWorkedAt)
+        // These fire only on actual work, NOT on creating tasks or editing metadata
         if (meta.lastWorkedAt) {
             const time = new Date(meta.lastWorkedAt).getTime();
             if (time > latestEngagement) latestEngagement = time;
         }
-
-        // d) Node updated_at (catches any recent interaction)
-        if (node.updatedAt) {
-            const time = new Date(node.updatedAt).getTime();
+        if (meta.lastPulseAt) {
+            const time = new Date(meta.lastPulseAt).getTime();
             if (time > latestEngagement) latestEngagement = time;
         }
 
-        // c) Focus Sessions (metadata.sessions)
+        // c) Completed Focus Sessions (metadata.sessions)
         if (meta.sessions) {
             meta.sessions.forEach(session => {
-                // Count completed sessions by their end time
+                // Only completed sessions count, not active ones
                 if (session.status === 'completed' && session.endTime) {
                     if (session.endTime > latestEngagement) latestEngagement = session.endTime;
-                }
-                // Count active sessions by their start time (if currently active, it's "now")
-                if (session.status === 'active' && session.startTime) {
-                    if (session.startTime > latestEngagement) latestEngagement = session.startTime;
                 }
             });
         }
