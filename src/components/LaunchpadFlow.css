@@ -399,7 +399,7 @@
     border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    textAlign: left;
+    text-align: left;
     display: flex;
     flex-direction: column;
     gap: 2px;
