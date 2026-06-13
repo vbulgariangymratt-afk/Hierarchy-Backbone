@@ -1,61 +1,58 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
-import './BackgroundLayer.css';
-
-// Maps URL pathname patterns to page keys used in wallpaperConfig.wallpapers.pages
-const resolvePageKey = (pathname) => {
-    if (pathname === '/' || pathname === '/launchpad') return 'launchpad';
-    if (pathname.startsWith('/journal')) return 'journal';
-    if (pathname.startsWith('/marketplace')) return 'marketplace';
-    if (pathname.startsWith('/area')) return 'area';
-    return null;
-};
 
 const BackgroundLayer = () => {
-    const { theme, backgroundMode, wallpaperConfig } = useTheme();
-    const location = useLocation();
+    const { backgroundMode, wallpaperImage, theme } = useTheme();
 
-    // ─── Non-wallpaper modes: unmount entirely or show default ───────────────
-    if (backgroundMode !== 'wallpaper') {
-        // Liquid mode: transparent window — render nothing at all
-        if (backgroundMode === 'liquid') return null;
-        // Solid mode: plain background div
-        return <div className="background-layer default-bg" />;
+    if (backgroundMode !== 'wallpaper' || !wallpaperImage) {
+        return null;
     }
 
-    // ─── Wallpaper mode ───────────────────────────────────────────────────────
-    const { wallpaperScope, wallpapers } = wallpaperConfig;
+    const isLight = theme === 'light';
 
-    let resolvedPair = wallpapers.global;
-
-    if (wallpaperScope === 'per-page') {
-        const pageKey = resolvePageKey(location.pathname);
-        const pagePair = pageKey ? wallpapers.pages[pageKey] : null;
-
-        // Use page-specific values, falling back field-by-field to global
-        if (pagePair && (pagePair.light || pagePair.dark)) {
-            resolvedPair = {
-                light: pagePair.light || wallpapers.global.light,
-                dark: pagePair.dark || wallpapers.global.dark,
-            };
-        }
-    }
-
-    const url = theme === 'dark' ? resolvedPair.dark : resolvedPair.light;
-
-    // Wallpaper mode is active but no URL is set yet — show plain background
-    if (!url) {
-        return <div className="background-layer default-bg" />;
-    }
+    const imageFilter = isLight
+        ? 'blur(8px) saturate(1.6) brightness(1.1)'
+        : 'blur(8px) saturate(1.3) brightness(0.75)';
 
     return (
-        <>
-            <div className="background-layer wallpaper-bg">
-                <img src={url} alt="" className="wallpaper-image" />
-            </div>
-            <div className="background-layer wallpaper-overlay" />
-        </>
+        <div 
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                zIndex: -99999,
+                pointerEvents: 'none',
+                overflow: 'hidden',
+                backgroundColor: 'transparent'
+            }}
+        >
+            <img 
+                src={wallpaperImage} 
+                alt="Wallpaper Background"
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    display: 'block',
+                    filter: imageFilter,
+                    transform: 'scale(1.02)', // Prevents the blurred edge artifacts
+                }}
+            />
+            <div 
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: isLight 
+                        ? 'rgba(255, 255, 255, 0.7)' 
+                        : 'rgba(10, 10, 10, 0.58)',
+                }}
+            />
+        </div>
     );
 };
 

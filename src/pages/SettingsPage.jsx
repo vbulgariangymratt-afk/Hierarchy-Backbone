@@ -3,25 +3,23 @@ import { supabase, loginWithGoogle } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
 import { backbone, NodeTypes } from '../backbone-v2/index';
-import WallpaperInputPair from '../components/WallpaperInputPair';
 import './SettingsPage.css';
 
 const SettingsPage = () => {
     const [user, setUser] = useState(null);
-    const {
+    const { 
         themePreference,
         setTheme,
         backgroundMode,
         setBackgroundMode,
-        wallpaperConfig,
-        wallpaperScope,
-        setWallpaperScope,
-        setLightWallpaper,
-        setDarkWallpaper,
         isSyncing,
         syncError,
         solidAccentColor,
         updateSolidAccentColor,
+        lightWallpaperImage,
+        darkWallpaperImage,
+        updateLightWallpaperImage,
+        updateDarkWallpaperImage,
     } = useTheme();
 
     const { 
@@ -69,7 +67,7 @@ const SettingsPage = () => {
         }
     };
 
-    const global = wallpaperConfig.wallpapers.global;
+
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -235,58 +233,135 @@ const SettingsPage = () => {
                         </div>
                     )}
 
-                    <div className="notion-divider" style={{ margin: '8px 0', opacity: 0.15 }} />
-
                     {backgroundMode === 'wallpaper' && (
-                        <>
-                            <div className="notion-divider" style={{ margin: '8px 0', opacity: 0.3 }} />
-                            {/* Wallpaper Behavior toggle */}
-                            <div className="appearance-row">
-                                <div className="appearance-row-label">Wallpaper Behavior</div>
-                                <div className="appearance-radio-group">
-                                    <label className="appearance-radio-row">
+                        <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '15px', width: '100%' }}>
+                            <div className="appearance-row-label">Wallpaper Images</div>
+                            <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: '5px' }}>
+                                Upload distinct background images for Light and Dark modes. They will be placed behind the app and automatically blurred and darkened.
+                            </p>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', width: '100%' }}>
+                                {/* Light Mode Wallpaper */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>Light Mode Wallpaper</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <input
-                                            type="radio"
-                                            name="settings-wallpaper-scope"
-                                            value="global"
-                                            checked={wallpaperScope === 'global'}
-                                            onChange={() => setWallpaperScope('global')}
+                                            type="file"
+                                            accept="image/*"
+                                            id="wallpaper-upload-light"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => {
+                                                        updateLightWallpaperImage(event.target.result);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
                                         />
-                                        <span>One wallpaper for entire app</span>
-                                    </label>
-                                    <label className="appearance-radio-row">
+                                        <label 
+                                            htmlFor="wallpaper-upload-light" 
+                                            className="segmented-control-item" 
+                                            style={{ 
+                                                padding: '8px 12px', 
+                                                cursor: 'pointer', 
+                                                borderRadius: '8px',
+                                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                textAlign: 'center',
+                                                fontSize: '13px'
+                                            }}
+                                        >
+                                            Choose Light
+                                        </label>
+                                        {lightWallpaperImage ? (
+                                            <>
+                                                <button
+                                                    className="segmented-control-item"
+                                                    style={{ 
+                                                        padding: '8px 12px', 
+                                                        borderRadius: '8px', 
+                                                        border: '1px solid rgba(255, 0, 0, 0.3)',
+                                                        color: '#ff453a',
+                                                        fontSize: '13px'
+                                                    }}
+                                                    onClick={() => updateLightWallpaperImage(null)}
+                                                >
+                                                    Remove
+                                                </button>
+                                                <div style={{ width: '36px', height: '36px', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                                                    <img src={lightWallpaperImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Light Preview" />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <span style={{ fontSize: '12px', opacity: 0.4 }}>None</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Dark Mode Wallpaper */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>Dark Mode Wallpaper</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <input
-                                            type="radio"
-                                            name="settings-wallpaper-scope"
-                                            value="per-page"
-                                            checked={wallpaperScope === 'per-page'}
-                                            onChange={() => setWallpaperScope('per-page')}
+                                            type="file"
+                                            accept="image/*"
+                                            id="wallpaper-upload-dark"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (event) => {
+                                                        updateDarkWallpaperImage(event.target.result);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                }
+                                            }}
                                         />
-                                        <span>Different wallpaper per page</span>
-                                    </label>
+                                        <label 
+                                            htmlFor="wallpaper-upload-dark" 
+                                            className="segmented-control-item" 
+                                            style={{ 
+                                                padding: '8px 12px', 
+                                                cursor: 'pointer', 
+                                                borderRadius: '8px',
+                                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                textAlign: 'center',
+                                                fontSize: '13px'
+                                            }}
+                                        >
+                                            Choose Dark
+                                        </label>
+                                        {darkWallpaperImage ? (
+                                            <>
+                                                <button
+                                                    className="segmented-control-item"
+                                                    style={{ 
+                                                        padding: '8px 12px', 
+                                                        borderRadius: '8px', 
+                                                        border: '1px solid rgba(255, 0, 0, 0.3)',
+                                                        color: '#ff453a',
+                                                        fontSize: '13px'
+                                                    }}
+                                                    onClick={() => updateDarkWallpaperImage(null)}
+                                                >
+                                                    Remove
+                                                </button>
+                                                <div style={{ width: '36px', height: '36px', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
+                                                    <img src={darkWallpaperImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Dark Preview" />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <span style={{ fontSize: '12px', opacity: 0.4 }}>None</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Global wallpaper inputs — only shown when scope is global */}
-                            {wallpaperScope === 'global' && (
-                                <div className="appearance-wallpaper-inputs">
-                                    <WallpaperInputPair
-                                        lightValue={global.light}
-                                        darkValue={global.dark}
-                                        onLightChange={(url) => setLightWallpaper(url, null)}
-                                        onDarkChange={(url) => setDarkWallpaper(url, null)}
-                                        idPrefix="settings-global"
-                                    />
-                                </div>
-                            )}
-
-                            {wallpaperScope === 'per-page' && (
-                                <p className="appearance-hint">
-                                    Per-page wallpapers are configured in the sidebar while browsing each page.
-                                </p>
-                            )}
-                        </>
+                        </div>
                     )}
+
                 </div>
             </section>
 

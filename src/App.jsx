@@ -27,7 +27,6 @@ export const preloadLaunchpad = () => import('./pages/Launchpad');
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { SessionProvider, useSession } from './context/SessionContext';
 import { SettingsProvider } from './context/SettingsContext';
-import BackgroundLayer from './components/background/BackgroundLayer';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 
 import { supabase } from './lib/supabase';
@@ -39,6 +38,7 @@ import EnergyModeTag from './components/EnergyModeTag';
 import { useDevAuthPoller } from './hooks/useDevAuthPoller';
 import { useDeepLinkAuth } from './hooks/useDeepLinkAuth';
 import { useAppInitialization } from './hooks/useAppInitialization';
+import BackgroundLayer from './components/background/BackgroundLayer';
 
 const LandingLog = () => {
   useEffect(() => { ; }, []);
@@ -62,6 +62,7 @@ function App() {
 
   return (
     <ThemeProvider>
+      <BackgroundLayer />
       <Router>
         {loading || !repositoriesReady ? (
           <PremiumLoadingScreen 
@@ -71,7 +72,6 @@ function App() {
           <SettingsProvider>
             <SessionProvider>
               <KeyboardShortcuts />
-              <BackgroundLayer />
               <EnergyModeTag />
               <Suspense fallback={<PremiumLoadingScreen secondaryText="Loading Perspective..." />}>
                 <Routes>

@@ -3,7 +3,6 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { backbone, repository, habitService, habitRepo } from '../backbone-v2/index';
 import { useTheme } from '../context/ThemeContext';
 import NodeIcon from '../components/NodeIcon';
-import AppearanceSection from '../components/sidebar/AppearanceSection';
 import { useSettings, SLOT_ROLES } from '../context/SettingsContext';
 import { supabase } from '../lib/supabase';
 import { getSkillEngagementStatus } from '../utils/engagementUtils';
@@ -896,7 +895,7 @@ const Sidebar = ({ onSkillClick }) => {
                         </>
                     )}
 
-                    {energyLevel > 3 && <AppearanceSection isVisible={backgroundMode === 'wallpaper'} />}
+
 
                     {energyLevel > 3 && (
                         <Link to="/settings" className="nav-item settings-btn">

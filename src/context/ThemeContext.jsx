@@ -2,46 +2,8 @@ import React, { createContext, useContext, useEffect, useRef, useState, useMemo 
 
 const isTauri = () => typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
 import { supabase } from '../lib/supabase';
-import { fetchWallpaperConfig, saveWallpaperConfig } from '../lib/wallpaperService';
 
 const ThemeContext = createContext();
-
-// ─── Default wallpaper config shape ──────────────────────────────────────────
-const DEFAULT_WALLPAPER_CONFIG = {
-    wallpaperScope: 'global',
-    backgroundMode: 'solid',
-    wallpapers: {
-        global: { light: null, dark: null },
-        pages: {
-            launchpad: { light: null, dark: null },
-            journal: { light: null, dark: null },
-            marketplace: { light: null, dark: null },
-            area: { light: null, dark: null },
-        }
-    }
-};
-
-/**
- * Migrate old flat { light, dark } shape → new nested shape.
- */
-const migrateWallpaperConfig = (raw) => {
-    if (!raw) return DEFAULT_WALLPAPER_CONFIG;
-
-    if (raw.wallpaperScope !== undefined && raw.wallpapers !== undefined) {
-        const pages = { ...DEFAULT_WALLPAPER_CONFIG.wallpapers.pages, ...raw.wallpapers.pages };
-        const backgroundMode = raw.backgroundMode || 'solid';
-        return { ...raw, backgroundMode, wallpapers: { ...raw.wallpapers, pages } };
-    }
-
-    return {
-        ...DEFAULT_WALLPAPER_CONFIG,
-        backgroundMode: raw.backgroundMode || 'solid',
-        wallpapers: {
-            ...DEFAULT_WALLPAPER_CONFIG.wallpapers,
-            global: { light: raw.light || null, dark: raw.dark || null }
-        }
-    };
-};
 
 export const ThemeProvider = ({ children }) => {
     const getSystemTheme = () =>
@@ -63,33 +25,11 @@ export const ThemeProvider = ({ children }) => {
 
         return 'solid';
     });
-
-    // ─── Wallpaper Config ─────────────────────────────────────────────────────
-    const [wallpaperConfig, setWallpaperConfig] = useState(() => {
-        const savedNew = localStorage.getItem('app-wallpaper-config');
-        if (savedNew) {
-            try {
-                const parsed = migrateWallpaperConfig(JSON.parse(savedNew));
-                // Sync backgroundMode if present in saved config
-                if (parsed.backgroundMode) {
-                    // We don't call setBackgroundMode here as it's the initializer,
-                    // but we can't easily sync back to backgroundMode state from here
-                    // without causing a re-render or being redundant.
-                    // The effect and migrateWallpaperConfig will handle it.
-                }
-                return parsed;
-            }
-            catch (e) { console.error('Failed to parse wallpaper config:', e); }
-        }
-        const legacy = localStorage.getItem('app-wallpaper');
-        if (legacy) return migrateWallpaperConfig({ light: legacy, dark: legacy });
-        return DEFAULT_WALLPAPER_CONFIG;
-    });
     
     // Derived resolved theme with fallback logic for neutral mode
     const resolvedTheme = (() => {
         if (themePreference === 'system') return systemTheme;
-        if (themePreference === 'neutral' && backgroundMode !== 'liquid') return 'dark';
+        if (themePreference === 'neutral' && (backgroundMode !== 'liquid' && backgroundMode !== 'wallpaper')) return 'dark';
         return themePreference;
     })();
 
@@ -107,13 +47,38 @@ export const ThemeProvider = ({ children }) => {
     const [showCompletedTasks, setShowCompletedTasks] = useState(() => {
         return localStorage.getItem('app-show-completed-tasks') === 'true';
     });
-    const [isMultipleWallpapersMode, setIsMultipleWallpapersMode] = useState(() => {
-        return localStorage.getItem('app-multiple-wallpapers-mode') === 'true';
-    });
 
     const [solidAccentColor, setSolidAccentColor] = useState(() => {
         return localStorage.getItem('app-solid-accent-color') || (resolvedTheme === 'dark' ? '#0a84ff' : '#0071e3');
     });
+
+    const [lightWallpaperImage, setLightWallpaperImage] = useState(() => {
+        return localStorage.getItem('app-light-wallpaper-image') || null;
+    });
+
+    const [darkWallpaperImage, setDarkWallpaperImage] = useState(() => {
+        return localStorage.getItem('app-dark-wallpaper-image') || null;
+    });
+
+    const updateLightWallpaperImage = (image) => {
+        setLightWallpaperImage(image);
+        if (image) {
+            localStorage.setItem('app-light-wallpaper-image', image);
+        } else {
+            localStorage.removeItem('app-light-wallpaper-image');
+        }
+    };
+
+    const updateDarkWallpaperImage = (image) => {
+        setDarkWallpaperImage(image);
+        if (image) {
+            localStorage.setItem('app-dark-wallpaper-image', image);
+        } else {
+            localStorage.removeItem('app-dark-wallpaper-image');
+        }
+    };
+
+    const wallpaperImage = resolvedTheme === 'light' ? lightWallpaperImage : darkWallpaperImage;
 
     const hexToRgb = (hex) => {
         if (!hex || hex.length < 7) return resolvedTheme === 'dark' ? '10, 132, 255' : '0, 113, 227';
@@ -138,104 +103,21 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem('app-solid-accent-color', color);
     };
 
-
-    // Ref to track whether the current config change came from a Supabase load
-    // (prevents echo-saving back what we just fetched)
-    const isLoadingFromSupabase = useRef(false);
-
-    // Debounce timer ref for Supabase saves
-    const saveDebounceRef = useRef(null);
-
-    // ─── Load wallpaper config from Supabase ──────────────────────────────────
-    const loadFromSupabase = async (userId) => {
-        setIsSyncing(true);
-        setSyncError(null);
-        try {
-            const remoteConfig = await fetchWallpaperConfig(userId);
-            if (remoteConfig) {
-                const migrated = migrateWallpaperConfig(remoteConfig);
-                isLoadingFromSupabase.current = true;
-                setWallpaperConfig(migrated);
-
-                // Update backgroundMode from remote if present
-                if (migrated.backgroundMode) {
-                    setBackgroundMode(migrated.backgroundMode);
-                }
-
-                // Also persist to localStorage for offline use
-                localStorage.setItem('app-wallpaper-config', JSON.stringify(migrated));
-            }
-        } catch (err) {
-            console.error('[ThemeContext] Failed to load wallpaper config from Supabase:', err);
-            setSyncError('Failed to sync wallpapers');
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
-    // ─── Auth listener: sign-in triggers remote load ──────────────────────────
+    // ─── Auth listener ────────────────────────────────────────────────────────
     useEffect(() => {
         // Check session on mount
         supabase.auth.getSession().then(({ data: { session } }) => {
             const user = session?.user ?? null;
             setCurrentUser(user);
-            if (user) loadFromSupabase(user.id);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const user = session?.user ?? null;
             setCurrentUser(user);
-            if (user) {
-                loadFromSupabase(user.id);
-            } else {
-                // Signed out: revert to local-only config
-                setCurrentUser(null);
-            }
         });
 
         return () => subscription.unsubscribe();
     }, []);
-
-    // ─── Debounced Supabase save whenever wallpaperConfig/backgroundMode changes ─────────────
-    useEffect(() => {
-
-        // Skip saving back to Supabase if this change originated from a remote load
-        if (isLoadingFromSupabase.current) {
-            isLoadingFromSupabase.current = false;
-            return;
-        }
-
-        if (!currentUser) return;
-
-        // Debounce: wait 1.5s after the last change before saving
-        if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
-
-        saveDebounceRef.current = setTimeout(async () => {
-            setIsSyncing(true);
-            setSyncError(null);
-            try {
-                // Include backgroundMode in the saved config
-                const configToSave = { ...wallpaperConfig, backgroundMode };
-                const { processedConfig } = await saveWallpaperConfig(currentUser.id, configToSave);
-
-                // If data URLs were replaced with public URLs, update local state + localStorage
-                if (processedConfig) {
-                    isLoadingFromSupabase.current = true; // prevent save echo
-                    setWallpaperConfig(processedConfig);
-                    localStorage.setItem('app-wallpaper-config', JSON.stringify(processedConfig));
-                }
-            } catch (err) {
-                console.error('[ThemeContext] Failed to save wallpaper config to Supabase:', err);
-                setSyncError('Failed to save wallpapers');
-            } finally {
-                setIsSyncing(false);
-            }
-        }, 1500);
-
-        return () => {
-            if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
-        };
-    }, [wallpaperConfig, backgroundMode, currentUser]);
 
     // ─── System theme listener ────────────────────────────────────────────────
     useEffect(() => {
@@ -267,7 +149,7 @@ export const ThemeProvider = ({ children }) => {
     useEffect(() => {
         const applyGlassEffect = async () => {
             if (isTauri()) {
-                if (backgroundMode === 'liquid') {
+                if (backgroundMode === 'liquid' || backgroundMode === 'wallpaper') {
                     // For neutral mode, we pass null to Rust to allow natural vibrancy
                     const rustTheme = resolvedTheme === 'neutral' ? 'light' : resolvedTheme;
                     try {
@@ -296,7 +178,11 @@ export const ThemeProvider = ({ children }) => {
         const surfaceAttr = (backgroundMode === 'liquid' || backgroundMode === 'wallpaper') ? 'glass' : 'solid';
 
         root.classList.remove('liquid-mode', 'solid-mode', 'wallpaper-mode');
-        root.classList.add(`${backgroundMode}-mode`);
+        if (backgroundMode === 'wallpaper') {
+            root.classList.add('liquid-mode', 'wallpaper-mode');
+        } else {
+            root.classList.add(`${backgroundMode}-mode`);
+        }
 
         root.setAttribute('data-surface', surfaceAttr);
         root.setAttribute('data-background-mode', backgroundMode);
@@ -304,19 +190,11 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem('app-background-mode', backgroundMode);
         // Clean up old surface mode setting
         localStorage.removeItem('app-surface-mode');
-
-        // Always persist to localStorage (for offline / no-auth)
-        localStorage.setItem('app-wallpaper-config', JSON.stringify({ ...wallpaperConfig, backgroundMode }));
-    }, [backgroundMode, wallpaperConfig, resolvedTheme]);
+    }, [backgroundMode, resolvedTheme]);
 
     useEffect(() => {
         localStorage.setItem('app-show-completed-tasks', showCompletedTasks);
     }, [showCompletedTasks]);
-
-    useEffect(() => {
-        localStorage.setItem('app-multiple-wallpapers-mode', isMultipleWallpapersMode);
-    }, [isMultipleWallpapersMode]);
-
 
     // ─── Theme setters ────────────────────────────────────────────────────────
     const setTheme = (theme) => {
@@ -332,73 +210,6 @@ export const ThemeProvider = ({ children }) => {
         });
     };
 
-    // ─── Wallpaper scope setter ───────────────────────────────────────────────
-    const setWallpaperScope = (scope) => {
-        setWallpaperConfig(prev => ({ ...prev, wallpaperScope: scope }));
-    };
-
-    // ─── Wallpaper setters (scope-aware) ─────────────────────────────────────
-    const setLightWallpaper = (url, page = null) => {
-        setWallpaperConfig(prev => {
-            if (page) {
-                return {
-                    ...prev,
-                    wallpapers: {
-                        ...prev.wallpapers,
-                        pages: {
-                            ...prev.wallpapers.pages,
-                            [page]: { ...prev.wallpapers.pages[page], light: url }
-                        }
-                    }
-                };
-            }
-            return {
-                ...prev,
-                wallpapers: { ...prev.wallpapers, global: { ...prev.wallpapers.global, light: url } }
-            };
-        });
-    };
-
-    const setDarkWallpaper = (url, page = null) => {
-        setWallpaperConfig(prev => {
-            if (page) {
-                return {
-                    ...prev,
-                    wallpapers: {
-                        ...prev.wallpapers,
-                        pages: {
-                            ...prev.wallpapers.pages,
-                            [page]: { ...prev.wallpapers.pages[page], dark: url }
-                        }
-                    }
-                };
-            }
-            return {
-                ...prev,
-                wallpapers: { ...prev.wallpapers, global: { ...prev.wallpapers.global, dark: url } }
-            };
-        });
-    };
-
-    const clearWallpaper = (page = null) => {
-        setWallpaperConfig(prev => {
-            if (page) {
-                return {
-                    ...prev,
-                    wallpapers: {
-                        ...prev.wallpapers,
-                        pages: { ...prev.wallpapers.pages, [page]: { light: null, dark: null } }
-                    }
-                };
-            }
-            return { ...prev, wallpapers: { ...DEFAULT_WALLPAPER_CONFIG.wallpapers } };
-        });
-    };
-
-    // Convenience alias (global pair only) — keeps existing consumers working
-    const wallpaper = wallpaperConfig.wallpapers.global;
-    const wallpaperScope = wallpaperConfig.wallpaperScope;
-
     const themeValue = useMemo(() => ({
         theme: resolvedTheme,
         themePreference,
@@ -406,23 +217,16 @@ export const ThemeProvider = ({ children }) => {
         toggleTheme,
         backgroundMode,
         setBackgroundMode,
-        wallpaper,
-        wallpaperConfig,
-        wallpaperScope,
-        setWallpaperScope,
-        setLightWallpaper,
-        setDarkWallpaper,
-        clearWallpaper,
-        // Sync status (optional: show in UI)
         isSyncing,
         syncError,
         showCompletedTasks,
         setShowCompletedTasks,
-        isMultipleWallpapersMode,
-        setIsMultipleWallpapersMode,
-        solidAccentColor,
-        updateSolidAccentColor,
-    }), [resolvedTheme, themePreference, backgroundMode, wallpaper, wallpaperConfig, wallpaperScope, isSyncing, syncError, showCompletedTasks, isMultipleWallpapersMode, solidAccentColor]);
+        lightWallpaperImage,
+        darkWallpaperImage,
+        updateLightWallpaperImage,
+        updateDarkWallpaperImage,
+        wallpaperImage,
+    }), [resolvedTheme, themePreference, backgroundMode, isSyncing, syncError, showCompletedTasks, solidAccentColor, lightWallpaperImage, darkWallpaperImage, wallpaperImage]);
 
     return (
         <ThemeContext.Provider value={themeValue}>

@@ -1,6 +1,5 @@
 import React from 'react';
 import './PremiumLoadingScreen.css';
-import BackgroundLayer from '../background/BackgroundLayer';
 
 /**
  * Premium glassmorphic loading experience. 
@@ -18,8 +17,7 @@ const PremiumLoadingScreen = ({ secondaryText }) => {
 
     return (
         <div className="premium-loader-container">
-            {/* 1. Blurred background of the app persists behind this */}
-            <BackgroundLayer />
+
             
             {/* 2. Darker translucent overlay to help centered text popup */}
             <div className="loader-bg-overlay" />

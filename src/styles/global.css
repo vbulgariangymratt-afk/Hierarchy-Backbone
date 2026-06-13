@@ -34,8 +34,14 @@ body,
 /* LIQUID MODE: Frosted Glass & Transparency */
 /* Logic moved to BackgroundLayer.jsx */
 
-/* SOLID MODE: Opaque & No Blur */
-/* Logic moved to BackgroundLayer.jsx */
+/* SOLID MODE: force opaque root so the permanently-transparent Tauri window
+   doesn't let the desktop bleed through. Liquid & wallpaper modes intentionally
+   keep the transparent root so the glass effect / wallpaper can show. */
+html.solid-mode,
+html.solid-mode body,
+html.solid-mode #root {
+    background: var(--color-bg-main) !important;
+}
 
 .solid-mode * {
     backdrop-filter: none !important;
@@ -200,18 +206,7 @@ video {
 .liquid-mode .modal-content,
 .liquid-mode .reward-modal,
 .liquid-mode .floating-ui,
-.liquid-mode .popover {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.28);
-}
-
-
-
-
+.liquid-mode .popover,
 .wallpaper-mode .liquid-glass,
 .wallpaper-mode .modal-content,
 .wallpaper-mode .reward-modal,
@@ -221,10 +216,12 @@ video {
 .wallpaper-mode .floating-ui,
 .wallpaper-mode .popover,
 .wallpaper-mode .page-panel {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
     box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.20);
+        0 8px 30px rgba(0, 0, 0, 0.28);
 }
 
 .liquid-mode.light .liquid-glass {
