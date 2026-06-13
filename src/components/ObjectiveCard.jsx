@@ -228,11 +228,6 @@ const ObjectiveCard = ({
                                 ) : (
                                     <span className="objective-title-static" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
                                 )}
-                                {energyLevel >= 5 && (
-                                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', opacity: 0.8, lineHeight: '1.4', maxWidth: '500px' }}>
-                                        {obj.metadata?.wish || "Something worth doing."}
-                                    </div>
-                                )}
                             </div>
                         </div>
 
