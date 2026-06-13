@@ -70,6 +70,7 @@ const FocusPage = () => {
     const [showMomentum, setShowMomentum] = useState(false);
     const [nextSuggestedTask, setNextSuggestedTask] = useState(null);
     const [hasAutoStarted, setHasAutoStarted] = useState(false);
+    const [showLowPleasurePrompt, setShowLowPleasurePrompt] = useState(false);
 
     const [levelUpCelebration, setLevelUpCelebration] = useState(null); // { level: X, fading: false }
 
@@ -612,12 +613,6 @@ const FocusPage = () => {
                     }).catch(err => console.error("[Focus Mode] Failed to auto-remove today tag:", err));
                 }
 
-                // 2. INSTANT UI: Trigger Momentum Loop immediately
-                if (energyLevel <= 2 && !isNavigatingAway && nextSuggestedTask) {
-                    setShowMomentum(true);
-                    return;
-                }
-
                 // Standard flow
                 if (isNavigatingAway) {
                     backbone.trackFocusMode(false).catch(console.error);
@@ -709,6 +704,28 @@ const FocusPage = () => {
     }, [task, skill, ack, loadNextTask]);
 
 
+    const handleStopForNow = useCallback(async () => {
+        setShowLowPleasurePrompt(false);
+        try {
+            if (task.metadata?.itemType === 'REPETITION') {
+                await backbone.incrementTaskRepetition(task.id);
+            } else {
+                await backbone.updateNode(task.id, {
+                    metadata: {
+                        ...task.metadata,
+                        status: TaskStatuses.DONE,
+                        completedAt: Date.now(),
+                        ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Failed to save task completion:", e);
+        }
+        await backbone.trackFocusMode(false);
+        navigate(previousRoute || '/launchpad');
+    }, [task, todayRemovalMode, navigate, previousRoute]);
+
     const handleSummarySubmit = useCallback(async () => {
         const isTaskDone = pendingTaskComplete;
         
@@ -716,14 +733,18 @@ const FocusPage = () => {
         const sessionPromise = completeBackboneSession(isTaskDone);
         
         if (isTaskDone) {
-            // OPTIMISTIC UI: Don't await the session save before starting the visual rewards
-            proceedWithTaskCompletion();
-            // Still await the promise in the background to ensure data integrity
-            sessionPromise.catch(err => console.error("Background session save failed:", err));
+            if (actualPleasure === 0 || actualPleasure === 2) {
+                setShowSummary(false);
+                setShowLowPleasurePrompt(true);
+                sessionPromise.catch(err => console.error("Background session save failed:", err));
+            } else {
+                proceedWithTaskCompletion();
+                sessionPromise.catch(err => console.error("Background session save failed:", err));
+            }
         } else {
             await sessionPromise;
         }
-    }, [completeBackboneSession, pendingTaskComplete, proceedWithTaskCompletion]);
+    }, [completeBackboneSession, pendingTaskComplete, proceedWithTaskCompletion, actualPleasure]);
 
     const handleAction = useCallback(async () => {
         if (!task || isToggling) return;
@@ -1234,6 +1255,33 @@ const FocusPage = () => {
                                 {pendingTaskComplete ? "Save & Finish Task" : "Save & Pause Session"}
                             </button>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Low Pleasure Prompt */}
+            {showLowPleasurePrompt && (
+                <div className="focus-modal-overlay">
+                    <div className="focus-modal-content">
+                        <h3>Task Completed</h3>
+                        <p style={{ opacity: 0.8, fontSize: '15px' }}>Would you like to continue with another task, or stop for now?</p>
+                        <div className="momentum-actions" style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                            <button
+                                className="modal-submit-btn"
+                                onClick={() => {
+                                    setShowLowPleasurePrompt(false);
+                                    proceedWithTaskCompletion();
+                                }}
+                            >
+                                Continue with another task
+                            </button>
+                            <button
+                                className="modal-submit-btn secondary"
+                                onClick={handleStopForNow}
+                            >
+                                Stop for now
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

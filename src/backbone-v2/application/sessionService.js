@@ -143,11 +143,11 @@ export const SessionService = (repository, auraService, deps = {}) => {
             const parentAspect = await findAspectAncestor(repository, taskId);
             const objectiveToUpdate = await findObjectiveAncestor(repository, taskId);
             if (parentAspect && completedSession && objectiveToUpdate) {
-                const accType = objectiveToUpdate.metadata?.accumulationType || 'minutes';
+                const accType = objectiveToUpdate.metadata?.accumulationType || 'tasks or activities';
                 let amount = 0;
                 if (accType === 'minutes') {
                     amount = Math.round(completedSession.actualDuration / 60);
-                } else if (accType === 'sessions') {
+                } else if (accType === 'sessions' || accType === 'tasks or activities' || accType === 'tasks' || accType === 'activities') {
                     amount = 1;
                 }
 

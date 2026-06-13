@@ -30,8 +30,8 @@ export const NodeService = (repository, auraService, deps = {}) => {
                 metadata.sessions = [];
                 metadata.orderIndex = metadata.orderIndex || 0;
             } else if (type === NodeTypes.OBJECTIVE) {
-                metadata.theme = metadata.theme || 'General';
-                metadata.accumulationType = metadata.accumulationType || 'minutes';
+                metadata.theme = metadata.theme || '';
+                metadata.accumulationType = metadata.accumulationType || 'tasks or activities';
                 metadata.status = ObjectiveStatuses.ACTIVE;
                 metadata.isActive = true;
                 metadata.isSleeping = false;

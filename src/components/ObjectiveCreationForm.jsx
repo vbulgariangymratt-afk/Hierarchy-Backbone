@@ -9,7 +9,7 @@ const ObjectiveCreationForm = ({ skillId, fetchData, onCancel }) => {
     const [newObjectiveName, setNewObjectiveName] = useState('');
     const [newObjectiveTheme, setNewObjectiveTheme] = useState('');
     const [newObjectiveDuration, setNewObjectiveDuration] = useState(30);
-    const [newObjectiveAccType, setNewObjectiveAccType] = useState('minutes');
+    const [newObjectiveAccType, setNewObjectiveAccType] = useState('tasks or activities');
     const [newObjectiveMVE, setNewObjectiveMVE] = useState('');
     const [newObjectiveWish, setNewObjectiveWish] = useState('');
     const [newObjectiveOutcome, setNewObjectiveOutcome] = useState('');
@@ -24,7 +24,7 @@ const ObjectiveCreationForm = ({ skillId, fetchData, onCancel }) => {
         const duration = newObjectiveDuration === '' ? null : parseInt(newObjectiveDuration);
         const accType = newObjectiveAccType;
 
-        if (!name || !theme || !accType) return;
+        if (!name || !accType) return;
 
         try {
             await backbone.addNode({
@@ -76,8 +76,11 @@ const ObjectiveCreationForm = ({ skillId, fetchData, onCancel }) => {
                 />
             </div>
             <div className="creation-row">
+                <label style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    <strong>Optional</strong> theme
+                </label>
                 <input
-                    placeholder="Theme (e.g. Speed, Quality, Joy)..."
+                    placeholder="e.g. Speed, Quality, Joy..."
                     value={newObjectiveTheme}
                     onChange={e => setNewObjectiveTheme(e.target.value)}
                     className="form-input"
@@ -92,16 +95,6 @@ const ObjectiveCreationForm = ({ skillId, fetchData, onCancel }) => {
                         value={newObjectiveDuration}
                         onChange={e => setNewObjectiveDuration(e.target.value)}
                         className="form-input num-input"
-                    />
-                </div>
-                <div className="input-group">
-                    <label>Accumulation Unit</label>
-                    <input
-                        type="text"
-                        placeholder="e.g. reps, minutes, pages..."
-                        value={newObjectiveAccType}
-                        onChange={e => setNewObjectiveAccType(e.target.value)}
-                        className="form-input"
                     />
                 </div>
             </div>

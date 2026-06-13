@@ -91,7 +91,7 @@ export const useObjectiveHandlers = ({
             name: obj.name || '',
             theme: obj.metadata?.theme || '',
             durationInDays: obj.metadata?.durationInDays ?? '',
-            accumulationType: obj.metadata?.accumulationType || 'minutes',
+            accumulationType: obj.metadata?.accumulationType || 'tasks or activities',
             mve: obj.metadata?.mve || '',
             wish: obj.metadata?.wish || '',
             outcome: obj.metadata?.outcome || '',

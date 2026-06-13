@@ -111,15 +111,6 @@ const ObjectiveCard = ({
                             onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, durationInDays: e.target.value })}
                         />
                     </div>
-                    <div className="edit-field">
-                        <label>Accumulation Unit</label>
-                        <input
-                            className="edit-input"
-                            placeholder="eg: minutes, reps, pages..."
-                            value={objectiveEditForm?.accumulationType}
-                            onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, accumulationType: e.target.value })}
-                        />
-                    </div>
                     <div className="edit-field full-width">
                         <label>Wish</label>
                         <input
@@ -363,16 +354,18 @@ const ObjectiveCard = ({
                                                             </div>
                                                         </div>
 
-                                                        <span style={{ 
-                                                            background: 'rgba(255, 255, 255, 0.05)', 
-                                                            padding: '4px 10px', 
-                                                            borderRadius: '6px', 
-                                                            fontFamily: 'monospace', 
-                                                            fontSize: '12px', 
-                                                            color: 'var(--text-secondary)',
-                                                            border: '1px solid rgba(255, 255, 255, 0.05)',
-                                                            whiteSpace: 'nowrap'
-                                                        }}>{obj.metadata?.theme || 'Feedback and adjustment'}</span>
+                                                        {obj.metadata?.theme && (
+                                                            <span style={{ 
+                                                                background: 'rgba(255, 255, 255, 0.05)', 
+                                                                padding: '4px 10px', 
+                                                                borderRadius: '6px', 
+                                                                fontFamily: 'monospace', 
+                                                                fontSize: '12px', 
+                                                                color: 'var(--text-secondary)',
+                                                                border: '1px solid rgba(255, 255, 255, 0.05)',
+                                                                whiteSpace: 'nowrap'
+                                                            }}>{obj.metadata.theme}</span>
+                                                        )}
                                                     </div>
                                                 </motion.div>
                                             </AnimatePresence>
@@ -485,18 +478,17 @@ const ObjectiveCard = ({
                                                                             <span className="aspect-task-count" style={{ display: 'inline-flex', gap: '3px', color: 'var(--text-secondary)' }}>
                                                                                 {(() => {
                                                                                     const aspectTasksForCount = getChildren(aspect.id, NodeTypes.TASK);
-                                                                                    const doneInAspect = aspectTasksForCount.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
-                                                                                    let aVal = 0;
-                                                                                    if (accType === 'minutes') {
-                                                                                        aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).reduce((sSum, s) => s.status === 'completed' ? sSum + Math.round((s.actualDuration || 0) / 60) : sSum, 0), 0);
-                                                                                    } else if (accType === 'reps') {
-                                                                                        aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.currentUnits || 0), 0);
-                                                                                    } else if (accType === 'sessions') {
-                                                                                        aVal = aspectTasksForCount.reduce((sum, t) => sum + (t.metadata?.sessions || []).filter(s => s.status === 'completed').length, 0);
-                                                                                    } else {
-                                                                                        aVal = doneInAspect;
+                                                                                    const tasks = aspectTasksForCount.filter(t => t.metadata?.itemType !== 'REPETITION').length;
+                                                                                    const activities = aspectTasksForCount.filter(t => t.metadata?.itemType === 'REPETITION').length;
+                                                                                    if (tasks === 0 && activities === 0) return null;
+                                                                                    const parts = [];
+                                                                                    if (tasks > 0) {
+                                                                                        parts.push(`${tasks} task${tasks === 1 ? '' : 's'}`);
                                                                                     }
-                                                                                    return <>{aVal} {accType} &bull; {doneInAspect} logs</>;
+                                                                                    if (activities > 0) {
+                                                                                        parts.push(`${activities} activit${activities === 1 ? 'y' : 'ies'}`);
+                                                                                    }
+                                                                                    return <>{parts.join(' • ')}</>;
                                                                                 })()}
                                                                             </span>
                                                                         </div>

@@ -72,6 +72,122 @@ const Sidebar = ({ onSkillClick }) => {
     const [glowingNodeId, setGlowingNodeId] = useState(null);
     const scrollTimeoutRef = useRef(null);
 
+    // --- QUICK CAPTURE STATE & HANDLERS ---
+    const [showCapture, setShowCapture] = useState(false);
+    const [captures, setCaptures] = useState([]);
+    const [captureInput, setCaptureInput] = useState('');
+    const capturePopoverRef = useRef(null);
+    const captureInputRef = useRef(null);
+
+    const loadCaptures = useCallback(async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data, error } = await supabase
+                    .from('quick_captures')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+                if (error) throw error;
+                setCaptures(data || []);
+            } else {
+                const guest = localStorage.getItem('guest_quick_captures');
+                setCaptures(guest ? JSON.parse(guest) : []);
+            }
+        } catch (e) {
+            console.error('Failed to load quick captures:', e);
+            const guest = localStorage.getItem('guest_quick_captures');
+            setCaptures(guest ? JSON.parse(guest) : []);
+        }
+    }, []);
+
+    const saveCaptureItem = useCallback(async (content) => {
+        if (!content || !content.trim()) return;
+        const trimmed = content.trim();
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data, error } = await supabase
+                    .from('quick_captures')
+                    .insert([{ user_id: user.id, content: trimmed }])
+                    .select();
+                if (error) throw error;
+                if (data && data[0]) {
+                    setCaptures(prev => [data[0], ...prev]);
+                }
+            } else {
+                const guest = localStorage.getItem('guest_quick_captures') || '[]';
+                const parsed = JSON.parse(guest);
+                const newItem = { id: `guest-${Date.now()}`, content: trimmed, created_at: new Date().toISOString() };
+                const updated = [newItem, ...parsed];
+                localStorage.setItem('guest_quick_captures', JSON.stringify(updated));
+                setCaptures(updated);
+            }
+        } catch (e) {
+            console.error('Failed to save quick capture item:', e);
+            const guest = localStorage.getItem('guest_quick_captures') || '[]';
+            const parsed = JSON.parse(guest);
+            const newItem = { id: `guest-${Date.now()}`, content: trimmed, created_at: new Date().toISOString() };
+            const updated = [newItem, ...parsed];
+            localStorage.setItem('guest_quick_captures', JSON.stringify(updated));
+            setCaptures(updated);
+        }
+    }, []);
+
+    const deleteCaptureItem = useCallback(async (id) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user && !String(id).startsWith('guest-')) {
+                const { error } = await supabase
+                    .from('quick_captures')
+                    .delete()
+                    .eq('id', id);
+                if (error) throw error;
+                setCaptures(prev => prev.filter(c => c.id !== id));
+            } else {
+                const guest = localStorage.getItem('guest_quick_captures') || '[]';
+                const parsed = JSON.parse(guest);
+                const updated = parsed.filter(c => c.id !== id);
+                localStorage.setItem('guest_quick_captures', JSON.stringify(updated));
+                setCaptures(updated);
+            }
+        } catch (e) {
+            console.error('Failed to delete quick capture item:', e);
+            const guest = localStorage.getItem('guest_quick_captures') || '[]';
+            const parsed = JSON.parse(guest);
+            const updated = parsed.filter(c => c.id !== id);
+            localStorage.setItem('guest_quick_captures', JSON.stringify(updated));
+            setCaptures(updated);
+        }
+    }, []);
+
+    const handleCloseCapture = useCallback(() => {
+        if (captureInput.trim()) {
+            saveCaptureItem(captureInput);
+            setCaptureInput('');
+        }
+        setShowCapture(false);
+    }, [captureInput, saveCaptureItem]);
+
+    useEffect(() => {
+        loadCaptures();
+    }, [loadCaptures]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (capturePopoverRef.current && !capturePopoverRef.current.contains(event.target) && !event.target.closest('.capture-toggle-btn')) {
+                handleCloseCapture();
+            }
+        };
+
+        if (showCapture) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showCapture, handleCloseCapture]);
+
     // --- CUSTOM CHIME SOUND ---
     const playChime = useCallback(() => {
         try {
@@ -372,18 +488,44 @@ const Sidebar = ({ onSkillClick }) => {
             <div className={`sidebar-scroll-content ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
                 <div className="sidebar-top">
                     {energyLevel > 1 && (
-                        <button
-                            className="mode-toggle-btn"
-                            onClick={toggleMode}
-                            disabled={storeLoading}
-                        >
-                            <div className="btn-icon mode-toggle-icon">
-                                <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
-                            </div>
-                            <span className="btn-text">
-                                {isFocusMode ? 'Go to planning' : 'Go to focus mode'}
-                            </span>
-                        </button>
+                        <div className="mode-toggle-row">
+                            <button
+                                className="mode-toggle-btn focus-toggle-btn"
+                                onClick={toggleMode}
+                                disabled={storeLoading}
+                            >
+                                <div className="btn-icon mode-toggle-icon">
+                                    <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
+                                </div>
+                                <span className="btn-text">
+                                    {isFocusMode ? 'Planning' : 'Focus'}
+                                </span>
+                            </button>
+                            <button
+                                className={`mode-toggle-btn capture-toggle-btn ${showCapture ? 'active' : ''}`}
+                                style={{ position: 'relative' }}
+                                onClick={() => {
+                                    if (showCapture) {
+                                        handleCloseCapture();
+                                    } else {
+                                        setShowCapture(true);
+                                    }
+                                }}
+                            >
+                                <div className="btn-icon mode-toggle-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '10px', height: '10px' }}>
+                                        <path d="M12 20h9"/>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                    </svg>
+                                </div>
+                                <span className="btn-text">Capture</span>
+                                {captures.length > 0 && (
+                                    <span className="capture-badge">
+                                        {captures.length}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
                     )}
                     
                     {/* Energy Level Selector */}
@@ -766,6 +908,58 @@ const Sidebar = ({ onSkillClick }) => {
                     )}
                 </div>
             </div>
+
+            {showCapture && (
+                <div className="quick-capture-popover" ref={capturePopoverRef}>
+                    <div className="quick-capture-header">
+                        <h4>Quick Capture</h4>
+                    </div>
+                    <div className="quick-capture-input-row">
+                        <input
+                            ref={captureInputRef}
+                            type="text"
+                            className="quick-capture-input"
+                            placeholder="Capture an idea..."
+                            value={captureInput}
+                            onChange={(e) => setCaptureInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    saveCaptureItem(captureInput);
+                                    setCaptureInput('');
+                                }
+                            }}
+                            autoFocus
+                        />
+                        <button 
+                            className="quick-capture-add-btn"
+                            onClick={() => {
+                                saveCaptureItem(captureInput);
+                                setCaptureInput('');
+                                if (captureInputRef.current) captureInputRef.current.focus();
+                            }}
+                        >
+                            Add
+                        </button>
+                    </div>
+                    <div className="quick-capture-list scrollbar-hidden">
+                        {captures.length === 0 ? (
+                            <div className="quick-capture-empty">No items captured yet.</div>
+                        ) : (
+                            captures.map(item => (
+                                <div className="quick-capture-item" key={item.id}>
+                                    <span className="quick-capture-item-text">{item.content}</span>
+                                    <button 
+                                        className="quick-capture-item-delete"
+                                        onClick={() => deleteCaptureItem(item.id)}
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
         </aside>
     );
 };
