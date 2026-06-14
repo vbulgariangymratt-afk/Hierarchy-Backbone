@@ -60,23 +60,309 @@ export const ThemeProvider = ({ children }) => {
         return localStorage.getItem('app-dark-wallpaper-image') || null;
     });
 
-    const updateLightWallpaperImage = (image) => {
-        setLightWallpaperImage(image);
-        if (image) {
-            localStorage.setItem('app-light-wallpaper-image', image);
+    // Daily limit tracking state
+    const [lightWallpaperChanges, setLightWallpaperChanges] = useState(() => {
+        try {
+            const saved = localStorage.getItem('app-light-wallpaper-changes');
+            return saved ? JSON.parse(saved) : { date: '', count: 0 };
+        } catch {
+            return { date: '', count: 0 };
+        }
+    });
+
+    const [darkWallpaperChanges, setDarkWallpaperChanges] = useState(() => {
+        try {
+            const saved = localStorage.getItem('app-dark-wallpaper-changes');
+            return saved ? JSON.parse(saved) : { date: '', count: 0 };
+        } catch {
+            return { date: '', count: 0 };
+        }
+    });
+
+    const getTodayDateString = () => new Date().toISOString().split('T')[0];
+
+    const lightChangesRemaining = Math.max(0, 2 - (lightWallpaperChanges.date === getTodayDateString() ? lightWallpaperChanges.count : 0));
+    const darkChangesRemaining = Math.max(0, 2 - (darkWallpaperChanges.date === getTodayDateString() ? darkWallpaperChanges.count : 0));
+
+    const incrementChangeCount = async (mode) => {
+        const todayStr = getTodayDateString();
+        let currentChanges = mode === 'light' ? lightWallpaperChanges : darkWallpaperChanges;
+        let newCount = 1;
+        if (currentChanges.date === todayStr) {
+            newCount = currentChanges.count + 1;
+        }
+        const updated = { date: todayStr, count: newCount };
+        
+        if (mode === 'light') {
+            setLightWallpaperChanges(updated);
+            localStorage.setItem('app-light-wallpaper-changes', JSON.stringify(updated));
         } else {
-            localStorage.removeItem('app-light-wallpaper-image');
+            setDarkWallpaperChanges(updated);
+            localStorage.setItem('app-dark-wallpaper-changes', JSON.stringify(updated));
+        }
+
+        if (currentUser) {
+            try {
+                const { data } = await supabase
+                    .from('wallpaper_configs')
+                    .select('config')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                const existingConfig = data?.config || {};
+                const newConfig = {
+                    ...existingConfig,
+                    [`${mode}_changes`]: updated
+                };
+
+                await supabase
+                    .from('wallpaper_configs')
+                    .upsert({
+                        user_id: currentUser.id,
+                        config: newConfig,
+                        updated_at: new Date().toISOString()
+                    });
+            } catch (err) {
+                console.error('[ThemeContext] Failed to sync daily change count:', err);
+            }
         }
     };
 
-    const updateDarkWallpaperImage = (image) => {
-        setDarkWallpaperImage(image);
-        if (image) {
-            localStorage.setItem('app-dark-wallpaper-image', image);
-        } else {
-            localStorage.removeItem('app-dark-wallpaper-image');
+    const updateLightWallpaperImage = async (image) => {
+        const todayStr = getTodayDateString();
+        // Check if this is a change to a new wallpaper image
+        const isNewImage = image !== null && image !== lightWallpaperImage;
+        if (isNewImage) {
+            const count = lightWallpaperChanges.date === todayStr ? lightWallpaperChanges.count : 0;
+            if (count >= 2) {
+                const errMsg = 'Daily light wallpaper limit reached. You can only change the wallpaper twice per day.';
+                setSyncError(errMsg);
+                alert(errMsg);
+                return;
+            }
+        }
+
+        if (image instanceof File) {
+            if (currentUser) {
+                setIsSyncing(true);
+                try {
+                    const publicUrl = await uploadWallpaper(image, 'light');
+                    if (publicUrl) {
+                        setLightWallpaperImage(publicUrl);
+                        localStorage.setItem('app-light-wallpaper-image', publicUrl);
+                        await saveWallpaperConfig('light', publicUrl);
+                        await incrementChangeCount('light');
+                    }
+                } catch (err) {
+                    setSyncError(err.message || 'Failed to upload light wallpaper');
+                } finally {
+                    setIsSyncing(false);
+                }
+            } else {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const dataUrl = event.target.result;
+                    setLightWallpaperImage(dataUrl);
+                    localStorage.setItem('app-light-wallpaper-image', dataUrl);
+                    await incrementChangeCount('light');
+                };
+                reader.readAsDataURL(image);
+            }
+        } else if (typeof image === 'string' || image === null) {
+            setLightWallpaperImage(image);
+            if (image) {
+                localStorage.setItem('app-light-wallpaper-image', image);
+            } else {
+                localStorage.removeItem('app-light-wallpaper-image');
+            }
+
+            if (currentUser) {
+                setIsSyncing(true);
+                try {
+                    if (image === null) {
+                        await supabase.storage
+                            .from('wallpapers')
+                            .remove([`${currentUser.id}/light_wallpaper`]);
+                    }
+                    await saveWallpaperConfig('light', image);
+                    if (isNewImage) {
+                        await incrementChangeCount('light');
+                    }
+                } catch (err) {
+                    console.error('[ThemeContext] Error updating remote light wallpaper config:', err);
+                } finally {
+                    setIsSyncing(false);
+                }
+            } else if (isNewImage) {
+                await incrementChangeCount('light');
+            }
         }
     };
+
+    const updateDarkWallpaperImage = async (image) => {
+        const todayStr = getTodayDateString();
+        const isNewImage = image !== null && image !== darkWallpaperImage;
+        if (isNewImage) {
+            const count = darkWallpaperChanges.date === todayStr ? darkWallpaperChanges.count : 0;
+            if (count >= 2) {
+                const errMsg = 'Daily dark wallpaper limit reached. You can only change the wallpaper twice per day.';
+                setSyncError(errMsg);
+                alert(errMsg);
+                return;
+            }
+        }
+
+        if (image instanceof File) {
+            if (currentUser) {
+                setIsSyncing(true);
+                try {
+                    const publicUrl = await uploadWallpaper(image, 'dark');
+                    if (publicUrl) {
+                        setDarkWallpaperImage(publicUrl);
+                        localStorage.setItem('app-dark-wallpaper-image', publicUrl);
+                        await saveWallpaperConfig('dark', publicUrl);
+                        await incrementChangeCount('dark');
+                    }
+                } catch (err) {
+                    setSyncError(err.message || 'Failed to upload dark wallpaper');
+                } finally {
+                    setIsSyncing(false);
+                }
+            } else {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const dataUrl = event.target.result;
+                    setDarkWallpaperImage(dataUrl);
+                    localStorage.setItem('app-dark-wallpaper-image', dataUrl);
+                    await incrementChangeCount('dark');
+                };
+                reader.readAsDataURL(image);
+            }
+        } else if (typeof image === 'string' || image === null) {
+            setDarkWallpaperImage(image);
+            if (image) {
+                localStorage.setItem('app-dark-wallpaper-image', image);
+            } else {
+                localStorage.removeItem('app-dark-wallpaper-image');
+            }
+
+            if (currentUser) {
+                setIsSyncing(true);
+                try {
+                    if (image === null) {
+                        await supabase.storage
+                            .from('wallpapers')
+                            .remove([`${currentUser.id}/dark_wallpaper`]);
+                    }
+                    await saveWallpaperConfig('dark', image);
+                    if (isNewImage) {
+                        await incrementChangeCount('dark');
+                    }
+                } catch (err) {
+                    console.error('[ThemeContext] Error updating remote dark wallpaper config:', err);
+                } finally {
+                    setIsSyncing(false);
+                }
+            } else if (isNewImage) {
+                await incrementChangeCount('dark');
+            }
+        }
+    };
+
+    const uploadWallpaper = async (file, mode) => {
+        if (!currentUser) return null;
+        try {
+            const filePath = `${currentUser.id}/${mode}_wallpaper`;
+            const { error } = await supabase.storage
+                .from('wallpapers')
+                .upload(filePath, file, {
+                    cacheControl: '0',
+                    upsert: true
+                });
+
+            if (error) throw error;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('wallpapers')
+                .getPublicUrl(filePath);
+
+            return `${publicUrl}?t=${Date.now()}`;
+        } catch (err) {
+            console.error(`[ThemeContext] Failed uploading wallpaper:`, err);
+            throw err;
+        }
+    };
+
+    const saveWallpaperConfig = async (mode, url) => {
+        if (!currentUser) return;
+        try {
+            const { data } = await supabase
+                .from('wallpaper_configs')
+                .select('config')
+                .eq('user_id', currentUser.id)
+                .single();
+
+            const existingConfig = data?.config || {};
+            const newConfig = {
+                ...existingConfig,
+                [mode]: url
+            };
+
+            const { error } = await supabase
+                .from('wallpaper_configs')
+                .upsert({
+                    user_id: currentUser.id,
+                    config: newConfig,
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
+        } catch (err) {
+            console.error('[ThemeContext] Failed to save wallpaper config:', err);
+        }
+    };
+
+    // Load remote wallpaper config on login
+    useEffect(() => {
+        if (!currentUser) return;
+        const loadWallpaperConfig = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('wallpaper_configs')
+                    .select('config')
+                    .eq('user_id', currentUser.id)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    console.error('[ThemeContext] Error loading wallpaper config:', error);
+                    return;
+                }
+
+                if (data && data.config) {
+                    const config = data.config;
+                    if (config.light) {
+                        setLightWallpaperImage(config.light);
+                        localStorage.setItem('app-light-wallpaper-image', config.light);
+                    }
+                    if (config.dark) {
+                        setDarkWallpaperImage(config.dark);
+                        localStorage.setItem('app-dark-wallpaper-image', config.dark);
+                    }
+                    if (config.light_changes) {
+                        setLightWallpaperChanges(config.light_changes);
+                        localStorage.setItem('app-light-wallpaper-changes', JSON.stringify(config.light_changes));
+                    }
+                    if (config.dark_changes) {
+                        setDarkWallpaperChanges(config.dark_changes);
+                        localStorage.setItem('app-dark-wallpaper-changes', JSON.stringify(config.dark_changes));
+                    }
+                }
+            } catch (err) {
+                console.error('[ThemeContext] Failed loading wallpaper config:', err);
+            }
+        };
+        loadWallpaperConfig();
+    }, [currentUser]);
 
     const wallpaperImage = resolvedTheme === 'light' ? lightWallpaperImage : darkWallpaperImage;
 
@@ -226,7 +512,9 @@ export const ThemeProvider = ({ children }) => {
         updateLightWallpaperImage,
         updateDarkWallpaperImage,
         wallpaperImage,
-    }), [resolvedTheme, themePreference, backgroundMode, isSyncing, syncError, showCompletedTasks, solidAccentColor, lightWallpaperImage, darkWallpaperImage, wallpaperImage]);
+        lightChangesRemaining,
+        darkChangesRemaining,
+    }), [resolvedTheme, themePreference, backgroundMode, isSyncing, syncError, showCompletedTasks, solidAccentColor, lightWallpaperImage, darkWallpaperImage, wallpaperImage, lightChangesRemaining, darkChangesRemaining]);
 
     return (
         <ThemeContext.Provider value={themeValue}>

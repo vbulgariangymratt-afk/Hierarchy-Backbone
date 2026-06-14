@@ -20,6 +20,8 @@ const SettingsPage = () => {
         darkWallpaperImage,
         updateLightWallpaperImage,
         updateDarkWallpaperImage,
+        lightChangesRemaining,
+        darkChangesRemaining,
     } = useTheme();
 
     const { 
@@ -240,40 +242,57 @@ const SettingsPage = () => {
                                 Upload distinct background images for Light and Dark modes. They will be placed behind the app and automatically blurred and darkened.
                             </p>
                             
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', width: '100%' }}>
+                            <div className="appearance-hint" style={{ 
+                                marginTop: '0px', 
+                                padding: '12px', 
+                                borderLeft: '3px solid var(--color-accent, #0a84ff)', 
+                                background: 'rgba(255, 255, 255, 0.03)', 
+                                borderRadius: '4px',
+                                fontSize: '13px',
+                                lineHeight: '1.5',
+                                maxWidth: '600px',
+                                opacity: 0.9,
+                                fontStyle: 'italic'
+                            }}>
+                                "If this setting were left completely unlocked... tweaking aesthetics would become a hyperfocus rabbit hole.<br /><br />
+                                Even I am locked out after two tries (owner & developer)"
+                            </div>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', width: '100%', marginTop: '10px' }}>
                                 {/* Light Mode Wallpaper */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>Light Mode Wallpaper</span>
+                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>
+                                        Light Mode Wallpaper ({lightChangesRemaining} {lightChangesRemaining === 1 ? 'change' : 'changes'} left today)
+                                    </span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             id="wallpaper-upload-light"
+                                            disabled={lightChangesRemaining === 0}
                                             style={{ display: 'none' }}
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0];
                                                 if (file) {
-                                                    const reader = new FileReader();
-                                                    reader.onload = (event) => {
-                                                        updateLightWallpaperImage(event.target.result);
-                                                    };
-                                                    reader.readAsDataURL(file);
+                                                    updateLightWallpaperImage(file);
                                                 }
                                             }}
                                         />
                                         <label 
-                                            htmlFor="wallpaper-upload-light" 
+                                            htmlFor={lightChangesRemaining > 0 ? "wallpaper-upload-light" : undefined} 
                                             className="segmented-control-item" 
                                             style={{ 
                                                 padding: '8px 12px', 
-                                                cursor: 'pointer', 
+                                                cursor: lightChangesRemaining === 0 ? 'not-allowed' : 'pointer', 
                                                 borderRadius: '8px',
                                                 border: '1px solid rgba(255, 255, 255, 0.15)',
                                                 textAlign: 'center',
-                                                fontSize: '13px'
+                                                fontSize: '13px',
+                                                opacity: lightChangesRemaining === 0 ? 0.4 : 1,
+                                                pointerEvents: lightChangesRemaining === 0 ? 'none' : 'auto'
                                             }}
                                         >
-                                            Choose Light
+                                            {lightChangesRemaining === 0 ? 'Choose Light (Locked)' : 'Choose Light'}
                                         </label>
                                         {lightWallpaperImage ? (
                                             <>
@@ -302,37 +321,38 @@ const SettingsPage = () => {
 
                                 {/* Dark Mode Wallpaper */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>Dark Mode Wallpaper</span>
+                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>
+                                        Dark Mode Wallpaper ({darkChangesRemaining} {darkChangesRemaining === 1 ? 'change' : 'changes'} left today)
+                                    </span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <input
                                             type="file"
                                             accept="image/*"
                                             id="wallpaper-upload-dark"
+                                            disabled={darkChangesRemaining === 0}
                                             style={{ display: 'none' }}
                                             onChange={(e) => {
                                                 const file = e.target.files?.[0];
                                                 if (file) {
-                                                    const reader = new FileReader();
-                                                    reader.onload = (event) => {
-                                                        updateDarkWallpaperImage(event.target.result);
-                                                    };
-                                                    reader.readAsDataURL(file);
+                                                    updateDarkWallpaperImage(file);
                                                 }
                                             }}
                                         />
                                         <label 
-                                            htmlFor="wallpaper-upload-dark" 
+                                            htmlFor={darkChangesRemaining > 0 ? "wallpaper-upload-dark" : undefined} 
                                             className="segmented-control-item" 
                                             style={{ 
                                                 padding: '8px 12px', 
-                                                cursor: 'pointer', 
+                                                cursor: darkChangesRemaining === 0 ? 'not-allowed' : 'pointer', 
                                                 borderRadius: '8px',
                                                 border: '1px solid rgba(255, 255, 255, 0.15)',
                                                 textAlign: 'center',
-                                                fontSize: '13px'
+                                                fontSize: '13px',
+                                                opacity: darkChangesRemaining === 0 ? 0.4 : 1,
+                                                pointerEvents: darkChangesRemaining === 0 ? 'none' : 'auto'
                                             }}
                                         >
-                                            Choose Dark
+                                            {darkChangesRemaining === 0 ? 'Choose Dark (Locked)' : 'Choose Dark'}
                                         </label>
                                         {darkWallpaperImage ? (
                                             <>
