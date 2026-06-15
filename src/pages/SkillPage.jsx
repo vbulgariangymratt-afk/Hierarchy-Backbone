@@ -34,6 +34,33 @@ import SkillSurvivalView from '../components/SkillSurvivalView';
 import ObjectiveCreationForm from '../components/ObjectiveCreationForm';
 import ObjectiveCard from '../components/ObjectiveCard';
 
+const bionicify = (text) => {
+    if (!text) return '';
+    return text.split('\n').map((line, lineIdx) => {
+        return (
+            <span key={lineIdx} style={{ display: 'block', marginBottom: line.trim() === '' ? '12px' : '0' }}>
+                {line.split(' ').map((word, wordIdx) => {
+                    const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'“”]/g,"");
+                    if (cleanWord.length === 0) return <span key={wordIdx} style={{ marginRight: '0.28em' }}>{word}</span>;
+                    
+                    const boldLength = Math.max(1, Math.ceil(cleanWord.length * 0.45));
+                    const prependedPunctuationCount = word.indexOf(cleanWord[0]);
+                    const splitIdx = Math.max(0, prependedPunctuationCount) + boldLength;
+                    
+                    const boldPart = word.substring(0, splitIdx);
+                    const normalPart = word.substring(splitIdx);
+                    
+                    return (
+                        <span key={wordIdx} style={{ display: 'inline-block', marginRight: '0.28em' }}>
+                            <strong style={{ fontWeight: 700 }}>{boldPart}</strong>{normalPart}
+                        </span>
+                    );
+                })}
+            </span>
+        );
+    });
+};
+
 const macOSSpring = {
     type: "spring",
     stiffness: 300,
@@ -45,7 +72,7 @@ const SkillPage = () => {
     const { id } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    const { showCompletedTasks } = useTheme();
+    const { showCompletedTasks, backgroundMode } = useTheme();
     const { energyLevel, activeExperimentLimit, maintenanceSkillIds } = useSettings();
 
     // Drag Reorder Lock
@@ -79,10 +106,17 @@ const SkillPage = () => {
 
     // Create Habit State
     const [isCreatingHabit, setIsCreatingHabit] = useState(false);
+    const [adhdFlowStep, setAdhdFlowStep] = useState(1);
     const [newHabitTrigger, setNewHabitTrigger] = useState('');
     const [newHabitAction, setNewHabitAction] = useState('');
     const [newHabitPeriod, setNewHabitPeriod] = useState('daily');
     const [newHabitCount, setNewHabitCount] = useState(1);
+    
+    // ADHD Habit Flow Steps State
+    const [finalHabitAction, setFinalHabitAction] = useState('');
+    const [habitTrigger, setHabitTrigger] = useState('');
+    const [smallestHabitAction, setSmallestHabitAction] = useState('');
+    const [activeReasonIndex, setActiveReasonIndex] = useState(0);
 
     // Inline rename state
     const [inlineEditingNodeId, setInlineEditingNodeId] = useState(null);
@@ -365,26 +399,29 @@ const SkillPage = () => {
 
     const handleCreateHabit = useCallback(async (e) => {
         if (e) e.preventDefault();
-        if (!newHabitTrigger.trim() || !newHabitAction.trim()) return;
+        if (!habitTrigger.trim() || !smallestHabitAction.trim()) return;
         try {
             await habitService.createHabit(
                 id,
-                newHabitTrigger.trim(),
-                newHabitAction.trim(),
+                habitTrigger.trim(),
+                smallestHabitAction.trim(),
                 newHabitPeriod,
                 newHabitCount
             );
             setIsCreatingHabit(false);
-            setNewHabitTrigger('');
-            setNewHabitAction('');
+            setAdhdFlowStep(1);
+            setFinalHabitAction('');
+            setHabitTrigger('');
+            setSmallestHabitAction('');
             setNewHabitPeriod('daily');
             setNewHabitCount(1);
+            setActiveReasonIndex(0);
             fetchData();
             fetchSkills();
         } catch (error) {
             console.error("Failed to create habit:", error);
         }
-    }, [id, newHabitTrigger, newHabitAction, newHabitPeriod, newHabitCount, fetchData, fetchSkills]);
+    }, [id, habitTrigger, smallestHabitAction, newHabitPeriod, newHabitCount, fetchData, fetchSkills]);
 
     const handleChallengeAction = useCallback((type) => {
         if (type === 'MASTERY' && masteryCheckTaskId) {
@@ -439,8 +476,533 @@ const SkillPage = () => {
         }
     }, [loading, energyLevel, skill?.id, activeObjectives]);
 
+    // Enter key advances the habit creation flow
+    useEffect(() => {
+        if (!isCreatingHabit) return;
+        const handleKeyDown = (e) => {
+            if (e.key !== 'Enter') return;
+            // Don't hijack Enter if the user is in a textarea (shouldn't be any, but just in case)
+            if (e.target.tagName === 'TEXTAREA') return;
+            // Prevent form submission / default behaviour
+            e.preventDefault();
+
+            const REASONS_LENGTH = 4;
+            switch (adhdFlowStep) {
+                case 1:
+                    setAdhdFlowStep(2);
+                    break;
+                case 2:
+                    if (finalHabitAction.trim()) setAdhdFlowStep(3);
+                    break;
+                case 3:
+                    if (habitTrigger.trim()) setAdhdFlowStep(4);
+                    break;
+                case 4:
+                    if (smallestHabitAction.trim()) setAdhdFlowStep(6);
+                    break;
+                case 5:
+                    // cycle reasons; on the last one, move forward to step 6
+                    setActiveReasonIndex(prev => {
+                        if (prev < REASONS_LENGTH - 1) return prev + 1;
+                        setAdhdFlowStep(6);
+                        return 0;
+                    });
+                    break;
+                case 6:
+                    handleCreateHabit();
+                    break;
+                default:
+                    break;
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isCreatingHabit, adhdFlowStep, finalHabitAction, habitTrigger, smallestHabitAction]);
+
     if (loading) return <div className="skill-page-loading">Loading Hierarchy...</div>;
     if (!skill) return <div className="skill-page-error">Skill not found.</div>;
+
+    if (isCreatingHabit) {
+        return (
+            <div className="adhd-habit-flow-overlay" style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                backgroundColor: backgroundMode === 'solid' ? '#0a0a0c' : 'rgba(10, 10, 12, 0.45)',
+                backdropFilter: backgroundMode === 'solid' ? 'none' : 'blur(24px) saturate(180%)',
+                WebkitBackdropFilter: backgroundMode === 'solid' ? 'none' : 'blur(24px) saturate(180%)',
+                color: '#fff',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                zIndex: 9999,
+                padding: '60px 40px 40px 40px',
+                boxSizing: 'border-box',
+                fontFamily: "'Lexend', system-ui, -apple-system, sans-serif"
+            }}>
+                <div style={{ height: '24px' }} />
+
+                <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '32px', alignItems: 'flex-start', width: '100%', textAlign: 'left' }}>
+                    {adhdFlowStep === 1 && (
+                        <>
+                            <p style={{ fontSize: '24px', fontWeight: 400, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
+                                {bionicify(`Its not as simple as “just do it consistently” for our type of brains\n\nLemme show you adhd does it`)}
+                            </p>
+                            <button 
+                                onClick={() => setAdhdFlowStep(2)}
+                                style={{
+                                    padding: '12px 28px',
+                                    fontSize: '16px',
+                                    fontWeight: 600,
+                                    color: '#fff',
+                                    background: 'var(--color-accent)',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    boxShadow: '0 4px 12px rgba(var(--color-accent-rgb), 0.3)',
+                                    marginTop: '10px',
+                                    fontFamily: 'inherit'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.target.style.transform = 'translateY(-1px)';
+                                    e.target.style.boxShadow = '0 6px 16px rgba(var(--color-accent-rgb), 0.45)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.target.style.transform = 'translateY(0)';
+                                    e.target.style.boxShadow = '0 4px 12px rgba(var(--color-accent-rgb), 0.3)';
+                                }}
+                            >
+                                show me
+                            </button>
+                        </>
+                    )}
+
+                    {adhdFlowStep === 2 && (
+                        <>
+                            <p style={{ fontSize: '22px', fontWeight: 400, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
+                                {bionicify(`what is the overall habit that you want to achieve? (study Russian every day) for example (exclude frequency for now)`)}
+                            </p>
+                            <input 
+                                autoFocus
+                                placeholder="e.g. study Russian"
+                                value={finalHabitAction}
+                                onChange={e => setFinalHabitAction(e.target.value)}
+                                style={{
+                                    border: 'none',
+                                    borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
+                                    background: 'transparent',
+                                    color: '#fff',
+                                    fontSize: '22px',
+                                    padding: '8px 0',
+                                    width: '100%',
+                                    maxWidth: '500px',
+                                    outline: 'none',
+                                    marginTop: '10px',
+                                    fontFamily: 'inherit',
+                                    textAlign: 'left'
+                                }}
+                            />
+                            <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(1)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#a1a1aa',
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Back
+                                </button>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(3)}
+                                    disabled={!finalHabitAction.trim()}
+                                    style={{
+                                        padding: '12px 28px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#fff',
+                                        background: finalHabitAction.trim() ? 'var(--color-accent)' : 'rgba(255, 255, 255, 0.08)',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: finalHabitAction.trim() ? 'pointer' : 'not-allowed',
+                                        transition: 'all 0.2s ease',
+                                        opacity: finalHabitAction.trim() ? 1 : 0.5,
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {adhdFlowStep === 3 && (
+                        <>
+                            <p style={{ fontSize: '22px', fontWeight: 400, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
+                                {bionicify(`and what will be your trigger? for example if you want to study russian, your trigger might be to sit on your desk\n\nSo your habit would look like: IF I ${habitTrigger.trim() || '___'} THEN I ${finalHabitAction}`)}
+                            </p>
+                            <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.55)', margin: '4px 0 0 0', fontWeight: 300 }}>
+                                {bionicify(`make sure to chain it to an action you already do`)}
+                            </p>
+                            <input 
+                                autoFocus
+                                placeholder="e.g. sit on my desk"
+                                value={habitTrigger}
+                                onChange={e => setHabitTrigger(e.target.value)}
+                                style={{
+                                    border: 'none',
+                                    borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
+                                    background: 'transparent',
+                                    color: '#fff',
+                                    fontSize: '22px',
+                                    padding: '8px 0',
+                                    width: '100%',
+                                    maxWidth: '500px',
+                                    outline: 'none',
+                                    marginTop: '10px',
+                                    fontFamily: 'inherit',
+                                    textAlign: 'left'
+                                }}
+                            />
+                            <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(2)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#a1a1aa',
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Back
+                                </button>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(4)}
+                                    disabled={!habitTrigger.trim()}
+                                    style={{
+                                        padding: '12px 28px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#fff',
+                                        background: habitTrigger.trim() ? 'var(--color-accent)' : 'rgba(255, 255, 255, 0.08)',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: habitTrigger.trim() ? 'pointer' : 'not-allowed',
+                                        transition: 'all 0.2s ease',
+                                        opacity: habitTrigger.trim() ? 1 : 0.5,
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {adhdFlowStep === 4 && (
+                        <>
+                            <p style={{ fontSize: '20px', fontWeight: 400, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
+                                {bionicify(`now ignore your desired habit for a while, think of the absolute, most insignificant smallest version of this habit that you can do\n\nFor example if your habit to study x thing every day, the smallest version of this would be: open the book on your desk (and thats it)\n\nSo it would look like: IF I ${habitTrigger} THEN I ${smallestHabitAction.trim() || '___'}\n\nAnd that would be phase 1 of your habit`)}
+                            </p>
+                            <input 
+                                autoFocus
+                                placeholder="e.g. open the book on my desk"
+                                value={smallestHabitAction}
+                                onChange={e => setSmallestHabitAction(e.target.value)}
+                                style={{
+                                    border: 'none',
+                                    borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
+                                    background: 'transparent',
+                                    color: '#fff',
+                                    fontSize: '22px',
+                                    padding: '8px 0',
+                                    width: '100%',
+                                    maxWidth: '500px',
+                                    outline: 'none',
+                                    marginTop: '10px',
+                                    fontFamily: 'inherit',
+                                    textAlign: 'left'
+                                }}
+                            />
+                            <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(3)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#a1a1aa',
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Back
+                                </button>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(5)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#a1a1aa',
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    why like this?
+                                </button>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(6)}
+                                    disabled={!smallestHabitAction.trim()}
+                                    style={{
+                                        padding: '12px 28px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#fff',
+                                        background: smallestHabitAction.trim() ? 'var(--color-accent)' : 'rgba(255, 255, 255, 0.08)',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: smallestHabitAction.trim() ? 'pointer' : 'not-allowed',
+                                        transition: 'all 0.2s ease',
+                                        opacity: smallestHabitAction.trim() ? 1 : 0.5,
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {adhdFlowStep === 5 && (
+                        <>
+                            <div style={{ maxWidth: '650px', width: '100%' }}>
+                                {(() => {
+                                    const reasons = [
+                                        `1: Our brains dont reward us when doing “boring but important” stuff, if we start with the apparently huge task of ${finalHabitAction} your brain will treat it as a threat cuz of the massive effort to start and you’ll burn out in 3 days`,
+                                        `2: Our brains have time blindness, so if we say “do x thing at 8 am” you’ll just forget, if you dont forget you’ll resist cuz it feels like a “should” task instead of something you want to do, and it just creates micro anxiety around that`,
+                                        `3: starting with the smallest possible action is way easier for adhd than with the final massive habit, costs way less energy, effort backfires in adhd so we remove it from the process of forming the habit, so you build step by step basically`,
+                                        `Think of all the habits & trackers that you’ve tried to implement and failed, they failed for these previous reasons, that way doesnt work for us, we need to do stuff differently bruv`
+                                    ];
+                                    return (
+                                        <>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', justifyContent: 'flex-start', marginBottom: '24px' }}>
+                                                <button 
+                                                    onClick={() => setActiveReasonIndex(prev => (prev > 0 ? prev - 1 : reasons.length - 1))}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#fff',
+                                                        fontSize: '28px',
+                                                        cursor: 'pointer',
+                                                        padding: '8px 16px 8px 0',
+                                                        opacity: 0.6,
+                                                        outline: 'none',
+                                                        transition: 'opacity 0.2s ease',
+                                                        fontFamily: 'inherit'
+                                                    }}
+                                                    onMouseEnter={e => e.target.style.opacity = 1}
+                                                    onMouseLeave={e => e.target.style.opacity = 0.6}
+                                                >
+                                                    &larr;
+                                                </button>
+                                                <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-accent)', letterSpacing: '0.05em' }}>
+                                                    Reason {activeReasonIndex + 1}
+                                                </span>
+                                                <button 
+                                                    onClick={() => setActiveReasonIndex(prev => (prev < reasons.length - 1 ? prev + 1 : 0))}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        color: '#fff',
+                                                        fontSize: '28px',
+                                                        cursor: 'pointer',
+                                                        padding: '8px 16px',
+                                                        opacity: 0.6,
+                                                        outline: 'none',
+                                                        transition: 'opacity 0.2s ease',
+                                                        fontFamily: 'inherit'
+                                                    }}
+                                                    onMouseEnter={e => e.target.style.opacity = 1}
+                                                    onMouseLeave={e => e.target.style.opacity = 0.6}
+                                                >
+                                                    &rarr;
+                                                </button>
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '18px', lineHeight: 1.6, color: 'rgba(255, 255, 255, 0.95)', minHeight: '140px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', textAlign: 'left' }}>
+                                                {bionicify(reasons[activeReasonIndex])}
+                                            </p>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+                            <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(4)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#a1a1aa',
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Back
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                    {adhdFlowStep === 6 && (
+                        <>
+                            <p style={{ fontSize: '22px', fontWeight: 400, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
+                                {bionicify(`how often do you wanna do this habit? (final form eventually)`)}
+                            </p>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', marginTop: '20px', width: '100%' }}>
+                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
+                                    {bionicify(`Frequency Target`)}
+                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '18px' }}>
+                                    <input 
+                                        type="number" 
+                                        value={newHabitCount}
+                                        onChange={e => setNewHabitCount(parseInt(e.target.value) || 1)}
+                                        min="1"
+                                        style={{
+                                            border: 'none',
+                                            borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
+                                            background: 'transparent',
+                                            color: '#fff',
+                                            fontSize: '22px',
+                                            padding: '4px 0',
+                                            width: '60px',
+                                            outline: 'none',
+                                            fontFamily: 'inherit',
+                                            textAlign: 'left'
+                                        }}
+                                    />
+                                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '16px' }}>
+                                        {bionicify(`times per`)}
+                                    </span>
+                                    <select 
+                                        value={newHabitPeriod}
+                                        onChange={e => setNewHabitPeriod(e.target.value)}
+                                        style={{
+                                            background: 'rgba(255, 255, 255, 0.08)',
+                                            border: '1px solid rgba(255, 255, 255, 0.15)',
+                                            borderRadius: '6px',
+                                            color: '#fff',
+                                            fontSize: '16px',
+                                            padding: '6px 12px',
+                                            outline: 'none',
+                                            cursor: 'pointer',
+                                            fontFamily: 'inherit'
+                                        }}
+                                    >
+                                        <option value="daily">day</option>
+                                        <option value="weekly">week</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
+                                <button 
+                                    onClick={() => setAdhdFlowStep(4)}
+                                    style={{
+                                        padding: '12px 24px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#a1a1aa',
+                                        background: 'transparent',
+                                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Back
+                                </button>
+                                <button 
+                                    onClick={handleCreateHabit}
+                                    style={{
+                                        padding: '12px 28px',
+                                        fontSize: '16px',
+                                        fontWeight: 600,
+                                        color: '#fff',
+                                        background: 'var(--color-accent)',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        fontFamily: 'inherit'
+                                    }}
+                                >
+                                    Create Habit
+                                </button>
+                            </div>
+                        </>
+                    )}
+
+                </div>
+
+                <div style={{ paddingBottom: '20px' }}>
+                    <button 
+                        onClick={() => setIsCreatingHabit(false)}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#71717a',
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            transition: 'color 0.2s ease',
+                            padding: '8px 16px'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.target.style.color = '#a1a1aa';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.color = '#71717a';
+                        }}
+                    >
+                        Save for later
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (energyLevel <= 2) {
         return (
@@ -521,7 +1083,7 @@ const SkillPage = () => {
                     {!isCreatingHabit && isHabitsExpanded && (
                         <button 
                             className="add-habit-trigger-btn" 
-                            onClick={(e) => { e.stopPropagation(); setIsCreatingHabit(true); setIsHabitsExpanded(true); }}
+                            onClick={(e) => { e.stopPropagation(); setIsCreatingHabit(true); setAdhdFlowStep(1); setActiveReasonIndex(0); setIsHabitsExpanded(true); }}
                         >
                             + Create Habit
                         </button>

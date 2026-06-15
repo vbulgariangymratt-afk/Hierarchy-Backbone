@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 import { arrayMove } from '@dnd-kit/sortable';
+import { playCompletionSound } from '../utils/audioHelper';
 
 /**
  * Custom hook to manage task and aspect-related state and handlers.
@@ -205,6 +206,10 @@ export const useTaskHandlers = ({
             return updatedNodes;
         });
 
+        if (nextUnits >= targetUnits && targetUnits > 0) {
+            playCompletionSound(0.4);
+        }
+
         backbone.incrementTaskRepetition(taskId)
             .then(() => {
                 if (nextUnits >= targetUnits && targetUnits > 0) {
@@ -224,6 +229,10 @@ export const useTaskHandlers = ({
         const currentStatus = task.metadata?.status || TaskStatuses.NOT_STARTED;
         const nextStatus = currentStatus === TaskStatuses.DONE ? TaskStatuses.NOT_STARTED : TaskStatuses.DONE;
         const completedAt = nextStatus === TaskStatuses.DONE ? Date.now() : null;
+
+        if (nextStatus === TaskStatuses.DONE) {
+            playCompletionSound(0.4);
+        }
 
         const isMVETask = task.name.toLowerCase().includes('minimum viable effort') || 
                           task.metadata?.isMVETask ||

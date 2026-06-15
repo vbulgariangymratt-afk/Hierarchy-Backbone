@@ -9,6 +9,7 @@ import { getAspectStats, scoreLowEnergyTask } from '../utils/taskScoring';
 import { formatDuration, formatTimer } from '../utils/timeUtils';
 import RewardAnimation from '../components/RewardAnimation';
 import { useSettings } from '../context/SettingsContext';
+import { playCompletionSound } from '../utils/audioHelper';
 
 const isTauri = () => typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
 
@@ -565,6 +566,7 @@ const FocusPage = () => {
     const completeBackboneSession = useCallback(async (preventLoad = false) => {
         console.time("sessionComplete");
         try {
+            playCompletionSound(0.4);
             const currentTaskId = task.id;
             const currentSessionId = activeSessionId;
 

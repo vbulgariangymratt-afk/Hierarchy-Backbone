@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { backbone, NodeTypes, ObjectiveStatuses } from '../backbone-v2/index';
+import { playExperimentCompletionSound } from '../utils/audioHelper';
 
 /**
  * Custom hook to manage objective-related state and handlers.
@@ -61,6 +62,7 @@ export const useObjectiveHandlers = ({
             metadata.isArchived = false;
             metadata.deactivatedAt = now;
         } else if (newStatus === 'COMPLETED') {
+            playExperimentCompletionSound(0.4);
             metadata.status = 'COMPLETED';
             metadata.isActive = false;
             metadata.isSleeping = false;

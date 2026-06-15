@@ -3,6 +3,7 @@ import { habitService } from '../backbone-v2/index';
 import HabitEvolutionGauge from './habits/HabitEvolutionGauge';
 import { Feather, Circle, Flame, X, HelpCircle, Pencil, Save, XCircle, Dumbbell, Moon, Sun } from 'lucide-react';
 import { useBackboneStore } from '../store/backboneStore';
+import { playCompletionSound } from '../utils/audioHelper';
 
 
 const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleActive, onComplete, onUpdate, onSleep, onDelete }) => {
@@ -79,11 +80,7 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
             setCelebration({ identity, fading: false, active: true, type: 'complete' });
 
             // 2. Audio Sync
-            try {
-                const audio = new Audio('/Level-up chime.mp3');
-                audio.volume = 0.35;
-                audio.play();
-            } catch (err) { }
+            playCompletionSound(0.35);
 
             await habitService.completeHabit(habit.id, friction);
             setCompleting(false);

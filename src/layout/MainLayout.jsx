@@ -18,6 +18,7 @@ const MainLayout = () => {
     
     // Auth & Safety Net Banner state
     const [user, setUser] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
     const [safetyNetDismissed, setSafetyNetDismissed] = useState(
         localStorage.getItem('safety_net_dismissed') === 'true'
     );
@@ -25,10 +26,12 @@ const MainLayout = () => {
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user: initialUser } }) => {
             setUser(initialUser);
+            setAuthLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
+            setAuthLoading(false);
         });
 
         return () => subscription.unsubscribe();
@@ -38,7 +41,7 @@ const MainLayout = () => {
         state.nodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.completedAt).length
     );
 
-    const showSafetyNetBanner = !user && completedTasksCount >= 3 && !safetyNetDismissed;
+    const showSafetyNetBanner = !authLoading && !user && completedTasksCount >= 3 && !safetyNetDismissed;
 
     const handleGoogleLogin = async () => {
         try {

@@ -57,6 +57,8 @@ const SettingsPage = () => {
 
     const [allSkills, setAllSkills] = useState([]);
     const [manualSleep, setManualSleep] = useState(localStorage.getItem('pref_manual_sleep') === 'true');
+    const [completionSoundsEnabled, setCompletionSoundsEnabled] = useState(localStorage.getItem('completion_sounds_enabled') !== 'false');
+    const [experimentSoundsEnabled, setExperimentSoundsEnabled] = useState(localStorage.getItem('experiment_sounds_enabled') !== 'false');
 
     const handleCurrencyNameChange = async (val) => {
         const secret = 'Vg5d9Xk3';
@@ -493,6 +495,50 @@ const SettingsPage = () => {
                     </div>
                     <p className="appearance-hint">
                         Prefer manual sleep log (auto-detection becomes secondary)
+                    </p>
+                </div>
+            </section>
+
+            {/* ── Sound Effects Section ───────────────────────────────────── */}
+            <section className="settings-section">
+                <h2 className="settings-section-title">Sound Effects</h2>
+                <div className="settings-card">
+                    <div className="appearance-row">
+                        <div className="appearance-row-label">Completion Sounds</div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={completionSoundsEnabled}
+                                onChange={(e) => {
+                                    localStorage.setItem('completion_sounds_enabled', e.target.checked);
+                                    setCompletionSoundsEnabled(e.target.checked);
+                                }}
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <p className="appearance-hint" style={{ marginBottom: '16px' }}>
+                        Play audio effects when completing tasks in planning mode, finishing focus sessions, or checking off habits.
+                    </p>
+
+                    <div className="notion-divider" style={{ margin: '16px 0', opacity: 0.2 }} />
+
+                    <div className="appearance-row">
+                        <div className="appearance-row-label">Experiment & Objective Chime</div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={experimentSoundsEnabled}
+                                onChange={(e) => {
+                                    localStorage.setItem('experiment_sounds_enabled', e.target.checked);
+                                    setExperimentSoundsEnabled(e.target.checked);
+                                }}
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <p className="appearance-hint">
+                        Play chime audio when an objective or experiment's status is set to complete.
                     </p>
                 </div>
             </section>

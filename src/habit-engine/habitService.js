@@ -91,8 +91,8 @@ export const createHabitService = (repository, auraService, backbone) => {
         createHabit: async (linkedSkillId, ifTrigger, mveAction, frequencyType = 'daily', targetCount = 1) => {
 
             const defaultEvolutionConfig = {
-                thresholds: [8, 30, 60, 100, 150],
-                postCapIncrement: 50,
+                thresholds: [8, 10, 12, 14, 16],
+                postCapIncrement: 2,
                 rollingWindowDays: 12,
                 requiredDaysInWindow: 8,
                 frictionWindow: 8,
@@ -134,9 +134,10 @@ export const createHabitService = (repository, auraService, backbone) => {
 
             const config = habit.evolutionConfig;
             
-            // Hot-patch Phase 1 shift for legacy configs
-            if (config.thresholds && config.thresholds[0] === 12) {
-                config.thresholds[0] = 8;
+            // Hot-patch thresholds to the new linear 8, 10, 12, 14, 16 + 2 progression
+            if (config) {
+                config.thresholds = [8, 10, 12, 14, 16];
+                config.postCapIncrement = 2;
             }
 
             const completions = habit.completions || [];
@@ -346,7 +347,11 @@ export const createHabitService = (repository, auraService, backbone) => {
             const currentLevel = habit.currentPhaseLevel || 0;
             const nextLevel = currentLevel + 1;
 
-            const config = habit.evolutionConfig || { thresholds: [12, 30, 60, 100, 150], postCapIncrement: 50 };
+            const config = habit.evolutionConfig || { thresholds: [8, 10, 12, 14, 16], postCapIncrement: 2 };
+            if (config) {
+                config.thresholds = [8, 10, 12, 14, 16];
+                config.postCapIncrement = 2;
+            }
 
             let threshold;
             if (nextLevel < config.thresholds.length) {
