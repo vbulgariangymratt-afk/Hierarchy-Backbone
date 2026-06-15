@@ -524,25 +524,7 @@ const SkillPage = () => {
 
     if (isCreatingHabit) {
         return (
-            <div className="adhd-habit-flow-overlay" style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                backgroundColor: backgroundMode === 'solid' ? '#0a0a0c' : 'rgba(10, 10, 12, 0.45)',
-                backdropFilter: backgroundMode === 'solid' ? 'none' : 'blur(24px) saturate(180%)',
-                WebkitBackdropFilter: backgroundMode === 'solid' ? 'none' : 'blur(24px) saturate(180%)',
-                color: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                zIndex: 9999,
-                padding: '60px 40px 40px 40px',
-                boxSizing: 'border-box',
-                fontFamily: "'Lexend', system-ui, -apple-system, sans-serif"
-            }}>
+            <div className="adhd-habit-flow-overlay">
                 <div style={{ height: '24px' }} />
 
                 <div style={{ maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '32px', alignItems: 'flex-start', width: '100%', textAlign: 'left' }}>
@@ -553,28 +535,7 @@ const SkillPage = () => {
                             </p>
                             <button 
                                 onClick={() => setAdhdFlowStep(2)}
-                                style={{
-                                    padding: '12px 28px',
-                                    fontSize: '16px',
-                                    fontWeight: 600,
-                                    color: '#fff',
-                                    background: 'var(--color-accent)',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: '0 4px 12px rgba(var(--color-accent-rgb), 0.3)',
-                                    marginTop: '10px',
-                                    fontFamily: 'inherit'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.target.style.transform = 'translateY(-1px)';
-                                    e.target.style.boxShadow = '0 6px 16px rgba(var(--color-accent-rgb), 0.45)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.target.style.transform = 'translateY(0)';
-                                    e.target.style.boxShadow = '0 4px 12px rgba(var(--color-accent-rgb), 0.3)';
-                                }}
+                                className="adhd-habit-flow-btn-accent"
                             >
                                 show me
                             </button>
@@ -591,55 +552,19 @@ const SkillPage = () => {
                                 placeholder="e.g. study Russian"
                                 value={finalHabitAction}
                                 onChange={e => setFinalHabitAction(e.target.value)}
-                                style={{
-                                    border: 'none',
-                                    borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
-                                    background: 'transparent',
-                                    color: '#fff',
-                                    fontSize: '22px',
-                                    padding: '8px 0',
-                                    width: '100%',
-                                    maxWidth: '500px',
-                                    outline: 'none',
-                                    marginTop: '10px',
-                                    fontFamily: 'inherit',
-                                    textAlign: 'left'
-                                }}
+                                className="adhd-habit-flow-input"
                             />
                             <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
                                 <button 
                                     onClick={() => setAdhdFlowStep(1)}
-                                    style={{
-                                        padding: '12px 24px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#a1a1aa',
-                                        background: 'transparent',
-                                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-secondary"
                                 >
                                     Back
                                 </button>
                                 <button 
                                     onClick={() => setAdhdFlowStep(3)}
                                     disabled={!finalHabitAction.trim()}
-                                    style={{
-                                        padding: '12px 28px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#fff',
-                                        background: finalHabitAction.trim() ? 'var(--color-accent)' : 'rgba(255, 255, 255, 0.08)',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        cursor: finalHabitAction.trim() ? 'pointer' : 'not-allowed',
-                                        transition: 'all 0.2s ease',
-                                        opacity: finalHabitAction.trim() ? 1 : 0.5,
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-accent"
                                 >
                                     Next
                                 </button>
@@ -652,7 +577,7 @@ const SkillPage = () => {
                             <p style={{ fontSize: '22px', fontWeight: 400, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
                                 {bionicify(`and what will be your trigger? for example if you want to study russian, your trigger might be to sit on your desk\n\nSo your habit would look like: IF I ${habitTrigger.trim() || '___'} THEN I ${finalHabitAction}`)}
                             </p>
-                            <p style={{ fontSize: '15px', color: 'rgba(255, 255, 255, 0.55)', margin: '4px 0 0 0', fontWeight: 300 }}>
+                            <p style={{ fontSize: '15px', opacity: 0.55, margin: '4px 0 0 0', fontWeight: 300 }}>
                                 {bionicify(`make sure to chain it to an action you already do`)}
                             </p>
                             <input 
@@ -660,55 +585,19 @@ const SkillPage = () => {
                                 placeholder="e.g. sit on my desk"
                                 value={habitTrigger}
                                 onChange={e => setHabitTrigger(e.target.value)}
-                                style={{
-                                    border: 'none',
-                                    borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
-                                    background: 'transparent',
-                                    color: '#fff',
-                                    fontSize: '22px',
-                                    padding: '8px 0',
-                                    width: '100%',
-                                    maxWidth: '500px',
-                                    outline: 'none',
-                                    marginTop: '10px',
-                                    fontFamily: 'inherit',
-                                    textAlign: 'left'
-                                }}
+                                className="adhd-habit-flow-input"
                             />
                             <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
                                 <button 
                                     onClick={() => setAdhdFlowStep(2)}
-                                    style={{
-                                        padding: '12px 24px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#a1a1aa',
-                                        background: 'transparent',
-                                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-secondary"
                                 >
                                     Back
                                 </button>
                                 <button 
                                     onClick={() => setAdhdFlowStep(4)}
                                     disabled={!habitTrigger.trim()}
-                                    style={{
-                                        padding: '12px 28px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#fff',
-                                        background: habitTrigger.trim() ? 'var(--color-accent)' : 'rgba(255, 255, 255, 0.08)',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        cursor: habitTrigger.trim() ? 'pointer' : 'not-allowed',
-                                        transition: 'all 0.2s ease',
-                                        opacity: habitTrigger.trim() ? 1 : 0.5,
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-accent"
                                 >
                                     Next
                                 </button>
@@ -726,72 +615,25 @@ const SkillPage = () => {
                                 placeholder="e.g. open the book on my desk"
                                 value={smallestHabitAction}
                                 onChange={e => setSmallestHabitAction(e.target.value)}
-                                style={{
-                                    border: 'none',
-                                    borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
-                                    background: 'transparent',
-                                    color: '#fff',
-                                    fontSize: '22px',
-                                    padding: '8px 0',
-                                    width: '100%',
-                                    maxWidth: '500px',
-                                    outline: 'none',
-                                    marginTop: '10px',
-                                    fontFamily: 'inherit',
-                                    textAlign: 'left'
-                                }}
+                                className="adhd-habit-flow-input"
                             />
                             <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
                                 <button 
                                     onClick={() => setAdhdFlowStep(3)}
-                                    style={{
-                                        padding: '12px 24px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#a1a1aa',
-                                        background: 'transparent',
-                                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-secondary"
                                 >
                                     Back
                                 </button>
                                 <button 
                                     onClick={() => setAdhdFlowStep(5)}
-                                    style={{
-                                        padding: '12px 24px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#a1a1aa',
-                                        background: 'transparent',
-                                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-secondary"
                                 >
                                     why like this?
                                 </button>
                                 <button 
                                     onClick={() => setAdhdFlowStep(6)}
                                     disabled={!smallestHabitAction.trim()}
-                                    style={{
-                                        padding: '12px 28px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#fff',
-                                        background: smallestHabitAction.trim() ? 'var(--color-accent)' : 'rgba(255, 255, 255, 0.08)',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        cursor: smallestHabitAction.trim() ? 'pointer' : 'not-allowed',
-                                        transition: 'all 0.2s ease',
-                                        opacity: smallestHabitAction.trim() ? 1 : 0.5,
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-accent"
                                 >
                                     Next
                                 </button>
@@ -814,47 +656,21 @@ const SkillPage = () => {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '24px', justifyContent: 'flex-start', marginBottom: '24px' }}>
                                                 <button 
                                                     onClick={() => setActiveReasonIndex(prev => (prev > 0 ? prev - 1 : reasons.length - 1))}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        color: '#fff',
-                                                        fontSize: '28px',
-                                                        cursor: 'pointer',
-                                                        padding: '8px 16px 8px 0',
-                                                        opacity: 0.6,
-                                                        outline: 'none',
-                                                        transition: 'opacity 0.2s ease',
-                                                        fontFamily: 'inherit'
-                                                    }}
-                                                    onMouseEnter={e => e.target.style.opacity = 1}
-                                                    onMouseLeave={e => e.target.style.opacity = 0.6}
+                                                    className="adhd-reason-nav-btn"
                                                 >
                                                     &larr;
                                                 </button>
-                                                <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-accent)', letterSpacing: '0.05em' }}>
+                                                <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-primary)', letterSpacing: '0.05em' }}>
                                                     Reason {activeReasonIndex + 1}
                                                 </span>
                                                 <button 
                                                     onClick={() => setActiveReasonIndex(prev => (prev < reasons.length - 1 ? prev + 1 : 0))}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        color: '#fff',
-                                                        fontSize: '28px',
-                                                        cursor: 'pointer',
-                                                        padding: '8px 16px',
-                                                        opacity: 0.6,
-                                                        outline: 'none',
-                                                        transition: 'opacity 0.2s ease',
-                                                        fontFamily: 'inherit'
-                                                    }}
-                                                    onMouseEnter={e => e.target.style.opacity = 1}
-                                                    onMouseLeave={e => e.target.style.opacity = 0.6}
+                                                    className="adhd-reason-nav-btn"
                                                 >
                                                     &rarr;
                                                 </button>
                                             </div>
-                                            <p style={{ margin: 0, fontSize: '18px', lineHeight: 1.6, color: 'rgba(255, 255, 255, 0.95)', minHeight: '140px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', textAlign: 'left' }}>
+                                            <p style={{ margin: 0, fontSize: '18px', lineHeight: 1.6, minHeight: '140px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', textAlign: 'left' }}>
                                                 {bionicify(reasons[activeReasonIndex])}
                                             </p>
                                         </>
@@ -864,18 +680,7 @@ const SkillPage = () => {
                             <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
                                 <button 
                                     onClick={() => setAdhdFlowStep(4)}
-                                    style={{
-                                        padding: '12px 24px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#a1a1aa',
-                                        background: 'transparent',
-                                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-secondary"
                                 >
                                     Back
                                 </button>
@@ -890,7 +695,7 @@ const SkillPage = () => {
                             </p>
                             
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-start', marginTop: '20px', width: '100%' }}>
-                                <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
+                                <span style={{ fontSize: '11px', opacity: 0.5, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
                                     {bionicify(`Frequency Target`)}
                                 </span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '18px' }}>
@@ -899,36 +704,16 @@ const SkillPage = () => {
                                         value={newHabitCount}
                                         onChange={e => setNewHabitCount(parseInt(e.target.value) || 1)}
                                         min="1"
-                                        style={{
-                                            border: 'none',
-                                            borderBottom: '2px solid rgba(255, 255, 255, 0.3)',
-                                            background: 'transparent',
-                                            color: '#fff',
-                                            fontSize: '22px',
-                                            padding: '4px 0',
-                                            width: '60px',
-                                            outline: 'none',
-                                            fontFamily: 'inherit',
-                                            textAlign: 'left'
-                                        }}
+                                        className="adhd-habit-flow-input"
+                                        style={{ width: '60px' }}
                                     />
-                                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '16px' }}>
+                                    <span style={{ opacity: 0.6, fontSize: '16px' }}>
                                         {bionicify(`times per`)}
                                     </span>
                                     <select 
                                         value={newHabitPeriod}
                                         onChange={e => setNewHabitPeriod(e.target.value)}
-                                        style={{
-                                            background: 'rgba(255, 255, 255, 0.08)',
-                                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                                            borderRadius: '6px',
-                                            color: '#fff',
-                                            fontSize: '16px',
-                                            padding: '6px 12px',
-                                            outline: 'none',
-                                            cursor: 'pointer',
-                                            fontFamily: 'inherit'
-                                        }}
+                                        className="adhd-habit-flow-select"
                                     >
                                         <option value="daily">day</option>
                                         <option value="weekly">week</option>
@@ -939,35 +724,13 @@ const SkillPage = () => {
                             <div style={{ display: 'flex', gap: '16px', marginTop: '20px' }}>
                                 <button 
                                     onClick={() => setAdhdFlowStep(4)}
-                                    style={{
-                                        padding: '12px 24px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#a1a1aa',
-                                        background: 'transparent',
-                                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-secondary"
                                 >
                                     Back
                                 </button>
                                 <button 
                                     onClick={handleCreateHabit}
-                                    style={{
-                                        padding: '12px 28px',
-                                        fontSize: '16px',
-                                        fontWeight: 600,
-                                        color: '#fff',
-                                        background: 'var(--color-accent)',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        fontFamily: 'inherit'
-                                    }}
+                                    className="adhd-habit-flow-btn-accent"
                                 >
                                     Create Habit
                                 </button>
@@ -980,22 +743,7 @@ const SkillPage = () => {
                 <div style={{ paddingBottom: '20px' }}>
                     <button 
                         onClick={() => setIsCreatingHabit(false)}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#71717a',
-                            fontSize: '14px',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            transition: 'color 0.2s ease',
-                            padding: '8px 16px'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.target.style.color = '#a1a1aa';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.target.style.color = '#71717a';
-                        }}
+                        className="adhd-habit-flow-btn-later"
                     >
                         Save for later
                     </button>

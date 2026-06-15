@@ -12,8 +12,11 @@ export const useBackboneStore = create((set) => ({
     nodes: [],
     loading: true,
     engagementMap: {}, // Stores { skillId: { status, daysSince, label, ... } }
+    activeUpgradeHabit: null,
 
     // 2. Actions: Methods to manipulate the state immutably
+
+    setActiveUpgradeHabit: (habit) => set({ activeUpgradeHabit: habit }),
 
     /**
      * Update the entire engagement map at once.

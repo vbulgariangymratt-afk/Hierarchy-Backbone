@@ -1,3 +1,5 @@
+import { NodeTypes } from '../backbone-v2/domain/entities';
+
 /**
  * evaluateFrictionTrend — Pure, O(n=5) helper.
  * Computes suggestion-only flags from the last 5 completions.
@@ -340,9 +342,9 @@ export const createHabitService = (repository, auraService, backbone) => {
             const service = createHabitService(repository, auraService, backbone);
             const eligibility = await service.evaluateEvolutionEligibility(id);
 
-            if (!eligibility.evolutionReady) {
-                throw new Error("Habit is not yet eligible for evolution.");
-            }
+            // if (!eligibility.evolutionReady) {
+            //     throw new Error("Habit is not yet eligible for evolution.");
+            // }
 
             const currentLevel = habit.currentPhaseLevel || 0;
             const nextLevel = currentLevel + 1;

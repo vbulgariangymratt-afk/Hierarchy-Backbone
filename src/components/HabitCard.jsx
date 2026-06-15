@@ -17,6 +17,7 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
 
     // Get skill for identity reinforcement
     const nodes = useBackboneStore(state => state.nodes);
+    const setActiveUpgradeHabit = useBackboneStore(state => state.setActiveUpgradeUpgradeHabit || state.setActiveUpgradeHabit);
 
     useEffect(() => {
         let isMounted = true;
@@ -309,9 +310,15 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
                 {habit.isActive && (
                     <div onClick={e => e.stopPropagation()} style={{ minWidth: completing ? '160px' : 'auto', transition: 'all 0.3s' }}>
                         {!completing ? (
-                            <button className="complete-btn" onClick={() => setCompleting(true)}>
-                                {progress.isDone ? '+ Log Extra' : 'Complete'}
-                            </button>
+                            true ? (
+                                <button className="complete-btn upgrade-btn-attention" onClick={() => setActiveUpgradeHabit(habit)}>
+                                    Upgrade
+                                </button>
+                            ) : (
+                                <button className="complete-btn" onClick={() => setCompleting(true)}>
+                                    {progress.isDone ? '+ Log Extra' : 'Complete'}
+                                </button>
+                            )
                         ) : (
                             <div className="friction-selector-modern">
                                 <div className="friction-option-wrapper">

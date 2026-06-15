@@ -4945,3 +4945,209 @@
 .habits-skill-wrapper .sleeping-section .sleeping-content {
     padding-left: 18px;
 }
+
+/* ADHD Habit Creation Flow Overlay */
+.adhd-habit-flow-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999;
+    padding: 60px 40px 40px 40px;
+    box-sizing: border-box;
+    font-family: 'Lexend', sans-serif !important;
+}
+
+/* Background modes for ADHD Flow */
+.solid-mode .adhd-habit-flow-overlay {
+    background-color: #0a0a0c !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+.liquid-mode .adhd-habit-flow-overlay {
+    background-color: rgba(10, 10, 12, 0.45) !important;
+    backdrop-filter: blur(24px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+}
+.wallpaper-mode .adhd-habit-flow-overlay {
+    background-color: rgba(10, 10, 12, 0.35) !important;
+    backdrop-filter: blur(32px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
+}
+
+/* Light Theme overrides for ADHD Flow */
+.light .adhd-habit-flow-overlay {
+    color: #1f2937 !important;
+}
+.light.solid-mode .adhd-habit-flow-overlay {
+    background-color: #f3f4f6 !important;
+}
+.light.liquid-mode .adhd-habit-flow-overlay {
+    background-color: rgba(243, 244, 246, 0.85) !important;
+}
+.light.wallpaper-mode .adhd-habit-flow-overlay {
+    background-color: rgba(243, 244, 246, 0.7) !important;
+}
+
+/* ADHD Inputs */
+.adhd-habit-flow-input {
+    border: none !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3) !important;
+    background: transparent !important;
+    color: #fff !important;
+    font-size: 22px !important;
+    padding: 8px 0 !important;
+    width: 100% !important;
+    max-width: 500px !important;
+    outline: none !important;
+    margin-top: 10px !important;
+    font-family: inherit !important;
+    text-align: left !important;
+    transition: border-bottom-color 0.2s ease;
+}
+.light .adhd-habit-flow-input {
+    border-bottom-color: rgba(0, 0, 0, 0.2) !important;
+    color: #111827 !important;
+}
+.adhd-habit-flow-input:focus {
+    border-bottom-color: var(--color-primary) !important;
+}
+
+/* ADHD Text Blocks */
+.adhd-habit-flow-overlay p {
+    color: #ffffff;
+}
+.light .adhd-habit-flow-overlay p {
+    color: #1f2937 !important;
+}
+.light .adhd-habit-flow-overlay p span.bionic-bold {
+    color: #111827 !important;
+}
+.light .adhd-habit-flow-overlay p span.bionic-muted {
+    color: #4b5563 !important;
+}
+
+/* Accent Buttons */
+.adhd-habit-flow-btn-accent {
+    padding: 12px 28px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #fff !important;
+    background: var(--color-primary) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb, 195, 154, 107), 0.3) !important;
+    margin-top: 10px !important;
+    font-family: inherit !important;
+}
+.adhd-habit-flow-btn-accent:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(var(--color-primary-rgb, 195, 154, 107), 0.45) !important;
+}
+.adhd-habit-flow-btn-accent:disabled {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+    box-shadow: none !important;
+}
+.light .adhd-habit-flow-btn-accent:disabled {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Secondary Buttons */
+.adhd-habit-flow-btn-secondary {
+    padding: 12px 24px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #a1a1aa !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    font-family: inherit !important;
+}
+.adhd-habit-flow-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+}
+.light .adhd-habit-flow-btn-secondary {
+    color: #4b5563 !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
+}
+.light .adhd-habit-flow-btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #111827 !important;
+}
+
+/* Bottom Cancel / Later button */
+.adhd-habit-flow-btn-later {
+    background: none !important;
+    border: none !important;
+    color: #71717a !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: color 0.2s ease !important;
+    padding: 8px 16px !important;
+}
+.adhd-habit-flow-btn-later:hover {
+    color: #a1a1aa !important;
+}
+.light .adhd-habit-flow-btn-later {
+    color: #6b7280 !important;
+}
+.light .adhd-habit-flow-btn-later:hover {
+    color: #111827 !important;
+}
+
+/* Select Box */
+.adhd-habit-flow-select {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 6px !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    padding: 6px 12px !important;
+    outline: none !important;
+    cursor: pointer !important;
+    font-family: inherit !important;
+}
+.light .adhd-habit-flow-select {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: #111827 !important;
+}
+.light .adhd-habit-flow-select option {
+    background-color: #ffffff;
+    color: #111827;
+}
+
+/* Nav reasons buttons */
+.adhd-reason-nav-btn {
+    background: none !important;
+    border: none !important;
+    color: #fff !important;
+    font-size: 28px !important;
+    cursor: pointer !important;
+    padding: 8px 16px !important;
+    opacity: 0.6 !important;
+    outline: none !important;
+    transition: opacity 0.2s ease !important;
+    font-family: inherit !important;
+}
+.adhd-reason-nav-btn:hover {
+    opacity: 1 !important;
+}
+.light .adhd-reason-nav-btn {
+    color: #111827 !important;
+}

@@ -34,6 +34,7 @@ import { backbone, repository, habitRepo, waitForReady, NodeTypes, reloadAllData
 import PremiumLoadingScreen from './components/loading/PremiumLoadingScreen';
 const LaunchpadFlow = lazy(() => import('./components/LaunchpadFlow'));
 import EnergyModeTag from './components/EnergyModeTag';
+import HabitUpgradeFlow from './components/habits/HabitUpgradeFlow';
 
 import { useDevAuthPoller } from './hooks/useDevAuthPoller';
 import { useDeepLinkAuth } from './hooks/useDeepLinkAuth';
@@ -94,6 +95,7 @@ function App() {
                   <Route path="/auth/callback" element={<AuthCallback />} />
                 </Routes>
               </Suspense>
+              <HabitUpgradeFlow />
             </SessionProvider>
           </SettingsProvider>
         )}
