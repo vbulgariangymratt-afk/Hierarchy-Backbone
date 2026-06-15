@@ -310,7 +310,7 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
                 {habit.isActive && (
                     <div onClick={e => e.stopPropagation()} style={{ minWidth: completing ? '160px' : 'auto', transition: 'all 0.3s' }}>
                         {!completing ? (
-                            true ? (
+                            isLevelUpReady ? (
                                 <button className="complete-btn upgrade-btn-attention" onClick={() => setActiveUpgradeHabit(habit)}>
                                     Upgrade
                                 </button>
