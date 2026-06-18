@@ -1997,3 +1997,8 @@
     overflow: visible !important;
 }
 
+.liquid-mode .capture-badge,
+.wallpaper-mode .capture-badge {
+    color: #111111;
+}
+

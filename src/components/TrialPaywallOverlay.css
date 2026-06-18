@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Trial Paywall Overlay Styles ────────────────────────────── */
+.trial-paywall-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    font-family: 'Lexend', sans-serif !important;
+}
+
+.trial-paywall-container {
+    width: 100%;
+    max-width: 580px;
+    padding: 40px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 28px;
+    animation: scaleInPaywall 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.paywall-message-primary {
+    font-size: 1.55rem;
+    font-weight: 500;
+    line-height: 1.6;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.paywall-message-secondary {
+    font-size: 0.98rem;
+    line-height: 1.75;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+}
+
+.paywall-actions {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.paywall-btn {
+    flex: 1;
+    height: 52px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.paywall-btn.secondary-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.paywall-btn.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.paywall-btn.primary-btn {
+    background: #ffffff;
+    border: none;
+    color: #000000;
+}
+
+.paywall-btn.primary-btn:hover {
+    background: #f0f0f2;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 255, 255, 0.15);
+}
+
+.paywall-btn:active {
+    transform: translateY(0);
+}
+
+/* ── Theme Adaptations ────────────────────────────── */
+
+/* Light Theme (Liquid/Wallpaper) */
+[data-theme="light"] .trial-paywall-overlay {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="light"] .trial-paywall-container {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .paywall-message-primary {
+    color: #111112;
+}
+
+[data-theme="light"] .paywall-message-secondary {
+    color: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="light"] .paywall-btn.secondary-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="light"] .paywall-btn.secondary-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000000;
+}
+
+[data-theme="light"] .paywall-btn.primary-btn {
+    background: #000000;
+    color: #ffffff;
+}
+
+[data-theme="light"] .paywall-btn.primary-btn:hover {
+    background: #1c1c1e;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Solid Mode (Opaque Backgrounds) */
+[data-background-mode="solid"] .trial-paywall-overlay,
+.solid-mode .trial-paywall-overlay {
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    background: rgba(10, 10, 12, 0.45) !important;
+}
+
+[data-theme="dark"][data-background-mode="solid"] .trial-paywall-container,
+.dark.solid-mode .trial-paywall-container {
+    background: rgb(28, 28, 30) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="light"][data-background-mode="solid"] .trial-paywall-overlay,
+.light.solid-mode .trial-paywall-overlay {
+    backdrop-filter: blur(24px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    background: rgba(240, 240, 243, 0.45) !important;
+}
+
+[data-theme="light"][data-background-mode="solid"] .trial-paywall-container,
+.light.solid-mode .trial-paywall-container {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Animations */
+@keyframes scaleInPaywall {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

@@ -3,17 +3,19 @@ import { Outlet, useLocation } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
 import MiniLaunchpadModal from '../components/modals/MiniLaunchpadModal';
+import TrialExpiredSidebar from '../components/TrialExpiredSidebar';
 import { backbone, NodeTypes } from '../backbone-v2/index';
 import { useBackboneStore } from '../store/backboneStore';
+import { useSettings } from '../context/SettingsContext';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import './MainLayout.css';
 
 const MainLayout = () => {
     // --- ZUSTAND SELECTORS ---
-    const safeMode = useBackboneStore(state => 
+    const safeMode = useBackboneStore(state =>
         state.nodes.some(n => n.type === NodeTypes.OBJECTIVE && n.metadata?.burnoutRisk === true)
     );
-
+    const { isTrialActive, trialDaysRemaining, hasAccess, loading: settingsLoading } = useSettings();
     const [bannerDismissed, setBannerDismissed] = useState(false);
     
     // Auth & Safety Net Banner state
@@ -22,6 +24,12 @@ const MainLayout = () => {
     const [safetyNetDismissed, setSafetyNetDismissed] = useState(
         localStorage.getItem('safety_net_dismissed') === 'true'
     );
+    const [extensionWarningDismissed, setExtensionWarningDismissed] = useState(
+        localStorage.getItem('trial_extension_warning_dismissed') === 'true'
+    );
+
+    // Sidebar overlay state
+    const [isTrialSidebarOpen, setIsTrialSidebarOpen] = useState(false);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user: initialUser } }) => {
@@ -37,11 +45,19 @@ const MainLayout = () => {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Check if trial has expired (isTrialActive === false / hasAccess === false)
+    // and they are in Planning Mode (which is any page rendered under MainLayout, i.e. not "/focus")
+    // Removed automatic lockout sidebar popup as trial expiration now uses Read-Only Paywall Interceptor instead.
+
     const completedTasksCount = useBackboneStore(state =>
         state.nodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.completedAt).length
     );
 
     const showSafetyNetBanner = !authLoading && !user && completedTasksCount >= 3 && !safetyNetDismissed;
+
+    // Check if we should show the 2-day reminder warning (trialDaysRemaining <= 2 and > 0)
+    const [forceShowExtensionWarning, setForceShowExtensionWarning] = useState(false);
+    const showExtensionWarning = (forceShowExtensionWarning || (!settingsLoading && isTrialActive && trialDaysRemaining <= 2)) && !extensionWarningDismissed;
 
     const handleGoogleLogin = async () => {
         try {
@@ -56,6 +72,12 @@ const MainLayout = () => {
         setSafetyNetDismissed(true);
     };
 
+    const dismissExtensionWarning = () => {
+        localStorage.setItem('trial_extension_warning_dismissed', 'true');
+        setExtensionWarningDismissed(true);
+        setForceShowExtensionWarning(false);
+    };
+
     // Modal state
     const [selectedSkill, setSelectedSkill] = useState(null);
     const [isLaunchpadOpen, setIsLaunchpadOpen] = useState(false);
@@ -67,7 +89,6 @@ const MainLayout = () => {
 
 
     const location = useLocation();
-    const showBanner = safeMode && !bannerDismissed;
 
     return (
         <div className="main-layout">
@@ -90,11 +111,21 @@ const MainLayout = () => {
                         <div className="safety-net-actions">
                             <button className="safety-net-login-btn" onClick={handleGoogleLogin}>
                                 Sign in with Google
-                            </button>
+                             </button>
                             <button className="safety-net-dismiss-btn" onClick={dismissSafetyNet} title="Dismiss">
                                 ✕
                             </button>
                         </div>
+                    </div>
+                )}
+                {showExtensionWarning && (
+                    <div className="trial-extension-warning-toast">
+                        <span className="trial-warning-text">
+                            Hey, your 7-day extension on Backbone wraps up in a couple days. No action needed right now, its just so there are no surprises ;)
+                        </span>
+                        <button className="trial-warning-dismiss-btn" onClick={dismissExtensionWarning} title="Dismiss warning">
+                            ✕
+                        </button>
                     </div>
                 )}
                 <div style={{ height: '100%', width: '100%' }}>
@@ -109,6 +140,11 @@ const MainLayout = () => {
                 skill={selectedSkill}
             />
 
+            {/* Trial Expired Sidebar */}
+            <TrialExpiredSidebar 
+                isOpen={isTrialSidebarOpen}
+                onClose={() => setIsTrialSidebarOpen(false)}
+            />
 
         </div>
     );

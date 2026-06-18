@@ -1,0 +1,218 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
+
+.trial-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: flex-end; /* Slide in from the right */
+    z-index: 10000;
+    animation: fadeInTrial 0.3s ease;
+    font-family: 'Lexend', sans-serif !important;
+}
+
+/* Base style: Dark mode / Glassy (Liquid/Wallpaper) */
+.trial-sidebar-container {
+    width: 380px;
+    max-width: 90vw;
+    height: 100%;
+    background: rgba(20, 20, 22, 0.85);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    display: flex;
+    flex-direction: column;
+    padding: 32px 24px;
+    box-sizing: border-box;
+    animation: slideInSidebar 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Light theme overrides */
+[data-theme="light"] .trial-sidebar-container {
+    background: rgba(255, 255, 255, 0.85);
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
+}
+
+/* Solid background mode overrides */
+[data-background-mode="solid"] .trial-sidebar-container {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+[data-theme="dark"][data-background-mode="solid"] .trial-sidebar-container {
+    background: rgb(28, 28, 28);
+    border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+[data-theme="light"][data-background-mode="solid"] .trial-sidebar-container {
+    background: #ffffff;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.trial-sidebar-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+}
+
+.trial-sidebar-close {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary, #8e8e93);
+    font-size: 1.25rem;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s, transform 0.2s;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trial-sidebar-close:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
+[data-theme="light"] .trial-sidebar-close {
+    color: #333333;
+}
+
+.trial-sidebar-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex-grow: 1;
+    justify-content: center;
+    max-width: 100%;
+}
+
+.trial-sidebar-message {
+    font-size: 0.98rem;
+    line-height: 1.75; /* Premium spacing to prevent eye strain and allow smooth ADHD visual tracking */
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 24px;
+    text-align: left;
+    letter-spacing: 0.015em;
+    font-weight: 300;
+}
+
+[data-theme="light"] .trial-sidebar-message {
+    color: #222222;
+}
+
+.trial-sidebar-message strong {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+[data-theme="light"] .trial-sidebar-message strong {
+    color: #000000;
+}
+
+.trial-sidebar-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+/* Primary Action - Subscribe */
+/* Shared styling for both actions to make them look exactly identical */
+.trial-sidebar-subscribe-btn,
+.trial-sidebar-extend-btn {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.trial-sidebar-subscribe-btn:hover,
+.trial-sidebar-extend-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.trial-sidebar-subscribe-btn:active,
+.trial-sidebar-extend-btn:active {
+    transform: translateY(0);
+}
+
+[data-theme="light"] .trial-sidebar-subscribe-btn,
+[data-theme="light"] .trial-sidebar-extend-btn {
+    background: rgba(0, 0, 0, 0.03);
+    color: #333333;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .trial-sidebar-subscribe-btn:hover,
+[data-theme="light"] .trial-sidebar-extend-btn:hover {
+    background: rgba(0, 0, 0, 0.07);
+    color: #000000;
+}
+
+/* Testing trigger button styling compatibility */
+.trial-test-trigger-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    z-index: 9999;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.trial-test-trigger-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+[data-theme="light"] .trial-test-trigger-btn {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .trial-test-trigger-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000000;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeInTrial {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInSidebar {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}

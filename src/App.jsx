@@ -26,7 +26,8 @@ export const preloadLaunchpad = () => import('./pages/Launchpad');
 
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { SessionProvider, useSession } from './context/SessionContext';
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsProvider, useSettings } from './context/SettingsContext';
+import { useBackboneStore } from './store/backboneStore';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 
 import { supabase } from './lib/supabase';
@@ -41,8 +42,48 @@ import { useDeepLinkAuth } from './hooks/useDeepLinkAuth';
 import { useAppInitialization } from './hooks/useAppInitialization';
 import BackgroundLayer from './components/background/BackgroundLayer';
 
+import TrialPaywallOverlay from './components/TrialPaywallOverlay';
+
 const LandingLog = () => {
   useEffect(() => { ; }, []);
+  return null;
+};
+
+// Global interceptor for trial/access limits
+const TrialInterceptor = () => {
+  const { hasAccess, loading } = useSettings();
+  const setShowPaywall = useBackboneStore(state => state.setShowPaywall);
+
+  useEffect(() => {
+    if (loading) return;
+
+    // 1. Monkeypatch backbone.addNode
+    const originalAddNode = backbone.addNode;
+    backbone.addNode = async function(...args) {
+      if (hasAccess === false) {
+        setShowPaywall(true);
+        return Promise.reject(new Error("Trial expired. New creations are locked."));
+      }
+      return originalAddNode.apply(this, args);
+    };
+
+    // 2. Monkeypatch activeUpgradeHabit setter in Zustand store
+    const originalSetActiveUpgrade = useBackboneStore.getState().setActiveUpgradeHabit;
+    useBackboneStore.getState().setActiveUpgradeHabit = function(habit) {
+      if (habit && hasAccess === false) {
+        setShowPaywall(true);
+        return;
+      }
+      return originalSetActiveUpgrade(habit);
+    };
+
+    return () => {
+      // Restore original implementations on cleanup
+      backbone.addNode = originalAddNode;
+      useBackboneStore.getState().setActiveUpgradeHabit = originalSetActiveUpgrade;
+    };
+  }, [hasAccess, loading, setShowPaywall]);
+
   return null;
 };
 
@@ -72,6 +113,7 @@ function App() {
         ) : (
           <SettingsProvider>
             <SessionProvider>
+              <TrialInterceptor />
               <KeyboardShortcuts />
               <EnergyModeTag />
               <Suspense fallback={<PremiumLoadingScreen secondaryText="Loading Perspective..." />}>
@@ -96,6 +138,7 @@ function App() {
                 </Routes>
               </Suspense>
               <HabitUpgradeFlow />
+              <TrialPaywallOverlay />
             </SessionProvider>
           </SettingsProvider>
         )}

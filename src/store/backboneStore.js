@@ -13,10 +13,12 @@ export const useBackboneStore = create((set) => ({
     loading: true,
     engagementMap: {}, // Stores { skillId: { status, daysSince, label, ... } }
     activeUpgradeHabit: null,
+    showPaywall: false,
 
     // 2. Actions: Methods to manipulate the state immutably
 
     setActiveUpgradeHabit: (habit) => set({ activeUpgradeHabit: habit }),
+    setShowPaywall: (show) => set({ showPaywall: show }),
 
     /**
      * Update the entire engagement map at once.

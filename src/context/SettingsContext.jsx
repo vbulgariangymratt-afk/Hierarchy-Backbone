@@ -428,6 +428,28 @@ export const SettingsProvider = ({ children }) => {
         return Date.now() - start < thirtyDays;
     }, [trialStartAt]);
 
+    const trialDaysRemaining = useMemo(() => {
+        if (!trialStartAt) return 30;
+        const start = new Date(trialStartAt).getTime();
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        const remainingMs = thirtyDays - (Date.now() - start);
+        return Math.max(0, remainingMs / (24 * 60 * 60 * 1000));
+    }, [trialStartAt]);
+
+    const extendTrial = async () => {
+        if (!trialStartAt) return;
+        const currentStart = new Date(trialStartAt).getTime();
+        // Add 7 days to the current trial start date so the math `Date.now() - start < thirtyDays` gives them 7 more days.
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        const newStart = new Date(currentStart + sevenDaysMs).toISOString();
+
+        _cache.trialStartAt = newStart;
+        setTrialStartAtState(newStart);
+        if (_cache.uid) {
+            await saveSettings({ trial_start_at: newStart });
+        }
+    };
+
     const hasAccess = useMemo(() => {
         return isWhitelisted || isTrialActive;
     }, [isWhitelisted, isTrialActive]);
@@ -457,12 +479,14 @@ export const SettingsProvider = ({ children }) => {
         applyWhitelist,
         trialStartAt,
         isTrialActive,
+        trialDaysRemaining,
         hasAccess,
+        extendTrial,
         dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, trialStartAt, isTrialActive, hasAccess, loading, refreshSettings]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, trialStartAt, isTrialActive, trialDaysRemaining, hasAccess, loading, refreshSettings, extendTrial]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>
