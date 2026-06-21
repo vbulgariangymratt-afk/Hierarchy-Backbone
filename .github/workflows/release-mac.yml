@@ -1,0 +1,50 @@
+name: Build and Release macOS App
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Tauri App
+        run: npm run tauri:build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Rename and Prepare Asset
+        run: |
+          # Find the built DMG file and copy/rename it to 'Backbone.zip' or leave it as DMG.
+          # The landing page expects the filename "Backbone.zip" for the download button.
+          # We compress the app bundle to make a zip file.
+          cd src-tauri/target/release/bundle/macos
+          zip -r ../../../../../Backbone.zip Backbone.app || zip -r ../../../../../Backbone.zip *.app
+
+      - name: Upload to Public Landing Page Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: vbulgariangymratt-afk/Backbone-s-minimal-webpage
+          token: ${{ secrets.PUBLIC_REPO_TOKEN }}
+          tag_name: ${{ github.event.release.tag_name }}
+          files: Backbone.zip
+          prerelease: false
+          make_latest: true
