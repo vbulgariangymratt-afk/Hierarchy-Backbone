@@ -75,6 +75,24 @@ const FocusPage = () => {
 
     const [levelUpCelebration, setLevelUpCelebration] = useState(null); // { level: X, fading: false }
 
+    const [forceOnboardingDemo, setForceOnboardingDemo] = useState(false);
+    const [forceOnboardingDemoB, setForceOnboardingDemoB] = useState(false);
+    const [tempTaskName, setTempTaskName] = useState('');
+    const handleStartTempOnboardingTask = () => {
+        if (!tempTaskName.trim()) return;
+        setTask({
+            id: 'temp-onboarding-task',
+            name: tempTaskName.trim(),
+            type: NodeTypes.TASK,
+            isTempOnboarding: true,
+            metadata: {
+                status: TaskStatuses.IN_PROGRESS,
+                isToday: true,
+                subSteps: []
+            }
+        });
+    };
+
 
     // Reward Animation Ref
     const rewardRef = useRef(null);
@@ -502,7 +520,7 @@ const FocusPage = () => {
 
     // Save state on pause/stop or when session details change
     useEffect(() => {
-        if (activeSessionId && task?.id) {
+        if (activeSessionId && task?.id && !task.isTempOnboarding) {
             localStorage.setItem(TIMER_PERSISTENCE_KEY, JSON.stringify({
                 activeSessionId,
                 taskId: task.id,
@@ -511,7 +529,7 @@ const FocusPage = () => {
                 startTime: startTimeRef.current
             }));
         }
-    }, [isPaused, activeSessionId, task?.id]);
+    }, [isPaused, activeSessionId, task?.id, task?.isTempOnboarding]);
 
     const formatTime = (totalSeconds) => formatTimer(totalSeconds);
 
@@ -529,8 +547,14 @@ const FocusPage = () => {
 
     const startBackboneSession = useCallback(async (pleasureValue) => {
         try {
-            const sess = await backbone.startSession(task.id, 10, pleasureValue, 0);
-            setActiveSessionId(sess.id);
+            let sessId;
+            if (task?.isTempOnboarding) {
+                sessId = `temp-session-${Date.now()}`;
+            } else {
+                const sess = await backbone.startSession(task.id, 10, pleasureValue, 0);
+                sessId = sess.id;
+            }
+            setActiveSessionId(sessId);
             // Anchor the clock — this is the only place we set startTimeRef for a fresh session
             startTimeRef.current = Date.now();
             setSeconds(0);
@@ -545,7 +569,7 @@ const FocusPage = () => {
 
             console.error("[DEBUG FocusPage] startBackboneSession FAILED:", error);
         }
-    }, [task?.id, setActiveSessionId]);
+    }, [task, setActiveSessionId]);
 
     // Auto-start logic
     useEffect(() => {
@@ -595,7 +619,13 @@ const FocusPage = () => {
             setShowSummary(false);
             localStorage.removeItem(TIMER_PERSISTENCE_KEY);
 
-            if (preventLoad) {
+            if (task?.isTempOnboarding) {
+                if (isNavigatingAway) {
+                    navigate(previousRoute || '/launchpad');
+                } else {
+                    loadNextTask();
+                }
+            } else if (preventLoad) {
                 // When completing a task, WAIT for the session save to finish
                 // so it doesn't race with proceedWithTaskCompletion
                 await backbone.completeSession(currentTaskId, currentSessionId, actualPleasure, mastery);
@@ -657,6 +687,15 @@ const FocusPage = () => {
         // 3. Database Execution in background
         console.time("taskCompleteTransition");
         try {
+            if (task.isTempOnboarding) {
+                setTimeout(() => {
+                    navigate(previousRoute || '/launchpad');
+                    setPendingTaskComplete(false);
+                    console.timeEnd("taskCompleteTransition");
+                }, 1000);
+                return;
+            }
+
             const taskUpdatePromise = task.metadata?.itemType === 'REPETITION'
                 ? backbone.incrementTaskRepetition(task.id)
                 : backbone.updateNode(task.id, {
@@ -709,22 +748,26 @@ const FocusPage = () => {
     const handleStopForNow = useCallback(async () => {
         setShowLowPleasurePrompt(false);
         try {
-            if (task.metadata?.itemType === 'REPETITION') {
-                await backbone.incrementTaskRepetition(task.id);
-            } else {
-                await backbone.updateNode(task.id, {
-                    metadata: {
-                        ...task.metadata,
-                        status: TaskStatuses.DONE,
-                        completedAt: Date.now(),
-                        ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})
-                    }
-                });
+            if (task && !task.isTempOnboarding) {
+                if (task.metadata?.itemType === 'REPETITION') {
+                    await backbone.incrementTaskRepetition(task.id);
+                } else {
+                    await backbone.updateNode(task.id, {
+                        metadata: {
+                            ...task.metadata,
+                            status: TaskStatuses.DONE,
+                            completedAt: Date.now(),
+                            ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})
+                        }
+                    });
+                }
             }
         } catch (e) {
             console.error("Failed to save task completion:", e);
         }
-        await backbone.trackFocusMode(false);
+        if (task && !task.isTempOnboarding) {
+            await backbone.trackFocusMode(false);
+        }
         navigate(previousRoute || '/launchpad');
     }, [task, todayRemovalMode, navigate, previousRoute]);
 
@@ -826,6 +869,188 @@ const FocusPage = () => {
     }
 
     if (!task) {
+        const completedTasksCount = allNodes.filter(n => 
+            n.type === NodeTypes.TASK && 
+            n.metadata?.status === TaskStatuses.DONE
+        ).length;
+
+        const hasAnyTasksAtAll = allNodes.some(n => n.type === NodeTypes.TASK);
+
+        // Version A: New user OR empty hierarchy forced demo
+        if (forceOnboardingDemo || (completedTasksCount < 3 && !hasAnyTasksAtAll)) {
+            return (
+                <div className="focus-container empty onboarding-empty-hierarchy" style={{ padding: '2rem' }}>
+                    <div className="focus-empty-state" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            <strong>Sett</strong>ing <strong>u</strong>p <strong>comp</strong>lex <strong>prod</strong>uctivity <strong>syst</strong>ems <strong>usua</strong>lly <strong>dra</strong>ins <strong>m</strong>y <strong>dopa</strong>mine <strong>bef</strong>ore <strong>I</strong> <strong>ev</strong>en <strong>sta</strong>rt <strong>work</strong>ing, <strong>s</strong>o <strong>le</strong>ts <strong>no</strong>t <strong>d</strong>o <strong>th</strong>at
+                        </p>
+                        <p style={{ marginBottom: '2rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            <strong>Pi</strong>ck <strong>a</strong> <strong>2-min</strong>ute <strong>micr</strong>o-task <strong>th</strong>at <strong>req</strong>uires <strong>alm</strong>ost <strong>0</strong> <strong>ene</strong>rgy <strong>fro</strong>m <strong>yo</strong>u, <strong>D</strong>O <strong>NO</strong>T <strong>pi</strong>ck <strong>a</strong> <strong>mass</strong>ive <strong>proj</strong>ect <strong>yo</strong>u <strong>be</strong>en <strong>avoi</strong>ding, <strong>i</strong>t <strong>mu</strong>st <strong>b</strong>e <strong>a</strong> <strong>qu</strong>ick <strong>wi</strong>n <strong>fo</strong>r <strong>yo</strong>u
+                        </p>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
+                            <input 
+                                type="text"
+                                className="temp-task-input"
+                                placeholder="What is a 2-minute micro-task you can do right now?"
+                                value={tempTaskName}
+                                onChange={(e) => setTempTaskName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleStartTempOnboardingTask();
+                                }}
+                                style={{
+                                    padding: '0.5rem 0',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderBottom: '2px solid var(--text-primary, #000000)',
+                                    color: 'var(--text-primary, #000000)',
+                                    fontSize: '1.1rem',
+                                    outline: 'none',
+                                    textAlign: 'center',
+                                    fontFamily: "'Lexend', sans-serif",
+                                    width: '100%'
+                                }}
+                            />
+                            <button 
+                                className="focus-back-btn primary"
+                                onClick={handleStartTempOnboardingTask}
+                                disabled={!tempTaskName.trim()}
+                                style={{
+                                    padding: '0.8rem 1.5rem',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: tempTaskName.trim() ? 'var(--focus-color-status, #00fff0)' : 'var(--color-bg-panel, rgba(255,255,255,0.1))',
+                                    color: tempTaskName.trim() ? 'var(--color-bg-main, #000)' : 'var(--text-secondary, rgba(255,255,255,0.4))',
+                                    fontWeight: 'bold',
+                                    cursor: tempTaskName.trim() ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.2s ease',
+                                    fontFamily: "'Lexend', sans-serif"
+                                }}
+                            >
+                                Try Focus Mode
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Version B: Experienced user OR seasoned empty forced demo
+        if (forceOnboardingDemoB || completedTasksCount >= 3 || hasAnyTasksAtAll) {
+            const availableTasks = allNodes.filter(n => 
+                n.type === NodeTypes.TASK && 
+                n.metadata?.status !== TaskStatuses.DONE
+            );
+            
+            const scoreTaskEase = (t) => {
+                let score = 0;
+                if (t.metadata?.highEnergy) return -100;
+                if (t.metadata?.status === TaskStatuses.IN_PROGRESS) score += 10;
+                if (t.metadata?.mve) score += 5;
+                const subStepsCount = t.metadata?.subSteps?.length || 0;
+                score += Math.max(0, 5 - subStepsCount);
+                const nameLength = t.name?.length || 100;
+                score += Math.max(0, 100 - nameLength) * 0.05;
+                return score;
+            };
+
+            const suggestedTasks = [...availableTasks]
+                .sort((a, b) => scoreTaskEase(b) - scoreTaskEase(a))
+                .slice(0, 2);
+
+            return (
+                <div className="focus-container empty onboarding-seasoned-empty" style={{ padding: '2rem' }}>
+                    <div className="focus-empty-state" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            <strong>Foc</strong>us <strong>Mo</strong>de <strong>i</strong>s <strong>emp</strong>ty. <strong>Yo</strong>u <strong>hav</strong>en't <strong>ass</strong>igned <strong>any</strong>thing <strong>fo</strong>r <strong>Tod</strong>ay. <strong>Goi</strong>ng <strong>ba</strong>ck <strong>t</strong>o <strong>loo</strong>k <strong>a</strong>t <strong>yo</strong>ur <strong>ent</strong>ire <strong>bac</strong>klog <strong>rig</strong>ht <strong>n</strong>ow <strong>i</strong>s <strong>a</strong> <strong>tra</strong>p <strong>th</strong>at <strong>lea</strong>ds <strong>t</strong>o <strong>dec</strong>ision <strong>par</strong>alysis.
+                        </p>
+
+                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            <strong>Her</strong>e <strong>ar</strong>e <strong>2</strong> <strong>tas</strong>ks <strong>th</strong>at <strong>mat</strong>ch <strong>yo</strong>ur <strong>cur</strong>rent <strong>ene</strong>rgy <strong>lev</strong>el. <strong>Pi</strong>ck <strong>on</strong>e <strong>an</strong>d <strong>jus</strong>t <strong>hi</strong>t <strong>sta</strong>rt:
+                        </p>
+
+                        {suggestedTasks.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%', maxWidth: '400px', margin: '0 auto 2rem auto' }}>
+                                {suggestedTasks.map(t => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setTask(t)}
+                                        style={{
+                                            padding: '0.8rem 1.5rem',
+                                            borderRadius: '8px',
+                                            border: '2px solid var(--text-primary, #000000)',
+                                            background: 'transparent',
+                                            color: 'var(--text-primary, #000000)',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            fontFamily: "'Lexend', sans-serif",
+                                            fontSize: '1rem',
+                                            transition: 'all 0.2s ease',
+                                            textAlign: 'center',
+                                            width: '100%'
+                                        }}
+                                    >
+                                        {t.name}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginBottom: '2rem', fontFamily: "'Lexend', sans-serif" }}>
+                                No tasks available in backlog to suggest.
+                            </p>
+                        )}
+
+                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            <strong>Bra</strong>in <strong>rej</strong>ecting <strong>bo</strong>th? <strong>Ski</strong>p <strong>th</strong>e <strong>pla</strong>n. <strong>Typ</strong>e <strong>th</strong>e <strong>abs</strong>olute <strong>sma</strong>llest, <strong>mos</strong>t <strong>tri</strong>vial <strong>thi</strong>ng <strong>yo</strong>u <strong>ca</strong>n <strong>d</strong>o <strong>rig</strong>ht <strong>n</strong>ow <strong>jus</strong>t <strong>t</strong>o <strong>ge</strong>t <strong>a</strong> <strong>wi</strong>n <strong>o</strong>n <strong>th</strong>e <strong>boa</strong>rd.
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
+                            <input 
+                                type="text"
+                                className="temp-task-input"
+                                placeholder="What's one tiny thing?"
+                                value={tempTaskName}
+                                onChange={(e) => setTempTaskName(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleStartTempOnboardingTask();
+                                }}
+                                style={{
+                                    padding: '0.5rem 0',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    borderBottom: '2px solid var(--text-primary, #000000)',
+                                    color: 'var(--text-primary, #000000)',
+                                    fontSize: '1.1rem',
+                                    outline: 'none',
+                                    textAlign: 'center',
+                                    fontFamily: "'Lexend', sans-serif",
+                                    width: '100%'
+                                }}
+                            />
+                            <button 
+                                className="focus-back-btn primary"
+                                onClick={handleStartTempOnboardingTask}
+                                disabled={!tempTaskName.trim()}
+                                style={{
+                                    padding: '0.8rem 1.5rem',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: tempTaskName.trim() ? 'var(--focus-color-status, #00fff0)' : 'var(--color-bg-panel, rgba(255,255,255,0.1))',
+                                    color: tempTaskName.trim() ? 'var(--color-bg-main, #000)' : 'var(--text-secondary, rgba(255,255,255,0.4))',
+                                    fontWeight: 'bold',
+                                    cursor: tempTaskName.trim() ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.2s ease',
+                                    fontFamily: "'Lexend', sans-serif"
+                                }}
+                            >
+                                Start Timer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="focus-container empty">
                 <div className="focus-empty-state">
