@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { logToFile } from './logger';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://yexazwttyoetdfuddwnw.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlleGF6d3R0eW9ldGRmdWRkd253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTg4OTUsImV4cCI6MjA4ODU5NDg5NX0.Kg9-O0v1ny2FJVE40oOi6gS3LTDr_hX7Lh_QN2Uufmw'
 
 if (!supabaseUrl || !supabaseAnonKey) {
 }
