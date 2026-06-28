@@ -41,3 +41,14 @@ These rules are established to ensure Backbone's interface is accessible, cognit
 *   **Line Length:** Max 70 to 80 characters per line.
 *   **Strict Left-Alignment:** Never justify text (which creates distracting "rivers of white").
 *   **Bionic Reading Support:** Maintain system integration that automatically bolds the first ~45% of words to act as a visual anchor.
+
+## 🎞️ Framer Motion Golden Rules
+
+These rules exist because animation bugs in this codebase have been diagnosed and fixed at cost. Do not repeat them.
+
+### Sliding Pill / Indicator Animations (`layoutId`)
+*   **Always wrap in `<LayoutGroup id="unique-id">`:** Any component that slides an element between positions using Framer Motion's `layoutId` (e.g. a pill, underline, or highlight) MUST be wrapped in a `LayoutGroup` with a unique `id` prop.
+    *   **Why:** Without it, any `AnimatePresence` animation elsewhere on the page (e.g. a fading list, a route transition) can shift bounding rectangles mid-frame and cause the indicator to teleport instead of slide smoothly. The `LayoutGroup` isolates coordinate measurements to that component only.
+    *   **The reusable component:** `src/components/ui/SegmentedControl.jsx` already implements this correctly. **Always use it** for segmented pill controls instead of re-implementing the pattern inline. Pass `layoutPrefix`, `options`, `value`, `onChange`, `buttonSize`, `fontSize`, and `activePadding` as props.
+*   **Never give `layoutId` to both a container and its child simultaneously:** If a parent button has `layoutId` and the pill inside it also has `layoutId`, they compete for coordinate resolution and the pill will teleport on reverse-direction transitions.
+*   **CSS transitions and Framer `layout` animations must not both own the same property:** If Framer is animating `width` via `layout`, remove `transition: width` from CSS, and vice versa. Two systems animating the same property simultaneously causes stretching and jitter.

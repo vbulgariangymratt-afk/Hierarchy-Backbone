@@ -9,9 +9,11 @@ import { backbone, NodeTypes } from '../backbone-v2/index';
 import { useBackboneStore } from '../store/backboneStore';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
-import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image } from 'lucide-react';
+import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, loginWithGoogle } from '../lib/supabase';
+import SegmentedControl from '../components/ui/SegmentedControl';
+import JournalPage from '../pages/JournalPage';
 import './MainLayout.css';
 
 const THEMES = [
@@ -51,6 +53,29 @@ const MainLayout = () => {
 
     // Sidebar overlay state
     const [isTrialSidebarOpen, setIsTrialSidebarOpen] = useState(false);
+
+    // Daily Log popover state
+    const [showDailyLog, setShowDailyLog] = useState(false);
+    const dailyLogContainerRef = React.useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dailyLogContainerRef.current && 
+                !dailyLogContainerRef.current.contains(event.target) &&
+                !event.target.closest('.header-daily-log-btn-ghost')
+            ) {
+                setShowDailyLog(false);
+            }
+        };
+
+        if (showDailyLog) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showDailyLog]);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user: initialUser } }) => {
@@ -128,118 +153,66 @@ const MainLayout = () => {
                             <span className="hryvnia-name">{currencyName.charAt(0).toUpperCase() + currencyName.slice(1).toLowerCase()}</span>
                         </div>
                     )}
+
+                    <div className="header-daily-log-container">
+                        <button
+                            className={`header-daily-log-btn-ghost ${showDailyLog ? 'active' : ''}`}
+                            onClick={() => setShowDailyLog(!showDailyLog)}
+                            title="Daily Log"
+                        >
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                <BookOpen size={16} />
+                            </motion.div>
+                        </button>
+                        
+                        <AnimatePresence>
+                            {showDailyLog && (
+                                <motion.div
+                                    ref={dailyLogContainerRef}
+                                    className="daily-log-popover liquid-glass"
+                                    style={{ transformOrigin: 'top right' }}
+                                    initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
+                                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                    exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
+                                    transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                                >
+                                    <div className="daily-log-popover-header">
+                                        <h3>Daily Log</h3>
+                                        <button className="close-popover-btn" onClick={() => setShowDailyLog(false)}>✕</button>
+                                    </div>
+                                    <div className="daily-log-popover-content scrollbar-hidden">
+                                        <JournalPage />
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                     
                     {energyLevel > 3 && (
                         <div className="header-controls-group">
-                            <div className="header-theme-toggle">
-                                {THEMES.map((themeItem) => {
-                                    const isActive = themePreference === themeItem.id;
-                                    const ThemeIcon = themeItem.icon;
-                                    return (
-                                        <motion.button
-                                            key={themeItem.id}
-                                            className={`header-theme-option ${isActive ? "active" : ""}`}
-                                            onClick={() => setTheme(themeItem.id)}
-                                            layoutId={`theme-btn-wrapper-${themeItem.id}`}
-                                            transition={{
-                                                layout: {
-                                                    type: "spring",
-                                                    damping: 20,
-                                                    stiffness: 230,
-                                                    mass: 1.2
-                                                }
-                                            }}
-                                            style={{ position: 'relative' }}
-                                        >
-                                            {isActive && (
-                                                <motion.div
-                                                    layoutId="theme-active-indicator"
-                                                    className="header-theme-active-pill"
-                                                    transition={{
-                                                        type: "spring",
-                                                        damping: 20,
-                                                        stiffness: 230,
-                                                        mass: 1.2
-                                                    }}
-                                                />
-                                            )}
-                                            <motion.div className="header-option-content" layout>
-                                                <motion.div layoutId={`theme-icon-${themeItem.id}`} className="header-option-icon-wrapper">
-                                                    <ThemeIcon size={14} className="header-option-icon" />
-                                                </motion.div>
-                                                {isActive && (
-                                                    <motion.span
-                                                        className="header-option-label"
-                                                        initial={{ opacity: 0, filter: "blur(4px)" }}
-                                                        animate={{ opacity: 1, filter: "blur(0px)" }}
-                                                        transition={{
-                                                            duration: 0.2,
-                                                            ease: [0.86, 0, 0.07, 1]
-                                                        }}
-                                                    >
-                                                        {themeItem.title}
-                                                    </motion.span>
-                                                )}
-                                            </motion.div>
-                                        </motion.button>
-                                    );
-                                })}
-                            </div>
+                            <SegmentedControl
+                                options={THEMES}
+                                value={themePreference}
+                                onChange={setTheme}
+                                layoutPrefix="theme"
+                                buttonSize={28}
+                                fontSize="0.8rem"
+                                activePadding="0 12px"
+                            />
                             
-                            <div className="header-theme-toggle">
-                                {MODES.map((modeItem) => {
-                                    const isActive = backgroundMode === modeItem.id;
-                                    const ModeIcon = modeItem.icon;
-                                    return (
-                                        <motion.button
-                                            key={modeItem.id}
-                                            className={`header-theme-option ${isActive ? "active" : ""}`}
-                                            onClick={() => setBackgroundMode(modeItem.id)}
-                                            layoutId={`mode-btn-wrapper-${modeItem.id}`}
-                                            transition={{
-                                                layout: {
-                                                    type: "spring",
-                                                    damping: 20,
-                                                    stiffness: 230,
-                                                    mass: 1.2
-                                                }
-                                            }}
-                                            style={{ position: 'relative' }}
-                                        >
-                                            {isActive && (
-                                                <motion.div
-                                                    layoutId="bg-active-indicator"
-                                                    className="header-theme-active-pill"
-                                                    transition={{
-                                                        type: "spring",
-                                                        damping: 20,
-                                                        stiffness: 230,
-                                                        mass: 1.2
-                                                    }}
-                                                />
-                                            )}
-                                            <motion.div className="header-option-content" layout>
-                                                <motion.div layoutId={`mode-icon-${modeItem.id}`} className="header-option-icon-wrapper">
-                                                    <ModeIcon size={14} className="header-option-icon" />
-                                                </motion.div>
-                                                {isActive && (
-                                                    <motion.span
-                                                        className="header-option-label"
-                                                        initial={{ opacity: 0, filter: "blur(4px)" }}
-                                                        animate={{ opacity: 1, filter: "blur(0px)" }}
-                                                        transition={{
-                                                            duration: 0.2,
-                                                            ease: [0.86, 0, 0.07, 1]
-                                                        }}
-                                                    >
-                                                        {modeItem.title}
-                                                    </motion.span>
-                                                )}
-                                            </motion.div>
-                                        </motion.button>
-                                    );
-                                })}
-                            </div>
+                            <SegmentedControl
+                                options={MODES}
+                                value={backgroundMode}
+                                onChange={setBackgroundMode}
+                                layoutPrefix="bg"
+                                buttonSize={28}
+                                fontSize="0.8rem"
+                                activePadding="0 12px"
+                            />
 
                             <Link to="/settings" className="header-settings-btn-ghost" title="Settings">
                                 <motion.div

@@ -736,11 +736,11 @@ body.dark.liquid-mode .metric {
 
 .segmented-control {
     display: flex;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--alpha-low);
     border-radius: 11px;
     padding: 3px;
     gap: 1px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--color-border);
 }
 
 .segmented-control-item {

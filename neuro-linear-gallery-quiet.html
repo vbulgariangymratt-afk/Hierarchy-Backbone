@@ -16,11 +16,11 @@
             /* Solid Dark (Default) */
             --bg: #121314; 
             --sidebar-bg: #101112;
-            --surface: #151617; /* Level 1: Cards resting on base background */
-            --surface-elevated: #18191A; /* Level 2: Elevated/hover state */
+            --surface: var(--card-bg); /* Bound to global app tokens */
+            --surface-elevated: #18191A; 
             --fg: #F7F7F8; 
             --muted: #80808B;
-            --border: #222325;
+            --border: var(--card-border); /* Bound to global app tokens */
             --border-hover: #2E2F32;
             
             /* Curated Cohesive Accents (Linear Indigo Signature) */
@@ -49,11 +49,11 @@
         [data-theme="light"] {
             --bg: #F7F7F8;
             --sidebar-bg: #F1F1F3;
-            --surface: #FFFFFF;
+            --surface: var(--card-bg); /* Bound to global app tokens */
             --surface-elevated: #F7F7F8;
             --fg: #0F0F11;
             --muted: #80808B;
-            --border: #E2E2E9;
+            --border: var(--card-border); /* Bound to global app tokens */
             --border-hover: #D2D2DC;
             --accent: #5E6AD2;
             --accent-hover: #4D59C1;

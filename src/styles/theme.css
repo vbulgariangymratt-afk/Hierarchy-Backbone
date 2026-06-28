@@ -26,6 +26,16 @@
     --focus-color-status: rgba(var(--focus-contrast), var(--focus-opacity-status));
     --focus-color-ghost: rgba(var(--focus-contrast), var(--focus-opacity-ghost));
     --focus-color-track: rgba(var(--focus-contrast), var(--focus-opacity-track));
+
+    /* Active Pill & Segmented Control Tokens matching sandbox values */
+    --pill-active-bg: transparent;
+    --pill-active-border: var(--color-accent);
+    --pill-active-shadow: none;
+
+    /* Card Container Tokens matching Sandbox specifications */
+    --card-bg: var(--color-bg-card);
+    --card-border: var(--color-border);
+    --card-radius: var(--radius-lg);
 }
 
 /* DARK THEME SEMANTIC TOKENS */
@@ -54,6 +64,16 @@
     --focus-color-status: rgba(var(--focus-contrast), var(--focus-opacity-status));
     --focus-color-ghost: rgba(var(--focus-contrast), var(--focus-opacity-ghost));
     --focus-color-track: rgba(var(--focus-contrast), var(--focus-opacity-track));
+
+    /* Active Pill & Segmented Control Tokens matching sandbox values */
+    --pill-active-bg: transparent;
+    --pill-active-border: var(--color-accent);
+    --pill-active-shadow: none;
+
+    /* Card Container Tokens matching Sandbox specifications */
+    --card-bg: var(--color-bg-card);
+    --card-border: var(--color-border);
+    --card-radius: var(--radius-lg);
 }
 
 /* Glass & Wallpaper Mode Neutral Accents removed to preserve standardized brand purple accent throughout the app */

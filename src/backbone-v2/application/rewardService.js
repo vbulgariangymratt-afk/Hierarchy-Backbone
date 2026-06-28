@@ -140,8 +140,7 @@ export const RewardService = (repository) => {
         const bankRewards = allNodes.filter(n =>
             n.type === NodeTypes.REWARD &&
             n.parentId === 'REWARD_BANK' &&
-            n.metadata?.rewardCategory === 'MARKETPLACE' &&
-            (n.metadata?.rewardTier || 1) <= unlockedTier
+            n.metadata?.rewardCategory === 'MARKETPLACE'
         );
 
         // Shuffle and pick up to 8 unique items

@@ -591,13 +591,6 @@ const Sidebar = ({ onSkillClick }) => {
                                     </NavLink>
                                 )}
 
-                                <NavLink to="/journal" className={({ isActive }) => `nav-item journal-nav ${isActive ? 'active' : ''}`}>
-                                    <span className="btn-icon">
-                                        <BookOpen size={16} />
-                                    </span>
-                                    <span className="btn-text">Daily log</span>
-                                </NavLink>
-
                                 <NavLink to="/calendar" className={({ isActive }) => `nav-item timeline-nav ${isActive ? 'active' : ''}`}>
                                     <span className="btn-icon">
                                         <Calendar size={16} />

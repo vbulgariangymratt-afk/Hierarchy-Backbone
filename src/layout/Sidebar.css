@@ -363,22 +363,38 @@
 }
 
 /* Framer motion active indicator pill sliding background/border */
+.header-theme-active-pill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--pill-active-bg);
+    border: 1px solid var(--pill-active-border);
+    border-radius: 9999px;
+    z-index: -1;
+    box-shadow: var(--pill-active-shadow);
+}
+
+.light .header-theme-active-pill {
+    /* Natively handled by dynamic tokens */
+}
+
 .energy-active-pill {
     position: absolute;
     top: -3px; /* Overcomes container top padding to reach the edge */
     bottom: -3px; /* Overcomes container bottom padding to reach the edge */
     left: -4px; /* Matches container 4px padding to touch the edges at the ends */
     right: -4px; /* Matches container 4px padding to touch the edges at the ends */
-    background: rgba(94, 106, 210, 0.06); /* Indigo tint matching sandbox */
-    border: 1.5px solid #5E6AD2; /* Signature sandbox indigo border */
+    background: var(--pill-active-bg);
+    border: 1px solid var(--pill-active-border);
     border-radius: 9999px; /* Pill indicator */
     z-index: 1;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--pill-active-shadow);
 }
 
 .light .energy-active-pill {
-    background: rgba(94, 106, 210, 0.04);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    /* Fallback override to keep clean contrast, although token variables handle themes natively */
 }
 
 /* Bottom Section */

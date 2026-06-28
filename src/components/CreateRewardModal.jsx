@@ -4,11 +4,11 @@ import { useSettings } from '../context/SettingsContext';
 import { Coins } from 'lucide-react';
 import './CreateRewardModal.css';
 
-const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
+const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
     const { currencyName } = useSettings();
     const [name, setName] = useState('');
     const [sensoryDescription, setSensoryDescription] = useState('');
-    const [rewardTier, setRewardTier] = useState(1);
+    const [rewardTier, setRewardTier] = useState(defaultTier);
     const [hryvniaCost, setHryvniaCost] = useState(10);
     const [isLevelGated, setIsLevelGated] = useState(false);
     const [requiredLevel, setRequiredLevel] = useState(1);
@@ -28,8 +28,11 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                 setRequiredSkillId(skills[0].id);
             }
         };
-        if (isOpen) fetchSkills();
-    }, [isOpen]);
+        if (isOpen) {
+            fetchSkills();
+            setRewardTier(defaultTier);
+        }
+    }, [isOpen, defaultTier]);
 
     const handleCostChange = (val) => {
         const cost = Number(val);

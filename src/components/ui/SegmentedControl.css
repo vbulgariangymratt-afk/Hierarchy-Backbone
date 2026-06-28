@@ -1,0 +1,97 @@
+/* ─────────────────────────────────────────────────────────────
+   SegmentedControl — shared styles
+   Sizes are driven by --sc-button-size CSS var set inline by the component.
+   The appearance-mode switcher in MainLayout used 28px;
+   the tier selector in MarketplacePage uses 38px.
+───────────────────────────────────────────────────────────── */
+
+.segmented-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--alpha-low);
+    padding: 3px;
+    height: var(--sc-button-size, 28px);
+    border-radius: 9999px;
+    position: relative;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    overflow: hidden; /* Clips the pill's -3px bleed flush to the container edge */
+}
+
+.light .segmented-control {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* ── Individual button ── */
+.sc-btn {
+    border: none;
+    background: transparent;
+    height: calc(var(--sc-button-size, 28px) - 6px);
+    width: calc(var(--sc-button-size, 28px) - 6px);
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: 9999px;
+    cursor: pointer;
+    /* Width + colour transition — Framer Motion handles the layout spring */
+    transition: color 0.15s ease, width 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.sc-btn:hover {
+    color: var(--text-primary);
+}
+
+.sc-btn.active {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+    width: auto;
+}
+
+/* ── Sliding pill (background + border) ── */
+.sc-pill {
+    position: absolute;
+    /* Negative offsets cancel the container's padding: 3px so the pill
+       bleeds flush to the container edge — same technique as .energy-active-pill */
+    top: -2px;
+    bottom: -2px;
+    left: -2px;
+    right: -2px;
+    background: var(--pill-active-bg);
+    border: 1px solid var(--pill-active-border);
+    border-radius: 9999px;
+    z-index: -1;
+    box-shadow: var(--pill-active-shadow);
+}
+
+/* ── Icon + label row ── */
+.sc-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.sc-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sc-icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2px;
+    color: inherit;
+}
+
+.sc-label {
+    white-space: nowrap;
+    overflow: hidden;
+}
