@@ -186,7 +186,7 @@ const SettingsPage = () => {
                             </p>
                             <div className="accent-color-selector">
                                 {[
-                                    '#0a84ff', // Blue
+                                    '#5E6AD2', // Blue (Backbone Sandbox Indigo)
                                     '#5e5ce6', // Indigo
                                     '#30d158', // Emerald
                                     '#ff9f0a', // Orange
@@ -204,7 +204,7 @@ const SettingsPage = () => {
                                 <div className="color-custom-input-wrapper">
                                     <input
                                         type="color"
-                                        value={solidAccentColor || '#0a84ff'}
+                                        value={solidAccentColor || '#5E6AD2'}
                                         onChange={(e) => updateSolidAccentColor(e.target.value)}
                                         className="color-custom-picker"
                                     />
@@ -247,7 +247,7 @@ const SettingsPage = () => {
                             <div className="appearance-hint" style={{ 
                                 marginTop: '0px', 
                                 padding: '12px', 
-                                borderLeft: '3px solid var(--color-accent, #0a84ff)', 
+                                borderLeft: '3px solid var(--color-accent, #5E6AD2)', 
                                 background: 'rgba(255, 255, 255, 0.03)', 
                                 borderRadius: '4px',
                                 fontSize: '13px',

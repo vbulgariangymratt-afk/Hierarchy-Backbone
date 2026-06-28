@@ -1,5 +1,5 @@
 :root {
-    --sidebar-width: 260px;
+    --sidebar-width: 240px; /* Reduced from 260px to match Sandbox specifications for a compact feel */
     --sidebar-bg: var(--color-bg-sidebar-translucent);
     --sidebar-border: var(--color-border);
     --accent-focus: var(--color-accent);
@@ -11,9 +11,9 @@
     --text-craft-tertiary: rgba(255, 255, 255, 0.3);
     
     /* Mathematical Spacing & Alignment */
-    --divider-gap: 6px; 
+    --divider-gap: 4px; 
     --sidebar-h-padding: 12px;
-    --section-gap: 12px; /* Unified Vertical Gap: 2 x --divider-gap */
+    --section-gap: 8px; /* Unified Vertical Gap: 2 x --divider-gap */
     --item-column-inset: 8px; /* Corrected for symmetry with item margins (4px each side) */
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -22,16 +22,16 @@
 
 .sidebar {
     width: var(--sidebar-width);
-    height: 100dvh;
-    border-radius: 0 18px 18px 0;
+    height: calc(100vh - 56px); /* Align beneath the global app-header */
+    border-radius: 0; /* Straight edges matching Sandbox header border */
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 0; /* Padding moved to scroll content for edge-aligned scrollbar */
-    position: fixed; /* Changed from sticky to fixed for static behavior */
+    padding: 0;
+    position: fixed;
     left: 0;
-    top: 0;
-    z-index: 1000; /* Higher z-index to stay above content */
+    top: 56px; /* Offset by header height */
+    z-index: 999; /* Below app-header z-index */
     transition: var(--transition-smooth);
     box-sizing: border-box;
     overflow: visible;
@@ -45,38 +45,14 @@
     height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 48px 12px 20px 12px; /* Restored padding here */
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar in IE/Edge */
+    padding: 16px 12px 20px 12px; /* Reduced top padding as header drag region is separate */
 }
 
-/* ── Scrollpill (Custom Scrollbar) ── */
+/* Hide scrollbar in Webkit browsers (Chrome, Safari, Tauri WebView) */
 .sidebar-scroll-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.sidebar-scroll-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.sidebar-scroll-content::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 10px;
-    border: 2px solid transparent; /* Creates a floating pill effect */
-    background-clip: content-box;
-    transition: background 0.3s ease;
-}
-
-.sidebar-scroll-content.is-scrolling::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.sidebar-scroll-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    background-clip: content-box;
-}
-
-.light .sidebar-scroll-content.is-scrolling::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    background-clip: content-box;
+    display: none;
 }
 
 /* Mode Specific Backgrounds */
@@ -114,7 +90,8 @@
 .neutral .sidebar,
 .dark.solid-mode .sidebar {
     background: var(--color-bg-sidebar-solid) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid !important; /* Declare 1px solid border frame */
+    border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 250px) 1 !important; /* Specular top-corner highlight gradient */
     box-shadow: none !important;
 }
 
@@ -123,7 +100,7 @@
 }
 
 .light.solid-mode .sidebar {
-    background: #ffffff !important;
+    background: var(--color-bg-sidebar-solid) !important;
     border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
     box-shadow: none !important;
 }
@@ -184,33 +161,26 @@
     margin-bottom: var(--section-gap);
 }
 
-.mode-toggle-btn {
-    appearance: none;
-    background: var(--alpha-med);
-    border: 1px solid var(--sidebar-border);
-    border-radius: 12px;
-    padding: 6px 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: var(--transition-smooth);
-    position: relative;
-    overflow: hidden;
-    width: calc(100% - var(--item-column-inset));
-    margin: 0 auto 12px auto; /* Explicit 12px margin-bottom for rhythm */
-    text-align: left;
-    box-sizing: border-box;
+.focus-toggle-btn,
+.capture-toggle-btn {
+    flex: 1 !important;
+    margin: 0 !important;
+    width: auto !important;
+    justify-content: center !important;
+    border-radius: var(--radius-btn) !important;
+    height: 34px !important;
+    font-size: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important; /* Subtle affordance border — same as Sandbox documentation button */
 }
 
-.mode-toggle-btn:hover {
-    background: var(--alpha-high);
-    transform: translateY(-1px);
-    border-color: rgba(255, 255, 255, 0.15);
+.focus-toggle-btn:hover,
+.capture-toggle-btn:hover {
+    background: var(--color-bg-hover) !important;
 }
 
-.mode-toggle-btn:active {
-    transform: translateY(0);
+.focus-toggle-btn:active,
+.capture-toggle-btn:active {
+    transform: scale(0.96) !important;
 }
 
 .btn-icon {
@@ -226,12 +196,12 @@
 }
 
 .btn-text {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    font-size: 13px;
-    font-weight: 500;
+    font-family: inherit;
+    font-size: 0.85rem; /* Exact sandbox spec: 0.85rem */
+    font-weight: 400;   /* Regular weight — sandbox uses 400, not 500 */
     color: inherit;
     flex-grow: 1;
-    line-height: 1; /* Collapsing invisible space */
+    line-height: 1;
 }
 
 .mode-toggle-btn .btn-text {
@@ -242,7 +212,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #4b5563;
+    background: var(--text-tertiary);
     transition: var(--transition-smooth);
 }
 
@@ -301,13 +271,13 @@
 }
 
 .mode-planning .btn-status-indicator {
-    background: #94a3b8;
+    background: var(--text-secondary);
     box-shadow: 0 0 8px rgba(148, 163, 184, 0.15);
 }
 
 /* Energy Level Selector */
 .energy-selector-container {
-    padding: 0 4px 6px 4px; /* Standardized to align label at 20px rail (16px margin-offset + 4px padding) */
+    padding: 0 0 6px 0; /* Full-width: let .energy-pills handle its own sizing */
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -317,75 +287,98 @@
 }
 
 .energy-label {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--text-primary);
-    opacity: 1;
+    color: var(--text-tertiary);
+    opacity: 0.8;
     margin-top: 0 !important;
     margin-bottom: 2px;
-    padding-left: 0;
+    padding-left: var(--sidebar-h-padding); /* Align with other section titles */
     margin-left: 0;
     line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .energy-pills {
     display: flex;
-    gap: 4px;
-    background: var(--alpha-low);
-    padding: 4px;
-    border-radius: 12px;
-    border: 1px solid var(--sidebar-border);
-    width: calc(100% - var(--item-column-inset));
+    align-items: center;
+    gap: 8px; /* Comfortable gap to separate the active border from adjacent numbers */
+    background: rgba(255, 255, 255, 0.04);
+    padding: 3px 4px; /* Adjusted horizontal padding to 4px to align button centers with 24px nav icons */
+    border-radius: 9999px; /* Unified pill design */
+    border: none;
+    width: calc(100% - 24px); /* Inset by 12px on each side to align container edges with nav items */
     margin: 0 auto;
+    box-sizing: border-box;
 }
 
-.dark.solid-mode .energy-pills,
+.dark.solid-mode .energy-pills {
+    background: rgba(255, 255, 255, 0.04);
+}
+
 .light.solid-mode .energy-pills {
-    background: var(--alpha-low);
-    border-color: var(--alpha-med);
+    background: rgba(0, 0, 0, 0.04);
 }
 
 .energy-pill {
-    flex: 1;
     border: none;
     background: transparent;
-    padding: 6px 0;
+    height: 24px; /* Fixed height for perfect circular toggle buttons */
+    flex: 1; /* Inactive buttons take equal smaller share, squishing together */
+    min-width: 20px;
+    padding: 0;
     font-size: 12px;
     font-weight: 700;
     color: var(--text-secondary);
-    border-radius: 8px;
+    border-radius: 9999px; /* Pill/circle style */
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 0.15s ease, flex 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
 }
 
 .energy-pill:hover {
-    background: var(--alpha-med);
     color: var(--text-primary);
 }
 
-.dark.solid-mode .energy-pill.active {
-    background: var(--color-accent) !important;
-    color: var(--color-bg-main) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+.energy-pill.active {
+    color: var(--text-primary) !important;
+    flex: 2; /* Active button takes double the share of space to breathe */
 }
 
-.light.solid-mode .energy-pill.active {
-    background: var(--color-accent) !important;
-    color: #ffffff !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+.energy-pill-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.liquid-mode .energy-pill.active,
-.wallpaper-mode .energy-pill.active {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+.energy-pill-label {
+    position: relative;
+    z-index: 2;
 }
 
-.dark .sidebar .energy-pill.active,
-.neutral .sidebar .energy-pill.active {
-    color: #ffffff !important;
+/* Framer motion active indicator pill sliding background/border */
+.energy-active-pill {
+    position: absolute;
+    top: -3px; /* Overcomes container top padding to reach the edge */
+    bottom: -3px; /* Overcomes container bottom padding to reach the edge */
+    left: -4px; /* Matches container 4px padding to touch the edges at the ends */
+    right: -4px; /* Matches container 4px padding to touch the edges at the ends */
+    background: rgba(94, 106, 210, 0.06); /* Indigo tint matching sandbox */
+    border: 1.5px solid #5E6AD2; /* Signature sandbox indigo border */
+    border-radius: 9999px; /* Pill indicator */
+    z-index: 1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.light .energy-active-pill {
+    background: rgba(94, 106, 210, 0.04);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* Bottom Section */
@@ -402,10 +395,12 @@
 }
 
 .hryvnia-icon {
-    font-size: 18px;
-    color: #10b981;
+    color: var(--color-accent);
     width: 24px;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .hryvnia-amount {
@@ -425,9 +420,14 @@
 
 .sidebar-divider {
     height: 1px;
-    background: var(--sidebar-border);
-    margin: 6px 16px;
-    opacity: 0.5;
+    background: var(--color-border);
+    margin: 12px 16px;
+    border: none;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.02); /* Specular highlight for dark mode */
+}
+
+.light .sidebar-divider {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8); /* Specular highlight for light mode */
 }
 
 .theme-toggle-sidebar {
@@ -540,8 +540,7 @@
 .focus-slots-section, 
 .maintenance-section,
 .life-areas-section {
-    padding-top: var(--divider-gap);
-    margin-top: var(--divider-gap); /* Combined 12px visual gap */
+    margin-top: 20px; /* Exact 20px gap matching Sandbox layout spacing */
 }
 
 .section-title-container {
@@ -554,22 +553,36 @@
     border-radius: 8px;
     transition: var(--transition-smooth);
     color: var(--text-primary) !important; 
-    padding-left: 8px;
+    padding-left: 12px; /* Aligns title text with nav-item icons (16px from sidebar edge) */
 }
 
 .header-action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.3);
-    transition: var(--transition-smooth);
+    color: var(--text-secondary);
+    opacity: 0; /* Hidden by default to reduce visual clutter */
+    transition: opacity 0.2s ease-in-out, background-color 0.15s ease, color 0.15s ease;
     border-radius: 4px;
     padding: 2px;
 }
 
+.header-action-btn svg {
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.section-title-container:hover .header-action-btn {
+    opacity: 0.6; /* Reveals partially when section title container is hovered */
+}
+
 .header-action-btn:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    opacity: 1 !important; /* Fully visible on direct icon hover */
+}
+
+.header-action-btn:hover svg {
+    transform: rotate(90deg); /* Satisfying 90-degree rotate animation */
 }
 
 .section-title-static,
@@ -600,12 +613,14 @@
 }
 
 .section-title-static {
-    font-size: 13px;
+    font-size: 0.68rem;    /* Exact sandbox spec: 0.68rem */
     font-weight: 600;
-    padding: 4px 0; /* Remove horizontal padding */
-    color: var(--text-primary); 
-    opacity: 1;
-    text-transform: capitalize; /* Ensure Title Case */
+    padding: 4px 0;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;    /* Exact sandbox spec: 8px below title before items */
 }
 
 .section-title-input:focus {
@@ -632,7 +647,7 @@
 .area-dot {
     width: 8px !important;
     height: 8px !important;
-    background-color: #60a5fa !important;
+    background-color: #5E6AD2 !important;
     border-radius: 50% !important;
     margin-left: auto;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
@@ -683,24 +698,27 @@
 
 .nav-item {
     text-decoration: none;
-    padding: 3px 8px;
+    padding: 8px 12px;  /* Exact sandbox spec: 8px 12px */
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 10px;          /* Exact sandbox spec: 10px */
     cursor: pointer;
-    border-radius: 8px;
+    border-radius: 6px;
     transition: var(--transition-smooth);
-    color: var(--text-secondary) !important;
+    color: var(--text-primary) !important;
     position: relative;
-    border-left: 2px solid transparent;
     width: calc(100% - var(--item-column-inset));
-    margin: 0 auto;
+    margin: 1px auto;
     box-sizing: border-box;
+    font-weight: 400;   /* Regular weight matching sandbox */
+    font-size: 0.85rem; /* Exact sandbox spec */
 }
 
 .nav-item .node-icon-wrapper,
 .nav-item .btn-icon {
-    opacity: 0.65;
+    color: var(--text-tertiary) !important; /* Icon is grey by default */
+    opacity: 0.8;
+    transition: var(--transition-smooth);
 }
 
 /* Ensure status dots always shine through nav-item 'quiet' mode */
@@ -716,22 +734,21 @@
 
 .nav-item:hover {
     background: var(--alpha-low);
-    color: var(--text-primary);
 }
 
 .nav-item:hover .node-icon-wrapper,
 .nav-item:hover .btn-icon {
+    color: var(--text-primary) !important; /* Icon turns white on hover */
     opacity: 1;
 }
 
 .nav-item.active {
-    background: var(--alpha-med);
-    color: var(--text-primary) !important;
-    border-left-color: var(--color-accent);
+    background: var(--color-bg-hover); /* Match Sandbox surface-elevated background token */
 }
 
 .nav-item.active .node-icon-wrapper,
 .nav-item.active .btn-icon {
+    color: var(--text-primary) !important; /* Icon turns white when active */
     opacity: 1;
 }
 
@@ -741,22 +758,23 @@
 
 .nav-item .btn-icon {
     background: transparent;
-    width: 20px;
-    min-width: 20px;
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 0.5;
+    opacity: 0.7;
     transition: opacity 0.2s ease;
 }
 
 .nav-item .btn-icon img,
 .nav-item .btn-icon svg,
 .nav-item .btn-icon .app-icon {
-    max-width: 16px;
-    max-height: 16px;
-    width: 16px;
-    height: 16px;
+    max-width: 18px;
+    max-height: 18px;
+    width: 18px;
+    height: 18px;
 }
 
 /* Animations */
@@ -1126,33 +1144,33 @@
 .pilot-skill-label {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 3px 8px;
-    font-size: 11px;
-    font-weight: 600;
+    gap: 12px;
+    padding: 6px 12px; /* Same padding as nav-item */
+    font-size: 14px; /* Same font size */
+    font-weight: 500; /* Same font weight */
     text-transform: none;
-    color: var(--text-secondary) !important;
+    color: var(--text-primary) !important; /* Same high-contrast text color */
     opacity: 1;
     cursor: pointer;
     transition: var(--transition-smooth);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    border-radius: 8px;
+    border-radius: 6px; /* Same border radius */
     width: calc(100% - var(--item-column-inset));
-    margin: 0 auto;
+    margin: 1px auto; /* Same margin */
     box-sizing: border-box;
 }
 
 .pilot-skill-label .btn-icon {
-    width: 20px !important; /* Matches nav-item rail */
-    height: 20px !important;
+    width: 24px !important; /* Matches nav-item icon rail */
+    height: 24px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    min-width: 20px;
+    min-width: 24px;
 }
 
 
@@ -1295,8 +1313,8 @@
 .area-dot, 
 .btn-status-indicator.active, 
 .btn-status-dot.active {
-    background-color: #60a5fa !important;
-    box-shadow: 0 0 10px rgba(96, 165, 250, 0.6) !important;
+    background-color: #5E6AD2 !important;
+    box-shadow: 0 0 10px rgba(94, 106, 210, 0.5) !important;
 }
 
 .health-dot.orange {
@@ -1329,9 +1347,8 @@
    gap: 0 !important; 
 }
 
-.sidebar-top .mode-toggle-btn { 
-   margin-bottom: 12px !important; /* Universal Beat: Timeline-to-Focus matching */
-   line-height: 1 !important; 
+.sidebar-top .mode-toggle-row { 
+   margin-bottom: 24px !important; /* Spacing scale: 24px separation between Action deck and Status container */
 }
 
 .sidebar-top .energy-label, 
@@ -1339,6 +1356,10 @@
    margin-top: 0 !important; 
    padding-top: 0 !important;
    line-height: 1 !important;
+}
+
+.sidebar-nav {
+   margin-top: 28px !important; /* Spacing scale: 28px separation between Status control valve and Navigation deck */
 }
 
 .light.solid-mode .sidebar,
@@ -1395,7 +1416,7 @@
 }
 
 .light .hryvnia-icon {
-    color: #059669; /* Slightly darker emerald for light mode */
+    color: var(--color-accent);
 }
 
 
@@ -1575,17 +1596,14 @@
 .liquid-mode.light .sidebar .settings-btn,
 .liquid-mode.light .sidebar .theme-toggle-sidebar,
 .liquid-mode.light .sidebar .pilot-skill-label,
-.liquid-mode.light .sidebar .hryvnia-icon,
 .solid-mode.light .sidebar .nav-item,
 .solid-mode.light .sidebar .settings-btn,
 .solid-mode.light .sidebar .theme-toggle-sidebar,
 .solid-mode.light .sidebar .pilot-skill-label,
-.solid-mode.light .sidebar .hryvnia-icon,
 .wallpaper-mode.light .sidebar .nav-item,
 .wallpaper-mode.light .sidebar .settings-btn,
 .wallpaper-mode.light .sidebar .theme-toggle-sidebar,
-.wallpaper-mode.light .sidebar .pilot-skill-label,
-.wallpaper-mode.light .sidebar .hryvnia-icon {
+.wallpaper-mode.light .sidebar .pilot-skill-label {
     color: rgb(129, 126, 125) !important; 
     font-weight: 400 !important;
     background: transparent !important;
@@ -1600,17 +1618,27 @@
     background: rgba(0, 0, 0, 0.02) !important;
 }
 
-/* Icons inherit the exact same whisper grey */
+/* Icons are whisper grey by default, white on hover/active */
 .liquid-mode .sidebar .nav-item .btn-icon,
 .solid-mode .sidebar .nav-item .btn-icon,
 .wallpaper-mode .sidebar .nav-item .btn-icon,
-.liquid-mode .sidebar .mode-toggle-btn .btn-icon,
-.solid-mode .sidebar .mode-toggle-btn .btn-icon,
-.wallpaper-mode .sidebar .mode-toggle-btn .btn-icon,
 .liquid-mode .sidebar .pilot-skill-label .btn-icon,
 .solid-mode .sidebar .pilot-skill-label .btn-icon,
 .wallpaper-mode .sidebar .pilot-skill-label .btn-icon {
-    color: inherit !important;
+    color: var(--text-tertiary) !important; /* Grey default */
+    opacity: 1 !important;
+}
+
+.liquid-mode .sidebar .nav-item:hover .btn-icon,
+.solid-mode .sidebar .nav-item:hover .btn-icon,
+.wallpaper-mode .sidebar .nav-item:hover .btn-icon,
+.liquid-mode .sidebar .pilot-skill-label:hover .btn-icon,
+.solid-mode .sidebar .pilot-skill-label:hover .btn-icon,
+.wallpaper-mode .sidebar .pilot-skill-label:hover .btn-icon,
+.liquid-mode .sidebar .nav-item.active .btn-icon,
+.solid-mode .sidebar .nav-item.active .btn-icon,
+.wallpaper-mode .sidebar .nav-item.active .btn-icon {
+    color: var(--text-primary) !important; /* White when selected */
     opacity: 1 !important;
 }
 

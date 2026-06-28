@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { backbone, repository, NodeTypes } from '../backbone-v2/index';
 import { useSettings } from '../context/SettingsContext';
+import { Coins } from 'lucide-react';
 import './CreateRewardModal.css';
 
 const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
     const { currencyName } = useSettings();
     const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
     const [sensoryDescription, setSensoryDescription] = useState('');
-    const [category, setCategory] = useState('MARKETPLACE'); // 'MARKETPLACE' or 'TASK'
+    const [rewardTier, setRewardTier] = useState(1);
     const [hryvniaCost, setHryvniaCost] = useState(10);
     const [isLevelGated, setIsLevelGated] = useState(false);
     const [requiredLevel, setRequiredLevel] = useState(1);
     const [requiredSkillId, setRequiredSkillId] = useState(''); // Empty string means no skill selected yet
     const [allSkills, setAllSkills] = useState([]);
-    const [iconUrl, setIconUrl] = useState('');
+    const [coverUrl, setCoverUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     React.useEffect(() => {
@@ -39,9 +39,6 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
         if (cost >= 50 && !isLevelGated) {
             setIsLevelGated(true);
             setRequiredLevel(Math.max(1, Math.floor(cost / 50)));
-        } else if (cost < 50 && isLevelGated && requiredLevel === Math.floor(50/50)) {
-            // Only auto-untoggle if it was at the default suggested level
-            // setIsLevelGated(false); 
         }
     };
 
@@ -58,26 +55,25 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                 type: NodeTypes.REWARD,
                 parentId: 'REWARD_BANK',
                 metadata: {
-                    description: description.trim(),
                     sensoryDescription: sensoryDescription.trim(),
-                    rewardCategory: category,
+                    rewardCategory: 'MARKETPLACE',
                     hryvniaCost: Number(hryvniaCost),
                     requiredLevel: isLevelGated ? Number(requiredLevel) : null,
                     requiredSkillId: isLevelGated ? requiredSkillId : null,
-                    rewardTier: 1, // Default to tier 1 for now
-                    iconUrl: iconUrl.trim() || null
+                    rewardTier: Number(rewardTier),
+                    coverUrl: coverUrl.trim() || null,
+                    iconUrl: coverUrl.trim() || null // Maintain backwards compatibility
                 }
             });
 
             setName('');
-            setDescription('');
             setSensoryDescription('');
-            setCategory('MARKETPLACE');
+            setRewardTier(1);
             setHryvniaCost(10);
             setIsLevelGated(false);
             setRequiredLevel(1);
             setRequiredSkillId(allSkills.length > 0 ? allSkills[0].id : '');
-            setIconUrl('');
+            setCoverUrl('');
 
             if (onSuccess) onSuccess();
             onClose();
@@ -88,6 +84,9 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
             setIsSubmitting(false);
         }
     };
+
+    const selectedSkill = allSkills.find(s => s.id === requiredSkillId);
+    const currentLevel = selectedSkill?.metadata?.currentLevel || 0;
 
     return (
         <div className="modal-overlay" onClick={onClose}>
@@ -110,16 +109,6 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Description (Internal)</label>
-                        <textarea
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                            placeholder="Purpose or internal notes..."
-                            rows={3}
-                        />
-                    </div>
-
-                    <div className="form-group">
                         <label>Sensory Description (Visual/Tactile)</label>
                         <textarea
                             value={sensoryDescription}
@@ -134,17 +123,24 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                         <div className="category-toggle">
                             <button
                                 type="button"
-                                className={`toggle-btn ${category === 'MARKETPLACE' ? 'active' : ''}`}
-                                onClick={() => setCategory('MARKETPLACE')}
+                                className={`toggle-btn ${rewardTier === 1 ? 'active' : ''}`}
+                                onClick={() => setRewardTier(1)}
                             >
-                                Marketplace
+                                Micro-Reset
                             </button>
                             <button
                                 type="button"
-                                className={`toggle-btn ${category === 'TASK' ? 'active' : ''}`}
-                                onClick={() => setCategory('TASK')}
+                                className={`toggle-btn ${rewardTier === 2 ? 'active' : ''}`}
+                                onClick={() => setRewardTier(2)}
                             >
-                                Task
+                                Mid-Reset
+                            </button>
+                            <button
+                                type="button"
+                                className={`toggle-btn ${rewardTier === 3 ? 'active' : ''}`}
+                                onClick={() => setRewardTier(3)}
+                            >
+                                Epic Milestone
                             </button>
                         </div>
                     </div>
@@ -152,26 +148,29 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                     <div className="form-group">
                         <label>{currencyName} Cost</label>
                         <div className="cost-input-wrapper">
-                            <span className="unit-icon">🪙</span>
+                            <Coins size={16} className="cost-unit-icon" />
                             <input
                                 type="number"
                                 min="0"
                                 step="1"
                                 value={hryvniaCost}
                                 onChange={e => handleCostChange(e.target.value)}
+                                style={{ paddingLeft: '44px' }}
                             />
                         </div>
                     </div>
 
                     <div className="form-group level-gate-group">
                         <div className="gate-toggle-wrapper">
-                            <label className="checkbox-label">
+                            <label className="checkbox-label custom-switch-container">
                                 <input 
                                     type="checkbox" 
                                     checked={isLevelGated}
                                     onChange={e => setIsLevelGated(e.target.checked)}
+                                    className="custom-switch-input"
                                 />
-                                <span>Gate this by Aura Level?</span>
+                                <span className="custom-switch-slider" />
+                                <span className="switch-text">Gate this by Aura Level?</span>
                             </label>
                             {hryvniaCost >= 50 && !isLevelGated && (
                                 <span className="smart-suggestion">Recommended for high-cost rewards</span>
@@ -193,7 +192,14 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                                         />
                                     </div>
                                     <div className="gate-field">
-                                        <label>Required In</label>
+                                        <label>
+                                            Required In
+                                            {selectedSkill && (
+                                                <span style={{ color: 'var(--color-accent)', textTransform: 'none', marginLeft: '6px' }}>
+                                                    (Current Lvl: {currentLevel})
+                                                </span>
+                                            )}
+                                        </label>
                                         <select 
                                             value={requiredSkillId} 
                                             onChange={e => setRequiredSkillId(e.target.value)}
@@ -212,21 +218,45 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Icon URL (notionicons.so)</label>
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                            <input
-                                type="text"
-                                value={iconUrl}
-                                onChange={e => setIconUrl(e.target.value)}
-                                placeholder="https://notionicons.so/icon/..."
-                                style={{ flex: 1 }}
-                            />
-                            {iconUrl && (
-                                <div className="icon-preview" style={{ width: '36px', height: '36px', background: 'var(--alpha-low)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
-                                    <img src={iconUrl} alt="preview" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                        <label>Cover Image URL (ADHD visual anchor)</label>
+                        <input
+                            type="text"
+                            value={coverUrl}
+                            onChange={e => setCoverUrl(e.target.value)}
+                            placeholder="https://images.unsplash.com/..."
+                        />
+                        {coverUrl && (
+                            <div 
+                                className="cover-preview-card" 
+                                style={{ 
+                                    backgroundImage: `url(${coverUrl})`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    height: '110px',
+                                    borderRadius: '12px',
+                                    marginTop: '12px',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                                }}
+                            >
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background: 'linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.72) 100%)',
+                                    display: 'flex',
+                                    alignItems: 'flex-end',
+                                    padding: '12px',
+                                    color: '#ffffff',
+                                    fontSize: '11px',
+                                    fontWeight: '600',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em'
+                                }}>
+                                    Cover Wallpaper Preview
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="modal-actions">

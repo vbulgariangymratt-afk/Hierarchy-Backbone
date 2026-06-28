@@ -1,226 +1,152 @@
-import React, { useState, useEffect } from 'react';
-import { backbone, repository, NodeTypes } from '../backbone-v2/index';
-import NodeIcon from './NodeIcon';
+import React, { useState, useEffect, useRef } from 'react';
+import { repository } from '../backbone-v2/index';
 import './EditRewardsModal.css';
 
-const BANKNOTE_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='12' x='2' y='6' rx='2'/%3E%3Cpath d='M6 12h.01M18 12h.01'/%3E%3C/svg%3E";
+const EditRewardsModal = ({ isOpen, onClose, onSuccess, reward, focusField }) => {
+    const [name, setName] = useState('');
+    const [sensoryDescription, setSensoryDescription] = useState('');
+    const [hryvniaCost, setHryvniaCost] = useState(10);
+    const [rewardTier, setRewardTier] = useState(1);
+    const [coverUrl, setCoverUrl] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
-const EditRewardsModal = ({ isOpen, onClose, onSuccess }) => {
-    const [allRewards, setAllRewards] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [editingId, setEditingId] = useState(null);
-    const [editPrice, setEditPrice] = useState('');
-    const [editLevel, setEditLevel] = useState('');
-    const [editSkillId, setEditSkillId] = useState('');
-    const [savingId, setSavingId] = useState(null);
-    const [deletingId, setDeletingId] = useState(null);
-    const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
-    const [allSkills, setAllSkills] = useState([]);
-
-    const fetchSkills = async () => {
-        const nodes = await repository.getAll();
-        setAllSkills(nodes.filter(n => n.type === NodeTypes.SKILL));
-    };
-
-    const fetchRewards = async () => {
-        setLoading(true);
-        try {
-            const allNodes = await repository.getAll();
-            const rewards = allNodes.filter(
-                n => n.type === NodeTypes.REWARD && n.parentId === 'REWARD_BANK'
-            );
-            setAllRewards(rewards);
-        } catch (err) {
-            console.error('Failed to load rewards:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const nameInputRef = useRef(null);
+    const priceInputRef = useRef(null);
+    const tierInputRef = useRef(null);
+    const coverInputRef = useRef(null);
 
     useEffect(() => {
-        if (isOpen) {
-            fetchRewards();
-            fetchSkills();
+        if (isOpen && reward) {
+            setName(reward.name || '');
+            setSensoryDescription(reward.metadata?.sensoryDescription || '');
+            setHryvniaCost(reward.metadata?.hryvniaCost || 10);
+            setRewardTier(reward.metadata?.rewardTier || 1);
+            setCoverUrl(reward.metadata?.coverUrl || reward.metadata?.iconUrl || '');
+
+            // Dynamic Auto-focus based on selected context menu option
+            setTimeout(() => {
+                if (focusField === 'name' && nameInputRef.current) {
+                    nameInputRef.current.focus();
+                    nameInputRef.current.select();
+                } else if (focusField === 'price' && priceInputRef.current) {
+                    priceInputRef.current.focus();
+                    priceInputRef.current.select();
+                } else if (focusField === 'tier' && tierInputRef.current) {
+                    tierInputRef.current.focus();
+                } else if (focusField === 'cover' && coverInputRef.current) {
+                    coverInputRef.current.focus();
+                    coverInputRef.current.select();
+                }
+            }, 50);
         }
-    }, [isOpen]);
+    }, [isOpen, reward, focusField]);
 
-    if (!isOpen) return null;
+    if (!isOpen || !reward) return null;
 
-    const handleStartEdit = (reward) => {
-        setEditingId(reward.id);
-        setEditPrice(reward.metadata?.hryvniaCost ?? 10);
-        setEditLevel(reward.metadata?.requiredLevel ?? '');
-        setEditSkillId(reward.metadata?.requiredSkillId ?? (allSkills.length > 0 ? allSkills[0].id : ''));
-    };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
 
-    const handleSavePrice = async (reward) => {
-        setSavingId(reward.id);
+        setIsSaving(true);
         try {
             await repository.update(reward.id, {
-                metadata: { 
-                    ...reward.metadata, 
-                    hryvniaCost: Number(editPrice),
-                    requiredLevel: editLevel === '' ? null : Number(editLevel),
-                    requiredSkillId: editLevel === '' ? null : editSkillId
+                name: name.trim(),
+                metadata: {
+                    ...reward.metadata,
+                    sensoryDescription: sensoryDescription.trim(),
+                    hryvniaCost: Number(hryvniaCost),
+                    rewardTier: Number(rewardTier),
+                    coverUrl: coverUrl.trim() || null
                 }
             });
-            setEditingId(null);
-            await fetchRewards();
             if (onSuccess) onSuccess();
+            onClose();
         } catch (err) {
-            console.error('Failed to update price:', err);
+            console.error('Failed to update reward:', err);
+            alert('Failed to update reward: ' + err.message);
         } finally {
-            setSavingId(null);
+            setIsSaving(false);
         }
     };
-
-    const handleDeleteClick = (e, rewardId) => {
-        e.stopPropagation();
-        setConfirmingDeleteId(rewardId);
-    };
-
-    const handleConfirmDelete = async (rewardId) => {
-        setConfirmingDeleteId(null);
-        setDeletingId(rewardId);
-        try {
-            await repository.delete(rewardId);
-            await fetchRewards();
-            if (onSuccess) onSuccess();
-        } catch (err) {
-            console.error('Failed to delete reward:', err);
-            alert('Error deleting reward: ' + err.message);
-        } finally {
-            setDeletingId(null);
-        }
-    };
-
-    const categoryLabel = (cat) => cat === 'TASK' ? 'Task' : 'Marketplace';
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="edit-rewards-modal" onClick={e => e.stopPropagation()}>
-                <header className="edit-rewards-header">
-                    <h2>Edit Rewards</h2>
+            <div className="reward-modal" onClick={e => e.stopPropagation()}>
+                <header className="reward-modal-header">
+                    <h2>Edit Reward Details</h2>
                     <button className="er-close-btn" onClick={onClose}>×</button>
                 </header>
 
-                <p className="er-subtitle">All rewards in your bank — edit prices or remove them.</p>
+                <form onSubmit={handleSubmit} className="reward-form">
+                    <div className="form-group">
+                        <label>Reward Name</label>
+                        <input
+                            ref={nameInputRef}
+                            type="text"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            required
+                        />
+                    </div>
 
-                {loading ? (
-                    <div className="er-loading">Loading rewards…</div>
-                ) : allRewards.length === 0 ? (
-                    <div className="er-empty">No rewards found. Create one first!</div>
-                ) : (
-                    <ul className="er-list">
-                        {allRewards.map(reward => (
-                            <li key={reward.id} className="er-item">
-                                <div className="er-item-info">
-                                    <span className="er-item-name">{reward.name}</span>
-                                    <span className="er-item-cat">{categoryLabel(reward.metadata?.rewardCategory)}</span>
-                                </div>
+                    <div className="form-group">
+                        <label>Sensory Description (ADHD-safe description)</label>
+                        <textarea
+                            value={sensoryDescription}
+                            onChange={e => setSensoryDescription(e.target.value)}
+                            rows={3}
+                            placeholder="Warm, sweet, crunchy..."
+                            className="textarea-input"
+                        />
+                    </div>
 
-                                <div className="er-item-actions">
-                                    {editingId === reward.id ? (
-                                        <div className="er-price-edit">
-                                            <NodeIcon iconUrl={BANKNOTE_SVG} size={14} />
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={editPrice}
-                                                onChange={e => setEditPrice(e.target.value)}
-                                                className="er-price-input"
-                                                placeholder="Cost"
-                                                autoFocus
-                                            />
-                                            <div className="er-level-edit">
-                                                <span className="er-level-icon">🛡️</span>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={editLevel}
-                                                    onChange={e => setEditLevel(e.target.value)}
-                                                    className="er-level-input"
-                                                    placeholder="Lvl"
-                                                />
-                                                <select
-                                                    value={editSkillId}
-                                                    onChange={e => setEditSkillId(e.target.value)}
-                                                    className="er-skill-select"
-                                                >
-                                                    {allSkills.length === 0 && <option value="">No skills</option>}
-                                                    {allSkills.map(s => (
-                                                        <option key={s.id} value={s.id}>{s.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <button
-                                                className="er-save-btn"
-                                                onClick={() => handleSavePrice(reward)}
-                                                disabled={savingId === reward.id}
-                                            >
-                                                {savingId === reward.id ? '…' : 'Save'}
-                                            </button>
-                                            <button
-                                                className="er-cancel-btn"
-                                                onClick={() => setEditingId(null)}
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div className="er-price-display">
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div className="er-stat">
-                                                    <NodeIcon iconUrl={BANKNOTE_SVG} size={14} />
-                                                    <span className="er-price-value">{reward.metadata?.hryvniaCost ?? 0}</span>
-                                                </div>
-                                                {reward.metadata?.requiredLevel && (
-                                                    <div className="er-stat">
-                                                        <span style={{ fontSize: '11px' }}>
-                                                            🛡️ {(allSkills.find(s => s.id === reward.metadata.requiredSkillId)?.name || 'Skill')} Lvl {reward.metadata.requiredLevel}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <button
-                                                className="er-edit-btn"
-                                                onClick={() => handleStartEdit(reward)}
-                                            >
-                                                Edit Price
-                                            </button>
-                                        </div>
-                                    )}
+                    <div className="form-group">
+                        <label>Cover Image URL (ADHD visual anchor)</label>
+                        <input
+                            ref={coverInputRef}
+                            type="text"
+                            value={coverUrl}
+                            onChange={e => setCoverUrl(e.target.value)}
+                            placeholder="https://images.unsplash.com/..."
+                        />
+                    </div>
 
-                                    {confirmingDeleteId === reward.id ? (
-                                        <div className="er-confirm-delete">
-                                            <span>Delete?</span>
-                                            <button
-                                                className="er-confirm-yes"
-                                                onClick={() => handleConfirmDelete(reward.id)}
-                                            >
-                                                Yes
-                                            </button>
-                                            <button
-                                                className="er-confirm-no"
-                                                onClick={() => setConfirmingDeleteId(null)}
-                                            >
-                                                No
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <button
-                                            className="er-delete-btn"
-                                            onClick={(e) => handleDeleteClick(e, reward.id)}
-                                            disabled={deletingId === reward.id}
-                                        >
-                                            {deletingId === reward.id ? '…' : '🗑'}
-                                        </button>
-                                    )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+                    <div className="form-row-2">
+                        <div className="form-group">
+                            <label>Price (Ekkos)</label>
+                            <input
+                                ref={priceInputRef}
+                                type="number"
+                                min="0"
+                                value={hryvniaCost}
+                                onChange={e => setHryvniaCost(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label>Reward Tier</label>
+                            <select
+                                ref={tierInputRef}
+                                value={rewardTier}
+                                onChange={e => setRewardTier(Number(e.target.value))}
+                                className="tier-select"
+                            >
+                                <option value="1">Tier 1</option>
+                                <option value="2">Tier 2</option>
+                                <option value="3">Tier 3</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="form-actions">
+                        <button type="button" className="btn btn-secondary" onClick={onClose}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary" disabled={isSaving}>
+                            {isSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     );

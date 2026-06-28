@@ -1,21 +1,42 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 
 import Sidebar from './Sidebar';
 import MiniLaunchpadModal from '../components/modals/MiniLaunchpadModal';
 import TrialExpiredSidebar from '../components/TrialExpiredSidebar';
+import UndoSnackbar from '../components/UndoSnackbar';
 import { backbone, NodeTypes } from '../backbone-v2/index';
 import { useBackboneStore } from '../store/backboneStore';
 import { useSettings } from '../context/SettingsContext';
+import { useTheme } from '../context/ThemeContext';
+import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import './MainLayout.css';
+
+const THEMES = [
+  { id: "light", title: "Light", icon: Sun },
+  { id: "system", title: "System", icon: Monitor },
+  { id: "dark", title: "Dark", icon: Moon },
+];
+
+const MODES = [
+  { id: "solid", title: "Solid", icon: Square },
+  { id: "liquid", title: "Liquid", icon: Droplet },
+  { id: "wallpaper", title: "Wallpaper", icon: Image },
+];
 
 const MainLayout = () => {
     // --- ZUSTAND SELECTORS ---
     const safeMode = useBackboneStore(state =>
         state.nodes.some(n => n.type === NodeTypes.OBJECTIVE && n.metadata?.burnoutRisk === true)
     );
-    const { isTrialActive, trialDaysRemaining, hasAccess, loading: settingsLoading } = useSettings();
+    const { isTrialActive, trialDaysRemaining, hasAccess, loading: settingsLoading, energyLevel } = useSettings();
+    const { theme, themePreference, setTheme, backgroundMode, setBackgroundMode } = useTheme();
+
+    const rootNode = useBackboneStore(state => state.nodes.find(n => n.id === 'ROOT'));
+    const hryvniaBalance = rootNode?.metadata?.hryvniaBalance || 0;
+    const currencyName = rootNode?.metadata?.currencyName || 'EKKOS';
     const [bannerDismissed, setBannerDismissed] = useState(false);
     
     // Auth & Safety Net Banner state
@@ -93,45 +114,189 @@ const MainLayout = () => {
     return (
         <div className="main-layout">
             <div className="app-drag-region" data-tauri-drag-region />
-            <Sidebar onSkillClick={openLaunchpad} />
-            <main className="content-area">
-                {showSafetyNetBanner && (
-                    <div className="safety-net-banner">
-                        <div className="safety-net-message">
-                            <span className="safety-net-emoji">🧠</span>
-                            <div>
-                                <strong style={{ display: 'block', fontWeight: '600' }}>
-                                    Nice bruv, you can login to save your data for when your brain's recharging
-                                </strong>
-                                <span style={{ display: 'block', marginTop: '4px', opacity: 0.8, fontSize: '0.78rem' }}>
-                                    No password needed, cuz remembering passwords is a crime against working memory anyway
-                                </span>
+            
+            <header className="app-header" data-tauri-drag-region>
+                <div className="header-left" data-tauri-drag-region>
+                    <span className="logo-text">Backbone Hierarchy</span>
+                </div>
+                
+                <div className="header-right">
+                    {energyLevel > 3 && (
+                        <div className="hryvnia-display-header-pill">
+                            <Coins size={14} className="hryvnia-icon" />
+                            <span className="hryvnia-amount">{hryvniaBalance}</span>
+                            <span className="hryvnia-name">{currencyName.charAt(0).toUpperCase() + currencyName.slice(1).toLowerCase()}</span>
+                        </div>
+                    )}
+                    
+                    {energyLevel > 3 && (
+                        <div className="header-controls-group">
+                            <div className="header-theme-toggle">
+                                {THEMES.map((themeItem) => {
+                                    const isActive = themePreference === themeItem.id;
+                                    const ThemeIcon = themeItem.icon;
+                                    return (
+                                        <motion.button
+                                            key={themeItem.id}
+                                            className={`header-theme-option ${isActive ? "active" : ""}`}
+                                            onClick={() => setTheme(themeItem.id)}
+                                            layoutId={`theme-btn-wrapper-${themeItem.id}`}
+                                            transition={{
+                                                layout: {
+                                                    type: "spring",
+                                                    damping: 20,
+                                                    stiffness: 230,
+                                                    mass: 1.2
+                                                }
+                                            }}
+                                            style={{ position: 'relative' }}
+                                        >
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="theme-active-indicator"
+                                                    className="header-theme-active-pill"
+                                                    transition={{
+                                                        type: "spring",
+                                                        damping: 20,
+                                                        stiffness: 230,
+                                                        mass: 1.2
+                                                    }}
+                                                />
+                                            )}
+                                            <motion.div className="header-option-content" layout>
+                                                <motion.div layoutId={`theme-icon-${themeItem.id}`} className="header-option-icon-wrapper">
+                                                    <ThemeIcon size={14} className="header-option-icon" />
+                                                </motion.div>
+                                                {isActive && (
+                                                    <motion.span
+                                                        className="header-option-label"
+                                                        initial={{ opacity: 0, filter: "blur(4px)" }}
+                                                        animate={{ opacity: 1, filter: "blur(0px)" }}
+                                                        transition={{
+                                                            duration: 0.2,
+                                                            ease: [0.86, 0, 0.07, 1]
+                                                        }}
+                                                    >
+                                                        {themeItem.title}
+                                                    </motion.span>
+                                                )}
+                                            </motion.div>
+                                        </motion.button>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="header-theme-toggle">
+                                {MODES.map((modeItem) => {
+                                    const isActive = backgroundMode === modeItem.id;
+                                    const ModeIcon = modeItem.icon;
+                                    return (
+                                        <motion.button
+                                            key={modeItem.id}
+                                            className={`header-theme-option ${isActive ? "active" : ""}`}
+                                            onClick={() => setBackgroundMode(modeItem.id)}
+                                            layoutId={`mode-btn-wrapper-${modeItem.id}`}
+                                            transition={{
+                                                layout: {
+                                                    type: "spring",
+                                                    damping: 20,
+                                                    stiffness: 230,
+                                                    mass: 1.2
+                                                }
+                                            }}
+                                            style={{ position: 'relative' }}
+                                        >
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="bg-active-indicator"
+                                                    className="header-theme-active-pill"
+                                                    transition={{
+                                                        type: "spring",
+                                                        damping: 20,
+                                                        stiffness: 230,
+                                                        mass: 1.2
+                                                    }}
+                                                />
+                                            )}
+                                            <motion.div className="header-option-content" layout>
+                                                <motion.div layoutId={`mode-icon-${modeItem.id}`} className="header-option-icon-wrapper">
+                                                    <ModeIcon size={14} className="header-option-icon" />
+                                                </motion.div>
+                                                {isActive && (
+                                                    <motion.span
+                                                        className="header-option-label"
+                                                        initial={{ opacity: 0, filter: "blur(4px)" }}
+                                                        animate={{ opacity: 1, filter: "blur(0px)" }}
+                                                        transition={{
+                                                            duration: 0.2,
+                                                            ease: [0.86, 0, 0.07, 1]
+                                                        }}
+                                                    >
+                                                        {modeItem.title}
+                                                    </motion.span>
+                                                )}
+                                            </motion.div>
+                                        </motion.button>
+                                    );
+                                })}
+                            </div>
+
+                            <Link to="/settings" className="header-settings-btn-ghost" title="Settings">
+                                <motion.div
+                                    whileHover={{ rotate: 90 }}
+                                    whileTap={{ rotate: 180 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <Settings size={16} />
+                                </motion.div>
+                            </Link>
+                        </div>
+                    )}
+                </div>
+            </header>
+
+            <div className="app-body">
+                <Sidebar onSkillClick={openLaunchpad} />
+                <main className="content-area">
+                    {showSafetyNetBanner && (
+                        <div className="safety-net-banner">
+                            <div className="safety-net-message">
+                                <span className="safety-net-emoji">🧠</span>
+                                <div>
+                                    <strong style={{ display: 'block', fontWeight: '600' }}>
+                                        Nice bruv, you can login to save your data for when your brain's recharging
+                                    </strong>
+                                    <span style={{ display: 'block', marginTop: '4px', opacity: 0.8, fontSize: '0.78rem' }}>
+                                        No password needed, cuz remembering passwords is a crime against working memory anyway
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="safety-net-actions">
+                                <button className="safety-net-login-btn" onClick={handleGoogleLogin}>
+                                    Sign in with Google
+                                 </button>
+                                <button className="safety-net-dismiss-btn" onClick={dismissSafetyNet} title="Dismiss">
+                                    ✕
+                                </button>
                             </div>
                         </div>
-                        <div className="safety-net-actions">
-                            <button className="safety-net-login-btn" onClick={handleGoogleLogin}>
-                                Sign in with Google
-                             </button>
-                            <button className="safety-net-dismiss-btn" onClick={dismissSafetyNet} title="Dismiss">
+                    )}
+                    {showExtensionWarning && (
+                        <div className="trial-extension-warning-toast">
+                            <span className="trial-warning-text">
+                                Hey, your 7-day extension on Backbone wraps up in a couple days. No action needed right now, its just so there are no surprises ;)
+                            </span>
+                            <button className="trial-warning-dismiss-btn" onClick={dismissExtensionWarning} title="Dismiss warning">
                                 ✕
                             </button>
                         </div>
+                    )}
+                    <div style={{ height: '100%', width: '100%' }}>
+                        <Outlet />
                     </div>
-                )}
-                {showExtensionWarning && (
-                    <div className="trial-extension-warning-toast">
-                        <span className="trial-warning-text">
-                            Hey, your 7-day extension on Backbone wraps up in a couple days. No action needed right now, its just so there are no surprises ;)
-                        </span>
-                        <button className="trial-warning-dismiss-btn" onClick={dismissExtensionWarning} title="Dismiss warning">
-                            ✕
-                        </button>
-                    </div>
-                )}
-                <div style={{ height: '100%', width: '100%' }}>
-                    <Outlet />
-                </div>
-            </main>
+                </main>
+            </div>
 
             {/* Global Modals */}
             <MiniLaunchpadModal 
@@ -145,6 +310,9 @@ const MainLayout = () => {
                 isOpen={isTrialSidebarOpen}
                 onClose={() => setIsTrialSidebarOpen(false)}
             />
+
+            {/* Global Delayed Undo Snackbar */}
+            <UndoSnackbar />
 
         </div>
     );

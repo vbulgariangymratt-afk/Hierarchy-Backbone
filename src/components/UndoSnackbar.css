@@ -1,0 +1,77 @@
+.undo-snackbar-container {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    pointer-events: none; /* Let clicks pass through empty space */
+}
+
+.undo-snackbar {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 9999px;
+    padding: 8px 12px 8px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    pointer-events: auto; /* Re-enable clicks on the snackbar */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    animation: slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.undo-message {
+    color: var(--color-text-main);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.undo-btn {
+    padding: 6px 16px !important; /* Override neuro-btn padding for pill */
+    border-radius: 9999px !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: var(--color-primary) !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+
+.light .undo-btn {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.undo-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.light .undo-btn:hover {
+    background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.undo-dismiss-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.undo-dismiss-btn:hover {
+    color: var(--color-text-main);
+}
+
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}

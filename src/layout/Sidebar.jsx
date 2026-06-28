@@ -13,6 +13,8 @@ import SidebarSpotlightCard from '../components/sidebar/SidebarSpotlightCard';
 import { useBackboneStore } from '../store/backboneStore';
 import { useShallow } from 'zustand/react/shallow';
 import './Sidebar.css';
+import { Coins, LayoutDashboard, ShoppingBag, BookOpen, Calendar, Target, Edit3, Settings, ClipboardList } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 
 
@@ -489,19 +491,19 @@ const Sidebar = ({ onSkillClick }) => {
                     {energyLevel > 1 && (
                         <div className="mode-toggle-row">
                             <button
-                                className="mode-toggle-btn focus-toggle-btn"
+                                className="btn btn-ghost focus-toggle-btn"
                                 onClick={toggleMode}
                                 disabled={storeLoading}
                             >
                                 <div className="btn-icon mode-toggle-icon">
-                                    <NodeIcon iconUrl={isFocusMode ? SVG_ICONS.FOCUS : SVG_ICONS.PLANNING} size={10} />
+                                    {isFocusMode ? <Target size={14} /> : <ClipboardList size={14} />}
                                 </div>
                                 <span className="btn-text">
                                     {isFocusMode ? 'Planning' : 'Focus'}
                                 </span>
                             </button>
                             <button
-                                className={`mode-toggle-btn capture-toggle-btn ${showCapture ? 'active' : ''}`}
+                                className={`btn btn-ghost capture-toggle-btn ${showCapture ? 'active' : ''}`}
                                 style={{ position: 'relative' }}
                                 onClick={() => {
                                     if (showCapture) {
@@ -512,10 +514,7 @@ const Sidebar = ({ onSkillClick }) => {
                                 }}
                             >
                                 <div className="btn-icon mode-toggle-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '10px', height: '10px' }}>
-                                        <path d="M12 20h9"/>
-                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-                                    </svg>
+                                    <Edit3 size={14} />
                                 </div>
                                 <span className="btn-text">Capture</span>
                                 {captures.length > 0 && (
@@ -530,18 +529,45 @@ const Sidebar = ({ onSkillClick }) => {
                     {/* Energy Level Selector */}
                     <div className="energy-selector-container">
                         <div className="energy-label">Energy</div>
-                        <div className="energy-pills">
-                            {[1, 2, 3, 4, 5].map(level => (
-                                <button
-                                    key={level}
-                                    className={`energy-pill ${energyLevel === level ? 'active' : ''}`}
-                                    onClick={() => updateEnergyLevel(level)}
-                                    title={`Set Energy to ${level}`}
-                                >
-                                    {level}
-                                </button>
-                            ))}
-                        </div>
+                        <motion.div className="energy-pills" layout>
+                            {[1, 2, 3, 4, 5].map(level => {
+                                const isActive = energyLevel === level;
+                                return (
+                                    <motion.button
+                                        key={level}
+                                        className={`energy-pill ${isActive ? 'active' : ''}`}
+                                        onClick={() => updateEnergyLevel(level)}
+                                        title={`Set Energy to ${level}`}
+                                        layout /* Enables smooth spring layout tracking for width and position shifts */
+                                        transition={{
+                                            layout: {
+                                                type: "spring",
+                                                damping: 20,
+                                                stiffness: 230,
+                                                mass: 1.2
+                                            }
+                                        }}
+                                        style={{ position: 'relative' }}
+                                    >
+                                        {isActive && (
+                                            <motion.div
+                                                layoutId="energy-active-indicator"
+                                                className="energy-active-pill"
+                                                transition={{
+                                                    type: "spring",
+                                                    damping: 20,
+                                                    stiffness: 230,
+                                                    mass: 1.2
+                                                }}
+                                            />
+                                        )}
+                                        <motion.div className="energy-pill-content" layout>
+                                            <span className="energy-pill-label">{level}</span>
+                                        </motion.div>
+                                    </motion.button>
+                                );
+                            })}
+                        </motion.div>
                     </div>
 
                     <nav className="sidebar-nav">
@@ -550,7 +576,7 @@ const Sidebar = ({ onSkillClick }) => {
                             <>
                                 <NavLink to="/launchpad" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                     <span className="btn-icon">
-                                        <NodeIcon iconUrl={SVG_ICONS.LAUNCHPAD} size={16} />
+                                        <LayoutDashboard size={16} />
                                     </span>
                                     <span className="btn-text">Launchpad</span>
                                 </NavLink>
@@ -559,7 +585,7 @@ const Sidebar = ({ onSkillClick }) => {
                                 {energyLevel >= 3 && (
                                     <NavLink to="/marketplace" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                         <span className="btn-icon">
-                                            <NodeIcon iconUrl={SVG_ICONS.MARKETPLACE} size={16} />
+                                            <ShoppingBag size={16} />
                                         </span>
                                         <span className="btn-text">Marketplace</span>
                                     </NavLink>
@@ -567,14 +593,14 @@ const Sidebar = ({ onSkillClick }) => {
 
                                 <NavLink to="/journal" className={({ isActive }) => `nav-item journal-nav ${isActive ? 'active' : ''}`}>
                                     <span className="btn-icon">
-                                        <NodeIcon iconUrl={SVG_ICONS.JOURNAL} size={16} />
+                                        <BookOpen size={16} />
                                     </span>
                                     <span className="btn-text">Daily log</span>
                                 </NavLink>
 
                                 <NavLink to="/calendar" className={({ isActive }) => `nav-item timeline-nav ${isActive ? 'active' : ''}`}>
                                     <span className="btn-icon">
-                                        <NodeIcon iconUrl={SVG_ICONS.TIMELINE} size={16} />
+                                        <Calendar size={16} />
                                     </span>
                                     <span className="btn-text">Timeline</span>
                                 </NavLink>
@@ -713,9 +739,9 @@ const Sidebar = ({ onSkillClick }) => {
                                                                 <span className="btn-text">{skill.name}</span>
                                                             </div>
 
-                                                            <div className="pilot-chips">
-                                                                {hasNoHabits ? null : (
-                                                                    skillPilots.map(h => {
+                                                            {!hasNoHabits && skillPilots.length > 0 && (
+                                                                <div className="pilot-chips">
+                                                                    {skillPilots.map(h => {
                                                                         const prog = habitService.getHabitProgress(h);
                                                                         return (
                                                                             <button
@@ -729,9 +755,9 @@ const Sidebar = ({ onSkillClick }) => {
                                                                                 {prog.isDone && <span className="pilot-chip-check">✓</span>}
                                                                             </button>
                                                                         );
-                                                                    })
-                                                                )}
-                                                            </div>
+                                                                    })}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 })}
@@ -846,66 +872,6 @@ const Sidebar = ({ onSkillClick }) => {
                     </nav>
                 </div>
 
-                {energyLevel > 3 && (
-                    <div className="hryvnia-display">
-                        <span className="hryvnia-icon">₴</span>
-                        <span className="hryvnia-amount">{hryvniaBalance}</span>
-                        <span className="hryvnia-name">{currencyName}</span>
-                    </div>
-                )}
-
-                <div className="sidebar-bottom">
-
-                    {energyLevel > 3 && (
-                        <>
-                            {/* Unified Appearance Segmented Control */}
-                            <div className="theme-sync-toggle">
-                                {[
-                                    { value: "light", label: "Light" },
-                                    { value: "system", label: "System" },
-                                    { value: "dark", label: "Dark" },
-                                ].map(({ value, label }) => (
-                                    <button
-                                        key={value}
-                                        className={`theme-sync-option ${themePreference === value ? "active" : ""}`}
-                                        onClick={() => setTheme(value)}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            <div className="section-title-static" style={{ marginTop: '16px', marginBottom: '8px', opacity: 0.6, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Appearance</div>
-                            <div className="theme-sync-toggle">
-                                {[
-                                    { value: "solid", label: "Solid" },
-                                    { value: "liquid", label: "Liquid" },
-                                    { value: "wallpaper", label: "Wallpaper" },
-                                ].map(({ value, label }) => (
-                                    <button
-                                        key={value}
-                                        className={`theme-sync-option ${backgroundMode === value ? "active" : ""}`}
-                                        onClick={() => setBackgroundMode(value)}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </div>
-
-                        </>
-                    )}
-
-
-
-                    {energyLevel > 3 && (
-                        <Link to="/settings" className="nav-item settings-btn">
-                            <span className="btn-icon">
-                                <NodeIcon iconUrl={SVG_ICONS.SETTINGS} size={16} />
-                            </span>
-                            <span className="btn-text">Settings</span>
-                        </Link>
-                    )}
-                </div>
             </div>
 
             {showCapture && (

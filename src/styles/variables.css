@@ -3,7 +3,8 @@
 /* BASE TOKENS (Theme agnostic) */
 :root {
   --sidebar-width: 240px;
-  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-family-sans: 'Lexend', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-family-data: 'Atkinson Hyperlegible', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
@@ -20,6 +21,7 @@
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --radius-btn: 6px;
   --radius-full: 9999px;
 
   --transition-fast: 0.2s ease;
@@ -32,6 +34,13 @@
   --color-success: #36b37e;
   --color-warning: #ffab00;
   --color-danger: #ff5630;
+
+  /* Linear Accent System - Global Defaults */
+  --color-accent: #5E6AD2;
+  --color-accent-hover: #6E7BE2;
+  --color-accent-rgb: 94, 106, 210;
+  --color-accent-muted: rgba(94, 106, 210, 0.15);
+  --color-accent-strong: #E2E2E9;
 
   /* FIXED CONTRAST TOKENS - FOR TEXT ON SPECIFIC BACKGROUNDS */
   --text-on-light-primary: #111111;
@@ -105,19 +114,20 @@
   --text-muted: #bfbfbf;
 }
 
-/* SOLID LIGHT MODE SPECIFIC OVERRIDES */
+/* SOLID MODE SPECIFIC OVERRIDES */
 [data-theme="light"][data-background-mode="solid"] {
-  --color-bg-main: #f7f7f7;   /* Soft warm background */
-  --color-bg-secondary: #ffffff;
-  --color-bg-card: #f1f1f1;
-  --color-bg-sidebar-solid: #ffffff;
+  --color-bg-main: #F7F7F8;
+  --color-bg-secondary: #FFFFFF;
+  --color-bg-card: #FFFFFF;
+  --color-bg-sidebar-solid: #F1F1F3;
+  --color-bg-hover: #F7F7F8;
   
-  --text-primary: #111111;
-  --text-secondary: #444444;
-  --text-tertiary: #666666;   
-  --text-muted: #888888;      
+  --text-primary: #0F0F11;
+  --text-secondary: #50505A;
+  --text-tertiary: #70707C;   
+  --text-muted: #80808B;      
   
-  --color-border: rgba(0, 0, 0, 0.08);
+  --color-border: #E2E2E9;
   --alpha-high: rgba(0, 0, 0, 0.06);
   --alpha-med: rgba(0, 0, 0, 0.03);
   --alpha-low: rgba(0, 0, 0, 0.015);
@@ -125,4 +135,46 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.06);
+
+  /* Linear Accent System - Light Mode */
+  --color-accent: #5E6AD2;
+  --color-accent-hover: #4D59C1;
+  --color-accent-muted: rgba(94, 106, 210, 0.1);
+  --color-accent-strong: #0F0F11;
+
+  /* ADHD-Safe Warning Redirections */
+  --color-warning: #EB5E28;
+  --color-danger: #EB5E28;
+}
+
+[data-theme="dark"][data-background-mode="solid"] {
+  --color-bg-main: #121314;
+  --color-bg-secondary: #151617;
+  --color-bg-card: #151617;
+  --color-bg-sidebar-solid: #101112;
+  --color-bg-hover: #18191A;
+  
+  --text-primary: #F7F7F8;
+  --text-secondary: #A5A5B2;
+  --text-tertiary: #80808B;   
+  --text-muted: #52525B;      
+  
+  --color-border: #222325;
+  --alpha-high: rgba(255, 255, 255, 0.06);
+  --alpha-med: rgba(255, 255, 255, 0.03);
+  --alpha-low: rgba(255, 255, 255, 0.015);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.4);
+
+  /* Linear Accent System - Dark Mode */
+  --color-accent: #5E6AD2;
+  --color-accent-hover: #6E7BE2;
+  --color-accent-muted: rgba(94, 106, 210, 0.15);
+  --color-accent-strong: #E2E2E9;
+
+  /* ADHD-Safe Warning Redirections */
+  --color-warning: #EB5E28;
+  --color-danger: #EB5E28;
 }

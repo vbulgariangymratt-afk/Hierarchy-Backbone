@@ -572,13 +572,22 @@
 }
 
 .maint-btn {
-    padding: 10px 20px;
+    min-height: 72px; /* Neuro-UI Hit Target */
+    margin: 6px; /* 12px dead space */
+    padding: 0 24px;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: var(--transition-premium);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Spring momentum */
     border: 1px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.maint-btn:active {
+    transform: scale(0.94) !important; /* Visual Receipt */
 }
 
 .maint-btn.complete {
@@ -687,7 +696,9 @@
 }
 
 .start-day-btn {
-    padding: 20px 60px;
+    min-height: 72px; /* Neuro-UI Hit Target */
+    margin: 6px; /* 12px dead space */
+    padding: 0 60px;
     border: none;
     border-radius: 99px;
     font-size: 18px;
@@ -695,13 +706,16 @@
     text-transform: uppercase;
     letter-spacing: 2px;
     cursor: pointer;
-    transition: var(--transition-premium);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Spring momentum */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .solid-mode .start-day-btn {
-    background: var(--accent-blue);
-    color: var(--color-text-inverse);
-    box-shadow: 0 10px 30px rgba(96, 165, 250, 0.3);
+    background: var(--color-primary);
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(var(--color-primary-rgb, 195, 154, 107), 0.3);
 }
 
 .liquid-mode .start-day-btn {
@@ -730,8 +744,8 @@
 }
 
 .solid-mode .start-day-btn:hover:not(:disabled) {
-    background: #2563eb;
-    box-shadow: 0 15px 40px rgba(96, 165, 250, 0.4);
+    background: var(--color-primary-dark, #a67c52);
+    box-shadow: 0 15px 40px rgba(var(--color-primary-rgb, 195, 154, 107), 0.4);
 }
 
 .liquid-mode .start-day-btn:hover:not(:disabled) {
@@ -744,7 +758,7 @@
 }
 
 .start-day-btn:active:not(:disabled) {
-    transform: translateY(0) scale(0.98);
+    transform: scale(0.94) !important; /* Visual Receipt */
 }
 
 .start-day-btn:disabled {

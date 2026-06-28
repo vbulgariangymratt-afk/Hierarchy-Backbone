@@ -5,6 +5,9 @@ import CreateRewardModal from '../components/CreateRewardModal';
 import EditRewardsModal from '../components/EditRewardsModal';
 import NodeIcon from '../components/NodeIcon';
 import './MarketplacePage.css';
+import { Coins, Pencil, Layers, Trash2, Star, Zap, Shield, Trophy, Image, Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 
 const SVG_ICONS = {
     COIN: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8'/%3E%3Cpath d='M12 18V6'/%3E%3C/svg%3E",
@@ -20,10 +23,31 @@ const MarketplacePage = () => {
     const [purchaseLoading, setPurchaseLoading] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedRewardForEdit, setSelectedRewardForEdit] = useState(null);
+    const [editFocusField, setEditFocusField] = useState('all'); // 'name' | 'price' | 'tier' | 'all'
+    const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, reward: null });
+    const [selectedTierGroup, setSelectedTierGroup] = useState('tier1');
     const [globalLevel, setGlobalLevel] = useState(1);
     const [skillLevels, setSkillLevels] = useState({});
     const [skills, setSkills] = useState([]);
     const { currencyName } = useSettings();
+    const { backgroundMode } = useTheme();
+
+    const handleContextMenu = (e, reward) => {
+        e.preventDefault();
+        setContextMenu({
+            visible: true,
+            x: e.clientX,
+            y: e.clientY,
+            reward
+        });
+    };
+
+    useEffect(() => {
+        const closeMenu = () => setContextMenu(prev => prev.visible ? { ...prev, visible: false } : prev);
+        window.addEventListener('click', closeMenu);
+        return () => window.removeEventListener('click', closeMenu);
+    }, []);
 
     const fetchData = async () => {
         try {
@@ -91,6 +115,15 @@ const MarketplacePage = () => {
         }
     };
 
+    const handleDeleteReward = async (rewardId) => {
+        try {
+            await repository.delete(rewardId);
+            fetchData();
+        } catch (err) {
+            console.error("Failed to delete reward:", err);
+        }
+    };
+
     const handleRefill = async () => {
         try {
             await backbone.refillMarketplace();
@@ -105,7 +138,7 @@ const MarketplacePage = () => {
         return (
             <div className="marketplace-loading">
                 <div className="loading-spinner"></div>
-                <p>Opening Marketplace...</p>
+                <span>Loading your marketplace...</span>
             </div>
         );
     }
@@ -117,22 +150,55 @@ const MarketplacePage = () => {
                     <div className="title-section">
                         <h1>Marketplace</h1>
                         <button
-                            className="create-reward-btn"
+                            className="btn btn-primary"
                             onClick={() => setIsCreateModalOpen(true)}
                         >
-                            <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
+                            <Plus size={14} strokeWidth={2.5} />
                             Create Reward
                         </button>
-                        <button
-                            className="create-reward-btn"
-                            onClick={() => setIsEditModalOpen(true)}
+                    </div>
+
+                    <div className="tier-tabs">
+                        <button 
+                            className={`tier-tab ${selectedTierGroup === 'tier1' ? 'active' : ''}`}
+                            onClick={() => setSelectedTierGroup('tier1')}
                         >
-                            Edit Rewards
+                            {selectedTierGroup === 'tier1' && (
+                                <motion.div layoutId="active-marketplace-tab" className="active-tab-bg" />
+                            )}
+                            <span className="tab-label">
+                                <Zap size={14} className="tab-icon" />
+                                Micro-Resets
+                            </span>
+                        </button>
+                        <button 
+                            className={`tier-tab ${selectedTierGroup === 'tier2' ? 'active' : ''}`}
+                            onClick={() => setSelectedTierGroup('tier2')}
+                        >
+                            {selectedTierGroup === 'tier2' && (
+                                <motion.div layoutId="active-marketplace-tab" className="active-tab-bg" />
+                            )}
+                            <span className="tab-label">
+                                <Shield size={14} className="tab-icon" />
+                                Mid-Resets
+                            </span>
+                        </button>
+                        <button 
+                            className={`tier-tab ${selectedTierGroup === 'tier3' ? 'active' : ''}`}
+                            onClick={() => setSelectedTierGroup('tier3')}
+                        >
+                            {selectedTierGroup === 'tier3' && (
+                                <motion.div layoutId="active-marketplace-tab" className="active-tab-bg" />
+                            )}
+                            <span className="tab-label">
+                                <Trophy size={14} className="tab-icon" />
+                                Epic Milestones
+                            </span>
                         </button>
                     </div>
 
                     <div className="hryvnia-card liquid-glass">
-                        <NodeIcon iconUrl={SVG_ICONS.COIN} size={24} />
+                        <Coins size={24} style={{ color: 'var(--color-accent)' }} />
                         <div className="hryvnia-details">
                             <span className="balance-value">{balance}</span>
                             <span className="balance-label">{currencyName}</span>
@@ -141,29 +207,62 @@ const MarketplacePage = () => {
                 </div>
             </header>
 
-            <main className="marketplace-main">
-                <div className="rewards-grid">
-                    {marketplaceRewards.map(reward => {
-                        const canAfford = balance >= (reward.metadata?.hryvniaCost || 0);
-                        const requiredLevel = reward.metadata?.requiredLevel;
-                        const requiredSkillId = reward.metadata?.requiredSkillId;
-                        
-                        let isLocked = false;
-                        let requirementLabel = '';
+             <main className="marketplace-main">
+                <div className="tier-legend-bar">
+                    <span className="tier-legend-text">
+                        {selectedTierGroup === 'tier1' && "Quick 5–15 min resets. Low cost, designed to release tension between task blocks."}
+                        {selectedTierGroup === 'tier2' && "Moderate resets. Designed for evening resets or blocks of rest after completing objectives."}
+                        {selectedTierGroup === 'tier3' && "Epic milestones. High-cost rewards to celebrate major accomplishments or multi-day streaks."}
+                    </span>
+                </div>
 
-                        if (requiredLevel && requiredSkillId) {
-                            const skill = skills.find(s => s.id === requiredSkillId);
-                            const currentSkillLevel = skillLevels[requiredSkillId] || 1;
-                            isLocked = currentSkillLevel < requiredLevel;
-                            requirementLabel = `${skill?.name || 'Skill'} Lvl ${requiredLevel}`;
-                        }
+                <AnimatePresence mode="wait">
+                    <motion.div 
+                        key={selectedTierGroup}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.15, ease: "easeInOut" }}
+                        className="rewards-grid"
+                    >
+                        {marketplaceRewards.filter(reward => {
+                            const t = reward.metadata?.rewardTier || 1;
+                            if (selectedTierGroup === 'tier1') return t === 1;
+                            if (selectedTierGroup === 'tier2') return t === 2;
+                            if (selectedTierGroup === 'tier3') return t === 3;
+                            return true;
+                        }).map(reward => {
+                            const canAfford = balance >= (reward.metadata?.hryvniaCost || 0);
+                            const requiredLevel = reward.metadata?.requiredLevel;
+                            const requiredSkillId = reward.metadata?.requiredSkillId;
+                            
+                            let isLocked = false;
+                            let requirementLabel = '';
 
-                        const isPurchasing = purchaseLoading === reward.id;
-                        const tier = reward.metadata?.rewardTier;
+                            if (requiredLevel && requiredSkillId) {
+                                const skill = skills.find(s => s.id === requiredSkillId);
+                                const currentSkillLevel = skillLevels[requiredSkillId] || 1;
+                                isLocked = currentSkillLevel < requiredLevel;
+                                requirementLabel = `${skill?.name || 'Skill'} Lvl ${requiredLevel}`;
+                            }
 
-                        return (
-                            <div key={reward.id} className={`reward-card liquid-glass ${!canAfford ? 'insufficient' : ''} ${isLocked ? 'locked' : ''}`}>
-                                {tier && <div className="reward-tier">Tier {tier}</div>}
+                            const isPurchasing = purchaseLoading === reward.id;
+                            const tier = reward.metadata?.rewardTier;
+                            const coverImage = reward.metadata?.coverUrl || reward.metadata?.iconUrl;
+
+                            return (
+                                <div 
+                                    key={reward.id} 
+                                    className={`reward-card liquid-glass tier-${tier || 1}-card ${coverImage ? 'has-cover-wallpaper' : ''} ${!canAfford ? 'insufficient' : ''} ${isLocked ? 'locked' : ''}`}
+                                    onContextMenu={(e) => handleContextMenu(e, reward)}
+                                >
+                                {coverImage && (
+                                    <div 
+                                        className="card-background-image" 
+                                        style={{ backgroundImage: `url(${coverImage})` }} 
+                                    />
+                                )}
+                                {coverImage && <div className="card-cover-overlay" />}
                                 {isLocked && (
                                     <div className="locked-overlay">
                                         <div className="lock-icon">🔒</div>
@@ -178,11 +277,11 @@ const MarketplacePage = () => {
                                 </div>
                                 <div className="reward-footer">
                                     <div className="reward-cost">
-                                        <NodeIcon iconUrl={SVG_ICONS.COIN} size={14} />
+                                        <Coins size={14} style={{ color: 'var(--color-accent)' }} />
                                         <span className="cost-value">{reward.metadata?.hryvniaCost || 0}</span>
                                     </div>
                                     <button
-                                        className={`buy-button ${!canAfford || isLocked ? 'disabled' : ''}`}
+                                        className={`btn btn-secondary buy-btn-full ${!canAfford || isLocked ? 'disabled' : ''}`}
                                         onClick={() => !isLocked && handleBuy(reward.id)}
                                         disabled={!canAfford || isPurchasing || isLocked}
                                     >
@@ -192,7 +291,8 @@ const MarketplacePage = () => {
                             </div>
                         );
                     })}
-                </div>
+                    </motion.div>
+                </AnimatePresence>
 
                 <div className="marketplace-footer">
                     <button className="refill-button" onClick={handleRefill}>
@@ -217,9 +317,77 @@ const MarketplacePage = () => {
             />
             <EditRewardsModal
                 isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedRewardForEdit(null);
+                }}
                 onSuccess={() => fetchData()}
+                reward={selectedRewardForEdit}
+                focusField={editFocusField}
             />
+
+            <AnimatePresence>
+                {contextMenu.visible && (
+                    <motion.div 
+                        className="marketplace-context-menu submenu-mockup"
+                        style={{ 
+                            position: 'fixed', 
+                            top: contextMenu.y, 
+                            left: contextMenu.x, 
+                            zIndex: 100000 
+                        }}
+                        initial={{ rotate: -3, transformOrigin: 'top left' }}
+                        animate={{ rotate: 0 }}
+                        exit={{ rotate: -3, opacity: 0, transition: { ease: 'easeIn', duration: 0.08 } }}
+                        transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="submenu-item" onClick={() => {
+                            setSelectedRewardForEdit(contextMenu.reward);
+                            setEditFocusField('name');
+                            setIsEditModalOpen(true);
+                            setContextMenu({ ...contextMenu, visible: false });
+                        }}>
+                            <Pencil size={14} className="lucide" />
+                            Rename
+                        </div>
+                        <div className="submenu-item" onClick={() => {
+                            setSelectedRewardForEdit(contextMenu.reward);
+                            setEditFocusField('price');
+                            setIsEditModalOpen(true);
+                            setContextMenu({ ...contextMenu, visible: false });
+                        }}>
+                            <Coins size={14} className="lucide" />
+                            Edit price
+                        </div>
+                        <div className="submenu-item" onClick={() => {
+                            setSelectedRewardForEdit(contextMenu.reward);
+                            setEditFocusField('tier');
+                            setIsEditModalOpen(true);
+                            setContextMenu({ ...contextMenu, visible: false });
+                        }}>
+                            <Layers size={14} className="lucide" />
+                            Edit tier
+                        </div>
+                        <div className="submenu-item" onClick={() => {
+                            setSelectedRewardForEdit(contextMenu.reward);
+                            setEditFocusField('cover');
+                            setIsEditModalOpen(true);
+                            setContextMenu({ ...contextMenu, visible: false });
+                        }}>
+                            <Image size={14} className="lucide" />
+                            Add cover
+                        </div>
+                        <div className="submenu-item danger" onClick={() => {
+                            handleDeleteReward(contextMenu.reward.id);
+                            setContextMenu({ ...contextMenu, visible: false });
+                        }}>
+                            <Trash2 size={14} className="lucide" />
+                            Delete reward
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

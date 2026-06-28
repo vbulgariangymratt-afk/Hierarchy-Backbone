@@ -1,0 +1,1180 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backbone | Neuro-Linear System Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* NEURO-LINEAR TOKEN SYSTEM - TRUE LINEAR CHARCOAL EDITION
+               Directly extracted HEX values from the Linear interface */
+            
+            /* Solid Dark (Default) */
+            --bg: #121314; 
+            --sidebar-bg: #101112;
+            --surface: #151617; /* Level 1: Cards resting on base background */
+            --surface-elevated: #18191A; /* Level 2: Elevated/hover state */
+            --fg: #F7F7F8; 
+            --muted: #80808B;
+            --border: #222325;
+            --border-hover: #2E2F32;
+            
+            /* Curated Cohesive Accents (Linear Indigo Signature) */
+            --accent: #5E6AD2; 
+            --accent-hover: #6E7BE2;
+            --accent-muted: rgba(94, 106, 210, 0.15);
+            --accent-strong: #E2E2E9;
+
+            /* Theme-aware UI contrast overrides */
+            --inactive-text: #A5A5B2;
+            --ghost-text: #A5A5B2;
+            --specular-border: linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 0%, var(--border) 250px) 1;
+
+            /* Typography */
+            --font-ui: 'Lexend', sans-serif;
+            --font-data: 'Atkinson Hyperlegible', sans-serif;
+            
+            /* Sizing & Spacing */
+            --radius-btn: 6px; /* Linear style: slightly rounded square, not full pill */
+            --radius-card: 8px;
+            --line-height: 1.6;
+            --max-width: 75ch;
+        }
+
+        /* Solid Light Mode */
+        [data-theme="light"] {
+            --bg: #F7F7F8;
+            --sidebar-bg: #F1F1F3;
+            --surface: #FFFFFF;
+            --surface-elevated: #F7F7F8;
+            --fg: #0F0F11;
+            --muted: #80808B;
+            --border: #E2E2E9;
+            --border-hover: #D2D2DC;
+            --accent: #5E6AD2;
+            --accent-hover: #4D59C1;
+            --accent-muted: rgba(94, 106, 210, 0.1);
+            --accent-strong: #0F0F11;
+            
+            /* High-contrast accessibility overrides for light background */
+            --inactive-text: #70707C;
+            --ghost-text: #50505A;
+            --specular-border: linear-gradient(to bottom, rgba(0, 0, 0, 0.08) 0%, var(--border) 250px) 1;
+        }
+
+        /* Glass Mode */
+        [data-theme="liquid"] {
+            --bg: #101012;
+            --sidebar-bg: rgba(15, 15, 17, 0.45);
+            --surface: rgba(22, 22, 24, 0.45);
+            --surface-elevated: rgba(28, 28, 31, 0.5);
+            --border: rgba(34, 34, 38, 0.3);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-ui);
+            line-height: var(--line-height);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* Navigation Header */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border);
+            background: var(--sidebar-bg); /* Match sidebar background */
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: -0.01em;
+        }
+
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* Main Workspace Container */
+        .workspace {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            flex: 1;
+        }
+
+        /* Sidebar Mockup */
+        .sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid;
+            /* Specular highlight border: theme-aware gradient */
+            border-image: var(--specular-border);
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-group-title {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase; /* Restored caps for better layout balance */
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 8px;
+            padding-left: 12px; /* Aligns with navigation items padding */
+            opacity: 0.8;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--fg);
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .sidebar-item:hover, .sidebar-item.active {
+            background: var(--surface-elevated);
+            color: var(--fg);
+        }
+
+        .sidebar-item-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid var(--muted);
+            opacity: 0.7;
+        }
+
+        .sidebar-item.active .sidebar-item-icon {
+            border-color: var(--accent);
+            background: var(--accent-muted);
+        }
+
+        /* Content Area */
+        .content {
+            /* Light source centered at top-left (0% 0%) using subtle white light */
+            background: radial-gradient(ellipse 50% 30% at 0% 0%, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+            padding: 60px 40px 40px 40px; /* Increased top padding to give header breathing room */
+            max-width: 1200px;
+        }
+
+        header {
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 1.75rem;
+            letter-spacing: -0.03em;
+            margin: 0 0 10px 0;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            max-width: var(--max-width);
+            font-size: 0.95rem;
+            font-weight: 300;
+            margin: 0;
+        }
+
+        /* Section Layout */
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin: 40px 0 20px 0;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-card);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 180px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+        }
+
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .card-desc {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin: 0 0 20px 0;
+            flex-grow: 1;
+        }
+
+        /* -------------------------------------------------------------
+           PREMIUM COMPACT BUTTON SYSTEM WITH INVISIBLE TOUCH TARGETS 
+        ------------------------------------------------------------- */
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-ui);
+            font-weight: 500;
+            font-size: 0.85rem;
+            border-radius: var(--radius-btn);
+            padding: 6px 14px;
+            height: 32px;
+            cursor: pointer;
+            transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        background-color 0.15s ease,
+                        border-color 0.15s ease,
+                        color 0.15s ease;
+            user-select: none;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        /* The secret weapon: Invisible touch area expander */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            min-width: 72px;
+            min-height: 72px;
+            cursor: pointer;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Primary Button (Solid Accent) */
+        .btn-primary {
+            background-color: var(--accent);
+            color: oklch(99% 0 0);
+            border: 1px solid transparent;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        /* Accent Border Button (Minimal Active State) */
+        .btn-accent-border {
+            background-color: transparent;
+            color: var(--fg);
+            border: 1px solid var(--accent);
+        }
+
+        .btn-accent-border:hover {
+            background-color: var(--accent-muted);
+        }
+
+        /* Secondary Button (Border slate) */
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--fg);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--border-hover);
+            background-color: var(--surface-elevated);
+        }
+
+        /* Ghost Button */
+        .btn-ghost {
+            background-color: transparent;
+            color: var(--ghost-text); /* Theme-aware contrast color */
+            border: none;
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+
+        .btn-ghost:hover {
+            color: var(--fg);
+            background-color: var(--surface-elevated);
+        }
+
+        /* Button group spacing */
+        .btn-group {
+            display: flex;
+            gap: 12px; /* Enforces clean dead space */
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* Inputs */
+        input[type="text"] {
+            width: 100%;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-family: var(--font-ui);
+            font-size: 0.85rem;
+            color: var(--fg);
+            outline: none;
+            height: 36px;
+            transition: border-color 0.15s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent);
+        }
+
+        /* Typographic elements */
+        .bionic b {
+            font-weight: 700;
+            color: inherit;
+        }
+
+        .data-text {
+            font-family: var(--font-data);
+            font-size: 0.85rem;
+            letter-spacing: 0.02em;
+            color: var(--muted);
+        }
+
+        /* Skeleton Screen */
+        .skeleton {
+            background: linear-gradient(
+                90deg, 
+                var(--surface) 25%, 
+                var(--surface-elevated) 50%, 
+                var(--surface) 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.6s infinite linear;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-line {
+            height: 12px;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+        .skeleton-line.short { width: 60%; }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--inactive-text); /* Theme-aware contrast color */
+            padding: 0 14px;
+            height: 28px; /* Fixed height container to guarantee perfect vertical text alignment */
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: var(--font-ui);
+            font-size: 0.75rem;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .mode-btn:hover {
+            color: var(--fg);
+            border-color: var(--border-hover);
+        }
+
+        .mode-btn.active {
+            border-color: var(--accent);
+            background: transparent;
+            color: var(--fg);
+        }
+
+        *:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Lucide Premium Icons Styling */
+        .lucide {
+            width: 14px;
+            height: 14px;
+            stroke-width: 1.75px;
+            color: var(--muted);
+            transition: color 0.15s ease, transform 0.15s ease;
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .sidebar-item:hover .lucide,
+        .sidebar-item.active .lucide {
+            color: var(--fg);
+        }
+
+        .btn .lucide {
+            width: 14px;
+            height: 14px;
+            margin-right: 6px;
+            color: inherit; /* Matches parent button text color */
+            stroke-width: 2px;
+        }
+
+        /* Segmented Energy Selector Styles */
+        .energy-selector-group {
+            margin-bottom: 28px; /* Proximity Spacing: naturally separates selector from Workspace menu */
+            padding: 0 12px; /* Aligns container EXACTLY with sidebar item hover boundaries */
+        }
+
+        .energy-selector {
+            display: flex;
+            background: rgba(255, 255, 255, 0.03); /* blends smoothly on any sidebar color */
+            border: none; /* Removed outer border to reduce visual noise */
+            border-radius: 9999px; /* Pill style */
+            padding: 3px;
+            gap: 2px;
+            margin-top: 8px;
+        }
+
+        .energy-pill-btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--muted);
+            font-family: var(--font-ui);
+            font-size: 0.8rem; /* slightly larger for better legibility */
+            font-weight: 500;
+            padding: 8px 0; /* Taller padding to match visual height of sidebar items */
+            border-radius: 9999px; /* Pill style */
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
+
+        /* Invisible touch target expander */
+        .energy-pill-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            min-height: 44px;
+        }
+
+        .energy-pill-btn:hover {
+            color: var(--fg);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .energy-pill-btn.active {
+            background-color: var(--accent-muted);
+            color: var(--accent);
+            border-color: rgba(94, 106, 210, 0.2);
+            font-weight: 600;
+            box-shadow: 0 0 8px rgba(94, 106, 210, 0.08);
+        }
+
+        /* -------------------------------------------------------------
+           FOCUS CONTROLS, DROPDOWNS & MODALS (STEP 1 OVERHAUL)
+        ------------------------------------------------------------- */
+        
+        /* Dropdown Submenu Container */
+        .submenu-mockup {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 220px;
+            padding: 4px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            color: var(--fg);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        
+        .submenu-item:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        [data-theme="light"] .submenu-item:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        .submenu-item.danger {
+            color: #EB5E28; /* Soft Warning Orange/Rust instead of angry red */
+        }
+        .submenu-item.danger:hover {
+            background-color: rgba(235, 94, 40, 0.1);
+        }
+
+        .submenu-item .lucide {
+            opacity: 0.7;
+            color: inherit;
+        }
+
+        /* Premium Toggle Switch */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background-color: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            position: relative;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        
+        .toggle-switch.active {
+            background-color: var(--accent-muted);
+            border-color: rgba(94, 106, 210, 0.3);
+        }
+        
+        .toggle-knob {
+            width: 16px;
+            height: 16px;
+            background-color: var(--muted);
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.2s ease;
+        }
+        
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(20px);
+            background-color: var(--accent);
+        }
+
+        /* Circular Controls (Focus Mode Buttons) */
+        .btn-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background-color: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1),
+                        background-color 0.15s ease,
+                        border-color 0.15s ease;
+        }
+
+        .btn-circle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .btn-circle:hover {
+            border-color: var(--border-hover);
+            background-color: var(--surface);
+        }
+
+        .btn-circle:active {
+            transform: scale(0.95);
+        }
+
+        .btn-circle .lucide {
+            width: 20px;
+            height: 20px;
+            color: inherit;
+        }
+
+        /* RSD Safe Soft Warning Button */
+        .btn-warning-soft {
+            background-color: rgba(235, 94, 40, 0.08);
+            color: #EB5E28; /* Rust/Orange */
+            border: 1px solid rgba(235, 94, 40, 0.25);
+        }
+
+        .btn-warning-soft:hover {
+            background-color: rgba(235, 94, 40, 0.15);
+            border-color: rgba(235, 94, 40, 0.4);
+        }
+
+        /* 10-Second Undo Snackbar (Capsule shape) */
+        .snackbar-undo {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            padding: 10px 18px;
+            border-radius: 30px; /* Capsule shape */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .snackbar-text {
+            font-size: 0.85rem;
+            color: var(--fg);
+        }
+        
+        .snackbar-action {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.82rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.15s ease;
+        }
+        .snackbar-action:hover {
+            color: var(--accent-hover);
+        }
+
+        /* -------------------------------------------------------------
+           SPECIALIZED PROGRESS BARS, AURAS & SKILL CARDS (STEP 1 EXT)
+        ------------------------------------------------------------- */
+        .progress-container {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .progress-label-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px; /* Thin, elegant premium profile */
+            background-color: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        /* Solid Mode Habit Progress (Accent Filled) */
+        .progress-fill-solid {
+            height: 100%;
+            background-color: var(--accent);
+            border-radius: 99px;
+            transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* Aura Level Gradient Fill (Area/Skill Specific) */
+        .progress-fill-aura {
+            height: 100%;
+            background: linear-gradient(90deg, #EFE6D6 0%, #EA9D9B 45%, #99BAD7 85%, #082434 100%);
+            border-radius: 99px;
+            transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        [data-theme="light"] .progress-fill-aura {
+            /* Muted warm light mode version of the aura gradient for high visibility */
+            background: linear-gradient(90deg, #EAD7BA 0%, #EA9D9B 45%, #99BAD7 85%, #4A6D8C 100%);
+        }
+
+        /* Area Page Skill List Item */
+        .skill-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 14px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: border-color 0.15s ease;
+        }
+
+        .skill-list-item:hover {
+            border-color: var(--border-hover);
+        }
+
+        .skill-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .skill-title-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--fg);
+        }
+
+        .skill-badge {
+            font-family: var(--font-data);
+            font-size: 0.7rem;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg);
+        }
+
+        .skill-progress-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            width: 50%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo-section">
+            <div class="logo-dot"></div>
+            Backbone Design Sandbox
+        </div>
+        <div class="controls">
+            <button class="mode-btn active" onclick="setTheme('dark')">Dark</button>
+            <button class="mode-btn" onclick="setTheme('light')">Light</button>
+            <button class="mode-btn" onclick="setTheme('liquid')">Liquid (Glass)</button>
+        </div>
+    </nav>
+
+    <div class="workspace">
+        <!-- Sidebar Navigation Mockup -->
+        <aside class="sidebar">
+            <!-- Interactive 1-5 Energy Selector (Hidden for now to focus on other details)
+            <div class="energy-selector-group">
+                <div class="sidebar-group-title">Energy Focus</div>
+                <div class="energy-selector">
+                    <button class="energy-pill-btn" onclick="setEnergy(1)">1</button>
+                    <button class="energy-pill-btn" onclick="setEnergy(2)">2</button>
+                    <button class="energy-pill-btn active" onclick="setEnergy(3)">3</button>
+                    <button class="energy-pill-btn" onclick="setEnergy(4)">4</button>
+                    <button class="energy-pill-btn" onclick="setEnergy(5)">5</button>
+                </div>
+            </div>
+            -->
+            <div>
+                <div class="sidebar-group-title">Workspace</div>
+                <div class="sidebar-item active">
+                    <i data-lucide="layers" class="lucide"></i>
+                    <span>Backbone Hierarchy</span>
+                </div>
+                <div class="sidebar-item">
+                    <i data-lucide="code-2" class="lucide"></i>
+                    <span>Backbone Code</span>
+                </div>
+            </div>
+            <div>
+                <div class="sidebar-group-title">Views</div>
+                <div class="sidebar-item">
+                    <i data-lucide="check-square" class="lucide"></i>
+                    <span>My Issues</span>
+                </div>
+                <div class="sidebar-item">
+                    <i data-lucide="inbox" class="lucide"></i>
+                    <span>Inbox</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Components Workspace -->
+        <main class="content">
+            <header>
+                <h1>Neuro-Linear Style Sandbox</h1>
+                <p class="subtitle">
+                    Visually quiet, premium components inspired by Linear. Tuned with cool slate OKLCH tokens, compact button profiles, and neurodivergent safety guards.
+                </p>
+            </header>
+
+            <div class="section-title">Linear Buttons (Visual Size vs Hit Target)</div>
+            <div class="gallery-grid">
+                <div class="card">
+                    <div>
+                        <h3>Button Elements</h3>
+                        <p class="card-desc">Sleek, low-height pill shapes. Touch target remains 72px invisibly to accommodate motor fatigue.</p>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary"><i data-lucide="plus"></i>Create new view</button>
+                        <button class="btn btn-accent-border">Active State</button>
+                        <button class="btn btn-secondary"><i data-lucide="book-open"></i>Documentation</button>
+                        <button class="btn btn-ghost">Skip</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div>
+                        <h3>Visual Receipt</h3>
+                        <p class="card-desc">Tapping any button triggers a scale micro-animation in &lt;100ms. Hovering changes backgrounds smoothly.</p>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="triggerTap(this)">Continue</button>
+                        <button class="btn btn-secondary" onclick="triggerTap(this)">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Visual Comfort & Typographic Guardrails</div>
+            <div class="gallery-grid">
+                <div class="card">
+                    <div>
+                        <h3>Neuro-Typographics</h3>
+                        <p class="card-desc bionic">
+                            <b>Us</b>ing <b>Lex</b>end. <b>Bi</b>onic <b>Rea</b>ding <b>ac</b>ts <b>as</b> a <b>vi</b>sual <b>spo</b>tlight. <b>No</b> caps <b>or</b> italics <b>al</b>lowed.
+                        </p>
+                    </div>
+                    <div class="data-text">Lexend UI • Line height: 1.6 • Max-width: 75ch</div>
+                </div>
+
+                <div class="card">
+                    <div>
+                        <h3>Technical Data Copy</h3>
+                        <p class="card-desc">Atkinson Hyperlegible makes visually similar characters distinct to prevent reading fatigue.</p>
+                    </div>
+                    <div class="data-text">
+                        ID: 1lI0O | O0o | Hash: 0x5e6ad2
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Layout & Progress States</div>
+            <div class="gallery-grid">
+                <div class="card">
+                    <div>
+                        <h3>Form Field Layout</h3>
+                        <p class="card-desc">Input text with subtle background. Focus transitions smoothly to the accent color border.</p>
+                    </div>
+                    <input type="text" placeholder="Title of something...">
+                </div>
+
+                <div class="card">
+                    <div>
+                        <h3>Continuous Skeleton Progress</h3>
+                        <p class="card-desc">No jarring spinners. Elegant, low-contrast shimmer blocks indicate pending content.</p>
+                    </div>
+                    <div style="width: 100%;">
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line"></div>
+                        <div class="skeleton skeleton-line short"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Focus Mode, Submenus & RSD Modals</div>
+            <div class="gallery-grid">
+                <!-- Submenus Mockup -->
+                <div class="card">
+                    <div>
+                        <h3>Submenu / Dropdown</h3>
+                        <p class="card-desc">Floating popover with a micro-border and subtle shadow offsets. Custom hover highlights.</p>
+                    </div>
+                    <div class="submenu-mockup">
+                        <div class="submenu-item">
+                            <i data-lucide="edit-3" class="lucide"></i>
+                            <span>Edit details</span>
+                        </div>
+                        <div class="submenu-item">
+                            <i data-lucide="share-2" class="lucide"></i>
+                            <span>Share project</span>
+                        </div>
+                        <div class="submenu-item danger">
+                            <i data-lucide="archive" class="lucide"></i>
+                            <span>Archive workflow</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Focus Mode Mockup -->
+                <div class="card">
+                    <div>
+                        <h3>Focus Controls</h3>
+                        <p class="card-desc">Circular media buttons and capsule toggle switches. Zero layout noise, fully tactile.</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; gap: 16px; align-items: center;">
+                            <button class="btn-circle" onclick="togglePause(this)" title="Pause Timer">
+                                <i data-lucide="pause" id="pause-icon"></i>
+                            </button>
+                            <span class="data-text" style="font-size: 1rem;">126:12</span>
+                        </div>
+                        <div class="switch-container" onclick="toggleSwitch(this)">
+                            <div class="toggle-switch active">
+                                <div class="toggle-knob"></div>
+                            </div>
+                            <span style="font-size: 0.85rem; color: var(--fg)">Focus Mode Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RSD Warning Modal & Undo Snack -->
+                <div class="card" style="grid-column: span 2;">
+                    <div>
+                        <h3>RSD-Safe Feedback & The Delayed Undo</h3>
+                        <p class="card-desc">Instead of red threat alarms or confirmation popup dialogs, perform actions instantly and show a 10-second Undo banner at the bottom.</p>
+                    </div>
+                    <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+                        <button class="btn btn-warning-soft" onclick="showUndoSnackbar()"><i data-lucide="trash-2"></i>Delete Item (Instantly)</button>
+                        
+                        <!-- Undo Snackbar Mockup -->
+                        <div class="snackbar-undo" id="undo-snackbar" style="opacity: 0.5; transition: opacity 0.3s ease;">
+                            <span class="snackbar-text">Item deleted from workflow</span>
+                            <button class="snackbar-action" onclick="triggerUndo()">Undo (9s)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title">Auras, Habits & Skills (Solid vs. Aura Progress)</div>
+            <div class="gallery-grid">
+                <!-- Habit Mastery Bar Card -->
+                <div class="card">
+                    <div>
+                        <h3>Habit Progress (Solid Mode)</h3>
+                        <p class="card-desc">Mastery/Evolution bar for habits. Very thin, crisp solid accent line with high-contrast metadata.</p>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-label-group">
+                            <span>Daily Stability</span>
+                            <span class="data-text">8 / 12 Days Done</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill-solid" style="width: 66%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aura Level Bar Card -->
+                <div class="card">
+                    <div>
+                        <h3>Skill Aura Progress (Area Page)</h3>
+                        <p class="card-desc">Skill reinforcement bars. Custom aura gradient tracker indicating progress to the next Level Up.</p>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-label-group">
+                            <span>Skill Aura Points</span>
+                            <span class="data-text">Level 4 (320 XP)</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill-aura" style="width: 45%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skill List Item Mockup -->
+                <div class="card" style="grid-column: span 2; min-height: auto;">
+                    <div>
+                        <h3>Skills List (Inside Area Page)</h3>
+                        <p class="card-desc">Unified row design inside the Area detailed view, integrating custom icons, level badges, and thin inline progress bars.</p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; width: 100%;">
+                        <div class="skill-list-item">
+                            <div class="skill-meta">
+                                <i data-lucide="brain" class="lucide" style="color: var(--accent); margin-top: 2px; align-self: flex-start;"></i>
+                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="skill-title-text">Cognitive Engineering</span>
+                                        <span class="skill-badge">Lvl 3</span>
+                                    </div>
+                                    <span style="font-size: 0.72rem; color: var(--muted);">Active Experiment: Design rulebook with NotebookLM</span>
+                                </div>
+                            </div>
+                            <div class="skill-progress-section">
+                                <div class="progress-track">
+                                    <div class="progress-fill-aura" style="width: 75%;"></div>
+                                </div>
+                                <span class="data-text" style="font-size: 0.75rem;">75%</span>
+                            </div>
+                        </div>
+                        <div class="skill-list-item">
+                            <div class="skill-meta">
+                                <i data-lucide="code" class="lucide" style="margin-top: 2px; align-self: flex-start;"></i>
+                                <div style="display: flex; flex-direction: column; gap: 3px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span class="skill-title-text">Frontend Systems Architecture</span>
+                                        <span class="skill-badge">Lvl 8</span>
+                                    </div>
+                                    <span style="font-size: 0.72rem; color: var(--muted);">Active Experiment: Solid-mode progress bars overhaul</span>
+                                </div>
+                            </div>
+                            <div class="skill-progress-section">
+                                <div class="progress-track">
+                                    <div class="progress-fill-solid" style="width: 40%;"></div>
+                                </div>
+                                <span class="data-text" style="font-size: 0.75rem;">40%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Lucide Library Link and Initialization -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(theme));
+            });
+        }
+
+        function setEnergy(value) {
+            document.querySelectorAll('.energy-pill-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === String(value));
+            });
+        }
+
+        function triggerTap(button) {
+            // Simple visual active scale indicator
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = '';
+            }, 80);
+        }
+
+        // Toggle Focus Pause Button
+        function togglePause(btn) {
+            btn.style.transform = 'scale(0.92)';
+            setTimeout(() => { btn.style.transform = ''; }, 80);
+            const icon = document.getElementById('pause-icon');
+            const isPaused = icon.getAttribute('data-lucide') === 'pause';
+            icon.setAttribute('data-lucide', isPaused ? 'play' : 'pause');
+            lucide.createIcons(); // refresh icon
+        }
+
+        // Toggle Switch handler
+        function toggleSwitch(container) {
+            const sw = container.querySelector('.toggle-switch');
+            sw.classList.toggle('active');
+        }
+
+        // Snackbar animation simulation
+        let undoTimer = null;
+        let secondsLeft = 10;
+        
+        function showUndoSnackbar() {
+            const snack = document.getElementById('undo-snackbar');
+            snack.style.opacity = '1';
+            secondsLeft = 10;
+            
+            if (undoTimer) clearInterval(undoTimer);
+            
+            const btn = snack.querySelector('.snackbar-action');
+            btn.textContent = `Undo (${secondsLeft}s)`;
+            
+            undoTimer = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    clearInterval(undoTimer);
+                    snack.style.opacity = '0.5';
+                    btn.textContent = 'Undo';
+                } else {
+                    btn.textContent = `Undo (${secondsLeft}s)`;
+                }
+            }, 1000);
+        }
+
+        function triggerUndo() {
+            if (undoTimer) {
+                clearInterval(undoTimer);
+                undoTimer = null;
+            }
+            const snack = document.getElementById('undo-snackbar');
+            snack.style.opacity = '0.5';
+            const btn = snack.querySelector('.snackbar-action');
+            btn.textContent = 'Undo';
+            alert('Action Undone successfully (tactile double-pulse vibration sent)');
+        }
+    </script>
+</body>
+</html>

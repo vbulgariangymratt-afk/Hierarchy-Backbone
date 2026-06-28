@@ -1,0 +1,332 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backbone | Neuro-Linear System Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 
+               NEURO-LINEAR TOKEN SYSTEM 
+               Avoiding "Halation" (no pure #000 or #FFF)
+               Using OKLch for precise luminosity and chroma control
+            */
+            
+            /* Solid Dark (Baseline) */
+            --bg: oklch(18% 0.01 250); 
+            --surface: oklch(22% 0.01 250);
+            --surface-elevated: oklch(26% 0.01 250);
+            --fg: oklch(92% 0.01 250); 
+            --muted: oklch(70% 0.01 250);
+            --border: oklch(32% 0.01 250);
+            --accent: oklch(65% 0.15 240); /* Soft, calm blue */
+            --accent-muted: oklch(65% 0.15 240 / 0.2);
+
+            /* Typography */
+            --font-ui: 'Lexend', sans-serif;
+            --font-data: 'Atkinson Hyperlegible', sans-serif;
+            
+            /* Spacing & Sizing */
+            --touch-target: 72px;
+            --dead-space: 12px;
+            --line-height: 1.6;
+            --max-width: 70ch;
+            --radius: 12px;
+        }
+
+        /* Mode Variants (Simulated for this gallery) */
+        [data-theme="light"] {
+            --bg: oklch(98% 0.005 250);
+            --surface: oklch(96% 0.005 250);
+            --surface-elevated: oklch(94% 0.005 250);
+            --fg: oklch(22% 0.01 250);
+            --muted: oklch(50% 0.01 250);
+            --border: oklch(88% 0.005 250);
+        }
+
+        [data-theme="liquid"] {
+            --bg: oklch(20% 0.01 250);
+            --surface: oklch(25% 0.01 250 / 0.6);
+            --border: oklch(35% 0.01 250 / 0.3);
+            --surface-elevated: oklch(30% 0.01 250 / 0.4);
+            backdrop-filter: blur(16px);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-ui);
+            line-height: var(--line-height);
+            margin: 0;
+            padding: 40px 20px;
+            transition: background-color 0.4s ease;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 60px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 2.5rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            max-width: var(--max-width);
+            font-size: 1.1rem;
+        }
+
+        /* THE "NEVER" RULES Implementation */
+        .no-italics { font-style: normal !important; }
+        .no-caps { text-transform: none !important; }
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 32px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-weight: 600;
+            color: var(--fg);
+        }
+
+        /* The "Visual Receipt" Button */
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 16px 24px;
+            font-family: var(--font-ui);
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s cubic-bezier(0.2, 0, 0, 1), background 0.2s ease;
+            
+            /* Touch target implementation */
+            min-width: var(--touch-target);
+            min-height: var(--touch-target);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+            filter: brightness(1.1);
+        }
+
+        /* Bionic Reading Simulation */
+        .bionic b {
+            font-weight: 700;
+            color: var(--fg);
+        }
+
+        /* Data Font Area */
+        .data-text {
+            font-family: var(--font-data);
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        /* Skeleton Screen */
+        .skeleton {
+            background: linear-gradient(
+                90deg, 
+                var(--surface-elevated) 25%, 
+                var(--border) 50%, 
+                var(--surface-elevated) 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite linear;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-line {
+            height: 16px;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+        .skeleton-line.short { width: 60%; }
+
+        /* Mode Switcher */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .mode-btn {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-ui);
+            font-size: 0.8rem;
+        }
+
+        .mode-btn:hover {
+            background: var(--border);
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            background: var(--accent-muted);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button class="mode-btn" onclick="setTheme('dark')">Solid Dark</button>
+        <button class="mode-btn" onclick="setTheme('light')">Solid Light</button>
+        <button class="mode-btn" onclick="setTheme('liquid')">Liquid</button>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Neuro-Linear System</h1>
+            <p class="subtitle">
+                A visually quiet, high-precision system engineered for neurodivergence. 
+                No halation, no silent accusers, just tactile scaffolding.
+            </p>
+        </header>
+
+        <div class="gallery-grid">
+            <!-- Card 1: Typography -->
+            <div class="card">
+                <span class="tag">TYPOGRAPHY</span>
+                <h3>Reading Experience</h3>
+                <p class="bionic">
+                    <b>Thi</b>s is <b>Bio</b>nic <b>Rea</b>ding. <b>It</b> acts <b>as</b> a <b>vi</b>sual <b>spo</b>tlight, <b>let</b>ting the <b>sub</b>conscious <b>mi</b>nd <b>fi</b>ll in the <b>res</b>t, <b>red</b>ucing <b>co</b>gnitive <b>loa</b>d.
+                </p>
+                <p style="font-size: 0.8rem; color: var(--muted);">
+                    Font: Lexend (UI) | Line Height: 1.6 | Alignment: Left
+                </p>
+            </div>
+
+            <!-- Card 2: Data Precision -->
+            <div class="card">
+                <span class="tag">PRECISION</span>
+                <h3>Technical Data</h3>
+                <div class="data-text">
+                    ID: 1lI0O <br>
+                    Hash: 0x71C...a21 <br>
+                    Status: Active
+                </div>
+                <p style="font-size: 0.8rem; color: var(--muted); margin-top: 15px;">
+                    Font: Atkinson Hyperlegible (Maximizes character distinction)
+                </p>
+            </div>
+
+            <!-- Card 3: Visual Receipt -->
+            <div class="card">
+                <span class="tag">INTERACTION</span>
+                <h3>The Visual Receipt</h3>
+                <p style="margin-bottom: 20px; font-size: 0.9rem;">
+                    Tap the button. It responds in &lt;400ms with a physical shrink to prove the action worked.
+                </p>
+                <button class="btn">Save Changes</button>
+            </div>
+
+            <!-- Card 4: Cognitive Comfort -->
+            <div class="card">
+                <span class="tag">COGNITIVE</span>
+                <h3>Skeleton Loading</h3>
+                <p style="margin-bottom: 15px; font-size: 0.9rem;">
+                    No spinning wheels. The brain sees the layout before the content arrives.
+                </p>
+                <div class="skeleton-container">
+                    <div class="skeleton skeleton-line"></div>
+                    <div class="skeleton skeleton-line"></div>
+                    <div class="skeleton skeleton-line short"></div>
+                </div>
+            </div>
+
+            <!-- Card 5: Motor Noise -->
+            <div class="card">
+                <span class="tag">MOTOR</span>
+                <h3>Touch Targets</h3>
+                <p style="margin-bottom: 20px; font-size: 0.9rem;">
+                    Buttons have a minimum 72px hit-box to prevent accidental mis-taps.
+                </p>
+                <div style="display: flex; gap: var(--dead-space);">
+                    <button class="btn" style="background: var(--surface-elevated); color: var(--fg);">Cancel</button>
+                    <button class="btn">Confirm</button>
+                </div>
+            </div>
+
+            <!-- Card 6: The "Never" List -->
+            <div class="card">
+                <span class="tag">SAFEGUARDS</span>
+                <h3>The Guardrails</h3>
+                <ul style="font-size: 0.9rem; padding-left: 20px; color: var(--muted);">
+                    <li>No Pure Black on White</li>
+                    <li>No Italics/All-Caps</li>
+                    <li>No Red Alarms</li>
+                    <li>No Justified Text</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+        }
+    </script>
+</body>
+</html>
+</article>

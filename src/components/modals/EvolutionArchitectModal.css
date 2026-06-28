@@ -67,14 +67,23 @@
     border: none;
     color: var(--text-muted, rgba(255, 255, 255, 0.3));
     cursor: pointer;
-    padding: 8px;
+    padding: 0;
+    min-width: 44px; /* Accessible minimum target */
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
-    transition: all 0.2s;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .close-btn:hover {
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-primary, #ffffff);
+}
+
+.close-btn:active {
+    transform: scale(0.94) !important; /* Visual Receipt */
 }
 
 .evolution-body {
@@ -176,8 +185,12 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    padding: 8px 0;
-    transition: all 0.2s;
+    min-height: 44px; /* Accessible list target */
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .secondary-btn:hover {
@@ -185,19 +198,26 @@
     text-decoration: underline;
 }
 
+.secondary-btn:active {
+    transform: scale(0.94) !important; /* Visual Receipt */
+}
+
 .primary-btn {
     background: #8DA399;
     color: #1a1a1a;
     border: none;
     border-radius: 12px;
-    padding: 12px 24px;
+    min-height: 72px; /* Neuro-UI Hit Target */
+    margin: 6px; /* 12px dead space */
+    padding: 0 32px;
     font-size: 15px;
     font-weight: 700;
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .primary-btn:hover {
@@ -206,12 +226,12 @@
     box-shadow: 0 8px 20px rgba(141, 163, 153, 0.3);
 }
 
-.primary-btn:active {
-    transform: translateY(0);
+.primary-btn:active:not(:disabled) {
+    transform: scale(0.94) !important; /* Visual Receipt */
 }
 
 .primary-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
+    transform: none !important;
 }

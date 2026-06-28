@@ -9,9 +9,9 @@
     --color-border: rgba(0, 0, 0, 0.1);
     --color-text-primary: var(--text-primary);
     --color-text-secondary: var(--text-secondary);
-    --color-accent: #0071e3;
-    --color-accent-hover: #0077ed;
-    --color-accent-rgb: 0, 113, 227;
+    --color-accent: #5E6AD2;
+    --color-accent-hover: #4f5ac4;
+    --color-accent-rgb: 94, 106, 210;
 
     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
@@ -37,9 +37,9 @@
     --color-border: var(--color-border);
     --color-text-primary: var(--text-primary);
     --color-text-secondary: var(--text-secondary);
-    --color-accent: #0a84ff;
-    --color-accent-hover: #409cff;
-    --color-accent-rgb: 10, 132, 255;
+    --color-accent: #5E6AD2;
+    --color-accent-hover: #707ce3;
+    --color-accent-rgb: 94, 106, 210;
 
     --shadow-sm: var(--shadow-sm);
     --shadow-md: var(--shadow-md);
@@ -56,15 +56,4 @@
     --focus-color-track: rgba(var(--focus-contrast), var(--focus-opacity-track));
 }
 
-/* Glass & Wallpaper Mode Neutral Accents */
-.liquid-mode,
-.wallpaper-mode {
-    --color-accent: rgba(255, 255, 255, 0.8) !important;
-    --color-accent-hover: rgba(255, 255, 255, 1) !important;
-}
-
-[data-theme="light"].liquid-mode,
-[data-theme="light"].wallpaper-mode {
-    --color-accent: rgba(0, 0, 0, 0.7) !important;
-    --color-accent-hover: rgba(0, 0, 0, 0.9) !important;
-}
+/* Glass & Wallpaper Mode Neutral Accents removed to preserve standardized brand purple accent throughout the app */

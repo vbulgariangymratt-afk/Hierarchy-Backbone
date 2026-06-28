@@ -3,6 +3,7 @@ import { useSettings } from '../context/SettingsContext';
 import './LaunchpadView.css';
 import NodeIcon from './NodeIcon';
 import AreaCard from './AreaCard';
+import { Coins } from 'lucide-react';
 import HabitCard from './HabitCard';
 import { formatDuration } from '../utils/timeUtils';
 
@@ -58,7 +59,10 @@ const LaunchpadView = ({
             <header className="launchpad-fixed-header">
                 <div className="header-stat">
                     <span className="stat-label">{currencyName} Balance</span>
-                    <span className="stat-value hryvnia">₴{hryvniaBalance}</span>
+                    <span className="stat-value hryvnia" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <Coins size={18} style={{ color: 'var(--color-accent)' }} />
+                        {hryvniaBalance}
+                    </span>
                 </div>
             </header>
 

@@ -14,11 +14,34 @@ export const useBackboneStore = create((set) => ({
     engagementMap: {}, // Stores { skillId: { status, daysSince, label, ... } }
     activeUpgradeHabit: null,
     showPaywall: false,
+    undoToast: null, // { message: string, onUndo: function, timeoutId: number }
 
     // 2. Actions: Methods to manipulate the state immutably
 
     setActiveUpgradeHabit: (habit) => set({ activeUpgradeHabit: habit }),
     setShowPaywall: (show) => set({ showPaywall: show }),
+
+    /**
+     * 10-Second Delayed Undo System
+     */
+    addUndoToast: (message, onUndo) => set((state) => {
+        if (state.undoToast?.timeoutId) {
+            clearTimeout(state.undoToast.timeoutId);
+        }
+        
+        const timeoutId = setTimeout(() => {
+            set({ undoToast: null });
+        }, 10000); // 10 seconds
+
+        return { undoToast: { message, onUndo, timeoutId } };
+    }),
+    
+    clearUndoToast: () => set((state) => {
+        if (state.undoToast?.timeoutId) {
+            clearTimeout(state.undoToast.timeoutId);
+        }
+        return { undoToast: null };
+    }),
 
     /**
      * Update the entire engagement map at once.

@@ -48,8 +48,26 @@ export const ThemeProvider = ({ children }) => {
         return localStorage.getItem('app-show-completed-tasks') === 'true';
     });
 
+    const isValidAccentColor = (hex) => {
+        if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return false;
+        // Saturation safety: reject near-grey/neutral colors
+        const num = parseInt(hex.replace('#', ''), 16);
+        const r = (num >> 16) & 0xFF;
+        const g = (num >> 8) & 0xFF;
+        const b = num & 0xFF;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const saturation = max === 0 ? 0 : (max - min) / max;
+        return saturation > 0.15; // reject near-greys
+    };
+
+    const BRAND_ACCENT = '#5E6AD2';
+
     const [solidAccentColor, setSolidAccentColor] = useState(() => {
-        return localStorage.getItem('app-solid-accent-color') || (resolvedTheme === 'dark' ? '#0a84ff' : '#0071e3');
+        const stored = localStorage.getItem('app-solid-accent-color');
+        if (isValidAccentColor(stored)) return stored;
+        localStorage.setItem('app-solid-accent-color', BRAND_ACCENT);
+        return BRAND_ACCENT;
     });
 
     const [lightWallpaperImage, setLightWallpaperImage] = useState(() => {
@@ -374,13 +392,25 @@ export const ThemeProvider = ({ children }) => {
         return `${r}, ${g}, ${b}`;
     };
 
+    const lightenHexColor = (hex, percent) => {
+        if (!hex || hex.length < 7) return resolvedTheme === 'dark' ? '#707ce3' : '#4d59c1';
+        const num = parseInt(hex.replace("#",""), 16),
+        amt = Math.round(2.55 * percent),
+        R = (num >> 16) + amt,
+        G = (num >> 8 & 0x00FF) + amt,
+        B = (num & 0x0000FF) + amt;
+        return "#" + (0x1000000 + (R<255?R<0?0:R:255)*0x10000 + (G<255?G<0?0:G:255)*0x100 + (B<255?B<0?0:B:255)).toString(16).slice(1);
+    };
+
     useEffect(() => {
         if (backgroundMode === 'solid' && solidAccentColor) {
             document.documentElement.style.setProperty('--color-accent', solidAccentColor);
             document.documentElement.style.setProperty('--color-accent-rgb', hexToRgb(solidAccentColor));
+            document.documentElement.style.setProperty('--color-accent-hover', lightenHexColor(solidAccentColor, 10));
         } else {
             document.documentElement.style.removeProperty('--color-accent');
             document.documentElement.style.removeProperty('--color-accent-rgb');
+            document.documentElement.style.removeProperty('--color-accent-hover');
         }
     }, [solidAccentColor, backgroundMode]);
 

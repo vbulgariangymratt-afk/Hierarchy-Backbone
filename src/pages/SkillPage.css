@@ -2138,9 +2138,9 @@
 /* Habit Mastery Bar - Matching Skill Card Aura Style */
 .habit-mastery-bar-container {
     width: 100%;
-    height: 8px;
+    height: 4px; /* Neuro-UI thin profile */
     background: var(--alpha-high);
-    border-radius: 10px;
+    border-radius: 4px;
     overflow: hidden;
     position: relative;
 }
@@ -2149,9 +2149,14 @@
     height: 100%;
     background: var(--aura-gradient);
     background-size: 200% 100%;
-    border-radius: 10px;
+    border-radius: 4px;
     box-shadow: 0 0 15px rgba(var(--color-accent-rgb), 0.2);
     transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.solid-mode .habit-mastery-bar-fill {
+    background: var(--color-primary);
+    box-shadow: 0 0 10px rgba(var(--color-primary-rgb, 195, 154, 107), 0.3);
 }
 
 .habit-card-minimal .complete-btn {
@@ -5021,6 +5026,7 @@
 /* ADHD Text Blocks */
 .adhd-habit-flow-overlay p {
     color: #ffffff;
+    font-family: 'Atkinson Hyperlegible', sans-serif !important; /* For legibility */
 }
 .light .adhd-habit-flow-overlay p {
     color: #1f2937 !important;
@@ -5034,22 +5040,29 @@
 
 /* Accent Buttons */
 .adhd-habit-flow-btn-accent {
-    padding: 12px 28px !important;
+    padding: 0 32px !important;
+    min-height: 72px !important; /* Neuro-UI Hit Target */
+    min-width: 120px !important; /* Substantial width */
+    margin: 6px !important; /* 12px total dead space */
     font-size: 16px !important;
     font-weight: 600 !important;
     color: #fff !important;
     background: var(--color-primary) !important;
     border: none !important;
-    border-radius: 8px !important;
+    border-radius: 12px !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Spring momentum */
     box-shadow: 0 4px 12px rgba(var(--color-primary-rgb, 195, 154, 107), 0.3) !important;
-    margin-top: 10px !important;
     font-family: inherit !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .adhd-habit-flow-btn-accent:hover {
-    transform: translateY(-1px) !important;
     box-shadow: 0 6px 16px rgba(var(--color-primary-rgb, 195, 154, 107), 0.45) !important;
+}
+.adhd-habit-flow-btn-accent:active {
+    transform: scale(0.94) !important; /* Visual Receipt */
 }
 .adhd-habit-flow-btn-accent:disabled {
     background: rgba(255, 255, 255, 0.08) !important;
@@ -5057,6 +5070,7 @@
     cursor: not-allowed !important;
     opacity: 0.5 !important;
     box-shadow: none !important;
+    transform: none !important;
 }
 .light .adhd-habit-flow-btn-accent:disabled {
     background: rgba(0, 0, 0, 0.08) !important;
@@ -5065,27 +5079,37 @@
 
 /* Secondary Buttons */
 .adhd-habit-flow-btn-secondary {
-    padding: 12px 24px !important;
+    padding: 0 32px !important;
+    min-height: 72px !important; /* Neuro-UI Hit Target */
+    min-width: 100px !important; /* Substantial width */
+    margin: 6px !important; /* 12px total dead space */
     font-size: 16px !important;
     font-weight: 600 !important;
     color: #a1a1aa !important;
-    background: transparent !important;
+    background: rgba(255, 255, 255, 0.03) !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-radius: 8px !important;
+    border-radius: 12px !important;
     cursor: pointer !important;
-    transition: all 0.2s ease !important;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Spring momentum */
     font-family: inherit !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 .adhd-habit-flow-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
     color: #ffffff !important;
+}
+.adhd-habit-flow-btn-secondary:active {
+    transform: scale(0.94) !important; /* Visual Receipt */
 }
 .light .adhd-habit-flow-btn-secondary {
     color: #4b5563 !important;
     border-color: rgba(0, 0, 0, 0.15) !important;
+    background: rgba(0, 0, 0, 0.02) !important;
 }
 .light .adhd-habit-flow-btn-secondary:hover {
-    background: rgba(0, 0, 0, 0.04) !important;
+    background: rgba(0, 0, 0, 0.06) !important;
     color: #111827 !important;
 }
 
