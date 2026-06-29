@@ -1,33 +1,57 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { timelineService } from '../backbone-v2';
-import { useSettings } from '../context/SettingsContext';
 import { formatDuration } from '../utils/timeUtils';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+import { ChevronRight, ChevronDown, Repeat } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import BorderGlow from '../components/ui/BorderGlow';
 import './TimelinePage.css';
+
+const streamContainerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.05
+        }
+    }
+};
+
+const cardVariants = {
+    hidden: { 
+        opacity: 0, 
+        y: 20, 
+        scale: 0.95 
+    },
+    visible: { 
+        opacity: 1, 
+        y: 0, 
+        scale: 1,
+        transition: {
+            type: "spring",
+            stiffness: 260,
+            damping: 22
+        }
+    }
+};
+
+const headerVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { 
+        opacity: 1, 
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 260,
+            damping: 22,
+            delay: 0.05
+        }
+    }
+};
 
 const TimelinePage = () => {
     const [timelineData, setTimelineData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [expandedDays, setExpandedDays] = useState(() => {
-        const todayStr = new Date().toISOString().split('T')[0];
-        return { [todayStr]: true };
-    });
-    const scrollContainerRef = useRef(null);
-    const navigate = useNavigate();
-
-    const [windowStart] = useState(() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 6);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
-    });
-
-    const [windowEnd] = useState(() => {
-        const d = new Date();
-        d.setHours(23, 59, 59, 999);
-        return d.getTime();
-    });
+    const [expandedDays, setExpandedDays] = useState({});
 
     useEffect(() => {
         const loadData = async () => {
@@ -37,29 +61,15 @@ const TimelinePage = () => {
 
             const data = await timelineService.getTimelineRange(start, end);
             setTimelineData(data);
+
+            // Expand today by default
+            const todayStr = new Date().toISOString().split('T')[0];
+            setExpandedDays({ [todayStr]: true });
+
             setLoading(false);
         };
         loadData();
     }, []);
-
-    // Auto-focus on TODAY on load
-    useEffect(() => {
-        if (!loading && timelineData && scrollContainerRef.current) {
-            const scrollContainer = scrollContainerRef.current;
-            // Scroll to the end immediately so the user doesn't see a delay/jump
-            scrollContainer.scrollLeft = scrollContainer.scrollWidth;
-
-            const timer = setTimeout(() => {
-                const todayCard = scrollContainer.querySelector('.day-card.is-today');
-                if (todayCard) {
-                    todayCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'end' });
-                } else {
-                    scrollContainer.scrollLeft = scrollContainer.scrollWidth;
-                }
-            }, 50);
-            return () => clearTimeout(timer);
-        }
-    }, [loading, timelineData]);
 
     const toggleDay = (date) => {
         setExpandedDays(prev => ({ ...prev, [date]: !prev[date] }));
@@ -67,32 +77,48 @@ const TimelinePage = () => {
 
     if (loading) return <div className="timeline-loading">Syncing your path...</div>;
 
+    // Show newest days at the top (descending chronological order)
+    const sortedDays = [...timelineData.days].reverse();
+
     return (
         <div className="timeline-page">
-            <header className="timeline-header">
-                <h1>Registry of Path</h1>
-                <p>A strictly historical record of your journey.</p>
-            </header>
+            <motion.header 
+                className="timeline-header"
+                variants={headerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <h1>This is your timeline</h1>
+                <p>Come here when your brain is calling you lazy</p>
+            </motion.header>
 
-            <div className="timeline-main-scroller" ref={scrollContainerRef}>
-                <div className="timeline-unified-grid">
-                    <div className="days-row">
-                        {timelineData.days.map((day) => (
-                            <DayCard 
+            <div className="timeline-main-scroller">
+                <div className="timeline-container">
+                    <div className="timeline-thread" />
+                    <motion.div 
+                        variants={streamContainerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="timeline-stream"
+                    >
+                        {sortedDays.map((day) => (
+                            <DayNode 
                                 key={day.date} 
                                 day={day} 
                                 isExpanded={!!expandedDays[day.date]} 
                                 onToggle={() => toggleDay(day.date)} 
                             />
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </div>
         </div>
     );
 };
 
-const DayCard = ({ day, isExpanded, onToggle }) => {
+const DayNode = ({ day, isExpanded, onToggle }) => {
+    const [activeFilter, setActiveFilter] = useState(null);
+
     const totalTasks = day.tasksCompleted.length;
     const totalSessions = day.focusSessions.length;
     const totalHabits = day.habitCompletions.reduce((acc, h) => acc + h.count, 0);
@@ -100,38 +126,110 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
     const totalLevelUps = day.levelUps?.length || 0;
     const totalSubTasks = day.subStepsCompleted?.length || 0;
     
-    // Count unique skills (ignore 'no-skill')
-    const uniqueSkillsCount = (day.skillGroups || []).filter(g => g.id !== 'no-skill').length;
+    // Get list of active skills (ignore 'no-skill')
+    const activeSkills = (day.skillGroups || []).filter(g => g.id !== 'no-skill');
 
     const isEmpty = totalTasks === 0 && totalSessions === 0 && totalHabits === 0 && totalReps === 0 && !day.journalEntry;
 
     const dateObj = new Date(day.date + 'T12:00:00');
     const isToday = day.date === new Date().toISOString().split('T')[0];
+    
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+    const isYesterday = day.date === yesterdayStr;
 
-    return (
-        <div className={`day-card liquid-glass ${isExpanded ? 'expanded' : ''} ${isToday ? 'is-today' : ''}`} onClick={onToggle}>
-            <div className="day-header">
-                <span className="day-date">
-                    {isToday ? "Today" : dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </span>
-                
-                <div className="day-summary-row">
-                    {uniqueSkillsCount > 0 && <span className="summary-pill highlighted">Skills: {uniqueSkillsCount}</span>}
-                    {totalTasks > 0 && <span className="summary-pill">Tasks: {totalTasks}</span>}
-                    {totalSubTasks > 0 && <span className="summary-pill">Subtasks: {totalSubTasks}</span>}
-                    {totalSessions > 0 && <span className="summary-pill">Focus: {totalSessions}</span>}
-                    {totalReps > 0 && <span className="summary-pill">Activities: {totalReps}</span>}
-                    {totalHabits > 0 && <span className="summary-pill">Habits: {totalHabits}</span>}
-                    {totalLevelUps > 0 && <span className="summary-pill level-up-pill">Levels: {totalLevelUps}</span>}
+    const handlePillClick = (e, filterType) => {
+        e.stopPropagation();
+        if (activeFilter === filterType) {
+            setActiveFilter(null);
+        } else {
+            setActiveFilter(filterType);
+            if (!isExpanded) {
+                onToggle();
+            }
+        }
+    };
+
+    const cardContent = (
+        <>
+            <div className="card-shine" />
+            <div className="node-card-header">
+                <div className="node-summary-info">
+                    <h3 className="node-title">
+                        {isToday ? "Today" : isYesterday ? "Yesterday" : dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
+                    </h3>
+                    {activeSkills.length > 0 && !isExpanded && (
+                        <div className="node-card-skills-list">
+                            {activeSkills.map(skill => (
+                                <span key={skill.id} className="node-card-skill-item">
+                                    {skill.name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                    <div className="node-pills">
+                        {totalTasks > 0 && (
+                            <span 
+                                className={`summary-pill ${activeFilter === 'tasks' ? 'selected' : ''}`}
+                                onClick={(e) => handlePillClick(e, 'tasks')}
+                            >
+                                Tasks: {totalTasks}
+                            </span>
+                        )}
+                        {totalSubTasks > 0 && (
+                            <span 
+                                className={`summary-pill ${activeFilter === 'subtasks' ? 'selected' : ''}`}
+                                onClick={(e) => handlePillClick(e, 'subtasks')}
+                            >
+                                Subtasks: {totalSubTasks}
+                            </span>
+                        )}
+                        {totalSessions > 0 && (
+                            <span 
+                                className={`summary-pill ${activeFilter === 'focus' ? 'selected' : ''}`}
+                                onClick={(e) => handlePillClick(e, 'focus')}
+                            >
+                                Focus: {totalSessions}
+                            </span>
+                        )}
+                        {totalReps > 0 && (
+                            <span 
+                                className={`summary-pill ${activeFilter === 'activities' ? 'selected' : ''}`}
+                                onClick={(e) => handlePillClick(e, 'activities')}
+                            >
+                                Activities: {totalReps}
+                            </span>
+                        )}
+                        {totalHabits > 0 && (
+                            <span 
+                                className={`summary-pill ${activeFilter === 'habits' ? 'selected' : ''}`}
+                                onClick={(e) => handlePillClick(e, 'habits')}
+                            >
+                                Habits: {totalHabits}
+                            </span>
+                        )}
+                        {totalLevelUps > 0 && (
+                            <span 
+                                className={`summary-pill level-up-pill ${activeFilter === 'levels' ? 'selected' : ''}`}
+                                onClick={(e) => handlePillClick(e, 'levels')}
+                            >
+                                Levels: {totalLevelUps}
+                            </span>
+                        )}
+                    </div>
                 </div>
                 
                 <span className="expand-hint">
-                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </span>
             </div>
 
-            {isExpanded && (
-                <div className="day-expanded-content" onClick={(e) => e.stopPropagation()}>
+            <div className={`node-card-accordion ${isExpanded ? 'is-open' : ''}`}>
+                <div 
+                    className="node-card-expanded-content"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {isEmpty ? (
                         <div className="empty-day-state">
                             <p className="empty-day-msg">Quiet day — your path is resting.</p>
@@ -140,21 +238,26 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
                         <div className="day-details-list">
                             {/* Grouped by Skill */}
                             {(day.skillGroups || []).map(group => (
-                                <SkillSection key={group.id} group={group} isToday={isToday} />
+                                <SkillSection 
+                                    key={group.id} 
+                                    group={group} 
+                                    isToday={isToday} 
+                                    activeFilter={activeFilter}
+                                />
                             ))}
 
-                            {/* Journal Pulse remains at the bottom of the day */}
-                            {day.journalEntry && (
-                                <Section title="Daily log Pulse">
+                            {/* Journal Pulse */}
+                            {day.journalEntry && (day.journalEntry.activation?.morningActivationLevel || day.journalEntry.notes) && (
+                                <Section title="Daily Log Pulse">
                                     {day.journalEntry.activation?.morningActivationLevel && (
                                         <div className="item-row">
-                                            <span>Activation</span>
+                                            <span>Morning Activation</span>
                                             <span className="duration-tag">{day.journalEntry.activation.morningActivationLevel.replace('_', ' ')}</span>
                                         </div>
                                     )}
                                     {day.journalEntry.notes && (
                                         <div className="journal-note-preview">
-                                            "{day.journalEntry.notes.length > 80 ? `${day.journalEntry.notes.substring(0, 80)}...` : day.journalEntry.notes}"
+                                            "{day.journalEntry.notes}"
                                         </div>
                                     )}
                                 </Section>
@@ -162,107 +265,167 @@ const DayCard = ({ day, isExpanded, onToggle }) => {
                         </div>
                     )}
                 </div>
-            )}
-        </div>
+            </div>
+        </>
+    );
+
+    return (
+        <motion.div 
+            variants={cardVariants}
+            className={`timeline-node ${isToday ? 'is-today' : ''} ${isEmpty ? 'is-empty' : ''}`}
+        >
+            {/* Left Sidebar: Date & Dot Node */}
+            <div className="node-sidebar" onClick={onToggle}>
+                <div className="node-dot-container">
+                    <div className="node-dot" />
+                </div>
+                <div className="node-date-sticky">
+                    <span className="node-date-num">{dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                </div>
+            </div>
+
+            {/* Right Side: The Content Card */}
+            <div
+                className={`node-card liquid-glass ${isExpanded ? 'expanded' : ''}`} 
+                onClick={onToggle}
+            >
+                <BorderGlow
+                    className="timeline-card-glow-wrapper"
+                    borderRadius={20}
+                    backgroundColor="transparent"
+                    glowColor="235 60 65"
+                    glowIntensity={0.65}
+                >
+                    {cardContent}
+                </BorderGlow>
+            </div>
+        </motion.div>
     );
 };
 
-const SkillSection = ({ group, isToday }) => {
+const SkillSection = ({ group, isToday, activeFilter }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
-    const totalTasks = group.tasksCompleted.length;
-    const totalSessions = group.focusSessions.length;
-    const totalHabits = group.habitCompletions.reduce((acc, h) => acc + h.count, 0);
-    const totalSubTasks = group.subStepsCompleted?.length || 0;
+    // Aggregate tasks, subtasks, and focus sessions into a single tree
+    const tasksMap = {};
+    const getTaskEntry = (id, name) => {
+        const cleanedId = id || name;
+        if (!tasksMap[cleanedId]) {
+            tasksMap[cleanedId] = {
+                id: cleanedId,
+                name: name,
+                completed: false,
+                focusDuration: 0,
+                subtasks: []
+            };
+        }
+        return tasksMap[cleanedId];
+    };
+
+    // 1. Process completed tasks
+    group.tasksCompleted.forEach(t => {
+        const entry = getTaskEntry(t.id, t.name);
+        entry.completed = true;
+    });
+
+    // 2. Process focus sessions
+    group.focusSessions.forEach(s => {
+        const entry = getTaskEntry(s.taskId, s.taskName);
+        entry.focusDuration += (s.actualDuration || 0);
+    });
+
+    // 3. Process subtasks completed
+    (group.subStepsCompleted || []).forEach(s => {
+        const entry = getTaskEntry(s.taskId, s.taskName);
+        if (!entry.subtasks.includes(s.text)) {
+            entry.subtasks.push(s.text);
+        }
+    });
+
+    const tasksList = Object.values(tasksMap);
+
+    // Filter tasks based on activeFilter
+    const filteredTasks = tasksList.map(task => {
+        if (activeFilter === 'tasks') {
+            return task.completed ? { ...task, subtasks: [] } : null;
+        }
+        if (activeFilter === 'focus') {
+            return task.focusDuration > 0 ? { ...task, subtasks: [] } : null;
+        }
+        if (activeFilter === 'subtasks') {
+            return task.subtasks.length > 0 ? { ...task, completed: false, focusDuration: 0 } : null;
+        }
+        if (activeFilter) {
+            return null; // hide tasks if filter is on habits/levels/activities
+        }
+        return task;
+    }).filter(Boolean);
+
+    const showTasksSection = filteredTasks.length > 0;
+    const showHabitsSection = (!activeFilter || activeFilter === 'habits') && group.habitCompletions.length > 0;
+    const showActivitiesSection = (!activeFilter || activeFilter === 'activities') && group.repetitionActivities.length > 0;
+
+    const hasContent = showTasksSection || showHabitsSection || showActivitiesSection || (activeFilter === 'levels' && group.levelUps.length > 0);
+
+    if (activeFilter && !hasContent) {
+        return null; // hide the entire skill group if no content matches the filter
+    }
 
     return (
         <div className={`skill-group-section ${isCollapsed ? 'collapsed' : ''}`}>
             <div className="skill-group-header" onClick={() => setIsCollapsed(!isCollapsed)}>
                 <div className="skill-group-title">
                     <h4>{group.name}</h4>
-                    <span className="skill-stats-hint">
-                        ({totalTasks > 0 && `tasks: ${totalTasks}`}{totalSubTasks > 0 && `${totalTasks > 0 ? ', ' : ''}sub-tasks: ${totalSubTasks}`}{totalSessions > 0 && `${(totalTasks > 0 || totalSubTasks > 0) ? ', ' : ''}focus: ${totalSessions}`}{totalHabits > 0 && `${(totalTasks > 0 || totalSubTasks > 0 || totalSessions > 0) ? ', ' : ''}habits: ${totalHabits}`})
-                    </span>
                 </div>
-                <span className="collapse-arrow">{isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</span>
+                <div className="skill-group-meta">
+                    {group.levelUps.map((lu, i) => (
+                        <span key={i} className="level-up-badge-header">
+                            ★ Lvl {lu.newLevel} (+20 ₴)
+                        </span>
+                    ))}
+                    <span className="collapse-arrow">{isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}</span>
+                </div>
             </div>
 
             {!isCollapsed && (
                 <div className="skill-group-content">
-                    {group.tasksCompleted.length > 0 && (
-                        <Section title="Accomplished">
-                            {group.tasksCompleted.map(t => (
-                                <div key={t.id} className="item-row">
-                                    <span>{t.name}</span>
-                                </div>
-                            ))}
-                        </Section>
-                    )}
-
-                    {group.subStepsCompleted?.length > 0 && (() => {
-                        const grouped = group.subStepsCompleted.reduce((acc, s) => {
-                            if (!acc[s.taskId]) acc[s.taskId] = { taskName: s.taskName, steps: [] };
-                            acc[s.taskId].steps.push(s);
-                            return acc;
-                        }, {});
-
-                        return (
-                            <Section title="Sub-tasks Completed">
-                                {Object.values(grouped).map((g, idx) => (
-                                    <div key={idx} className="subtasks-timeline-group" style={{ marginTop: idx > 0 ? '12px' : '0' }}>
-                                        <div className="subtasks-group-title" style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '6px', fontWeight: 600 }}>
-                                            {g.taskName}
-                                        </div>
-                                        {g.steps.map((s, i) => (
-                                            <div key={i} className="item-row" style={{ paddingLeft: '8px', borderLeft: '1px solid var(--color-border)', marginLeft: '4px' }}>
-                                                <span className="subtask-text-timeline" style={{ color: 'var(--text-secondary)' }}>{s.text}</span>
-                                            </div>
-                                        ))}
+                    {showTasksSection && (
+                        <Section title="Tasks & Focus">
+                            {filteredTasks.map(task => (
+                                <div key={task.id} className="task-ledger-group">
+                                    <div className={`item-row task-row ${task.completed ? 'completed' : 'worked-on'}`}>
+                                        <span>{task.name}</span>
+                                        {task.focusDuration > 0 && (
+                                            <span className="duration-tag">
+                                                {formatDuration(task.focusDuration, 'seconds')}
+                                            </span>
+                                        )}
                                     </div>
-                                ))}
-                            </Section>
-                        );
-                    })()}
-
-
-
-                    {group.focusSessions.length > 0 && (
-                        <Section 
-                            title="Focus Sessions" 
-                            subLabel={formatDuration(group.focusSessions.reduce((acc, s) => acc + (s.actualDuration || 0), 0), 'seconds')}
-                        >
-                            {group.focusSessions.map((s, i) => (
-                                <div key={i} className="item-row">
-                                    <span>{s.taskName}</span>
-                                    <span className="duration-tag">{formatDuration(s.actualDuration, 'seconds')}</span>
+                                    {task.subtasks.map((sub, sIdx) => (
+                                        <div key={sIdx} className="item-row subtask-row">
+                                            <span>{sub}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             ))}
                         </Section>
                     )}
 
-                    {group.habitCompletions.length > 0 && (
+                    {showHabitsSection && (
                         <Section title="Habits Reinforced">
                             {group.habitCompletions.map(h => (
                                 <div key={h.habitId} className="item-row">
-                                    <span>{h.name}</span>
+                                    <span>
+                                        <Repeat size={14} className="habit-icon-bullet" strokeWidth={2.75} />
+                                        {h.name}
+                                    </span>
                                     {h.count > 1 && <span className="duration-tag">×{h.count}</span>}
                                 </div>
                             ))}
                         </Section>
                     )}
 
-                    {group.levelUps.length > 0 && (
-                        <Section title="Mastery Reached">
-                            {group.levelUps.map((lu, i) => (
-                                <div key={i} className="item-row level-up-row">
-                                    <span>Mastered Level {lu.newLevel}</span>
-                                    <span className="aura-gain-tag">+20 ₴</span>
-                                </div>
-                            ))}
-                        </Section>
-                    )}
-
-                    {group.repetitionActivities.length > 0 && (
+                    {showActivitiesSection && (
                         <Section title="Activities">
                             {group.repetitionActivities.map(r => (
                                 <div key={r.taskId} className="item-row">
@@ -278,14 +441,17 @@ const SkillSection = ({ group, isToday }) => {
     );
 };
 
-const Section = ({ title, subLabel, children }) => (
-    <div className="day-content-section">
-        <div className="section-title-row">
-            <h3>{title}</h3>
-            {subLabel && <span className="section-sublabel">{subLabel}</span>}
+const Section = ({ title, subLabel, children }) => {
+    const sectionClass = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    return (
+        <div className={`day-content-section section-${sectionClass}`}>
+            <div className="section-title-row">
+                <h3>{title}</h3>
+                {subLabel && <span className="section-sublabel">{subLabel}</span>}
+            </div>
+            <div className="section-items">{children}</div>
         </div>
-        <div className="section-items">{children}</div>
-    </div>
-);
+    );
+};
 
 export default TimelinePage;

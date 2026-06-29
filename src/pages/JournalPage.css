@@ -155,8 +155,10 @@
 
 .slider-current-value {
     position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: max-content;
     color: var(--text-primary);
     font-weight: 600;
     background: rgba(var(--color-accent-rgb), 0.1);
@@ -546,4 +548,97 @@
     z-index: 5;
     margin: 0;
     padding: 0;
+}
+
+/* -------------------------------------------------------------
+   BORDER GLOW FOR HYDRATION & MEDICATION BUTTONS
+   ------------------------------------------------------------- */
+
+/* 1. Hydration buttons wrapper */
+.water-size-log-glow-wrapper {
+    flex: 1;
+    height: 52px;
+    --border-radius: var(--radius-md, 8px);
+    border-radius: var(--border-radius);
+    display: flex !important;
+}
+
+.water-size-log-glow-wrapper .border-glow-inner {
+    border-radius: calc(var(--border-radius) - 1.5px);
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
+    width: 100%;
+}
+
+.water-size-log-glow-wrapper::before {
+    display: none !important; /* Hide backglow */
+}
+
+.water-size-log-glow-wrapper .water-size-log-btn {
+    border: none !important;
+    background: transparent !important;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+/* Prevent hover background changes on hydration buttons */
+.water-size-log-glow-wrapper:hover .border-glow-inner,
+.water-size-log-glow-wrapper .water-size-log-btn:hover {
+    background: var(--alpha-low) !important;
+}
+
+
+/* 2. Medication buttons wrapper */
+.med-log-glow-wrapper {
+    height: 48px;
+    --border-radius: var(--radius-md, 8px);
+    border-radius: var(--border-radius);
+    display: flex !important;
+}
+
+.med-log-glow-wrapper .border-glow-inner {
+    border-radius: calc(var(--border-radius) - 1.5px);
+    background: var(--alpha-low);
+    border: 1px solid var(--color-border);
+    width: 100%;
+}
+
+/* Taken state overrides */
+.med-log-glow-wrapper.taken .border-glow-inner {
+    background: rgba(16, 185, 129, 0.15); /* Soft success green */
+    border-color: #10b981;
+}
+
+.solid-mode .med-log-glow-wrapper.taken .border-glow-inner {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.med-log-glow-wrapper::before {
+    display: none !important; /* Hide backglow */
+}
+
+.med-log-glow-wrapper .med-log-btn {
+    border: none !important;
+    background: transparent !important;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+/* Prevent hover background changes on med buttons */
+.med-log-glow-wrapper .med-log-btn:hover {
+    background: transparent !important;
+}
+
+.med-log-glow-wrapper:hover .border-glow-inner {
+    background: var(--alpha-low) !important;
+}
+
+.med-log-glow-wrapper.taken:hover .border-glow-inner {
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+
+.solid-mode .med-log-glow-wrapper.taken:hover .border-glow-inner {
+    background: rgba(16, 185, 129, 0.2) !important;
 }

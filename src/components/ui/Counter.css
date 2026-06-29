@@ -1,0 +1,59 @@
+/* src/components/ui/Counter.css */
+
+.counter-container {
+  display: inline-flex;
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  vertical-align: middle;
+  height: 1.2em; /* constrain height */
+}
+
+.counter-counter {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.counter-digit {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  /* Width of a typical digit */
+  width: 0.62em;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.counter-number {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.gradient-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.top-gradient,
+.bottom-gradient {
+  width: 100%;
+  left: 0;
+  display: block;
+}

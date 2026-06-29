@@ -60,7 +60,13 @@ export const createJournalRepository = () => {
                     date: entry.date,
                     biological: entry.biological || {},
                     activation: entry.activation || {},
-                    regulation: entry.regulation || {},
+                    regulation: {
+                        ...(entry.regulation || {}),
+                        wake_up_ease: entry.wake_up_ease !== undefined ? entry.wake_up_ease : null,
+                        shut_down_ease: entry.shut_down_ease !== undefined ? entry.shut_down_ease : null,
+                        hydration_total: entry.hydration_total !== undefined ? entry.hydration_total : null,
+                        meds_taken: entry.meds_taken || []
+                    },
                     medication_taken: entry.medication_taken || false,
                     med_taken_at: entry.med_taken_at || null,
                     dopamine_spark_at: entry.dopamine_spark_at || null,
@@ -138,7 +144,11 @@ export const createJournalRepository = () => {
                     medications: row.medications || [],
                     snapshots: row.snapshots || {},
                     createdAt: row.created_at,
-                    updatedAt: row.updated_at
+                    updatedAt: row.updated_at,
+                    wake_up_ease: row.regulation?.wake_up_ease !== undefined ? row.regulation.wake_up_ease : undefined,
+                    shut_down_ease: row.regulation?.shut_down_ease !== undefined ? row.regulation.shut_down_ease : undefined,
+                    hydration_total: row.regulation?.hydration_total !== undefined ? row.regulation.hydration_total : undefined,
+                    meds_taken: row.regulation?.meds_taken || []
                 }));
 
                 // Metadata might be repeated across rows or stored elsewhere. 
@@ -261,7 +271,13 @@ export const createJournalRepository = () => {
                     date: entry.date,
                     biological: entry.biological || {},
                     activation: entry.activation || {},
-                    regulation: entry.regulation || {},
+                    regulation: {
+                        ...(entry.regulation || {}),
+                        wake_up_ease: entry.wake_up_ease !== undefined ? entry.wake_up_ease : null,
+                        shut_down_ease: entry.shut_down_ease !== undefined ? entry.shut_down_ease : null,
+                        hydration_total: entry.hydration_total !== undefined ? entry.hydration_total : null,
+                        meds_taken: entry.meds_taken || []
+                    },
                     medication_taken: entry.medication_taken || false,
                     med_taken_at: entry.med_taken_at || null,
                     dopamine_spark_at: entry.dopamine_spark_at || null,

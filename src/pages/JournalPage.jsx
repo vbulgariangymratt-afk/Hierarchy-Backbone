@@ -3,6 +3,7 @@ import { Droplet, Plus, Minus, Moon, Sun, Pill, Pencil, X, Check } from 'lucide-
 import { motion } from 'framer-motion';
 import { journalService, repository } from '../backbone-v2';
 import './JournalPage.css';
+import BorderGlow from '../components/ui/BorderGlow';
 
 const DiscreteSlider = ({ min = 1, max = 5, value, onChange }) => {
     const percentage = ((value - min) / (max - min)) * 100;
@@ -13,11 +14,13 @@ const DiscreteSlider = ({ min = 1, max = 5, value, onChange }) => {
                 <div className="custom-slider-track">
                     <motion.div 
                         className="custom-slider-fill" 
+                        initial={false}
                         animate={{ width: `${percentage}%` }}
                         transition={{ type: "spring", stiffness: 450, damping: 28 }}
                     />
                     <motion.div 
                         className="custom-slider-thumb"
+                        initial={false}
                         animate={{ left: `${percentage}%` }}
                         transition={{ type: "spring", stiffness: 450, damping: 28 }}
                     />
@@ -74,10 +77,10 @@ const JournalPage = () => {
                 ]);
                 
                 if (entry) {
-                    setWakeUpEase(entry.wake_up_ease !== undefined ? entry.wake_up_ease : 3);
-                    setShutDownEase(entry.shut_down_ease !== undefined ? entry.shut_down_ease : 3);
-                    setHydrationTotal(entry.hydration_total !== undefined ? entry.hydration_total : 0);
-                    setMedsTaken(entry.meds_taken !== undefined ? entry.meds_taken : []);
+                    setWakeUpEase(entry.wake_up_ease || 3);
+                    setShutDownEase(entry.shut_down_ease || 3);
+                    setHydrationTotal(entry.hydration_total || 0);
+                    setMedsTaken(entry.meds_taken || []);
                 }
                 
                 if (root) {
@@ -199,7 +202,8 @@ const JournalPage = () => {
         if (val === 2) return 'Light Sleep / Mostly Ok';
         if (val === 3) return 'Neutral';
         if (val === 4) return 'Grogginess / Tired';
-        return 'Exhausted';
+        if (val === 5) return 'Exhausted';
+        return 'Neutral';
     };
 
     const getShutDownLabel = (val) => {
@@ -207,7 +211,8 @@ const JournalPage = () => {
         if (val === 2) return 'A bit restless';
         if (val === 3) return 'Neutral';
         if (val === 4) return 'Delayed shutdown';
-        return 'Avoided sleep (revenge bedtime procrastination)';
+        if (val === 5) return 'Avoided sleep (revenge bedtime procrastination)';
+        return 'Neutral';
     };
 
     if (loading) {
@@ -240,7 +245,15 @@ const JournalPage = () => {
                         />
                         <div className="slider-labels">
                             <span className="slider-label-extreme">Refreshed</span>
-                            <span className="slider-current-value">{getWakeUpLabel(wakeUpEase)}</span>
+                            <motion.span 
+                                layout 
+                                transition={{ type: "spring", stiffness: 450, damping: 28 }}
+                                className="slider-current-value"
+                            >
+                                <motion.span layout transition={{ duration: 0 }}>
+                                    {getWakeUpLabel(wakeUpEase)}
+                                </motion.span>
+                            </motion.span>
                             <span className="slider-label-extreme">Exhausted</span>
                         </div>
                     </div>
@@ -259,7 +272,15 @@ const JournalPage = () => {
                         />
                         <div className="slider-labels">
                             <span className="slider-label-extreme">Easy sleep</span>
-                            <span className="slider-current-value">{getShutDownLabel(shutDownEase)}</span>
+                            <motion.span 
+                                layout 
+                                transition={{ type: "spring", stiffness: 450, damping: 28 }}
+                                className="slider-current-value"
+                            >
+                                <motion.span layout transition={{ duration: 0 }}>
+                                    {getShutDownLabel(shutDownEase)}
+                                </motion.span>
+                            </motion.span>
                             <span className="slider-label-extreme">Avoided sleep</span>
                         </div>
                     </div>
@@ -274,15 +295,22 @@ const JournalPage = () => {
                         </label>
                         <div className="water-quick-log-row">
                             {WATER_SIZES.map((size) => (
-                                <button
+                                <BorderGlow
                                     key={size.value}
-                                    type="button"
-                                    className="water-size-log-btn"
-                                    onClick={() => addWater(size.value)}
+                                    glowRadius={16}
+                                    backgroundColor="transparent"
+                                    fillOpacity={0.25}
+                                    className="water-size-log-glow-wrapper"
                                 >
-                                    <Droplet size={12} />
-                                    <span>{size.label}</span>
-                                </button>
+                                    <button
+                                        type="button"
+                                        className="water-size-log-btn"
+                                        onClick={() => addWater(size.value)}
+                                    >
+                                        <Droplet size={12} />
+                                        <span>{size.label}</span>
+                                    </button>
+                                </BorderGlow>
                             ))}
                         </div>
 
@@ -377,17 +405,24 @@ const JournalPage = () => {
                                     {configuredMeds.map((med, idx) => {
                                         const isTaken = medsTaken.includes(med);
                                         return (
-                                            <button
+                                            <BorderGlow
                                                 key={idx}
-                                                type="button"
-                                                className={`med-log-btn ${isTaken ? 'taken' : ''}`}
-                                                onClick={() => toggleMedicationTaken(med)}
+                                                glowRadius={16}
+                                                backgroundColor="transparent"
+                                                fillOpacity={0.25}
+                                                className={`med-log-glow-wrapper ${isTaken ? 'taken' : ''}`}
                                             >
-                                                <span className="med-checkbox">
-                                                    {isTaken && <Check size={12} />}
-                                                </span>
-                                                <span className="med-name-text">{med}</span>
-                                            </button>
+                                                <button
+                                                    type="button"
+                                                    className={`med-log-btn ${isTaken ? 'taken' : ''}`}
+                                                    onClick={() => toggleMedicationTaken(med)}
+                                                >
+                                                    <span className="med-checkbox">
+                                                        {isTaken && <Check size={12} />}
+                                                    </span>
+                                                    <span className="med-name-text">{med}</span>
+                                                </button>
+                                            </BorderGlow>
                                         );
                                     })}
                                 </div>

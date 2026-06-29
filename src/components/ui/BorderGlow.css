@@ -1,0 +1,80 @@
+/* src/components/ui/BorderGlow.css */
+
+.border-glow-card {
+  position: relative;
+  border-radius: var(--border-radius, 12px);
+  padding: 1.5px; /* border thickness matches the padding here */
+  background: transparent;
+  display: flex;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.border-glow-inner {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  border-radius: var(--border-radius, 12px);
+  background: var(--card-bg, #120F17);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+/* Edge light (border spotlight) following the mouse */
+.border-glow-card .edge-light {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  /* Spotlight gradient centered at the cursor coordinates */
+  background: radial-gradient(
+    circle 110px at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(var(--color-accent-rgb), 0.95),
+    transparent 100%
+  );
+  
+  /* Mask to outline only the border area */
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  -webkit-mask-composite: destination-out;
+  padding: 1.5px;
+}
+
+/* Ambient glow spotlight under the card following the mouse */
+.border-glow-card::before {
+  content: "";
+  position: absolute;
+  inset: -15px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+  
+  background: radial-gradient(
+    circle 130px at calc(var(--mouse-x, 50%) + 15px) calc(var(--mouse-y, 50%) + 15px),
+    rgba(var(--color-accent-rgb), 0.45),
+    transparent 100%
+  );
+  filter: blur(15px);
+
+}
+
+/* Reveal light and shadow spotlight effects on hover */
+.border-glow-card:hover .edge-light,
+.border-glow-card.sweep-active .edge-light {
+  opacity: 1;
+}
+
+.border-glow-card:hover::before,
+.border-glow-card.sweep-active::before {
+  opacity: calc(var(--edge-proximity, 100) / 100 * var(--fill-opacity, 0.4));
+}

@@ -10,6 +10,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import SegmentedControl from '../components/ui/SegmentedControl';
 import { BlurReveal } from '../components/ui/BlurReveal';
+import BorderGlow from '../components/ui/BorderGlow';
+import Counter from '../components/ui/Counter';
+
+
 
 const SVG_ICONS = {
     COIN: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8'/%3E%3Cpath d='M12 18V6'/%3E%3C/svg%3E",
@@ -70,6 +74,17 @@ const cardVariants = {
 
 const MarketplacePage = () => {
     const [balance, setBalance] = useState(0);
+    const [displayedBalance, setDisplayedBalance] = useState(0);
+    useEffect(() => {
+        setDisplayedBalance(balance);
+    }, [balance]);
+
+    const triggerCoinJiggle = () => {
+        setDisplayedBalance(prev => prev + 5);
+        setTimeout(() => {
+            setDisplayedBalance(balance);
+        }, 400);
+    };
     const [marketplaceRewards, setMarketplaceRewards] = useState([]);
     const [loading, setLoading] = useState(true);
     const [purchaseLoading, setPurchaseLoading] = useState(null);
@@ -96,7 +111,14 @@ const MarketplacePage = () => {
     const inlineCoverRef = useRef(null);
 
     const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, reward: null });
-    const [selectedTierGroup, setSelectedTierGroup] = useState('tier1');
+    const [selectedTierGroup, setSelectedTierGroup] = useState(() => {
+        return localStorage.getItem('marketplace_selected_tier') || 'tier1';
+    });
+
+    const handleTierChange = (newTier) => {
+        setSelectedTierGroup(newTier);
+        localStorage.setItem('marketplace_selected_tier', newTier);
+    };
     const [globalLevel, setGlobalLevel] = useState(1);
     const [skillLevels, setSkillLevels] = useState({});
     const [skills, setSkills] = useState([]);
@@ -298,7 +320,7 @@ const MarketplacePage = () => {
                         <SegmentedControl
                                 options={TIERS}
                                 value={selectedTierGroup}
-                                onChange={setSelectedTierGroup}
+                                onChange={handleTierChange}
                                 layoutPrefix="tier"
                                 buttonSize={38}
                                 fontSize="0.9rem"
@@ -312,10 +334,17 @@ const MarketplacePage = () => {
                         </BlurReveal>
                     </div>
 
-                    <div className="hryvnia-card liquid-glass">
+                    <div 
+                        className="hryvnia-card liquid-glass interactive-balance-pill"
+                        onClick={triggerCoinJiggle}
+                        style={{ cursor: 'pointer' }}
+                        title="Interactive Balance"
+                    >
                         <Coins size={16} style={{ color: 'var(--color-accent)' }} />
                         <div className="hryvnia-details">
-                            <span className="balance-value">{balance}</span>
+                            <span className="balance-value">
+                                <Counter value={displayedBalance} fontSize={14} fontWeight={700} />
+                            </span>
                             <span className="balance-label">{currencyName}</span>
                         </div>
                     </div>
@@ -355,7 +384,7 @@ const MarketplacePage = () => {
 
                             const hoverAnimation = isLocked || isEditing ? {} : { y: tier === 1 ? -2 : tier === 3 ? -4 : -6 };
 
-                            return (
+                             return (
                                  <motion.div 
                                      key={reward.id} 
                                      variants={cardVariants}
@@ -363,154 +392,169 @@ const MarketplacePage = () => {
                                      className={`reward-card liquid-glass tier-${tier || 1}-card ${coverImage ? 'has-cover-wallpaper' : ''} ${!canAfford ? 'insufficient' : ''} ${isLocked ? 'locked' : ''} ${isEditing ? 'editing' : ''}`}
                                      onContextMenu={(e) => !isEditing && handleContextMenu(e, reward)}
                                  >
-                                 {coverImage && (
-                                     <div 
-                                         className="card-background-image" 
-                                         style={{ backgroundImage: `url(${coverImage})` }} 
-                                     />
-                                 )}
-                                 {coverImage && <div className="card-cover-overlay" />}
-                                 <div className="card-shine" />
-                                 <div className="card-glow" />
-                                 {isLocked && (
-                                     <div className="locked-overlay">
-                                         <div className="lock-icon">🔒</div>
-                                         <div className="lock-requirement">{requirementLabel}</div>
-                                     </div>
-                                 )}
-                                 
-                                 {isEditing ? (
-                                     <div className="reward-content inline-edit-form">
-                                         <div className="inline-edit-row">
-                                             <input
-                                                 ref={inlineNameRef}
-                                                 type="text"
-                                                 className="inline-edit-input inline-edit-name"
-                                                 value={editForm.name}
-                                                 onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                                 placeholder="Reward Name"
-                                                 required
-                                                 onKeyDown={e => {
-                                                     if (e.key === 'Enter') handleSaveInlineEdit(reward.id);
-                                                     if (e.key === 'Escape') handleCancelInlineEdit();
-                                                 }}
+                                     <BorderGlow
+                                         glowColor={tier === 1 ? '260 85 65' : tier === 2 ? '195 85 65' : '45 90 60'}
+                                         backgroundColor="transparent"
+                                         borderRadius={12}
+                                         className="reward-card-glow-wrapper"
+                                     >
+                                         {coverImage && (
+                                             <div 
+                                                 className="card-background-image" 
+                                                 style={{ backgroundImage: `url(${coverImage})` }} 
                                              />
-                                         </div>
-                                         <div className="inline-edit-row">
-                                             <textarea
-                                                 ref={inlineDescRef}
-                                                 className="inline-edit-textarea inline-edit-description"
-                                                 value={editForm.sensoryDescription}
-                                                 onChange={e => setEditForm({ ...editForm, sensoryDescription: e.target.value })}
-                                                 placeholder="ADHD-safe description"
-                                                 rows={2}
-                                                 onKeyDown={e => {
-                                                     if (e.key === 'Escape') handleCancelInlineEdit();
-                                                 }}
-                                             />
-                                         </div>
-                                         <div className="inline-edit-row">
-                                             <input
-                                                 ref={inlineCoverRef}
-                                                 type="text"
-                                                 className="inline-edit-input inline-edit-cover"
-                                                 value={editForm.coverUrl}
-                                                 onChange={e => setEditForm({ ...editForm, coverUrl: e.target.value })}
-                                                 placeholder="Cover image URL"
-                                                 onKeyDown={e => {
-                                                     if (e.key === 'Enter') handleSaveInlineEdit(reward.id);
-                                                     if (e.key === 'Escape') handleCancelInlineEdit();
-                                                 }}
-                                             />
-                                         </div>
-                                         <div className="inline-edit-row">
-                                             <select
-                                                 ref={inlineTierRef}
-                                                 className="inline-edit-select inline-edit-tier"
-                                                 value={editForm.rewardTier}
-                                                 onChange={e => setEditForm({ ...editForm, rewardTier: Number(e.target.value) })}
-                                                 onKeyDown={e => {
-                                                     if (e.key === 'Escape') handleCancelInlineEdit();
-                                                 }}
-                                             >
-                                                 <option value={1}>Tier 1 (Micro-Resets)</option>
-                                                 <option value={2}>Tier 2 (Mid-Resets)</option>
-                                                 <option value={3}>Tier 3 (Epic Milestones)</option>
-                                             </select>
-                                         </div>
-                                     </div>
-                                 ) : (
-                                     <div className="reward-content">
-                                         <h3 className="reward-name">{reward.name}</h3>
-                                         <p className="reward-description">
-                                             {reward.metadata?.sensoryDescription || "No description available."}
-                                         </p>
-                                     </div>
-                                 )}
+                                         )}
+                                         {coverImage && <div className="card-cover-overlay" />}
+                                         <div className="card-shine" />
+                                         <div className="card-glow" />
+                                         {isLocked && (
+                                             <div className="locked-overlay">
+                                                 <div className="lock-icon">🔒</div>
+                                                 <div className="lock-requirement">{requirementLabel}</div>
+                                             </div>
+                                         )}
+                                         
+                                         {isEditing ? (
+                                             <div className="reward-content inline-edit-form">
+                                                 <div className="inline-edit-row">
+                                                     <input
+                                                         ref={inlineNameRef}
+                                                         type="text"
+                                                         className="inline-edit-input inline-edit-name"
+                                                         value={editForm.name}
+                                                         onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                                                         placeholder="Reward Name"
+                                                         required
+                                                         onKeyDown={e => {
+                                                             if (e.key === 'Enter') handleSaveInlineEdit(reward.id);
+                                                             if (e.key === 'Escape') handleCancelInlineEdit();
+                                                         }}
+                                                     />
+                                                 </div>
+                                                 <div className="inline-edit-row">
+                                                     <textarea
+                                                         ref={inlineDescRef}
+                                                         className="inline-edit-textarea inline-edit-description"
+                                                         value={editForm.sensoryDescription}
+                                                         onChange={e => setEditForm({ ...editForm, sensoryDescription: e.target.value })}
+                                                         placeholder="ADHD-safe description"
+                                                         rows={2}
+                                                         onKeyDown={e => {
+                                                             if (e.key === 'Escape') handleCancelInlineEdit();
+                                                         }}
+                                                     />
+                                                 </div>
+                                                 <div className="inline-edit-row">
+                                                     <input
+                                                         ref={inlineCoverRef}
+                                                         type="text"
+                                                         className="inline-edit-input inline-edit-cover"
+                                                         value={editForm.coverUrl}
+                                                         onChange={e => setEditForm({ ...editForm, coverUrl: e.target.value })}
+                                                         placeholder="Cover image URL"
+                                                         onKeyDown={e => {
+                                                             if (e.key === 'Enter') handleSaveInlineEdit(reward.id);
+                                                             if (e.key === 'Escape') handleCancelInlineEdit();
+                                                         }}
+                                                     />
+                                                 </div>
+                                                 <div className="inline-edit-row">
+                                                     <select
+                                                         ref={inlineTierRef}
+                                                         className="inline-edit-select inline-edit-tier"
+                                                         value={editForm.rewardTier}
+                                                         onChange={e => setEditForm({ ...editForm, rewardTier: Number(e.target.value) })}
+                                                         onKeyDown={e => {
+                                                             if (e.key === 'Escape') handleCancelInlineEdit();
+                                                         }}
+                                                     >
+                                                         <option value={1}>Tier 1 (Micro-Resets)</option>
+                                                         <option value={2}>Tier 2 (Mid-Resets)</option>
+                                                         <option value={3}>Tier 3 (Epic Milestones)</option>
+                                                     </select>
+                                                 </div>
+                                             </div>
+                                         ) : (
+                                             <div className="reward-content">
+                                                 <h3 className="reward-name">{reward.name}</h3>
+                                                 <p className="reward-description">
+                                                     {reward.metadata?.sensoryDescription || "No description available."}
+                                                 </p>
+                                             </div>
+                                         )}
 
-                                 <div className="reward-footer">
-                                     {isEditing ? (
-                                         <>
-                                             <div className="reward-cost editing-cost">
-                                                 <Coins size={14} style={{ color: 'var(--color-accent)' }} />
-                                                 <input
-                                                     ref={inlinePriceRef}
-                                                     type="number"
-                                                     className="inline-edit-input inline-edit-cost-input"
-                                                     value={editForm.hryvniaCost}
-                                                     onChange={e => setEditForm({ ...editForm, hryvniaCost: e.target.value })}
-                                                     min="0"
-                                                     onKeyDown={e => {
-                                                         if (e.key === 'Enter') handleSaveInlineEdit(reward.id);
-                                                         if (e.key === 'Escape') handleCancelInlineEdit();
-                                                     }}
-                                                 />
-                                             </div>
-                                             <div className="inline-edit-actions">
-                                                 <button 
-                                                     className="btn btn-secondary inline-cancel-btn"
-                                                     onClick={handleCancelInlineEdit}
-                                                 >
-                                                     Cancel
-                                                 </button>
-                                                 <button 
-                                                     className="btn btn-primary inline-save-btn"
-                                                     onClick={() => handleSaveInlineEdit(reward.id)}
-                                                     disabled={!editForm.name.trim()}
-                                                 >
-                                                     Save
-                                                 </button>
-                                             </div>
-                                         </>
-                                     ) : (
-                                         <>
-                                             <div className="reward-cost">
-                                                 <Coins size={14} style={{ color: 'var(--color-accent)' }} />
-                                                 <span className="cost-value">{reward.metadata?.hryvniaCost || 0}</span>
-                                             </div>
-                                             <button
-                                                 className={`btn btn-secondary buy-btn-full ${!canAfford || isLocked ? 'disabled' : ''}`}
-                                                 onClick={() => !isLocked && handleBuy(reward.id)}
-                                                 disabled={!canAfford || isPurchasing || isLocked}
-                                             >
-                                                 <span>
-                                                     {isLocked ? 'Locked' : (isPurchasing ? 'Processing...' : (canAfford ? 'Buy' : `Insufficient ${currencyName}`))}
-                                                 </span>
-                                             </button>
-                                         </>
-                                     )}
-                                 </div>
-                             </motion.div>
+                                         <div className="reward-footer">
+                                             {isEditing ? (
+                                                 <>
+                                                     <div className="reward-cost editing-cost">
+                                                         <Coins size={14} style={{ color: 'var(--color-accent)' }} />
+                                                         <input
+                                                             ref={inlinePriceRef}
+                                                             type="number"
+                                                             className="inline-edit-input inline-edit-cost-input"
+                                                             value={editForm.hryvniaCost}
+                                                             onChange={e => setEditForm({ ...editForm, hryvniaCost: e.target.value })}
+                                                             min="0"
+                                                             onKeyDown={e => {
+                                                                 if (e.key === 'Enter') handleSaveInlineEdit(reward.id);
+                                                                 if (e.key === 'Escape') handleCancelInlineEdit();
+                                                             }}
+                                                         />
+                                                     </div>
+                                                     <div className="inline-edit-actions">
+                                                         <button 
+                                                             className="btn btn-secondary inline-cancel-btn"
+                                                             onClick={handleCancelInlineEdit}
+                                                         >
+                                                             Cancel
+                                                         </button>
+                                                         <button 
+                                                             className="btn btn-primary inline-save-btn"
+                                                             onClick={() => handleSaveInlineEdit(reward.id)}
+                                                             disabled={!editForm.name.trim()}
+                                                         >
+                                                             Save
+                                                         </button>
+                                                     </div>
+                                                 </>
+                                             ) : (
+                                                 <>
+                                                     <div className="reward-cost">
+                                                         <Coins size={14} style={{ color: 'var(--color-accent)' }} />
+                                                         <span className="cost-value">{reward.metadata?.hryvniaCost || 0}</span>
+                                                     </div>
+                                                     <button
+                                                         className={`btn btn-secondary buy-btn-full ${!canAfford || isLocked ? 'disabled' : ''}`}
+                                                         onClick={() => !isLocked && handleBuy(reward.id)}
+                                                         disabled={!canAfford || isPurchasing || isLocked}
+                                                     >
+                                                         <span>
+                                                             {isLocked ? 'Locked' : (isPurchasing ? 'Processing...' : (canAfford ? 'Buy' : `Insufficient ${currencyName}`))}
+                                                         </span>
+                                                     </button>
+                                                 </>
+                                             )}
+                                         </div>
+                                     </BorderGlow>
+                                 </motion.div>
                         );
                     })}
                     </motion.div>
                 </AnimatePresence>
 
                 <div className="marketplace-footer">
-                    <button className={`refill-button ${isRefilling ? 'is-refilling' : ''}`} onClick={handleRefill}>
-                        <NodeIcon iconUrl={SVG_ICONS.REFILL} size={16} />
-                        Refill Marketplace
-                    </button>
+                    <BorderGlow
+                        glowRadius={22}
+                        borderRadius={12}
+                        backgroundColor="transparent"
+                        fillOpacity={0.25}
+                        className="refill-button-glow-wrapper"
+                    >
+                        <button className={`refill-button ${isRefilling ? 'is-refilling' : ''}`} onClick={handleRefill}>
+                            <NodeIcon iconUrl={SVG_ICONS.REFILL} size={16} />
+                            Refill Marketplace
+                        </button>
+                    </BorderGlow>
                     <div className="refill-info-wrapper">
                         <span className="refill-info-icon">?</span>
                         <div className="refill-tooltip">

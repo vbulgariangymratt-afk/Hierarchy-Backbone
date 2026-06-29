@@ -14,7 +14,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import SegmentedControl from '../components/ui/SegmentedControl';
 import JournalPage from '../pages/JournalPage';
+import Counter from '../components/ui/Counter';
 import './MainLayout.css';
+
 
 const THEMES = [
   { id: "light", title: "Light", icon: Sun },
@@ -40,6 +42,18 @@ const MainLayout = () => {
     const hryvniaBalance = rootNode?.metadata?.hryvniaBalance || 0;
     const currencyName = rootNode?.metadata?.currencyName || 'EKKOS';
     const [bannerDismissed, setBannerDismissed] = useState(false);
+
+    const [displayedBalance, setDisplayedBalance] = useState(hryvniaBalance);
+    useEffect(() => {
+        setDisplayedBalance(hryvniaBalance);
+    }, [hryvniaBalance]);
+
+    const triggerCoinJiggle = () => {
+        setDisplayedBalance(prev => prev + 5);
+        setTimeout(() => {
+            setDisplayedBalance(hryvniaBalance);
+        }, 400);
+    };
     
     // Auth & Safety Net Banner state
     const [user, setUser] = useState(null);
@@ -147,9 +161,16 @@ const MainLayout = () => {
                 
                 <div className="header-right">
                     {energyLevel > 3 && (
-                        <div className="hryvnia-display-header-pill">
+                        <div 
+                            className="hryvnia-display-header-pill interactive-balance-pill"
+                            onClick={triggerCoinJiggle}
+                            style={{ cursor: 'pointer' }}
+                            title="Interactive Balance"
+                        >
                             <Coins size={14} className="hryvnia-icon" />
-                            <span className="hryvnia-amount">{hryvniaBalance}</span>
+                            <span className="hryvnia-amount">
+                                <Counter value={displayedBalance} fontSize={14} fontWeight={600} />
+                            </span>
                             <span className="hryvnia-name">{currencyName.charAt(0).toUpperCase() + currencyName.slice(1).toLowerCase()}</span>
                         </div>
                     )}
@@ -171,23 +192,32 @@ const MainLayout = () => {
                         
                         <AnimatePresence>
                             {showDailyLog && (
-                                <motion.div
-                                    ref={dailyLogContainerRef}
-                                    className="daily-log-popover liquid-glass"
-                                    style={{ transformOrigin: 'top right' }}
-                                    initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
-                                    animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                    exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
-                                    transition={{ type: 'spring', stiffness: 700, damping: 20 }}
-                                >
-                                    <div className="daily-log-popover-header">
-                                        <h3>Daily Log</h3>
-                                        <button className="close-popover-btn" onClick={() => setShowDailyLog(false)}>✕</button>
-                                    </div>
-                                    <div className="daily-log-popover-content scrollbar-hidden">
-                                        <JournalPage />
-                                    </div>
-                                </motion.div>
+                                <>
+                                    <motion.div
+                                        className="daily-log-backdrop"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        onClick={() => setShowDailyLog(false)}
+                                    />
+                                    <motion.div
+                                        ref={dailyLogContainerRef}
+                                        className="daily-log-popover liquid-glass"
+                                        style={{ transformOrigin: 'top right' }}
+                                        initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
+                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                        exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
+                                        transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                                    >
+                                        <div className="daily-log-popover-header">
+                                            <h3>Daily Log</h3>
+                                            <button className="close-popover-btn" onClick={() => setShowDailyLog(false)}>✕</button>
+                                        </div>
+                                        <div className="daily-log-popover-content scrollbar-hidden">
+                                            <JournalPage />
+                                        </div>
+                                    </motion.div>
+                                </>
                             )}
                         </AnimatePresence>
                     </div>
