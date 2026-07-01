@@ -10,6 +10,27 @@
     position: relative;
 }
 
+.timeline-side-rays {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 600px;
+    height: 600px;
+    z-index: 0 !important;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    
+    /* Smooth CSS mask to blend canvas boundaries to 100% transparency on the left */
+    mask-image: radial-gradient(circle at 0% 0%, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at 0% 0%, black 30%, transparent 80%);
+}
+
+[data-theme="dark"] .timeline-side-rays {
+    opacity: 0.85; /* Only show in dark mode */
+}
+
 .timeline-header {
     margin-bottom: 40px;
     margin-top: 40px;
@@ -21,11 +42,12 @@
 }
 
 .timeline-header h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
+    font-family: var(--font-family-sans) !important;
+    font-size: 38px;
+    font-weight: 600;
     margin-bottom: 8px;
     color: var(--text-primary);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
 }
 
 .timeline-header p {
@@ -148,9 +170,10 @@
     border-radius: 20px;
     padding: 0;
     cursor: pointer;
-    transition: background-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-                border-color 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
-                box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: background-color 0.3s cubic-bezier(0.2, 0, 0, 1),
+                border-color 0.3s cubic-bezier(0.2, 0, 0, 1),
+                box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1),
+                transform 0.3s cubic-bezier(0.2, 0, 0, 1);
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     overflow: hidden;
@@ -197,6 +220,27 @@
     margin: 0;
     color: var(--text-primary);
     letter-spacing: -0.015em;
+}
+
+/* Skills preview collapses simultaneously with the accordion opening — no jolt */
+.skills-preview-accordion {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 185ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.skills-preview-accordion.is-collapsed {
+    grid-template-rows: 0fr;
+}
+
+.skills-preview-accordion .node-card-skills-list {
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 150ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.skills-preview-accordion.is-collapsed .node-card-skills-list {
+    opacity: 0;
 }
 
 .node-card-skills-list {
@@ -287,29 +331,46 @@
     border-color: var(--color-accent) !important;
 }
 
-.expand-hint {
-    color: var(--color-text-secondary);
+.expand-chevron-wrapper {
+    display: inline-flex;
+    color: var(--text-secondary);
     opacity: 0.5;
-    padding-top: 4px;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transform: scaleY(1);
+    transform-origin: center;
+    transition: transform 185ms cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease;
 }
 
-.node-card:hover .expand-hint {
+.expand-chevron-wrapper path {
+    vector-effect: non-scaling-stroke;
+}
+
+.node-card:hover .expand-chevron-wrapper {
     opacity: 0.9;
 }
 
-/* CSS grid accordion — animates height: 0 → auto with zero JS and zero snap */
+.expand-chevron-wrapper.is-expanded {
+    transform: scaleY(-1);
+}
+
+/* CSS grid accordion — animates height: 0 → auto with transitions.dev curves and blur-in fade */
 .node-card-accordion {
+    --acc-expand: 210ms;
+    --acc-collapse: 185ms;
+    --acc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 0.28s cubic-bezier(0.2, 0, 0, 1),
-                opacity 0.22s ease;
+    transition: grid-template-rows var(--acc-collapse) var(--acc-ease),
+                opacity var(--acc-collapse) var(--acc-ease);
     opacity: 0;
 }
 
 .node-card-accordion.is-open {
     grid-template-rows: 1fr;
     opacity: 1;
+    transition: grid-template-rows var(--acc-expand) var(--acc-ease),
+                opacity var(--acc-expand) var(--acc-ease);
 }
 
 .node-card-expanded-content {
@@ -319,6 +380,13 @@
     flex-direction: column;
     gap: 20px;
     padding: 0 24px 24px 24px;
+    opacity: 0;
+    transition: opacity var(--acc-collapse) var(--acc-ease);
+}
+
+.node-card-accordion.is-open .node-card-expanded-content {
+    opacity: 1;
+    transition: opacity var(--acc-expand) var(--acc-ease);
 }
 
 @keyframes timelineFadeIn {
@@ -538,6 +606,61 @@
     font-size: 0.72rem;
     font-weight: 700;
     color: var(--color-accent);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+                background-color 0.2s ease,
+                border-color 0.2s ease;
+}
+
+.level-up-badge-header:active {
+    transform: scale(0.95);
+}
+
+.level-up-badge-header:before,
+.level-up-badge-header:after {
+    position: absolute;
+    content: "";
+    width: 140%;
+    left: 50%;
+    height: 100%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background-repeat: no-repeat;
+    pointer-events: none;
+}
+
+.level-up-badge-header:hover:before,
+.level-up-badge-header:active:before {
+    top: -70%;
+    background-image: radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, transparent 20%, var(--color-accent) 20%, transparent 30%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, transparent 10%, var(--color-accent) 15%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%);
+    background-size: 10% 10%, 20% 20%, 15% 15%, 20% 20%, 18% 18%, 10% 10%, 15% 15%,
+        10% 10%, 18% 18%;
+    background-position: 50% 120%;
+    animation: rewardTopBubbles 0.6s ease;
+}
+
+.level-up-badge-header:hover:after,
+.level-up-badge-header:active:after {
+    bottom: -70%;
+    background-image: radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, transparent 10%, var(--color-accent) 15%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%),
+        radial-gradient(circle, var(--color-accent) 20%, transparent 20%);
+    background-size: 15% 15%, 20% 20%, 18% 18%, 20% 20%, 15% 15%, 20% 20%, 18% 18%;
+    background-position: 50% 0%;
+    animation: rewardBottomBubbles 0.6s ease;
 }
 
 .aura-gain-tag {
@@ -687,6 +810,39 @@
     }
     100% {
         background-position: 150% 0;
+    }
+}
+
+/* Confetti bubble animations copied from MarketplacePage.css */
+@keyframes rewardTopBubbles {
+    0% {
+        background-position: 5% 90%, 10% 90%, 10% 90%, 15% 90%, 25% 90%, 25% 90%,
+            40% 90%, 55% 90%, 70% 90%;
+    }
+    50% {
+        background-position: 0% 80%, 0% 20%, 10% 40%, 20% 0%, 30% 30%, 22% 50%,
+            50% 50%, 65% 20%, 90% 30%;
+    }
+    100% {
+        background-position: 0% 70%, 0% 10%, 10% 30%, 20% -10%, 30% 20%, 22% 40%,
+            50% 40%, 65% 10%, 90% 20%;
+        background-size: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
+    }
+}
+
+@keyframes rewardBottomBubbles {
+    0% {
+        background-position: 10% -10%, 30% 10%, 55% -10%, 70% -10%, 85% -10%,
+            70% -10%, 70% 0%;
+    }
+    50% {
+        background-position: 0% 80%, 20% 80%, 45% 60%, 60% 100%, 75% 70%, 95% 60%,
+            105% 0%;
+    }
+    100% {
+        background-position: 0% 90%, 20% 90%, 45% 70%, 60% 110%, 75% 80%, 95% 70%,
+            110% 10%;
+        background-size: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
     }
 }
 

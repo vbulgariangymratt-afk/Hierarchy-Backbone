@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import * as LucideIcons from 'lucide-react';
 
 const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon', size = 20 }) => {
     // Process SVG data URLs to enable dynamic theming
@@ -32,6 +33,18 @@ const NodeIcon = ({ iconUrl, emoji, defaultIcon = '🌐', className = 'app-icon'
     }, [iconUrl]);
 
     const renderIcon = () => {
+        // Handle Lucide icon name resolution
+        if (iconUrl && typeof iconUrl === 'string' && LucideIcons[iconUrl]) {
+            const LucideComp = LucideIcons[iconUrl];
+            return (
+                <LucideComp
+                    size={size}
+                    className={className}
+                    style={{ color: 'currentColor', flexShrink: 0 }}
+                />
+            );
+        }
+
         // Handle data:image URLs directly as requested (Non-SVG images)
         if (iconUrl && typeof iconUrl === 'string' && iconUrl.startsWith('data:image') && !iconUrl.startsWith('data:image/svg+xml')) {
             // If it's an SVG and we're NOT using the img route, processedSvg would handle it.

@@ -15,6 +15,7 @@ import { supabase, loginWithGoogle } from '../lib/supabase';
 import SegmentedControl from '../components/ui/SegmentedControl';
 import JournalPage from '../pages/JournalPage';
 import Counter from '../components/ui/Counter';
+import CustomThemeSwitch from '../components/ui/CustomThemeSwitch';
 import './MainLayout.css';
 
 
@@ -71,6 +72,29 @@ const MainLayout = () => {
     // Daily Log popover state
     const [showDailyLog, setShowDailyLog] = useState(false);
     const dailyLogContainerRef = React.useRef(null);
+
+    // Custom theme switch state (double-click trigger)
+    const [showCustomSwitch, setShowCustomSwitch] = useState(false);
+    const [lastThemeClick, setLastThemeClick] = useState({ theme: null, time: 0 });
+
+    const handleThemeChange = (newTheme) => {
+        const now = Date.now();
+        if (newTheme === themePreference && lastThemeClick.theme === newTheme && now - lastThemeClick.time < 350) {
+            setShowCustomSwitch(true);
+        } else {
+            setLastThemeClick({ theme: newTheme, time: now });
+        }
+        setTheme(newTheme);
+    };
+
+    const handleCustomSwitchToggle = (e) => {
+        const targetTheme = e.target.checked ? 'dark' : 'light';
+        setTheme(targetTheme);
+    };
+
+    const handleCustomSwitchDoubleClick = () => {
+        setShowCustomSwitch(false);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -224,15 +248,28 @@ const MainLayout = () => {
                     
                     {energyLevel > 3 && (
                         <div className="header-controls-group">
-                            <SegmentedControl
-                                options={THEMES}
-                                value={themePreference}
-                                onChange={setTheme}
-                                layoutPrefix="theme"
-                                buttonSize={28}
-                                fontSize="0.8rem"
-                                activePadding="0 12px"
-                            />
+                            {showCustomSwitch ? (
+                                <div 
+                                    onDoubleClick={handleCustomSwitchDoubleClick}
+                                    title="Double click to switch back to normal theme controls"
+                                    style={{ display: 'flex', alignItems: 'center', height: '28px' }}
+                                >
+                                    <CustomThemeSwitch
+                                        checked={themePreference === 'dark'}
+                                        onChange={handleCustomSwitchToggle}
+                                    />
+                                </div>
+                            ) : (
+                                <SegmentedControl
+                                    options={THEMES}
+                                    value={themePreference}
+                                    onChange={handleThemeChange}
+                                    layoutPrefix="theme"
+                                    buttonSize={28}
+                                    fontSize="0.8rem"
+                                    activePadding="0 12px"
+                                />
+                            )}
                             
                             <SegmentedControl
                                 options={MODES}

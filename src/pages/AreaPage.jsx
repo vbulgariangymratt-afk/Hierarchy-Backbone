@@ -4,6 +4,7 @@ import { backbone, repository, NodeTypes, IdentityTiers } from '../backbone-v2/i
 import CreateSkillModal from '../components/CreateSkillModal';
 import NodeIcon from '../components/NodeIcon';
 import SkillCard from '../components/SkillCard';
+import IconPickerModal from '../components/modals/IconPickerModal';
 import './AreaPage.css';
 
 const SVG_ICONS = {
@@ -34,6 +35,7 @@ const AreaPage = () => {
     const [isSleepingSkillsCollapsed, setIsSleepingSkillsCollapsed] = useState(true);
     const [isEditingArea, setIsEditingArea] = useState(false);
     const [areaEditForm, setAreaEditForm] = useState({ name: '', identityAnchor: '', iconUrl: '' });
+    const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
     
     // Inline rename state for skills and area title
     const [inlineEditingId, setInlineEditingId] = useState(null);
@@ -212,6 +214,26 @@ const AreaPage = () => {
         }
     };
 
+    const handleIconSelect = async (iconName) => {
+        if (isEditingArea) {
+            setAreaEditForm(prev => ({ ...prev, iconUrl: iconName }));
+        } else {
+            try {
+                const updatedMetadata = {
+                    ...area.metadata,
+                    iconUrl: iconName
+                };
+                await backbone.updateNode(area.id, { metadata: updatedMetadata });
+                setArea(prev => ({
+                    ...prev,
+                    metadata: updatedMetadata
+                }));
+            } catch (err) {
+                console.error("Failed to update area icon directly:", err);
+            }
+        }
+    };
+
     const handleDeleteArea = async () => {
         try {
             await backbone.deleteNode(id);
@@ -323,20 +345,37 @@ const AreaPage = () => {
                             </div>
                         </div>
                         <div className="edit-field" style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Icon URL (notionicons.so)</label>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Area Icon</label>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <input
-                                    className="edit-input"
-                                    value={areaEditForm.iconUrl}
-                                    placeholder="https://notionicons.so/icon/..."
-                                    onChange={e => setAreaEditForm({ ...areaEditForm, iconUrl: e.target.value })}
-                                    style={{ flex: 1, padding: '10px', background: 'var(--bg-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
-                                />
-                                {areaEditForm.iconUrl && (
-                                    <div className="icon-preview" style={{ width: '38px', height: '38px', background: 'var(--bg-surface)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)' }}>
-                                        <NodeIcon iconUrl={areaEditForm.iconUrl} size={24} />
-                                    </div>
-                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsIconPickerOpen(true)}
+                                    style={{
+                                        flex: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '10px 14px',
+                                        background: 'var(--bg-surface)',
+                                        border: '1px solid var(--color-border)',
+                                        borderRadius: '8px',
+                                        color: 'var(--color-text)',
+                                        cursor: 'pointer',
+                                        textAlign: 'left'
+                                    }}
+                                >
+                                    <span style={{ fontSize: '13px', opacity: areaEditForm.iconUrl ? 1 : 0.5 }}>
+                                        {areaEditForm.iconUrl ? `Icon: ${areaEditForm.iconUrl}` : 'Select a Lucide icon...'}
+                                    </span>
+                                    <span style={{ fontSize: '11px', color: 'var(--color-accent)', fontWeight: 600 }}>Change</span>
+                                </button>
+                                <div 
+                                    className="icon-preview" 
+                                    onClick={() => setIsIconPickerOpen(true)}
+                                    style={{ width: '38px', height: '38px', background: 'var(--bg-surface)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)', cursor: 'pointer' }}
+                                >
+                                    <NodeIcon iconUrl={areaEditForm.iconUrl} size={24} />
+                                </div>
                             </div>
                         </div>
                         {/* Sleeping Skills — Delete Section */}
@@ -418,7 +457,20 @@ const AreaPage = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                                    <NodeIcon iconUrl={area.metadata?.iconUrl} emoji={area.icon} size={32} />
+                                    <div 
+                                        onClick={() => {
+                                            setAreaEditForm({
+                                                name: area.name,
+                                                identityAnchor: area.metadata?.identityAnchor || '',
+                                                iconUrl: area.metadata?.iconUrl || ''
+                                            });
+                                            setIsIconPickerOpen(true);
+                                        }}
+                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                        title="Click to select Lucide icon"
+                                    >
+                                        <NodeIcon iconUrl={area.metadata?.iconUrl} emoji={area.icon} size={32} />
+                                    </div>
                                     {inlineEditingId === area.id ? (
                                         <input
                                             ref={inlineInputRef}
@@ -481,9 +533,9 @@ const AreaPage = () => {
             </section>
 
             <section className="skills-section sleeping-section">
-                <div className="section-header" onClick={() => setIsSleepingSkillsCollapsed(!isSleepingSkillsCollapsed)}>
+                <div className="section-header" onClick={() => setIsSleepingSkillsCollapsed(!isSleepingSkillsCollapsed)} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', marginBottom: '24px' }}>
                     <NodeIcon iconUrl={isSleepingSkillsCollapsed ? SVG_ICONS.CHEVRON_RIGHT : SVG_ICONS.CHEVRON_DOWN} size={14} />
-                    <h2>Sleeping Skills</h2>
+                    <h2 className="section-title">Sleeping Skills</h2>
                     <span className="count-badge">{sleepingSkills.length}</span>
                 </div>
 
@@ -622,6 +674,13 @@ const AreaPage = () => {
                     </div>
                 </div>
             )}
+            {/* Icon Picker Modal */}
+            <IconPickerModal
+                isOpen={isIconPickerOpen}
+                onClose={() => setIsIconPickerOpen(false)}
+                onSelect={handleIconSelect}
+                currentIcon={isEditingArea ? areaEditForm.iconUrl : area.metadata?.iconUrl}
+            />
         </div>
     );
 };

@@ -91,7 +91,7 @@
 .dark.solid-mode .sidebar {
     background: var(--color-bg-sidebar-solid) !important;
     border-right: 1px solid !important; /* Declare 1px solid border frame */
-    border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 250px) 1 !important; /* Specular top-corner highlight gradient */
+    border-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.18) 80px, rgba(255, 255, 255, 0.08) 250px) 1 !important; /* Specular top-corner highlight gradient matching light rays */
     box-shadow: none !important;
 }
 

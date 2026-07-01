@@ -570,9 +570,7 @@
     width: 100%;
 }
 
-.water-size-log-glow-wrapper::before {
-    display: none !important; /* Hide backglow */
-}
+
 
 .water-size-log-glow-wrapper .water-size-log-btn {
     border: none !important;
@@ -614,9 +612,7 @@
     background: rgba(16, 185, 129, 0.2);
 }
 
-.med-log-glow-wrapper::before {
-    display: none !important; /* Hide backglow */
-}
+
 
 .med-log-glow-wrapper .med-log-btn {
     border: none !important;
@@ -641,4 +637,25 @@
 
 .solid-mode .med-log-glow-wrapper.taken:hover .border-glow-inner {
     background: rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Local backglow overrides for daily log buttons: clip inside borders, softer and subtle spotlight */
+.water-size-log-glow-wrapper,
+.med-log-glow-wrapper {
+    overflow: hidden !important;
+}
+
+.water-size-log-glow-wrapper::before,
+.med-log-glow-wrapper::before {
+    background: radial-gradient(
+        circle 75px at calc(var(--mouse-x, 50%) + 15px) calc(var(--mouse-y, 50%) + 15px),
+        rgba(var(--color-accent-rgb), 0.55),
+        transparent 100%
+    ) !important;
+    filter: blur(12px) !important;
+}
+
+.water-size-log-glow-wrapper:hover::before,
+.med-log-glow-wrapper:hover::before {
+    opacity: 0.55 !important;
 }

@@ -12,6 +12,7 @@ import HealthTooltip from '../components/HealthTooltip';
 import SidebarSpotlightCard from '../components/sidebar/SidebarSpotlightCard';
 import { useBackboneStore } from '../store/backboneStore';
 import { useShallow } from 'zustand/react/shallow';
+import IconPickerModal from '../components/modals/IconPickerModal';
 import './Sidebar.css';
 import { Coins, LayoutDashboard, ShoppingBag, BookOpen, Calendar, Target, Edit3, Settings, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -466,21 +467,19 @@ const Sidebar = ({ onSkillClick }) => {
         localStorage.setItem('sidebar_maintenance_expanded', newState);
     };
 
-    const handleSaveIcon = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const handleIconSelect = async (iconName) => {
         if (!editingIconNode) return;
-
         try {
             await backbone.updateNode(editingIconNode.id, {
                 metadata: {
                     ...editingIconNode.metadata,
-                    iconUrl: tempIconUrl.trim() || null
+                    iconUrl: iconName
                 }
             });
-            setEditingIconNode(null);
         } catch (err) {
             console.error('Failed to update icon:', err);
+        } finally {
+            setEditingIconNode(null);
         }
     };
 
@@ -805,29 +804,6 @@ const Sidebar = ({ onSkillClick }) => {
                                                                 iconUrl={area.metadata?.iconUrl}
                                                                 defaultIcon="🌐"
                                                             />
-                                                            {editingIconNode?.id === area.id && (
-                                                                <div className="icon-edit-popover" onClick={e => e.stopPropagation()}>
-                                                                    <div className="popover-header">Change Icon</div>
-                                                                    <input
-                                                                        autoFocus
-                                                                        className="popover-input"
-                                                                        placeholder="Paste icon URL..."
-                                                                        value={tempIconUrl}
-                                                                        onChange={e => setTempIconUrl(e.target.value)}
-                                                                        onKeyDown={e => {
-                                                                            if (e.key === 'Enter') handleSaveIcon(e);
-                                                                            if (e.key === 'Escape') setEditingIconNode(null);
-                                                                        }}
-                                                                    />
-                                                                    <div className="popover-preview">
-                                                                        <NodeIcon iconUrl={tempIconUrl} size={24} />
-                                                                    </div>
-                                                                    <div className="popover-actions">
-                                                                        <button className="confirm-btn" onClick={handleSaveIcon}>Save</button>
-                                                                        <button className="cancel-btn" onClick={() => setEditingIconNode(null)}>Cancel</button>
-                                                                    </div>
-                                                                </div>
-                                                            )}
                                                         </div>
                                                         <span className="btn-text">{area.name}</span>
                                                         {area.isActive && (
@@ -918,6 +894,13 @@ const Sidebar = ({ onSkillClick }) => {
                     </div>
                 </div>
             )}
+            {/* Icon Picker Modal */}
+            <IconPickerModal
+                isOpen={!!editingIconNode}
+                onClose={() => setEditingIconNode(null)}
+                onSelect={handleIconSelect}
+                currentIcon={editingIconNode?.metadata?.iconUrl}
+            />
         </aside>
     );
 };

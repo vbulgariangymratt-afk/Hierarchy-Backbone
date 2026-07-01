@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { timelineService } from '../backbone-v2';
+import { timelineService, journalRepo } from '../backbone-v2';
 import { formatDuration } from '../utils/timeUtils';
 import { ChevronRight, ChevronDown, Repeat } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BorderGlow from '../components/ui/BorderGlow';
+import SideRays from '../components/ui/SideRays';
 import './TimelinePage.css';
 
 const streamContainerVariants = {
@@ -48,27 +49,66 @@ const headerVariants = {
     }
 };
 
+const getLocalDateString = (date = new Date()) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const dayVal = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${dayVal}`;
+};
+const getWakeUpLabel = (val) => {
+    if (val === 1) return 'Refreshed';
+    if (val === 2) return 'Light Sleep / Mostly Ok';
+    if (val === 3) return 'Neutral';
+    if (val === 4) return 'Grogginess / Tired';
+    if (val === 5) return 'Exhausted';
+    return null;
+};
+
+const getShutDownLabel = (val) => {
+    if (val === 1) return 'Easy Sleep';
+    if (val === 2) return 'A bit restless';
+    if (val === 3) return 'Neutral';
+    if (val === 4) return 'Delayed shutdown';
+    if (val === 5) return 'Avoided sleep (revenge bedtime procrastination)';
+    return null;
+};
+
 const TimelinePage = () => {
     const [timelineData, setTimelineData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [expandedDays, setExpandedDays] = useState({});
+    
+    // Check if it is daytime (Always true for now so you can see them)
+    const [showRays] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
         const loadData = async () => {
             const end = new Date();
             const start = new Date();
             start.setDate(end.getDate() - 6);
 
             const data = await timelineService.getTimelineRange(start, end);
-            setTimelineData(data);
-
-            // Expand today by default
-            const todayStr = new Date().toISOString().split('T')[0];
-            setExpandedDays({ [todayStr]: true });
-
-            setLoading(false);
+            if (isMounted) {
+                setTimelineData(data);
+                setLoading(false);
+            }
         };
         loadData();
+
+        // Expand today by default on initial mount
+        const todayStr = getLocalDateString();
+        setExpandedDays(prev => ({ [todayStr]: true, ...prev }));
+
+        // Subscribe to real-time updates in the journal database
+        const unsubscribe = journalRepo.subscribe(() => {
+            loadData();
+        });
+
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
     }, []);
 
     const toggleDay = (date) => {
@@ -82,6 +122,18 @@ const TimelinePage = () => {
 
     return (
         <div className="timeline-page">
+            {showRays && (
+                <SideRays
+                    className="timeline-side-rays"
+                    speed={0.8}
+                    rayColor1="#EAB308"
+                    rayColor2="#96c8ff"
+                    intensity={1.25}
+                    spread={1.7}
+                    opacity={0.15}
+                    origin="top-left"
+                />
+            )}
             <motion.header 
                 className="timeline-header"
                 variants={headerVariants}
@@ -118,6 +170,7 @@ const TimelinePage = () => {
 
 const DayNode = ({ day, isExpanded, onToggle }) => {
     const [activeFilter, setActiveFilter] = useState(null);
+    console.log("DayNode day data:", day.date, "hasJournal:", !!day.journalEntry, "journalEntry:", day.journalEntry);
 
     const totalTasks = day.tasksCompleted.length;
     const totalSessions = day.focusSessions.length;
@@ -132,11 +185,11 @@ const DayNode = ({ day, isExpanded, onToggle }) => {
     const isEmpty = totalTasks === 0 && totalSessions === 0 && totalHabits === 0 && totalReps === 0 && !day.journalEntry;
 
     const dateObj = new Date(day.date + 'T12:00:00');
-    const isToday = day.date === new Date().toISOString().split('T')[0];
+    const isToday = day.date === getLocalDateString();
     
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+    const yesterdayStr = getLocalDateString(yesterdayDate);
     const isYesterday = day.date === yesterdayStr;
 
     const handlePillClick = (e, filterType) => {
@@ -159,13 +212,15 @@ const DayNode = ({ day, isExpanded, onToggle }) => {
                     <h3 className="node-title">
                         {isToday ? "Today" : isYesterday ? "Yesterday" : dateObj.toLocaleDateString('en-US', { weekday: 'long' })}
                     </h3>
-                    {activeSkills.length > 0 && !isExpanded && (
-                        <div className="node-card-skills-list">
-                            {activeSkills.map(skill => (
-                                <span key={skill.id} className="node-card-skill-item">
-                                    {skill.name}
-                                </span>
-                            ))}
+                    {activeSkills.length > 0 && (
+                        <div className={`skills-preview-accordion ${isExpanded ? 'is-collapsed' : ''}`}>
+                            <div className="node-card-skills-list">
+                                {activeSkills.map(skill => (
+                                    <span key={skill.id} className="node-card-skill-item">
+                                        {skill.name}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
                     )}
                     <div className="node-pills">
@@ -220,8 +275,10 @@ const DayNode = ({ day, isExpanded, onToggle }) => {
                     </div>
                 </div>
                 
-                <span className="expand-hint">
-                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                <span className={`expand-chevron-wrapper ${isExpanded ? 'is-expanded' : ''}`}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M4 6.5L8 10.5L12 6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                 </span>
             </div>
 
@@ -246,22 +303,54 @@ const DayNode = ({ day, isExpanded, onToggle }) => {
                                 />
                             ))}
 
-                            {/* Journal Pulse */}
-                            {day.journalEntry && (day.journalEntry.activation?.morningActivationLevel || day.journalEntry.notes) && (
-                                <Section title="Daily Log Pulse">
-                                    {day.journalEntry.activation?.morningActivationLevel && (
-                                        <div className="item-row">
-                                            <span>Morning Activation</span>
-                                            <span className="duration-tag">{day.journalEntry.activation.morningActivationLevel.replace('_', ' ')}</span>
-                                        </div>
-                                    )}
-                                    {day.journalEntry.notes && (
-                                        <div className="journal-note-preview">
-                                            "{day.journalEntry.notes}"
-                                        </div>
-                                    )}
-                                </Section>
-                            )}
+                             {/* Journal Pulse */}
+                             {day.journalEntry && (
+                                 day.journalEntry.activation?.morningActivationLevel || 
+                                 day.journalEntry.notes ||
+                                 day.journalEntry.wake_up_ease ||
+                                 day.journalEntry.shut_down_ease ||
+                                 day.journalEntry.hydration_total > 0 ||
+                                 (day.journalEntry.meds_taken && day.journalEntry.meds_taken.length > 0)
+                             ) && (
+                                 <Section title="Daily Log Pulse">
+                                     {day.journalEntry.activation?.morningActivationLevel && (
+                                         <div className="item-row">
+                                             <span>Morning Activation</span>
+                                             <span className="duration-tag">{day.journalEntry.activation.morningActivationLevel.replace('_', ' ')}</span>
+                                         </div>
+                                     )}
+                                     {day.journalEntry.wake_up_ease && getWakeUpLabel(day.journalEntry.wake_up_ease) && (
+                                         <div className="item-row">
+                                             <span>Wake Up quality</span>
+                                             <span className="duration-tag">{getWakeUpLabel(day.journalEntry.wake_up_ease)}</span>
+                                         </div>
+                                     )}
+                                     {day.journalEntry.shut_down_ease && getShutDownLabel(day.journalEntry.shut_down_ease) && (
+                                         <div className="item-row">
+                                             <span>Sleep quality</span>
+                                             <span className="duration-tag">{getShutDownLabel(day.journalEntry.shut_down_ease)}</span>
+                                         </div>
+                                     )}
+                                     {day.journalEntry.hydration_total > 0 && (
+                                         <div className="item-row">
+                                             <span>Hydration</span>
+                                             <span className="duration-tag">{day.journalEntry.hydration_total} ml</span>
+                                         </div>
+                                     )}
+                                     {day.journalEntry.meds_taken && day.journalEntry.meds_taken.length > 0 && (
+                                         <div className="item-row">
+                                             <span>Medication taken</span>
+                                             <span className="duration-tag">{day.journalEntry.meds_taken.join(', ')}</span>
+                                         </div>
+                                     )}
+                                     {day.journalEntry.notes && (
+                                         <div className="journal-note-preview">
+                                             "{day.journalEntry.notes}"
+                                         </div>
+                                     )}
+                                 </Section>
+                             )}
+
                         </div>
                     )}
                 </div>
@@ -379,7 +468,7 @@ const SkillSection = ({ group, isToday, activeFilter }) => {
                 </div>
                 <div className="skill-group-meta">
                     {group.levelUps.map((lu, i) => (
-                        <span key={i} className="level-up-badge-header">
+                        <span key={i} className="level-up-badge-header" onClick={(e) => e.stopPropagation()}>
                             ★ Lvl {lu.newLevel} (+20 ₴)
                         </span>
                     ))}

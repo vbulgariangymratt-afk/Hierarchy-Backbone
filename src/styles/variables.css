@@ -53,7 +53,7 @@
   --aura-bg-coral: #EA9D9B;
   --aura-bg-teal: #082434;
   --aura-bg-misty: #99BAD7;
-  --aura-gradient: linear-gradient(90deg, #EFE6D6 0%, #EA9D9B 45%, #99BAD7 85%, #082434 100%);
+  --aura-gradient: linear-gradient(90deg, #E2B6FF 0%, #B088FF 40%, #5E6AD2 85%, #8FD3FF 100%);
 }
 
 /* DARK MODE (Default & Explicit) */

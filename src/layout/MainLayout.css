@@ -311,7 +311,13 @@
 }
 
 [data-theme="dark"][data-background-mode="solid"] .app-header {
-    border-bottom: 1px solid #222325 !important; /* Exact Sandbox spec: thin, dark charcoal line */
+    border-bottom: 1px solid !important;
+    border-image: linear-gradient(to right, 
+        rgba(255, 255, 255, 0.28) 0%, 
+        rgba(255, 255, 255, 0.12) 180px, 
+        rgba(255, 255, 255, 0.05) 400px, 
+        rgba(255, 255, 255, 0.04) 100%
+    ) 1 !important;
 }
 
 .header-left {
