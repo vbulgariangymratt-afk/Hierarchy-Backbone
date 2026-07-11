@@ -693,8 +693,8 @@ video {
     color: var(--text-primary);
 }
 
-[data-theme='light'] .liquid-glass.hover-trigger,
-[data-theme='light'] .liquid-glass:not(.primary-button) {
+:not(.solid-mode)[data-theme='light'] .liquid-glass.hover-trigger,
+:not(.solid-mode)[data-theme='light'] .liquid-glass:not(.primary-button) {
     background: rgba(255, 255, 255, 0.2) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
     color: var(--text-primary);

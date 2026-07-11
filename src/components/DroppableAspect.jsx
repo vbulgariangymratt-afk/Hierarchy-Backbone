@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { motion } from 'framer-motion';
+import BorderGlow from './ui/BorderGlow';
 
 const macOSSpring = {
     type: "spring",
@@ -8,8 +9,6 @@ const macOSSpring = {
     damping: 30,
     mass: 0.8
 };
-
-const CARD_BORDER_RADIUS = 18;
 
 const DroppableAspect = React.memo(({ 
     aspect, 
@@ -29,10 +28,11 @@ const DroppableAspect = React.memo(({
         <motion.div
             layout="position"
             ref={setNodeRef}
-            className={`aspect-card ${isOver ? 'drag-over' : ''} ${isUntouched ? 'is-untouched' : ''} ${isNoveltyHighlighted ? 'novelty-highlight' : ''}`}
+            className={`aspect-card liquid-glass ${isOver ? 'drag-over' : ''} ${isUntouched ? 'is-untouched' : ''} ${isNoveltyHighlighted ? 'novelty-highlight' : ''}`}
             transition={macOSSpring}
+            whileHover={isEditing ? {} : { y: -4 }}
             style={{
-                borderRadius: '24px',
+                borderRadius: '12px',
             }}
             onClick={(e) => {
                 // Don't toggle if clicking inside the aspect title area (rename interaction)
@@ -41,12 +41,21 @@ const DroppableAspect = React.memo(({
                 onToggleAspect(aspect.id);
             }}
         >
-            {isNoveltyHighlighted && (
-                <div className="novelty-badge">UNEXPLORED</div>
-            )}
-            <div style={{ width: '100%' }}>
-                {children}
-            </div>
+            <BorderGlow
+                glowColor="260 85 65"
+                backgroundColor="transparent"
+                borderRadius={12}
+                className="aspect-card-glow-wrapper"
+            >
+                <div className="card-shine" />
+                <div className="card-glow" />
+                {isNoveltyHighlighted && (
+                    <div className="novelty-badge">UNEXPLORED</div>
+                )}
+                <div style={{ width: '100%' }}>
+                    {children}
+                </div>
+            </BorderGlow>
         </motion.div>
     );
 }, (prev, next) => {

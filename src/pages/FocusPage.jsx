@@ -637,9 +637,10 @@ const FocusPage = () => {
 
                 // 1.5. Check for today task auto-removal
                 if (todayRemovalMode === 'after_session' && currentTaskId) {
+                    const { subSteps: _ss1, ...restMeta1 } = task.metadata || {};
                     backbone.updateNode(currentTaskId, {
                         metadata: {
-                            ...task.metadata,
+                            ...restMeta1,
                             isToday: false
                         }
                     }).catch(err => console.error("[Focus Mode] Failed to auto-remove today tag:", err));
@@ -696,11 +697,12 @@ const FocusPage = () => {
                 return;
             }
 
+            const { subSteps: _ss2, ...restMeta2 } = task.metadata || {};
             const taskUpdatePromise = task.metadata?.itemType === 'REPETITION'
                 ? backbone.incrementTaskRepetition(task.id)
                 : backbone.updateNode(task.id, {
                     metadata: {
-                        ...task.metadata,
+                        ...restMeta2,
                         status: TaskStatuses.DONE,
                         completedAt: Date.now(),
                         ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})
@@ -752,9 +754,10 @@ const FocusPage = () => {
                 if (task.metadata?.itemType === 'REPETITION') {
                     await backbone.incrementTaskRepetition(task.id);
                 } else {
+                    const { subSteps: _ss3, ...restMeta3 } = task.metadata || {};
                     await backbone.updateNode(task.id, {
                         metadata: {
-                            ...task.metadata,
+                            ...restMeta3,
                             status: TaskStatuses.DONE,
                             completedAt: Date.now(),
                             ...(todayRemovalMode === 'on_completion' ? { isToday: false } : {})

@@ -47,6 +47,9 @@ const SkillCard = React.memo(({
             {skill.metadata?.pinchState && (
                 <div className="pinch-tag">
                     {skill.metadata.pinchState === 'HURRY' ? 'URGENCY' : skill.metadata.pinchState}
+                    <div className="pinch-tooltip">
+                        Based on your performance in <em>{skill.name}</em> your brain needs to feel a sense of <strong>{skill.metadata.pinchState === 'HURRY' ? 'urgency' : skill.metadata.pinchState.toLowerCase()}</strong> for you to perform at 100%
+                    </div>
                 </div>
             )}
             <BorderGlow

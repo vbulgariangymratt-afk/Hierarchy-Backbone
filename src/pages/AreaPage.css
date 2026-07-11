@@ -17,28 +17,51 @@
 }
 
 .area-page-header {
-    margin-bottom: 60px;
+    margin-bottom: 40px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    padding-bottom: 40px;
+    padding-bottom: 24px;
+    position: relative;
+}
+
+.edit-area-btn {
+    padding: 6px 12px;
+    background: var(--alpha-low, rgba(255, 255, 255, 0.02));
+    color: var(--color-text, var(--text-secondary));
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.area-page-header:hover .edit-area-btn {
+    opacity: 1;
+}
+
+.edit-area-btn:hover {
+    background: var(--alpha-med, rgba(255, 255, 255, 0.05));
+    border-color: var(--color-accent-muted, rgba(94, 106, 210, 0.3));
 }
 
 .area-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 48px;
-    font-weight: 700;
+    font-family: var(--font-family-sans) !important;
+    font-size: 38px;
+    font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 16px;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
     line-height: 1.05;
 }
 
 .area-identity-anchor {
-    font-size: 20px;
+    font-size: 1.1rem;
     color: var(--text-secondary);
-    font-style: italic;
     font-weight: 400;
     max-width: 800px;
     line-height: 1.6;
+    opacity: 0.8;
 }
 
 .section-header {
@@ -173,7 +196,6 @@
 /* Removed duplicate block */
 
 .liquid-mode .skill-card:hover {
-    background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-accent-rgb), 0.15);
     transform: translateY(calc(var(--spacing-xs) * -1)) translateZ(0);
@@ -186,13 +208,11 @@
 }
 
 .dark.solid-mode .skill-card:hover {
-    background: #2d2d2d;
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-accent-rgb), 0.15);
 }
 
 .light.solid-mode .skill-card:hover {
-    background: #fcfcfc;
     border-color: rgba(0, 0, 0, 0.1);
     box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-accent-rgb), 0.15);
 }
@@ -603,12 +623,12 @@
 /* ── Skill Management Enhancements ────────────────────────── */
 
 .skills-section {
-    margin-bottom: 60px;
+    margin-bottom: 48px;
 }
 
 .sleeping-section {
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    padding-top: 40px;
+    border-top: none;
+    padding-top: 0px;
 }
 
 .section-header.collapsible {
@@ -1187,7 +1207,7 @@
 
 .progress-fill-aura {
     height: 100%;
-    background: var(--aura-gradient);
+    background: linear-gradient(90deg, var(--color-accent, #5E6AD2) 0%, #b85c88 100%);
     border-radius: var(--radius-full, 9999px);
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -1222,17 +1242,22 @@
     background: var(--alpha-low, rgba(255, 255, 255, 0.02)) !important;
     border: 1px solid var(--color-border) !important;
     color: var(--text-secondary) !important;
-    border-radius: var(--radius-btn, 6px);
+    border-radius: 100px !important;
     cursor: pointer;
     box-shadow: none !important;
-    transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+    transition: transform 0.32s cubic-bezier(0.34, 1.6, 0.64, 1),
+                background-color 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease !important;
 }
 
 .skill-card-actions .skill-status-btn:hover {
-    background: var(--alpha-med, rgba(255, 255, 255, 0.05)) !important;
-    border-color: var(--color-accent-muted, rgba(94, 106, 210, 0.3)) !important;
+    background: var(--alpha-high) !important;
+    border-color: rgba(var(--color-accent-rgb), 0.6) !important;
     color: var(--text-primary) !important;
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 
+                0 0 10px rgba(var(--color-accent-rgb), 0.15) !important;
 }
 
 /* Compact add button row styling */
@@ -1272,6 +1297,7 @@
     height: 100%;
     display: flex !important;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .skill-card-glow-wrapper .border-glow-inner {
@@ -1282,4 +1308,241 @@
     background: transparent !important;
     overflow: hidden;
     border-radius: inherit;
+}
+
+/* Pinch Tag Tooltip */
+.pinch-tag {
+    cursor: help;
+    position: relative; /* Anchor for the absolute positioned tooltip */
+}
+
+.pinch-tooltip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    transform: translateY(8px);
+    width: 250px;
+    background: rgba(20, 20, 25, 0.94);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.55;
+    box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(var(--color-accent-rgb), 0.15);
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1),
+                visibility 0.25s;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+    text-align: left;
+}
+
+/* Tooltip Little Triangle Pointer Arrow */
+.pinch-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    right: 20px;
+    transform: rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: rgba(20, 20, 25, 0.94);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Light Theme overrides */
+.light .pinch-tooltip {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.7);
+    box-shadow: 
+        0 10px 25px rgba(0, 0, 0, 0.15),
+        0 0 15px rgba(var(--color-accent-rgb), 0.15);
+}
+
+.light .pinch-tooltip::after {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.pinch-tooltip em {
+    color: var(--color-accent, #5E6AD2);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.pinch-tooltip strong {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.pinch-tag:hover .pinch-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* ── Area Edit Form Block (Neuro-Linear Quiet Gallery style matching) ── */
+
+.area-edit-block {
+    background: var(--sidebar-bg, rgba(255, 255, 255, 0.01)) !important;
+    padding: 24px;
+    border-radius: var(--radius-card, 8px) !important;
+    border: 1px solid var(--border, var(--color-border)) !important;
+    margin-bottom: 24px;
+}
+
+/* Edit labels */
+.area-edit-block label {
+    display: block;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: var(--muted, var(--text-secondary)) !important;
+    margin-bottom: 8px !important;
+    opacity: 0.8 !important;
+}
+
+/* Edit Inputs */
+.area-edit-block .edit-input {
+    width: 100%;
+    background: var(--surface-elevated, var(--bg-surface)) !important;
+    border: 1px solid var(--border, var(--color-border)) !important;
+    border-radius: var(--radius-btn, 6px) !important;
+    padding: 8px 12px !important;
+    font-family: var(--font-family-sans) !important;
+    font-size: 0.85rem !important;
+    color: var(--text-primary) !important;
+    outline: none !important;
+    height: 36px !important;
+    transition: border-color 0.15s ease !important;
+}
+
+.area-edit-block .edit-input:focus {
+    border-color: var(--color-accent, var(--accent, #5E6AD2)) !important;
+}
+
+/* Edit Icon Select Button */
+.area-edit-block .icon-select-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px !important;
+    background: var(--surface-elevated, var(--bg-surface)) !important;
+    border: 1px solid var(--border, var(--color-border)) !important;
+    border-radius: var(--radius-btn, 6px) !important;
+    color: var(--text-primary) !important;
+    cursor: pointer;
+    text-align: left;
+    height: 36px;
+    font-family: var(--font-family-sans) !important;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.area-edit-block .icon-select-btn:hover {
+    border-color: var(--border-hover, #2E2F32) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.area-edit-block .icon-preview {
+    width: 36px !important;
+    height: 36px !important;
+    background: var(--surface-elevated, var(--bg-surface)) !important;
+    border-radius: var(--radius-btn, 6px) !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border, var(--color-border)) !important;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.area-edit-block .icon-preview:hover {
+    border-color: var(--border-hover, #2E2F32) !important;
+}
+
+/* Sleeping Skill Row in edit block */
+.area-edit-block .sleeping-skill-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px !important;
+    background: var(--alpha-low, rgba(255, 255, 255, 0.02)) !important;
+    border-radius: var(--radius-btn, 6px) !important;
+    border: 1px solid var(--border, var(--color-border)) !important;
+}
+
+/* Premium Buttons */
+.area-edit-block .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-family-sans) !important;
+    font-weight: 500 !important;
+    font-size: 0.85rem !important;
+    border-radius: var(--radius-btn, 6px) !important;
+    padding: 6px 14px !important;
+    height: 32px !important;
+    cursor: pointer !important;
+    transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1),
+                background-color 0.15s ease,
+                border-color 0.15s ease,
+                color 0.15s ease !important;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.area-edit-block .btn-primary {
+    background-color: var(--color-accent, var(--accent, #5E6AD2)) !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+}
+
+.area-edit-block .btn-primary:hover {
+    background-color: var(--color-accent-hover, var(--accent-hover, #6E7BE2)) !important;
+}
+
+.area-edit-block .btn-secondary {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border, var(--color-border)) !important;
+}
+
+.area-edit-block .btn-secondary:hover {
+    border-color: var(--border-hover, #2E2F32) !important;
+    background-color: var(--surface-elevated, rgba(255, 255, 255, 0.04)) !important;
+}
+
+.area-edit-block .btn-danger {
+    background-color: rgba(235, 94, 40, 0.08) !important;
+    color: #EB5E28 !important;
+    border: 1px solid rgba(235, 94, 40, 0.15) !important;
+}
+
+.area-edit-block .btn-danger:hover {
+    background-color: rgba(235, 94, 40, 0.16) !important;
+    border-color: rgba(235, 94, 40, 0.3) !important;
+}
+
+.area-edit-block .btn-danger-solid {
+    background-color: #EB5E28 !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+}
+
+.area-edit-block .btn-danger-solid:hover {
+    background-color: #f0713d !important;
 }

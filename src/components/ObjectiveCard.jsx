@@ -210,8 +210,8 @@ const ObjectiveCard = ({
                             position: 'relative'
                         }}
                     >
-                        <div className="objective-header-left" style={{ display: 'flex', alignItems: 'flex-start', marginLeft: '-38px' }}>
-                            <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`} style={{ marginTop: '2px', marginRight: '8px' }}>
+                        <div className="objective-header-left" style={{ display: 'flex', alignItems: 'center', marginLeft: '-38px' }}>
+                            <span className={`objective-toggle-icon ${isExpanded && !isSleeping ? 'expanded' : ''}`} style={{ marginRight: '8px' }}>
                                 {isSleeping ? <Moon size={16} /> : (obj.metadata?.iconUrl ? <NodeIcon iconUrl={obj.metadata.iconUrl} size={18} /> : <ChevronRight size={18} />)}
                             </span>
                             <div className="objective-title-stack" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -226,12 +226,12 @@ const ObjectiveCard = ({
                                         style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--color-primary)', color: 'inherit', fontSize: 'inherit', fontWeight: 'inherit', outline: 'none' }}
                                     />
                                 ) : (
-                                    <span className="objective-title-static" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.01em' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
+                                    <span className="objective-title-static" style={{ color: 'var(--text-primary)' }} onDoubleClick={(e) => { e.stopPropagation(); handleStartInlineEdit(obj.id, obj.name); }}>{obj.name}</span>
                                 )}
                             </div>
                         </div>
 
-                        <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                        <div className="objective-action-strip" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             {energyLevel >= 4 && (
                                 <button
                                     onClick={(e) => {
@@ -337,15 +337,14 @@ const ObjectiveCard = ({
                                                     style={{ overflow: 'hidden' }}
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '40px', padding: '12px 0 24px 0' }}>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                                            <div style={{ fontSize: '15px', color: 'var(--text-primary)', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-                                                                <span style={{ fontWeight: '700', whiteSpace: 'nowrap' }}>Your wish:</span>
-                                                                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5' }}>{obj.metadata?.wish || "the wish goes here"}</span>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', flex: 1 }}>
+                                                            <div style={{ lineHeight: '1.4' }}>
+                                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>Wish</span>
+                                                                <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.wish || "the wish goes here"}</span>
                                                             </div>
-
-                                                            <div style={{ fontSize: '15px', color: 'var(--text-primary)', display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-                                                                <span style={{ fontWeight: '700', whiteSpace: 'nowrap' }}>Core outcome:</span>
-                                                                <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5' }}>{obj.metadata?.outcome || "outcome goes here"}</span>
+                                                            <div style={{ lineHeight: '1.4' }}>
+                                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>Outcome</span>
+                                                                <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.outcome || "outcome goes here"}</span>
                                                             </div>
                                                         </div>
 
@@ -415,6 +414,7 @@ const ObjectiveCard = ({
                                                     aspectsForMasonry.forEach(aspect => {
                                                         const isCreatingTask = creatingTaskForAspectId === aspect.id;
                                                         const rawAspectTasks = getChildren(aspect.id, NodeTypes.TASK);
+                                                        const completedTasksCount = rawAspectTasks.filter(t => t.metadata?.status === TaskStatuses.DONE).length;
                                                         const baseTasks = showCompletedTasks 
                                                             ? rawAspectTasks 
                                                             : rawAspectTasks.filter(t => t.metadata?.status !== TaskStatuses.DONE);
@@ -470,24 +470,14 @@ const ObjectiveCard = ({
                                                                                     style={{ cursor: 'text', userSelect: 'none', color: 'var(--text-primary)', fontWeight: 600 }}
                                                                                 >{aspect.name}</span>
                                                                             )}
-                                                                            <span className="aspect-task-count" style={{ display: 'inline-flex', gap: '3px', color: 'var(--text-secondary)' }}>
-                                                                                {(() => {
-                                                                                    const aspectTasksForCount = getChildren(aspect.id, NodeTypes.TASK);
-                                                                                    const tasks = aspectTasksForCount.filter(t => t.metadata?.itemType !== 'REPETITION').length;
-                                                                                    const activities = aspectTasksForCount.filter(t => t.metadata?.itemType === 'REPETITION').length;
-                                                                                    if (tasks === 0 && activities === 0) return null;
-                                                                                    const parts = [];
-                                                                                    if (tasks > 0) {
-                                                                                        parts.push(`${tasks} task${tasks === 1 ? '' : 's'}`);
-                                                                                    }
-                                                                                    if (activities > 0) {
-                                                                                        parts.push(`${activities} activit${activities === 1 ? 'y' : 'ies'}`);
-                                                                                    }
-                                                                                    return <>{parts.join(' • ')}</>;
-                                                                                })()}
-                                                                            </span>
+
                                                                         </div>
                                                                         <div className="aspect-header-right">
+                                                                            {completedTasksCount > 0 && (
+                                                                                <span className="aspect-completed-badge">
+                                                                                    ✓ {completedTasksCount}
+                                                                                </span>
+                                                                            )}
                                                                             {isNoveltyHighlighted && firstIncompleteTask && (
                                                                                 <button
                                                                                     className="novelty-sprint-btn"
@@ -536,7 +526,7 @@ const ObjectiveCard = ({
                                                                         </div>
                                                                     )}
                                                                     <button className="add-task-btn" onClick={(e) => { e.stopPropagation(); setCreatingTaskForAspectId(aspect.id); setNewTaskItemType('FINITE'); }}>
-                                                                        + Add Task
+                                                                        + Add task
                                                                     </button>
                                                                 </div>
                                                             </DroppableAspect>
@@ -588,34 +578,21 @@ const ObjectiveCard = ({
                                                                         Completed Aspects ({completedAspects.length})
                                                                     </button>
                                                                     {isCompletedAspectsExpanded && (
-                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '12px' }}>
+                                                                        <div className="completed-aspects-grid">
                                                                             {completedAspects.map(aspect => {
                                                                                 const allTasks = getChildren(aspect.id, NodeTypes.TASK);
                                                                                 return (
-                                                                                    <div key={aspect.id} style={{ flex: '1 1 300px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '16px', padding: '16px 20px', opacity: 0.6 }}>
-                                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                                                            <span style={{ fontSize: '14px', fontWeight: '700' }}>{aspect.name}</span>
-                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                                                <span style={{ fontSize: '11px' }}>{allTasks.length} done</span>
+                                                                                    <div key={aspect.id} className="completed-aspect-card">
+                                                                                        <div className="completed-aspect-card-inner">
+                                                                                            <span className="completed-aspect-name">{aspect.name}</span>
+                                                                                            <div className="completed-aspect-actions">
+                                                                                                <span className="completed-aspect-stats">{allTasks.length} done</span>
                                                                                                 <button 
+                                                                                                    className="completed-aspect-add-btn"
                                                                                                     onClick={(e) => {
                                                                                                         e.stopPropagation();
                                                                                                         setCreatingTaskForAspectId(aspect.id);
                                                                                                         setNewTaskItemType('FINITE');
-                                                                                                    }}
-                                                                                                    style={{
-                                                                                                        background: 'var(--alpha-high)',
-                                                                                                        border: 'none',
-                                                                                                        color: 'var(--text-primary)',
-                                                                                                        width: '24px',
-                                                                                                        height: '24px',
-                                                                                                        borderRadius: '50%',
-                                                                                                        display: 'flex',
-                                                                                                        alignItems: 'center',
-                                                                                                        justifyContent: 'center',
-                                                                                                        cursor: 'pointer',
-                                                                                                        fontSize: '14px',
-                                                                                                        fontWeight: 'bold'
                                                                                                     }}
                                                                                                 >
                                                                                                     +

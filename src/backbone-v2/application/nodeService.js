@@ -128,9 +128,28 @@ export const NodeService = (repository, auraService, deps = {}) => {
                     sessions: mergedSessions
                 };
 
-                // Guard for subSteps too
-                if (existingMetadata.subSteps && !incomingMetadata.subSteps) {
-                    newUpdates.metadata.subSteps = existingMetadata.subSteps;
+                // PERMANENT INTEGRITY GUARD: Never let subSteps shrink or lose completed entries.
+                // Merges by ID so a stale closure spreading ...task.metadata can't wipe checked-off steps.
+                const existingSubSteps = existingMetadata.subSteps;
+                const incomingSubSteps = incomingMetadata.subSteps;
+                if (existingSubSteps && incomingSubSteps) {
+                    // Build a map of existing steps, then layer incoming on top (preserves completedAt)
+                    const merged = new Map(existingSubSteps.map(s => [s.id, s]));
+                    incomingSubSteps.forEach(s => {
+                        const existing = merged.get(s.id);
+                        if (!existing || s.isCompleted || !existing.isCompleted) {
+                            // Prefer the more-complete version: if incoming is completed, use it;
+                            // if existing is already completed and incoming isn't, keep existing.
+                            merged.set(s.id, (existing?.isCompleted && !s.isCompleted) ? existing : s);
+                        }
+                    });
+                    // Preserve ordering from incoming list, appending any extras from existing
+                    const incomingIds = new Set(incomingSubSteps.map(s => s.id));
+                    const extras = existingSubSteps.filter(s => !incomingIds.has(s.id));
+                    newUpdates.metadata.subSteps = [...incomingSubSteps.map(s => merged.get(s.id)), ...extras];
+                } else if (existingSubSteps && !incomingSubSteps) {
+                    // Incoming update didn't touch subSteps at all — restore from existing
+                    newUpdates.metadata.subSteps = existingSubSteps;
                 }
             }
 

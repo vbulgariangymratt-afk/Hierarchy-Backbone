@@ -49,6 +49,66 @@ const MainLayout = () => {
         setDisplayedBalance(hryvniaBalance);
     }, [hryvniaBalance]);
 
+    // Fullscreen state for macOS traffic light alignment
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        let active = true;
+        let tauriUnlisten = null;
+
+        const updateFullscreen = async () => {
+            let isFS = false;
+            if (window.__TAURI__) {
+                try {
+                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                    const appWindow = getCurrentWindow();
+                    isFS = await appWindow.isFullscreen();
+                } catch (err) {
+                    console.error('[MainLayout] Tauri fullscreen query error:', err);
+                }
+            } else {
+                isFS = !!document.fullscreenElement;
+            }
+
+            if (active) {
+                setIsFullscreen(isFS);
+            }
+        };
+
+        // Initial check
+        updateFullscreen();
+
+        // Listen for standard resize events (fired reliably on macOS fullscreen transitions)
+        const handleResize = () => {
+            updateFullscreen();
+        };
+        window.addEventListener('resize', handleResize);
+        document.addEventListener('fullscreenchange', handleResize);
+
+        // Tauri window event insurance
+        if (window.__TAURI__) {
+            import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+                const appWindow = getCurrentWindow();
+                appWindow.onResized(() => {
+                    updateFullscreen();
+                }).then(unlisten => {
+                    tauriUnlisten = unlisten;
+                });
+            });
+        }
+
+        return () => {
+            active = false;
+            window.removeEventListener('resize', handleResize);
+            document.removeEventListener('fullscreenchange', handleResize);
+            if (tauriUnlisten) {
+                tauriUnlisten();
+            }
+        };
+    }, []);
+
     const triggerCoinJiggle = () => {
         setDisplayedBalance(prev => prev + 5);
         setTimeout(() => {
@@ -178,7 +238,7 @@ const MainLayout = () => {
         <div className="main-layout">
             <div className="app-drag-region" data-tauri-drag-region />
             
-            <header className="app-header" data-tauri-drag-region>
+            <header className={`app-header ${isFullscreen ? 'is-fullscreen' : ''}`} data-tauri-drag-region>
                 <div className="header-left" data-tauri-drag-region>
                     <span className="logo-text">Backbone Hierarchy</span>
                 </div>

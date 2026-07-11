@@ -22,6 +22,7 @@ import {
 } from '../backbone-v2/index';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
+import { Search } from 'lucide-react';
 import './SkillPage.css';
 
 import NodeIcon from '../components/NodeIcon';
@@ -89,6 +90,29 @@ const SkillPage = () => {
         fetchData, 
         fetchSkills 
     } = useSkillPageData(id, isReorderingRef);
+
+    const totalCompletedTasks = useMemo(() => {
+        const skillObjectives = (allNodes || []).filter(n => n.type === NodeTypes.OBJECTIVE && n.parentId === id);
+        const skillObjectiveIds = new Set(skillObjectives.map(o => o.id));
+        const skillAspects = (allNodes || []).filter(n => n.type === NodeTypes.ASPECT && skillObjectiveIds.has(n.parentId));
+        const skillAspectIds = new Set(skillAspects.map(a => a.id));
+
+        const skillTasks = (allNodes || []).filter(n => 
+            n.type === NodeTypes.TASK && 
+            skillAspectIds.has(n.parentId)
+        );
+
+        let totalCount = 0;
+        skillTasks.forEach(task => {
+            if (task.metadata?.itemType === 'REPETITION') {
+                totalCount += (Number(task.metadata?.currentUnits) || 0);
+            } else if (task.metadata?.status === TaskStatuses.DONE) {
+                totalCount += 1;
+            }
+        });
+
+        return totalCount;
+    }, [allNodes, id]);
 
     // UI State for expansion & becoming section
     const [expandedAspectIds, setExpandedAspectIds] = useState([]);
@@ -458,7 +482,10 @@ const SkillPage = () => {
     }, [skill?.id]);
 
     useEffect(() => {
-        if (skill?.metadata?.identityAnchor !== undefined) setTempBecoming(skill.metadata.identityAnchor || '');
+        if (skill?.metadata?.identityAnchor !== undefined) {
+            const rawVal = skill.metadata.identityAnchor || '';
+            setTempBecoming(rawVal ? (rawVal.charAt(0).toLowerCase() + rawVal.slice(1)) : '');
+        }
     }, [skill?.id, skill?.metadata?.identityAnchor]);
 
     useEffect(() => {
@@ -759,28 +786,25 @@ const SkillPage = () => {
                 habits={activeHabits} navigate={navigate} handleHabitComplete={handleHabitComplete} getChildren={getChildren}
             />
         );
-    }
-
-    const PinchAnalysis = ({ skill, energyLevel }) => {
+    }    const PinchAnalysis = ({ skill, energyLevel }) => {
         if (energyLevel < 4) return null;
         const pinch = skill.metadata?.pinchState;
         if (!pinch || pinch === 'NONE') return null;
-        const driverName = { 'NOVELTY': 'Novelty', 'CHALLENGE': 'Challenge', 'PASSION': 'Passion', 'INTEREST': 'Flow', 'HURRY': 'Hurry' }[pinch] || pinch;
+
+        const explanation = {
+            'NOVELTY': "Attention is decaying. The current experiment structure has become predictable.",
+            'CHALLENGE': "Mastery has plateaued. Increase the difficulty.",
+            'PASSION': "High value, high resistance. Break the next task into a 2-minute MVE.",
+            'INTEREST': null,
+            'HURRY': null
+        }[pinch];
+
+        if (!explanation) return null;
 
         return (
-            <div className="pinch-analysis-station">
-                <div className="pinch-status-header">
-                    <p>• Your brain needs to feel "{driverName}" right now to reach peak performance.</p>
-                </div>
-                <div className="pinch-body">
-                    <p className="pinch-explanation">
-                        • {pinch === 'NOVELTY' && "Attention is decaying. The current experiment structure has become predictable."}
-                        {pinch === 'CHALLENGE' && "Mastery has plateaued. Increase the difficulty."}
-                        {pinch === 'PASSION' && "High value, high resistance. Break the next task into a 2-minute MVE."}
-                        {pinch === 'INTEREST' && "Low intrinsic fuel. Look for an unorthodox angle."}
-                        {pinch === 'HURRY' && "Roadmap ready, 5-min kickoff to break the seal?"}
-                    </p>
-                </div>
+            <div className="pinch-explanation-banner">
+                <span className="pinch-explanation-icon">⚡</span>
+                <p className="pinch-explanation-text">{explanation}</p>
             </div>
         );
     };
@@ -791,26 +815,46 @@ const SkillPage = () => {
 
             <header className="skill-header">
                 <div className="skill-header-main-row">
-                    {inlineEditingNodeId === skill.id ? (
-                        <input
-                            ref={inlineInputRef} autoFocus value={inlineDraftName}
-                            onChange={e => setInlineDraftName(e.target.value)}
-                            onBlur={() => handleSaveInlineEdit(skill.id)}
-                            onKeyDown={e => handleInlineKeyDown(e, skill.id)}
-                            className="inline-skill-title-input"
-                        />
-                    ) : (
-                        <h1 className="skill-title" onDoubleClick={() => handleStartInlineEdit(skill.id, skill.name)}>{skill.name}</h1>
-                    )}
-                    {skill.metadata?.pinchState === 'PASSION' && <span className="passion-core-badge">CORE</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {inlineEditingNodeId === skill.id ? (
+                            <input
+                                ref={inlineInputRef} autoFocus value={inlineDraftName}
+                                onChange={e => setInlineDraftName(e.target.value)}
+                                onBlur={() => handleSaveInlineEdit(skill.id)}
+                                onKeyDown={e => handleInlineKeyDown(e, skill.id)}
+                                className="inline-skill-title-input"
+                            />
+                        ) : (
+                            <h1 className="skill-title" onDoubleClick={() => handleStartInlineEdit(skill.id, skill.name)}>{skill.name}</h1>
+                        )}
+                        {skill.metadata?.pinchState === 'PASSION' && <span className="passion-core-badge">CORE</span>}
+                    </div>
                 </div>
                 <div className="skill-identity-row">
-                    <span className="identity-prefix">Becoming:</span>
+                    <span className="identity-prefix">Becoming</span>
                     <input
                         className="skill-identity-input" placeholder="Define who you are becoming..."
-                        value={tempBecoming} onChange={(e) => { setTempBecoming(e.target.value); debouncedUpdateBecoming(e.target.value); }}
+                        value={tempBecoming} onChange={(e) => {
+                            const val = e.target.value;
+                            const formatted = val ? (val.charAt(0).toLowerCase() + val.slice(1)) : '';
+                            setTempBecoming(formatted);
+                            debouncedUpdateBecoming(formatted);
+                        }}
                     />
-                    {isSyncingBecoming && <span className="sync-indicator">Saving...</span>}
+                    {isSyncingBecoming && <span className="sync-indicator" style={{ marginRight: '16px' }}>Saving...</span>}
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
+                        {totalCompletedTasks > 0 && (
+                            <span className="skill-completed-badge" title="Total completed tasks in this skill">
+                                ✓ {totalCompletedTasks} completed
+                            </span>
+                        )}
+                        {energyLevel >= 4 && skill.metadata?.pinchState && ['NOVELTY', 'CHALLENGE', 'PASSION', 'INTEREST', 'HURRY'].includes(skill.metadata.pinchState) && (
+                            <span className={`pinch-state-badge pinch-${skill.metadata.pinchState.toLowerCase()}`}>
+                                { { 'NOVELTY': 'Novelty', 'CHALLENGE': 'Challenge', 'PASSION': 'Passion', 'INTEREST': 'Interest', 'HURRY': 'Hurry' }[skill.metadata.pinchState] }
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <PinchAnalysis skill={skill} energyLevel={energyLevel} />
             </header>
@@ -1194,22 +1238,7 @@ const SkillPage = () => {
                         className="task-creation-modal"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="task-type-tabs" style={{ marginTop: '20px' }}>
-                            <button 
-                                className={`type-tab ${taskHandlers.newTaskItemType === 'FINITE' ? 'active' : ''}`}
-                                onClick={() => taskHandlers.setNewTaskItemType('FINITE')}
-                            >
-                                One-time Task
-                            </button>
-                            <button 
-                                className={`type-tab ${taskHandlers.newTaskItemType === 'REPETITION' ? 'active' : ''}`}
-                                onClick={() => taskHandlers.setNewTaskItemType('REPETITION')}
-                            >
-                                Repeated Activity
-                            </button>
-                        </div>
-
-                        <div className="task-creation-body">
+                        <div className="task-creation-body" style={{ paddingTop: '28px' }}>
                             <div className="creation-field">
                                 <label>Task Name</label>
                                 <input 
@@ -1219,6 +1248,26 @@ const SkillPage = () => {
                                     onChange={(e) => taskHandlers.setNewTaskName(e.target.value)}
                                     onKeyDown={(e) => taskHandlers.handleCreateTask(e, taskHandlers.creatingTaskForAspectId)}
                                 />
+                            </div>
+
+                            <div className="creation-field">
+                                <label>Activity Type</label>
+                                <div className="switch-card">
+                                    <div className="switch-label-group">
+                                        <div className="switch-title">Repeated Activity</div>
+                                        <div className="switch-desc">Track quantitative reps, counts, or time duration</div>
+                                    </div>
+                                    <label className="switch-control">
+                                        <input 
+                                            type="checkbox"
+                                            checked={taskHandlers.newTaskItemType === 'REPETITION'}
+                                            onChange={(e) => {
+                                                taskHandlers.setNewTaskItemType(e.target.checked ? 'REPETITION' : 'FINITE');
+                                            }}
+                                        />
+                                        <span className="switch-slider"></span>
+                                    </label>
+                                </div>
                             </div>
 
                             {taskHandlers.newTaskItemType === 'REPETITION' && (
@@ -1269,7 +1318,7 @@ const SkillPage = () => {
                                             onFocus={() => setShowDepResults(true)}
                                             style={{ paddingRight: '36px' }}
                                         />
-                                        <div className="search-icon-inline" style={{ position: 'absolute', right: '14px', top: '12px', opacity: 0.3, pointerEvents: 'none' }}>🔍</div>
+                                        <Search size={14} className="search-icon-inline" style={{ position: 'absolute', right: '14px', top: '12px', opacity: 0.4, pointerEvents: 'none', color: 'var(--text-secondary)' }} />
                                         
                                         {showDepResults && filteredDepTasks.length > 0 && (
                                             <div className="dep-search-results">

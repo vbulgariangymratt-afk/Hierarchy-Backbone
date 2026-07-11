@@ -323,75 +323,58 @@ const AreaPage = () => {
         <div className="area-page">
             <header className="area-page-header">
                 {isEditingArea ? (
-                    <div className="area-edit-block" style={{ background: 'var(--alpha-low)', padding: '24px', borderRadius: '12px', border: '1px solid var(--color-border)', marginBottom: '24px' }}>
+                    <div className="area-edit-block">
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '16px' }}>
                             <div className="edit-field">
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Area Name</label>
+                                <label>Area Name</label>
                                 <input
                                     className="edit-input"
                                     value={areaEditForm.name}
                                     onChange={e => setAreaEditForm({ ...areaEditForm, name: e.target.value })}
-                                    style={{ width: '100%', padding: '10px', background: 'var(--bg-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
                                 />
                             </div>
                             <div className="edit-field">
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Identity Anchor</label>
+                                <label>Identity Anchor</label>
                                 <input
                                     className="edit-input"
                                     value={areaEditForm.identityAnchor}
                                     onChange={e => setAreaEditForm({ ...areaEditForm, identityAnchor: e.target.value })}
-                                    style={{ width: '100%', padding: '10px', background: 'var(--bg-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', color: 'var(--color-text)' }}
                                 />
                             </div>
                         </div>
                         <div className="edit-field" style={{ marginBottom: '20px' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px', opacity: 0.6 }}>Area Icon</label>
+                            <label>Area Icon</label>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                 <button
                                     type="button"
                                     onClick={() => setIsIconPickerOpen(true)}
-                                    style={{
-                                        flex: 1,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '10px 14px',
-                                        background: 'var(--bg-surface)',
-                                        border: '1px solid var(--color-border)',
-                                        borderRadius: '8px',
-                                        color: 'var(--color-text)',
-                                        cursor: 'pointer',
-                                        textAlign: 'left'
-                                    }}
+                                    className="icon-select-btn"
                                 >
-                                    <span style={{ fontSize: '13px', opacity: areaEditForm.iconUrl ? 1 : 0.5 }}>
+                                    <span style={{ opacity: areaEditForm.iconUrl ? 1 : 0.5 }}>
                                         {areaEditForm.iconUrl ? `Icon: ${areaEditForm.iconUrl}` : 'Select a Lucide icon...'}
                                     </span>
-                                    <span style={{ fontSize: '11px', color: 'var(--color-accent)', fontWeight: 600 }}>Change</span>
+                                    <span style={{ color: 'var(--color-accent)', fontWeight: 600 }}>Change</span>
                                 </button>
                                 <div 
                                     className="icon-preview" 
                                     onClick={() => setIsIconPickerOpen(true)}
-                                    style={{ width: '38px', height: '38px', background: 'var(--bg-surface)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--color-border)', cursor: 'pointer' }}
                                 >
-                                    <NodeIcon iconUrl={areaEditForm.iconUrl} size={24} />
+                                    <NodeIcon iconUrl={areaEditForm.iconUrl} size={20} />
                                 </div>
                             </div>
                         </div>
                         {/* Sleeping Skills — Delete Section */}
                         {sleepingSkills.length > 0 && (
-                            <div style={{ marginBottom: '20px', borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '12px', opacity: 0.6 }}>Sleeping Skills</label>
+                            <div style={{ marginBottom: '24px', borderTop: '1px solid var(--color-border)', paddingTop: '20px' }}>
+                                <label style={{ marginBottom: '12px' }}>Sleeping Skills</label>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {sleepingSkills.map(skill => (
-                                        <div key={skill.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--alpha-low)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
-                                            <span style={{ fontSize: '14px', color: 'var(--color-text)', opacity: 0.8 }}>{skill.name}</span>
+                                        <div key={skill.id} className="sleeping-skill-row">
+                                            <span style={{ fontSize: '13px', color: 'var(--color-text)', opacity: 0.85 }}>{skill.name}</span>
                                             <button
                                                 type="button"
                                                 onClick={() => handleDeleteSkill(skill.id, skill.name)}
-                                                style={{ padding: '4px 12px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
-                                                onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                                                onMouseOut={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                                className="btn btn-danger"
                                             >
                                                 Delete
                                             </button>
@@ -402,23 +385,25 @@ const AreaPage = () => {
                         )}
                         <div className="edit-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                                <button onClick={handleSaveAreaEdit} style={{ padding: '8px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
-                                <button onClick={() => setIsEditingArea(false)} style={{ padding: '8px 20px', background: 'var(--alpha-medium)', color: 'var(--color-text)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                                <button onClick={handleSaveAreaEdit} className="btn btn-primary">Save Changes</button>
+                                <button onClick={() => setIsEditingArea(false)} className="btn btn-secondary">Cancel</button>
                             </div>
                              {isDeleteConfirmOpen ? (
-                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(239, 68, 68, 0.1)', padding: '4px 12px', borderRadius: '8px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                                    <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>Really delete?</span>
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(235, 94, 40, 0.08)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(235, 94, 40, 0.15)' }}>
+                                    <span style={{ fontSize: '11px', color: '#EB5E28', fontWeight: 600 }}>Really delete?</span>
                                     <button 
                                         type="button"
                                         onClick={handleDeleteArea}
-                                        style={{ padding: '4px 10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}
+                                        className="btn btn-danger-solid"
+                                        style={{ height: '24px', padding: '0 8px', fontSize: '11px' }}
                                     >
                                         YES, DELETE
                                     </button>
                                     <button 
                                         type="button"
                                         onClick={() => setIsDeleteConfirmOpen(false)}
-                                        style={{ padding: '4px 10px', background: 'var(--alpha-medium)', color: 'var(--color-text)', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                                        className="btn btn-secondary"
+                                        style={{ height: '24px', padding: '0 8px', fontSize: '11px' }}
                                     >
                                         CANCEL
                                     </button>
@@ -431,21 +416,7 @@ const AreaPage = () => {
                                         e.stopPropagation();
                                         setIsDeleteConfirmOpen(true);
                                     }}
-                                    style={{ 
-                                        padding: '8px 20px', 
-                                        background: 'rgba(239, 68, 68, 0.1)', 
-                                        color: '#ef4444', 
-                                        border: '1px solid rgba(239, 68, 68, 0.2)', 
-                                        borderRadius: '8px', 
-                                        fontWeight: 600, 
-                                        cursor: 'pointer',
-                                        position: 'relative',
-                                        zIndex: 10001,
-                                        WebkitAppRegion: 'no-drag',
-                                        pointerEvents: 'auto'
-                                    }}
-                                    onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-                                    onMouseOut={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                    className="btn btn-danger"
                                 >
                                     Delete Area
                                 </button>
@@ -488,7 +459,7 @@ const AreaPage = () => {
                             </div>
                             <button
                                 onClick={handleStartEditArea}
-                                style={{ padding: '6px 12px', background: 'var(--alpha-low)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                className="edit-area-btn"
                             >
                                 Edit Area
                             </button>
