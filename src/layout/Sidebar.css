@@ -601,6 +601,32 @@
     transform: rotate(90deg); /* Satisfying 90-degree rotate animation */
 }
 
+.header-action-btn.force-visible {
+    opacity: 0.6 !important;
+}
+
+.header-action-btn.force-visible:hover {
+    opacity: 1 !important;
+}
+
+.header-action-btn.pulse-breathe {
+    opacity: 0.8 !important;
+    color: var(--color-accent) !important;
+    animation: gear-breathe 3s infinite ease-in-out;
+}
+
+@keyframes gear-breathe {
+    0%, 100% {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 6px var(--color-accent));
+        opacity: 0.8;
+    }
+}
+
 .section-title-static,
 .section-title-input {
     padding-left: 0 !important;

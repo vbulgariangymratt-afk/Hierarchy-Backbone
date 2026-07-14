@@ -25,7 +25,7 @@
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
-    border-radius: 20px;
+    border-radius: 12px;
     width: 440px;
     max-width: 90vw;
     padding: 24px;
@@ -169,7 +169,7 @@
     height: 44px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -189,7 +189,7 @@
 .title-group h2 {
     margin: 0 0 10px 0;
     font-size: 22px;
-    font-weight: 700;
+    font-weight: 450;
     color: white;
     letter-spacing: -0.02em;
 }
@@ -325,7 +325,7 @@
 .task-button {
     background: var(--alpha-low);
     border: 1px solid var(--color-border);
-    border-radius: 14px;
+    border-radius: 8px;
     padding: 16px;
     min-height: 72px; /* Neuro-UI Hit Target */
     display: flex;
@@ -434,4 +434,20 @@
 
 .view-library-btn:hover {
     color: white;
+}
+
+/* Tooltip Styles */
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.tooltip-container:hover .help-icon {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: var(--text-primary) !important;
 }

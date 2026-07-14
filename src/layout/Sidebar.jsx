@@ -297,7 +297,14 @@ const Sidebar = ({ onSkillClick }) => {
         });
         return skillMap;
     }, [allNodes, focusSlots]);
-;
+
+    const isEmptyObsessions = useMemo(() => {
+        return !focusSlots || focusSlots.every(slot => slot === null);
+    }, [focusSlots]);
+
+    const isEmptyMaintenance = useMemo(() => {
+        return maintenanceSkills.length === 0;
+    }, [maintenanceSkills]);
 
     // ---------------------------------------------------------------------------
     // PILOT LIGHT DRAWER — compute spotlight and pilot light habits
@@ -605,7 +612,7 @@ const Sidebar = ({ onSkillClick }) => {
                                             <span className="section-title-static">Obsessions</span>
                                             <Link 
                                                 to="/focus-center" 
-                                                className="header-action-btn"
+                                                className={`header-action-btn ${isEmptyObsessions ? 'pulse-breathe' : ''}`}
                                                 onClick={(e) => e.stopPropagation()}
                                                 title="Manage Obsessions"
                                             >
@@ -667,7 +674,7 @@ const Sidebar = ({ onSkillClick }) => {
                                             <span className="section-title-static">Keep it alive</span>
                                             <Link 
                                                 to="/maintenance-center" 
-                                                className="header-action-btn"
+                                                className={`header-action-btn ${isEmptyMaintenance ? (isEmptyObsessions ? 'force-visible' : 'pulse-breathe') : ''}`}
                                                 onClick={(e) => e.stopPropagation()}
                                                 title="Manage Maintenance Skills"
                                             >
@@ -681,11 +688,7 @@ const Sidebar = ({ onSkillClick }) => {
                                         {/* Pilot Light Drawer forced expanded in low energy */}
                                         {(isMaintenanceExpanded || energyLevel <= 2) && (
                                             <div className="pilot-drawer">
-                                                {maintenanceSkills.length === 0 && (
-                                                    <div className="empty-pilot-state" style={{ padding: '12px 16px', color: 'var(--text-tertiary)', fontSize: '12px', lineHeight: '1.4', fontFamily: "'Lexend', sans-serif" }}>
-                                                        No maintenance skills chosen yet. Click the gear icon to set them up.
-                                                    </div>
-                                                )}
+
 
                                                 {/* ── SPOTLIGHT ── */}
                                                 {spotlightHabits.length > 0 && (
@@ -760,15 +763,11 @@ const Sidebar = ({ onSkillClick }) => {
                                                 })}
 
                                                 {/* ── ALL DONE STATE ── */}
-                                                {spotlightHabits.length === 0 && pilotLightHabits.length === 0 && skillsWithNoHabits.length === 0 && (
+                                                {spotlightHabits.length === 0 && pilotLightHabits.length === 0 && skillsWithNoHabits.length === 0 && energyLevel <= 2 && maintenanceSkills.length > 0 && (
                                                     <div className="maintenance-all-done">
-                                                        {energyLevel <= 2 && maintenanceSkills.length > 0 ? (
-                                                            <div className="low-energy-instruction">
-                                                                <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Open: {maintenanceSkills[0].name}</div>
-                                                            </div>
-                                                        ) : (
-                                                            "Everything is alive today."
-                                                        )}
+                                                        <div className="low-energy-instruction">
+                                                            <div style={{ fontWeight: 700, color: '#fff', marginBottom: '4px' }}>Open: {maintenanceSkills[0].name}</div>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>

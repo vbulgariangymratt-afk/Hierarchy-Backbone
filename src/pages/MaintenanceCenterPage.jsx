@@ -105,7 +105,7 @@ const MaintenanceCenterPage = () => {
                 </div>
                 <h1>Maintenance Center</h1>
                 <p>
-                    Select the skills you want to keep active. Maintenance tasks will appear in your sidebar to help you prevent regression.
+                    Select the skills you want to keep on a pilot light. Doing their tiny maintenance habits keeps them warm and prevents them from cooling down to grey.
                 </p>
                 
                 <div className="search-bar-container">
