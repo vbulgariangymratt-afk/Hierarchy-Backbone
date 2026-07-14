@@ -354,6 +354,8 @@ export const SettingsProvider = ({ children }) => {
                                 });
                         }
                     });
+                } else if (!uid) {
+                    setLoading(false);
                 }
             } else if (event === 'SIGNED_OUT') {
                 _cache.uid = null;
@@ -378,12 +380,17 @@ export const SettingsProvider = ({ children }) => {
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(false);
                 setTrialStartAtState(null);
+                setLoading(false);
             }
         });
 
         // Initial check if already authenticated
         supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user?.id) loadSettings(session.user.id);
+            if (session?.user?.id) {
+                loadSettings(session.user.id);
+            } else {
+                setLoading(false);
+            }
         });
 
         return () => subscription.unsubscribe();

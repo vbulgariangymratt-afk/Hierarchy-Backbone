@@ -175,9 +175,18 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
                                 <span className="custom-switch-slider" />
                                 <span className="switch-text">Gate this by Aura Level?</span>
                             </label>
-                            {hryvniaCost >= 50 && !isLevelGated && (
-                                <span className="smart-suggestion">Recommended for high-cost rewards</span>
-                            )}
+                            
+                            <div className="gate-toggle-right-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {hryvniaCost >= 50 && !isLevelGated && (
+                                    <span className="smart-suggestion">Recommended</span>
+                                )}
+                                <div className="aura-help-wrapper">
+                                    <span className="aura-help-icon">?</span>
+                                    <div className="aura-help-tooltip">
+                                        Aura is how you'll track progress on your skills.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {isLevelGated && (

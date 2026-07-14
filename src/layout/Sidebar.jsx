@@ -62,7 +62,7 @@ const Sidebar = ({ onSkillClick }) => {
 
     // --- LOCAL UI STATE ---
     const [isAreasExpanded, setIsAreasExpanded] = useState(true);
-    const [sectionTitle, setSectionTitle] = useState("Life Areas");
+    const [sectionTitle, setSectionTitle] = useState("Identities");
     const [isAddingArea, setIsAddingArea] = useState(false);
     const [newAreaName, setNewAreaName] = useState('');
     const [editingIconNode, setEditingIconNode] = useState(null);
@@ -602,12 +602,12 @@ const Sidebar = ({ onSkillClick }) => {
                                 {energyLevel >= 3 && (
                                     <div className={`sidebar-section focus-slots-section ${energyLevel === 2 ? 'ghosted-focus' : ''}`}>
                                         <div className="section-title-container">
-                                            <span className="section-title-static">Focus</span>
+                                            <span className="section-title-static">Obsessions</span>
                                             <Link 
                                                 to="/focus-center" 
                                                 className="header-action-btn"
                                                 onClick={(e) => e.stopPropagation()}
-                                                title="Manage Focus Slots"
+                                                title="Manage Obsessions"
                                             >
                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                     <circle cx="12" cy="12" r="3"></circle>
@@ -658,7 +658,7 @@ const Sidebar = ({ onSkillClick }) => {
                                 )}
 
                                 {/* KEEP IT ALIVE — Pilot Light Drawer */}
-                                {energyLevel > 1 && maintenanceEnabled && maintenanceSkillIds.length > 0 && (
+                                {energyLevel > 1 && maintenanceEnabled && (
                                     <div className="sidebar-section maintenance-section">
                                         <div
                                             className="section-title-container"
@@ -681,6 +681,11 @@ const Sidebar = ({ onSkillClick }) => {
                                         {/* Pilot Light Drawer forced expanded in low energy */}
                                         {(isMaintenanceExpanded || energyLevel <= 2) && (
                                             <div className="pilot-drawer">
+                                                {maintenanceSkills.length === 0 && (
+                                                    <div className="empty-pilot-state" style={{ padding: '12px 16px', color: 'var(--text-tertiary)', fontSize: '12px', lineHeight: '1.4', fontFamily: "'Lexend', sans-serif" }}>
+                                                        No maintenance skills chosen yet. Click the gear icon to set them up.
+                                                    </div>
+                                                )}
 
                                                 {/* ── SPOTLIGHT ── */}
                                                 {spotlightHabits.length > 0 && (
@@ -778,7 +783,7 @@ const Sidebar = ({ onSkillClick }) => {
                                             className="section-title-container"
                                             onClick={() => setIsAreasExpanded(!isAreasExpanded)}
                                         >
-                                            <span className="section-title-static">Life areas</span>
+                                            <span className="section-title-static">Identities</span>
                                         </div>
 
                                         {isAreasExpanded && (
@@ -819,7 +824,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                     <span className="btn-icon">
                                                         <NodeIcon iconUrl={SVG_ICONS.PLUS} size={14} />
                                                     </span>
-                                                    <span className="btn-text">New Area</span>
+                                                    <span className="btn-text">New Identity</span>
                                                 </button>
                                             </div>
                                         )}

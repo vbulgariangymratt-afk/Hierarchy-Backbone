@@ -67,8 +67,8 @@ const HealthTooltip = ({ children, engagement }) => {
                 >
                     <div className="tooltip-legend">
                         <div className="legend-item">
-                            <span className="legend-dot blue"></span>
-                            <span className="legend-text"><strong>Blue:</strong> Reinforced recently (within last 3 days)</span>
+                            <span className="legend-dot purple"></span>
+                            <span className="legend-text"><strong>Purple:</strong> Reinforced recently (within last 3 days)</span>
                         </div>
                         <div className="legend-item">
                             <span className="legend-dot orange"></span>

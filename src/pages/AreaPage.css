@@ -92,7 +92,7 @@
     flex-direction: column;
     gap: 20px;
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: none !important;
 }
 
 /* Liquid Mode Specifics */
@@ -178,13 +178,13 @@
 .skill-card.is-active {
     background: rgba(255, 255, 255, 0.02);
     border-color: rgba(255, 255, 255, 0.08); /* Slightly more prominent than default */
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.10); /* Soft neutral highlight per request */
+    box-shadow: none; /* Soft neutral highlight handled by BorderGlow */
 }
 
 .dark.solid-mode .skill-card.is-active {
     background: var(--color-bg-secondary);
     border-color: rgba(255, 255, 255, 0.06);
-    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
 }
 
 .liquid-mode .skill-card.is-active,

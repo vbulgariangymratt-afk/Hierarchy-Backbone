@@ -1244,7 +1244,66 @@ const LaunchpadFlow = () => {
     };
 
 
-    if (!allNodes || allNodes.length === 0) return null;
+    if (!allNodes || allNodes.length === 0 || tasks.length === 0) {
+        const text = "The launchpad acts as your prosthetic frontal lobes, once you dump your activities into Backbone, it will only show you what you can handle at the moment based on how much energy you got (1-5 slider)";
+        const bionicText = text.split(' ').map((word, i) => {
+            if (!word) return null;
+            const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            if (cleanWord.length === 0) return <span key={i}>{word} </span>;
+            
+            const boldLen = Math.max(1, Math.ceil(cleanWord.length * 0.45));
+            let charIndex = 0;
+            let letterCount = 0;
+            while (charIndex < word.length && letterCount < boldLen) {
+                if (/[a-zA-Z0-9]/.test(word[charIndex])) {
+                    letterCount++;
+                }
+                charIndex++;
+            }
+            
+            const bold = word.slice(0, charIndex);
+            const rest = word.slice(charIndex);
+            
+            return (
+                <span key={i} style={{ display: 'inline-block', marginRight: '0.28em' }}>
+                    <strong>{bold}</strong>{rest}
+                </span>
+            );
+        });
+
+        return (
+            <div className="launchpad-flow-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '40px', fontFamily: 'Lexend, sans-serif' }}>
+                <div className="launchpad-empty-state" style={{
+                    maxWidth: '560px',
+                    padding: '48px 32px',
+                    borderRadius: '24px',
+                    background: 'linear-gradient(145deg, var(--alpha-medium) 0%, var(--alpha-low) 100%)',
+                    border: '1px solid var(--color-border)',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'stretch',
+                    gap: '24px',
+                    fontFamily: 'Lexend, sans-serif'
+                }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.4, fontFamily: 'Lexend, sans-serif', textAlign: 'center' }}>
+                        Your Launchpad is Empty
+                    </h2>
+                    <p style={{ 
+                        fontSize: '16px', 
+                        lineHeight: '1.65', 
+                        color: 'var(--text-secondary)', 
+                        margin: 0,
+                        fontWeight: 400,
+                        fontFamily: 'Lexend, sans-serif',
+                        textAlign: 'left'
+                    }}>
+                        {bionicText}
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     const suggestion = getSuggestion(energyLevel);
 
@@ -1689,7 +1748,7 @@ const LaunchpadFlow = () => {
                             <div className="recommended-focus-container" style={{ textAlign: 'center', width: '100%', maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '600px', justifyContent: 'center' }}>
                                 {isEnergy3SwitchingSkill ? (
                                     <div style={{ width: '100%', maxWidth: '400px' }}>
-                                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '40px', opacity: 0.9 }}>Switch Focus Skill</h2>
+                                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '40px', opacity: 0.9 }}>Switch Obsession</h2>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
                                             <button
                                                 className="literal-target"
@@ -2199,7 +2258,7 @@ const LaunchpadFlow = () => {
                                                 onClick={() => setEnergy2SubStep('skills')}
                                                 style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
                                             >
-                                                Focus skills
+                                                Obsessions
                                             </button>
                                             <button
                                                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
@@ -2426,7 +2485,7 @@ const LaunchpadFlow = () => {
                                                 onClick={() => setEnergy1SubStep('skills')}
                                                 style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
                                             >
-                                                Focus skills
+                                                Obsessions
                                             </button>
                                             <button 
                                                 style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
@@ -2920,7 +2979,7 @@ const LaunchpadFlow = () => {
                                         Prepare for your future self
                                     </div>
                                     <h1 style={{ fontSize: '30px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
-                                        Which life area do you want to set up?
+                                        Which identity do you want to set up?
                                     </h1>
                                 </div>
                                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2979,7 +3038,7 @@ const LaunchpadFlow = () => {
                                     {hasFocus && (
                                         <>
                                             <div style={{ width: '100%', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.16em', color: 'rgba(255,255,255,0.3)', marginBottom: '10px' }}>
-                                                Focus Skills
+                                                Obsessions
                                             </div>
                                             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '28px' }}>
                                                 {focusSkills.map(skill => (

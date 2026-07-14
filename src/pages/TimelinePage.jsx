@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { timelineService, journalRepo } from '../backbone-v2';
+import { timelineService, journalRepo, NodeTypes, TaskStatuses } from '../backbone-v2';
 import { formatDuration } from '../utils/timeUtils';
 import { ChevronRight, ChevronDown, Repeat } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BorderGlow from '../components/ui/BorderGlow';
 import SideRays from '../components/ui/SideRays';
+import { useBackboneStore } from '../store/backboneStore';
 import './TimelinePage.css';
 
 const streamContainerVariants = {
@@ -80,6 +81,14 @@ const TimelinePage = () => {
     
     // Check if it is daytime (Always true for now so you can see them)
     const [showRays] = useState(true);
+
+    const allNodes = useBackboneStore(state => state.nodes || []);
+    const completedTasksCount = allNodes.filter(n => 
+        n.type === NodeTypes.TASK && 
+        n.metadata?.status === TaskStatuses.DONE
+    ).length;
+    const hasAnyTasksAtAll = allNodes.some(n => n.type === NodeTypes.TASK);
+    const isNewOrEmpty = completedTasksCount === 0 || !hasAnyTasksAtAll;
 
     useEffect(() => {
         let isMounted = true;
@@ -159,6 +168,7 @@ const TimelinePage = () => {
                                 day={day} 
                                 isExpanded={!!expandedDays[day.date]} 
                                 onToggle={() => toggleDay(day.date)} 
+                                isNewOrEmpty={isNewOrEmpty}
                             />
                         ))}
                     </motion.div>
@@ -168,7 +178,7 @@ const TimelinePage = () => {
     );
 };
 
-const DayNode = ({ day, isExpanded, onToggle }) => {
+const DayNode = ({ day, isExpanded, onToggle, isNewOrEmpty }) => {
     const [activeFilter, setActiveFilter] = useState(null);
     console.log("DayNode day data:", day.date, "hasJournal:", !!day.journalEntry, "journalEntry:", day.journalEntry);
 
@@ -289,7 +299,11 @@ const DayNode = ({ day, isExpanded, onToggle }) => {
                 >
                     {isEmpty ? (
                         <div className="empty-day-state">
-                            <p className="empty-day-msg">Quiet day — your path is resting.</p>
+                            <p className="empty-day-msg">
+                                {isNewOrEmpty 
+                                    ? "Here you'll see your activity for the day" 
+                                    : "Quiet day — your path is resting."}
+                            </p>
                         </div>
                     ) : (
                         <div className="day-details-list">

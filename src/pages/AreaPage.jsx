@@ -461,7 +461,7 @@ const AreaPage = () => {
                                 onClick={handleStartEditArea}
                                 className="edit-area-btn"
                             >
-                                Edit Area
+                                Edit Identity
                             </button>
                         </div>
                     </>

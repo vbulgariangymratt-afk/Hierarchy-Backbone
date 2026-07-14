@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { habitService } from '../backbone-v2/index';
 import HabitEvolutionGauge from './habits/HabitEvolutionGauge';
+import BorderGlow from './ui/BorderGlow';
 import { Feather, Circle, Flame, X, HelpCircle, Pencil, Save, XCircle, Dumbbell, Moon, Sun } from 'lucide-react';
 import { useBackboneStore } from '../store/backboneStore';
 import { playCompletionSound } from '../utils/audioHelper';
@@ -240,15 +241,23 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
         <div
             className={`habit-card-minimal ${progress.isDone ? "completed sage-glow" : ""} ${isPulsing ? "satisfaction-pulse" : ""} ${celebration?.active ? "habit-celebrating" : ""} ${celebration ? "habit-lingering-glow" : ""} ${isLevelUpReady ? "level-up-ready" : ""}`}
             id={`habit-${habit.id}`}
-            style={{ position: 'relative', overflow: 'hidden' }}
+            style={{ position: 'relative', overflow: 'visible', padding: 0 }}
         >
-            {celebration?.active && <div className={`habit-ripple ${celebration.type === 'levelup' ? 'levelup' : ''}`} />}
-            {celebration?.active && (
-                <div className={`habit-identity-label ${celebration.fading ? 'fade-out' : 'fade-in'} ${celebration.type === 'levelup' ? 'levelup' : ''}`}>
-                    {celebration.type === 'levelup' ? '✨ LEVEL UP READY ✨' : `+ Aura (Becoming ${celebration.identity})`}
-                    {celebration.type === 'levelup' && <div className="identity-reinforcement">Becoming {celebration.identity}</div>}
-                </div>
-            )}
+            <BorderGlow
+                glowColor="260 85 65"
+                backgroundColor="transparent"
+                borderRadius={16}
+                fillOpacity={0.35}
+                className="habit-card-glow-wrapper"
+            >
+                <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+                    {celebration?.active && <div className={`habit-ripple ${celebration.type === 'levelup' ? 'levelup' : ''}`} />}
+                    {celebration?.active && (
+                        <div className={`habit-identity-label ${celebration.fading ? 'fade-out' : 'fade-in'} ${celebration.type === 'levelup' ? 'levelup' : ''}`}>
+                            {celebration.type === 'levelup' ? '✨ LEVEL UP READY ✨' : `+ Aura (Becoming ${celebration.identity})`}
+                            {celebration.type === 'levelup' && <div className="identity-reinforcement">Becoming {celebration.identity}</div>}
+                        </div>
+                    )}
 
             {/* Top Right: Icons (Absolute Positioned to not mess with vertical spacing) */}
             <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '10px', alignItems: 'flex-start', zIndex: 10 }}>
@@ -277,10 +286,10 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
 
             {/* 1. Header (Top Row) */}
             <div className="habit-intention" style={{ fontSize: '13.5px', color: 'var(--text-primary)', lineHeight: '1.4', paddingRight: '40px' }}>
-                <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, marginRight: '6px' }}>IF</span>
-                <span style={{ fontWeight: 700, marginRight: '6px' }}>{habit.ifTrigger}</span>
-                <span style={{ color: 'var(--text-tertiary)', fontWeight: 800, marginRight: '6px' }}>THEN</span>
-                <span style={{ fontWeight: 700 }}>{currentPhase.description}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontWeight: 600, marginRight: '6px' }}>IF</span>
+                <span style={{ fontWeight: 500, marginRight: '6px' }}>{habit.ifTrigger}</span>
+                <span style={{ color: 'var(--text-tertiary)', fontWeight: 600, marginRight: '6px' }}>THEN</span>
+                <span style={{ fontWeight: 500 }}>{currentPhase.description}</span>
                 {!habit.isActive && (
                     <span className="habit-activation-tag paused" onClick={(e) => { e.stopPropagation(); onToggleActive?.(habit); }} style={{ marginLeft: '8px', display: 'inline-block' }}>Paused</span>
                 )}
@@ -372,6 +381,8 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
                 )}
             </div>
 
+                </div>
+            </BorderGlow>
         </div>
     );
 }, (prevProps, nextProps) => {

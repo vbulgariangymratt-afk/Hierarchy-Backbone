@@ -389,13 +389,13 @@ const SettingsPage = () => {
 
             {/* ── Focus Set Section ───────────────────────────────────── */}
             <section className="settings-section">
-                <h2 className="settings-section-title">Focus Set</h2>
+                <h2 className="settings-section-title">Obsessions</h2>
                 <div className="settings-card">
                     <div className="appearance-row">
                         <div>
                             <div className="appearance-row-label">Guided Slot Roles</div>
                             <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: 0 }}>
-                                Show role labels (Main Quest, Growth, Maintenance, Wildcard, Flex) and helper descriptions in the Focus Center.
+                                Show role labels (Main Quest, Growth, Maintenance, Wildcard, Flex) and helper descriptions in the Obsession Center.
                             </p>
                         </div>
                         <label className="toggle-switch">

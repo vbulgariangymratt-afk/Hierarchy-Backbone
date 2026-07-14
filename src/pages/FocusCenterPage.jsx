@@ -76,11 +76,9 @@ const FocusCenterPage = () => {
     return (
         <div className="focus-center-container">
             <header className="focus-center-header">
-                <h1>Focus Center</h1>
+                <h1>Obsession Center</h1>
                 <p>
-                    {guidedSlotRoles
-                        ? 'Assign skills to guided roles. Your Launchpad will prioritize tasks from these skills.'
-                        : 'Assign skills to your 5 focus slots. Your Launchpad will prioritize tasks from these skills.'}
+                    Choose the skills you're currently obsessed with, when you get tired of one you can just rotate it for a new one.
                 </p>
             </header>
 
@@ -94,23 +92,7 @@ const FocusCenterPage = () => {
                             className={`slot-card ${skill ? 'is-filled' : 'is-empty'}`}
                             onClick={() => setShowPicker(index)}
                         >
-                            {/* Slot label / role */}
-                            <div className="slot-role-header">
-                                {guidedSlotRoles ? (
-                                    <>
-                                        <span className="slot-role-icon">
-                                            {index === 0 && <Target size={14} />}
-                                            {index === 1 && <TrendingUp size={14} />}
-                                            {index === 2 && <Settings size={14} />}
-                                            {index === 3 && <Compass size={14} />}
-                                            {index === 4 && <Layers size={14} />}
-                                        </span>
-                                        <span className="slot-role-label">{role.label}</span>
-                                    </>
-                                ) : (
-                                    <span className="slot-role-label">Slot {index + 1}</span>
-                                )}
-                            </div>
+
 
                             {skill ? (
                                 <div className="slot-content filled">
@@ -144,11 +126,7 @@ const FocusCenterPage = () => {
                     <div className="skill-picker-modal" onClick={e => e.stopPropagation()}>
                         <header className="picker-header">
                             <div className="picker-title-group">
-                                {guidedSlotRoles && activeSlot && (
-                                    <span className="picker-role-badge">
-                                        {activeSlot.label}
-                                    </span>
-                                )}
+
                                 <h3>Select a Skill</h3>
                             </div>
                             <button

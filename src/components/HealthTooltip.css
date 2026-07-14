@@ -58,9 +58,9 @@
     flex-shrink: 0;
 }
 
-.legend-dot.blue {
-    background-color: #3b82f6;
-    box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
+.legend-dot.purple {
+    background-color: var(--color-accent);
+    box-shadow: 0 0 6px rgba(var(--color-accent-rgb), 0.5);
 }
 
 .legend-dot.orange {

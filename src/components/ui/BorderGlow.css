@@ -15,12 +15,29 @@
   position: relative;
   z-index: 2;
   flex: 1;
-  border-radius: var(--border-radius, 12px);
+  border-radius: calc(var(--border-radius, 12px) - 1.5px);
   background: var(--card-bg, #120F17);
   display: flex;
   flex-direction: column;
   height: 100%;
   width: 100%;
+}
+
+/* Static resting edge that fades out on hover to prevent double border rasterizer issues */
+.border-glow-card .static-edge {
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: var(--color-border);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: 1;
+  opacity: 1;
+  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1);
+  pointer-events: none;
 }
 
 /* Edge light (border spotlight) following the mouse */
@@ -41,11 +58,10 @@
   );
   
   /* Mask to outline only the border area */
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: xor;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
-  -webkit-mask-composite: destination-out;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
   padding: 1.5px;
 }
 

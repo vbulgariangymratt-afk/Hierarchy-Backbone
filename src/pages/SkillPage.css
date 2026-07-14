@@ -772,14 +772,14 @@
 }
 
 .solid-mode .aspect-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border) !important;
+    background: var(--color-bg-secondary) !important;
+    border: none !important;
     border-radius: var(--card-radius, 12px);
     box-shadow: none;
 }
 
 .liquid-mode .aspect-card {
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: none !important;
 }
 
 .liquid-mode.dark .aspect-card {
@@ -787,11 +787,10 @@
 }
 
 .wallpaper-mode .aspect-card {
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border: none !important;
 }
 
 .aspect-card:hover {
-    border-color: transparent !important;
     box-shadow:
         0 16px 36px rgba(0, 0, 0, 0.35),
         0 0 20px rgba(var(--color-accent-rgb), 0.1);
@@ -812,7 +811,7 @@
     background-position: -100% 0;
     opacity: 0;
     pointer-events: none;
-    z-index: 1;
+    z-index: 10;
     transition: opacity 0.3s ease;
     border-radius: inherit;
 }
@@ -822,25 +821,7 @@
     animation: rewardShine 1s forwards cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* Ambient glow spotlight under card title */
-.aspect-card .card-glow {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: radial-gradient(
-        circle at 50% 0%,
-        rgba(var(--color-accent-rgb), 0.15) 0%,
-        rgba(var(--color-accent-rgb), 0) 70%
-    );
-    opacity: 0;
-    pointer-events: none;
-    z-index: 1;
-    transition: opacity 0.4s ease;
-}
 
-.aspect-card:hover .card-glow {
-    opacity: 1;
-}
 
 @keyframes rewardShine {
     0% { background-position: -150% 0; }
@@ -853,14 +834,18 @@
     height: 100%;
     display: flex !important;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .aspect-card-glow-wrapper .border-glow-inner {
-    padding: 24px;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    height: 100%;
-    width: 100%;
+    background: transparent !important;
+    overflow: hidden;
+    border-radius: inherit;
+    padding: 24px;
 }
 
 
@@ -1737,9 +1722,9 @@
 
 .habit-card-minimal {
     background: var(--alpha-low);
-    border: 1px solid var(--color-border);
+    border: none !important;
     border-radius: 16px;
-    padding: 14px 18px;
+    padding: 0; /* padding handled inside by content container */
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -1748,7 +1733,21 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* Let the border glow breathe */
+}
+
+/* Make the BorderGlow's inner wrapper transparent so the card's background wins */
+.habit-card-minimal .border-glow-inner {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0;
+}
+
+.habit-card-minimal:hover {
+    border-color: transparent;
 }
 
 .solid-mode .habit-card-minimal {
@@ -1879,17 +1878,10 @@
 }
 
 .liquid-mode.dark .habit-card-minimal {
-    background: transparent !important;
+    background: rgba(255, 255, 255, 0.03);
 }
 
-.habit-card-minimal:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-}
 
-.liquid-mode.dark .habit-card-minimal:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
-}
 
 .habit-tooltip-wrapper {
     position: relative;
@@ -2205,7 +2197,7 @@
 
 .habit-mastery-bar-fill {
     height: 100%;
-    background: var(--aura-gradient);
+    background: linear-gradient(90deg, #B088FF 0%, #5E6AD2 70%, #4A90E2 100%);
     background-size: 200% 100%;
     border-radius: 4px;
     box-shadow: 0 0 15px rgba(var(--color-accent-rgb), 0.2);
@@ -2213,35 +2205,39 @@
 }
 
 .solid-mode .habit-mastery-bar-fill {
-    background: var(--color-primary);
-    box-shadow: 0 0 10px rgba(var(--color-primary-rgb, 195, 154, 107), 0.3);
+    background: linear-gradient(90deg, #B088FF 0%, #5E6AD2 70%, #4A90E2 100%);
+    background-size: 200% 100%;
+    box-shadow: 0 0 10px rgba(var(--color-accent-rgb), 0.3);
 }
 
 .habit-card-minimal .complete-btn {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.03);
     color: var(--text-secondary);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    padding: 10px 18px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 8px 16px;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 500;
+    font-family: var(--font-ui);
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.liquid-mode .habit-card-minimal .complete-btn,
-.wallpaper-mode .habit-card-minimal .complete-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+                background-color 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease,
+                box-shadow 0.2s ease;
 }
 
 .habit-card-minimal .complete-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--color-accent);
+    background-color: var(--color-accent-muted);
     color: var(--text-primary);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 12px rgba(var(--color-accent-rgb), 0.15);
     transform: translateY(-1px);
+}
+
+.habit-card-minimal .complete-btn:active {
+    transform: scale(0.96) translateY(0);
 }
 
 .friction-selector-modern {
@@ -4656,12 +4652,6 @@
     border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);
     color: var(--text-primary);
-}
-
-[data-theme="light"][data-background-mode="solid"] .habit-card-minimal:hover {
-    background: #fcfcfc;
-    border-color: rgba(0, 0, 0, 0.1);
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="light"][data-background-mode="solid"] .edit-label {

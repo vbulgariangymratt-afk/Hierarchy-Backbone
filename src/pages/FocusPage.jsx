@@ -881,17 +881,46 @@ const FocusPage = () => {
 
         // Version A: New user OR empty hierarchy forced demo
         if (forceOnboardingDemo || (completedTasksCount < 3 && !hasAnyTasksAtAll)) {
+            const toBionic = (textStr) => {
+                return textStr.split(' ').map((word, idx) => {
+                    if (!word) return null;
+                    const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    if (cleanWord.length === 0) return <span key={idx}>{word} </span>;
+                    
+                    const boldLen = Math.max(1, Math.ceil(cleanWord.length * 0.45));
+                    let charIndex = 0;
+                    let letterCount = 0;
+                    while (charIndex < word.length && letterCount < boldLen) {
+                        if (/[a-zA-Z0-9]/.test(word[charIndex])) {
+                            letterCount++;
+                        }
+                        charIndex++;
+                    }
+                    
+                    const bold = word.slice(0, charIndex);
+                    const rest = word.slice(charIndex);
+                    
+                    return (
+                        <span key={idx} style={{ display: 'inline-block', marginRight: '0.28em' }}>
+                            <strong>{bold}</strong>{rest}
+                        </span>
+                    );
+                });
+            };
+
             return (
-                <div className="focus-container empty onboarding-empty-hierarchy" style={{ padding: '2rem' }}>
-                    <div className="focus-empty-state" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            <strong>Sett</strong>ing <strong>u</strong>p <strong>comp</strong>lex <strong>prod</strong>uctivity <strong>syst</strong>ems <strong>usua</strong>lly <strong>dra</strong>ins <strong>m</strong>y <strong>dopa</strong>mine <strong>bef</strong>ore <strong>I</strong> <strong>ev</strong>en <strong>sta</strong>rt <strong>work</strong>ing, <strong>s</strong>o <strong>le</strong>ts <strong>no</strong>t <strong>d</strong>o <strong>th</strong>at
-                        </p>
-                        <p style={{ marginBottom: '2rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            <strong>Pi</strong>ck <strong>a</strong> <strong>2-min</strong>ute <strong>micr</strong>o-task <strong>th</strong>at <strong>req</strong>uires <strong>alm</strong>ost <strong>0</strong> <strong>ene</strong>rgy <strong>fro</strong>m <strong>yo</strong>u, <strong>D</strong>O <strong>NO</strong>T <strong>pi</strong>ck <strong>a</strong> <strong>mass</strong>ive <strong>proj</strong>ect <strong>yo</strong>u <strong>be</strong>en <strong>avoi</strong>ding, <strong>i</strong>t <strong>mu</strong>st <strong>b</strong>e <strong>a</strong> <strong>qu</strong>ick <strong>wi</strong>n <strong>fo</strong>r <strong>yo</strong>u
+                <div className="focus-container empty onboarding-empty-hierarchy" style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', position: 'relative' }}>
+                    <button className="focus-exit-btn" onClick={handleExit}>Back to Planning</button>
+                    <div className="focus-empty-state" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'left', fontFamily: "'Lexend', sans-serif" }}>
+                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.65', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            {toBionic('Doing Mode is your distraction shield. It separates "planning" from "doing" so your brain doesn\'t have to keep re-deciding what to do once you start.')}
                         </p>
                         
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
+                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.65', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            {toBionic('Right now doing mode is empty, you can either write a 2 minute task you can complete right now')}
+                        </p>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '520px', margin: '2rem auto' }}>
                             <input 
                                 type="text"
                                 className="temp-task-input"
@@ -922,8 +951,8 @@ const FocusPage = () => {
                                     padding: '0.8rem 1.5rem',
                                     borderRadius: '8px',
                                     border: 'none',
-                                    background: tempTaskName.trim() ? 'var(--focus-color-status, #00fff0)' : 'var(--color-bg-panel, rgba(255,255,255,0.1))',
-                                    color: tempTaskName.trim() ? 'var(--color-bg-main, #000)' : 'var(--text-secondary, rgba(255,255,255,0.4))',
+                                    background: tempTaskName.trim() ? 'var(--color-accent)' : 'var(--color-bg-panel, rgba(255,255,255,0.1))',
+                                    color: tempTaskName.trim() ? '#ffffff' : 'var(--text-secondary, rgba(255,255,255,0.4))',
                                     fontWeight: 'bold',
                                     cursor: tempTaskName.trim() ? 'pointer' : 'not-allowed',
                                     transition: 'all 0.2s ease',
@@ -933,6 +962,10 @@ const FocusPage = () => {
                                 Try Focus Mode
                             </button>
                         </div>
+
+                        <p style={{ marginTop: '2rem', lineHeight: '1.65', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
+                            {toBionic('Or when you fill the app with your life context just click the "today" button in a task and come here (top left corner)')}
+                        </p>
                     </div>
                 </div>
             );

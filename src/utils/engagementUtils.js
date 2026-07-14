@@ -112,7 +112,7 @@ export const getSkillEngagementStatus = (skillId, nodes = [], habits = []) => {
 
     let status = "grey";
     if (daysSince <= 3) {
-        status = "blue";
+        status = "purple";
     } else if (daysSince <= 7) {
         status = "orange";
     }

@@ -175,7 +175,7 @@
                 box-shadow 0.3s cubic-bezier(0.2, 0, 0, 1),
                 transform 0.3s cubic-bezier(0.2, 0, 0, 1);
     background: var(--card-bg);
-    border: 1px solid var(--card-border);
+    border: none !important;
     overflow: hidden;
     width: 680px;
     max-width: 100%;
@@ -187,13 +187,15 @@
 }
 
 .timeline-node.is-today .node-card {
-    border-color: rgba(var(--color-accent-rgb), 0.55);
     box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb), 0.22), 
                 0 4px 20px rgba(var(--color-accent-rgb), 0.12);
 }
 
+.timeline-node.is-today .timeline-card-glow-wrapper .static-edge {
+    background: rgba(var(--color-accent-rgb), 0.55);
+}
+
 .timeline-node.is-today .node-card:hover {
-    border-color: rgba(var(--color-accent-rgb), 0.8);
     box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb), 0.35), 
                 0 16px 36px rgba(var(--color-accent-rgb), 0.2),
                 0 12px 30px rgba(0, 0, 0, 0.15);

@@ -149,6 +149,7 @@ const BorderGlow = ({
       }}
       {...props}
     >
+      <span className="static-edge" />
       <span className="edge-light" />
       <div className="border-glow-inner">
         {children}

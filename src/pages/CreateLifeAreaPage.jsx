@@ -91,6 +91,7 @@ const CreateLifeAreaPage = () => {
             selectedAspectToSave = selectedAspect,
             taskNamesToSave = [],
             redirectTo = '/launchpad',
+            redirectState = null,
             loopToStep = null
         } = options;
 
@@ -100,6 +101,8 @@ const CreateLifeAreaPage = () => {
         
         if (!areaClean) return;
         setIsSaving(true);
+
+        const createdTaskIds = [];
 
         try {
             // 1. Create and save Life Area Node
@@ -206,7 +209,9 @@ const CreateLifeAreaPage = () => {
                         // Create tasks under the selected focus aspect
                         if (isFocus && taskNamesToSave && taskNamesToSave.length > 0) {
                             for (const taskName of taskNamesToSave) {
+                                const taskId = Math.random().toString(36).substr(2, 9);
                                 await backbone.addNode({
+                                    id: taskId,
                                     type: NodeTypes.TASK,
                                     name: taskName,
                                     parentId: aspId,
@@ -214,6 +219,7 @@ const CreateLifeAreaPage = () => {
                                         status: 'NOT_STARTED'
                                     }
                                 });
+                                createdTaskIds.push(taskId);
                             }
                         }
                     }
@@ -260,7 +266,15 @@ const CreateLifeAreaPage = () => {
                     setStep(2);
                 }
             } else {
-                navigate(redirectTo);
+                let finalRedirectState = redirectState;
+                if (redirectTo === '/focus' && createdTaskIds.length > 0) {
+                    finalRedirectState = { taskId: createdTaskIds[0] };
+                }
+                if (finalRedirectState) {
+                    navigate(redirectTo, { state: finalRedirectState });
+                } else {
+                    navigate(redirectTo);
+                }
             }
         }
     };
@@ -705,7 +719,7 @@ const CreateLifeAreaPage = () => {
                                             onClick={() => {
                                                 handleFinalSave({
                                                     taskNamesToSave: parsedTasks,
-                                                    redirectTo: '/launchpad'
+                                                    redirectTo: '/focus'
                                                 });
                                             }}
                                             disabled={isSaving}

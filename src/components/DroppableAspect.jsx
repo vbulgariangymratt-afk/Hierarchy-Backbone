@@ -48,7 +48,6 @@ const DroppableAspect = React.memo(({
                 className="aspect-card-glow-wrapper"
             >
                 <div className="card-shine" />
-                <div className="card-glow" />
                 {isNoveltyHighlighted && (
                     <div className="novelty-badge">UNEXPLORED</div>
                 )}
