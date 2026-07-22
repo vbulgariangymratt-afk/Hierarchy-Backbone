@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Trash2, Timer, Gift, Zap, ArrowUpRight, Circle, CircleDot, Check } from 'lucide-react';
+import { Lock, Trash2, Timer, Gift, Zap, ArrowUpRight, Circle, CircleDot, Check, GripVertical } from 'lucide-react';
 import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 
 const getTaskStatusInfo = (task) => {
@@ -27,7 +27,8 @@ const SortableTaskRow = React.memo(({
     onSetSelectingRewardForTaskId,
     onRemoveReward,
     onAttachReward,
-    onSaveMVE
+    onSaveMVE,
+    onStartCreatingReward
 }) => {
     const navigate = useNavigate();
     const [isEditing, setIsEditing] = useState(false);
@@ -38,12 +39,23 @@ const SortableTaskRow = React.memo(({
     const inputRef = useRef(null);
     const hintTimeoutRef = useRef(null);
     
-    // Dragging disabled
-    const attributes = {};
-    const listeners = {};
-    const setNodeRef = null;
-    const isDragging = false;
-    const style = {};
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({
+        id: task.id,
+        data: { type: 'TASK', task }
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.35 : 1
+    };
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -141,6 +153,8 @@ const SortableTaskRow = React.memo(({
             style={style}
             id={`task-${task.id}`}
             className={`task-row-container ${isExpanded ? 'is-expanded' : ''} ${isDragging ? 'is-dragging-ghost' : ''}`}
+            {...attributes}
+            {...listeners}
             onClick={(e) => { 
                 console.log('[SortableTaskRow] clicked, isEditing:', isEditing, 'taskId:', task.id);
                 if (!isEditing) {
@@ -278,77 +292,60 @@ const SortableTaskRow = React.memo(({
 
             {isExpanded && (
                 <div className="task-expanded-content" onClick={(e) => e.stopPropagation()}>
-
-                    {/* ── MVE Section ── */}
-                    <div className="task-submenu-section">
-                        <span className="expanded-label-small"><Zap size={11} strokeWidth={2.5} style={{ marginRight: '4px' }} /> Min. Viable Effort</span>
-                        <input
-                            className="mve-input"
-                            type="text"
-                            value={mveDraft}
-                            onChange={(e) => setMveDraft(e.target.value)}
-                            onBlur={handleSaveMVE}
-                            onKeyDown={handleMveKeyDown}
-                            placeholder="e.g. Just open the file for 2 min…"
-                        />
-                        {mveSaving && <span className="mve-saving-indicator">Saving…</span>}
-                    </div>
-
-                    {/* ── Micro Reward Section ── */}
-                    <div className="task-submenu-section micro-reward-section">
-                        <span className="expanded-label-small"><Gift size={11} strokeWidth={2.5} style={{ marginRight: '4px' }} /> Micro Reward</span>
-                        {rewardId ? (
-                            <div className="reward-info-block">
-                                {reward ? (
-                                    <>
-                                        <div className="reward-main">
-                                            <span className="reward-icon-inline"><Gift size={12} /></span>
-                                            <span className="reward-name-inline">{reward.name}</span>
-                                            <span className="reward-tier-inline">T{reward.metadata?.rewardTier || 1}</span>
-                                        </div>
-                                        <div className="reward-actions-inline">
-                                            <button className="reward-action-btn" onClick={() => onSetSelectingRewardForTaskId(task.id)}>Change</button>
-                                            <button className="reward-action-btn remove" onClick={() => onRemoveReward(task.id)}>Remove</button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="reward-error">
-                                        <span>Reward not found</span>
+                    {rewardId ? (
+                        <div className="reward-info-block">
+                            {reward ? (
+                                <>
+                                    <div className="reward-main">
+                                        <span className="reward-icon-inline"><Gift size={12} /></span>
+                                        <span className="reward-name-inline">{reward.name}</span>
+                                        <span className="reward-tier-inline">T{reward.metadata?.rewardTier || 1}</span>
+                                    </div>
+                                    <div className="reward-actions-inline">
+                                        <button className="reward-action-btn" onClick={() => onSetSelectingRewardForTaskId(task.id)}>Change</button>
                                         <button className="reward-action-btn remove" onClick={() => onRemoveReward(task.id)}>Remove</button>
                                     </div>
-                                )}
-                            </div>
-                        ) : (
+                                </>
+                            ) : (
+                                <div className="reward-error">
+                                    <span>Reward not found</span>
+                                    <button className="reward-action-btn remove" onClick={() => onRemoveReward(task.id)}>Remove</button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        isSelectingRewardForTaskId !== task.id && (
                             <button
                                 className="attach-reward-trigger"
                                 onClick={() => onSetSelectingRewardForTaskId(task.id)}
                             >
                                 + Attach Micro Reward
                             </button>
-                        )}
-                    </div>
+                        )
+                    )}
 
                     {isSelectingRewardForTaskId === task.id && (
-                        <div className="reward-picker-overlay" onClick={() => onSetSelectingRewardForTaskId(null)}>
-                            <div className="reward-picker-container" onClick={(e) => e.stopPropagation()}>
-                                <h4 className="picker-title">Select Micro Reward</h4>
-                                <div className="reward-list-scroll">
-                                    {allNodes
-                                        .filter(n => n.type === NodeTypes.REWARD && n.metadata?.rewardCategory === 'TASK')
-                                        .map(r => (
-                                            <div
-                                                key={r.id}
-                                                className="reward-pick-item"
-                                                onClick={() => onAttachReward(task.id, r.id)}
-                                            >
-                                                <span className="pick-name">{r.name}</span>
-                                                <span className={`tier-badge tier-${r.metadata?.rewardTier || 1}`}>T{r.metadata?.rewardTier || 1}</span>
-                                            </div>
-                                        ))}
-                                    {allNodes.filter(n => n.type === NodeTypes.REWARD && n.metadata?.rewardCategory === 'TASK').length === 0 && (
-                                        <div className="no-rewards-found">No Micro Rewards found in Bank.</div>
-                                    )}
-                                </div>
+                        <div className="reward-picker-inline">
+                            <span className="picker-title-inline">Select Micro Reward</span>
+                            <div className="reward-list-scroll">
+                                {allNodes
+                                    .filter(n => n.type === NodeTypes.REWARD && n.metadata?.rewardCategory === 'MARKETPLACE' && (n.metadata?.rewardTier === 1 || !n.metadata?.rewardTier))
+                                    .map(r => (
+                                        <div
+                                            key={r.id}
+                                            className="reward-pick-item"
+                                            onClick={() => onAttachReward(task.id, r.id)}
+                                        >
+                                            <span className="pick-name">{r.name}</span>
+                                            <span className={`tier-badge tier-${r.metadata?.rewardTier || 1}`}>T{r.metadata?.rewardTier || 1}</span>
+                                        </div>
+                                    ))}
+                                {allNodes.filter(n => n.type === NodeTypes.REWARD && n.metadata?.rewardCategory === 'MARKETPLACE' && (n.metadata?.rewardTier === 1 || !n.metadata?.rewardTier)).length === 0 && (
+                                    <div className="no-rewards-found">No Micro Resets found in Bank.</div>
+                                )}
+                            </div>
+                            <div className="picker-actions-inline">
+                                <button className="picker-create-btn" onClick={() => onStartCreatingReward(task.id)}>+ Create</button>
                                 <button className="picker-close-btn" onClick={() => onSetSelectingRewardForTaskId(null)}>Cancel</button>
                             </div>
                         </div>

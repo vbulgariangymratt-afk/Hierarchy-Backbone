@@ -32,6 +32,13 @@
     z-index: 1;
 }
 
+/* Inline task row buttons and minor utility buttons must not spill 72px hit targets over neighboring buttons */
+.task-row button::after,
+.add-task-btn::after,
+.show-all-tasks-btn::after {
+    display: none !important;
+}
+
 .skill-page-loading {
     padding: 80px;
     text-align: center;
@@ -511,6 +518,7 @@
     font-weight: 500;
     cursor: pointer;
     padding: 6px 0;
+    margin-top: 12px;
     text-align: left;
     transition: color 0.2s ease;
     display: inline-flex;
@@ -1025,16 +1033,16 @@
     display: inline-flex !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    background: var(--color-accent);
-    color: white;
+    background: var(--color-accent) !important;
+    color: #ffffff !important;
 }
 
 .task-today-badge.tomorrow {
     display: inline-flex !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    background: rgba(var(--color-accent-rgb), 0.5);
-    color: white;
+    background: #6366f1 !important;
+    color: #ffffff !important;
 }
 
 .planning-toast {
@@ -1073,10 +1081,10 @@
 }
 
 .task-row-container.is-expanded {
-    background: rgba(255, 255, 255, 0.02);
-    padding: 2px 8px 12px 8px;
-    margin: 4px -8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: transparent;
+    padding: 2px 0 12px 0;
+    margin: 0;
+    border: none;
 }
 
 .task-row {
@@ -1099,6 +1107,7 @@
     justify-content: center;
     align-items: center;
     font-weight: bold;
+    position: relative;
     transition: width 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
                 margin-right 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
                 opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1107,6 +1116,16 @@
 .task-status-symbol.clickable {
     cursor: pointer;
     transition: transform 0.1s ease;
+}
+
+.task-status-symbol.clickable::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    bottom: -8px;
+    left: -12px;
+    right: -12px;
+    z-index: 10;
 }
 
 .task-status-symbol.locked {
@@ -2776,8 +2795,11 @@
 
 /* Expanded Task & Micro Reward Styles */
 .task-expanded-content {
-    margin-top: 12px;
-    padding-left: 30px;
+    margin-top: 6px;
+    margin-left: 26px; /* align past checkbox */
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
     animation: taskExpandFade 0.2s ease-out;
 }
 
@@ -2794,24 +2816,28 @@
 }
 
 .expanded-label-small {
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-family: var(--font-family-sans);
+    font-size: 11px;
+    font-weight: 600; /* bold weight exclusively for emphasis */
+    text-transform: none; /* NO ALL CAPS */
+    letter-spacing: 0.2px;
     color: var(--text-secondary);
-    opacity: 0.5;
-    display: block;
-    margin-bottom: 8px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0;
 }
 
 /* ── Task Sub-menu Sections ─────────────────────────────────── */
 .task-submenu-section {
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    margin-bottom: 8px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    margin-bottom: 0;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .task-submenu-section:last-child {
@@ -2821,33 +2847,34 @@
 /* MVE input field */
 .mve-input {
     width: 100%;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+    border-radius: 6px;
     color: var(--text-primary);
     font-size: 13px;
-    font-weight: 500;
-    padding: 4px 0 6px 0;
+    font-weight: 400;
+    padding: 8px 12px;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
     box-sizing: border-box;
     font-family: inherit;
 }
 
 .mve-input::placeholder {
     color: var(--text-secondary);
-    opacity: 0.35;
-    font-style: italic;
+    opacity: 0.4;
+    font-style: normal; /* NO ITALICS */
 }
 
 .mve-input:focus {
-    border-bottom-color: rgba(var(--color-accent-rgb), 0.5);
+    border-color: var(--color-accent);
+    background: rgba(var(--color-accent-rgb), 0.02);
 }
 
 .mve-saving-indicator {
     position: absolute;
-    top: 10px;
-    right: 12px;
+    top: 0;
+    right: 0;
     font-size: 9px;
     font-weight: 700;
     text-transform: uppercase;
@@ -2879,6 +2906,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+    max-width: 380px;
 }
 
 .reward-main {
@@ -2916,11 +2949,11 @@
     border: none;
     color: var(--color-accent);
     font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
+    font-weight: 600;
+    text-transform: none; /* NO ALL CAPS */
     cursor: pointer;
-    opacity: 0.7;
-    transition: opacity 0.2s;
+    opacity: 0.8;
+    transition: opacity 0.2s, color 0.2s;
 }
 
 .reward-action-btn:hover {
@@ -2928,69 +2961,72 @@
 }
 
 .reward-action-btn.remove {
-    color: #ef4444;
+    color: #EB5E28; /* Soft Warning Rust instead of angry red */
+}
+
+.reward-action-btn.remove:hover {
+    color: #d84f1a;
 }
 
 .attach-reward-trigger {
+    align-self: flex-start;
     background: transparent;
-    border: 1px dashed rgba(var(--color-accent-rgb), 0.3);
+    border: 1px solid var(--color-accent);
     color: var(--color-accent);
-    font-size: 11px;
-    font-weight: 700;
-    padding: 6px 12px;
-    border-radius: 4px;
+    font-family: var(--font-family-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1),
+                background-color 0.15s ease,
+                border-color 0.15s ease;
 }
 
 .attach-reward-trigger:hover {
-    background: rgba(var(--color-accent-rgb), 0.05);
-    border-color: var(--color-accent);
+    background: rgba(var(--color-accent-rgb), 0.08);
+}
+
+.attach-reward-trigger:active {
+    transform: scale(0.96);
 }
 
 .reward-error {
     font-size: 12px;
-    color: #ef4444;
+    color: #EB5E28; /* Soft Warning Rust instead of angry red */
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-/* Reward Picker Modal */
-.reward-picker-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.reward-picker-container {
-    background: color-mix(in srgb, var(--color-bg-card) 85%, transparent);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-    border-radius: 18px;
-    width: 320px;
-    max-height: 400px;
+/* Inline Reward Picker Dropdown */
+.reward-picker-inline {
+    margin-top: 8px;
+    background: var(--color-bg-card, #18191A);
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    padding: 12px;
+    width: 100%;
+    max-width: 380px;
+    max-height: 250px;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    box-shadow: var(--shadow-lg, 0 10px 25px rgba(0, 0, 0, 0.3));
+    z-index: 10;
+    animation: taskExpandFade 0.15s ease-out;
 }
 
-.picker-title {
-    margin: 0 0 16px 0;
-    font-size: 14px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-primary);
+.picker-title-inline {
+    font-family: var(--font-family-sans);
+    font-size: 11px;
+    font-weight: 600; /* bold weight exclusively for emphasis */
+    text-transform: none; /* NO ALL CAPS */
+    color: var(--text-secondary);
+    opacity: 0.7;
+    margin-bottom: 8px;
+    margin-left: 10px; /* Align perfectly with list item text */
+    display: block;
 }
 
 .reward-list-scroll {
@@ -2999,28 +3035,28 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 .reward-pick-item {
-    padding: 12px;
-    background: rgba(255, 255, 255, 0.02);
+    padding: 8px 10px;
+    background: transparent;
     border: 1px solid transparent;
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.15s ease;
 }
 
 .reward-pick-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(var(--color-accent-rgb), 0.3);
+    background: rgba(var(--color-accent-rgb), 0.08);
+    border-color: rgba(var(--color-accent-rgb), 0.15);
 }
 
 .pick-name {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     color: var(--text-primary);
 }
@@ -3033,19 +3069,53 @@
     padding: 20px;
 }
 
-.picker-close-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: none;
-    color: var(--text-secondary);
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 700;
+.picker-actions-inline {
+    display: flex;
+    justify-content: space-between; /* Space out actions to balance the card */
+    align-items: center;
+    width: 100%;
+}
+
+.picker-create-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--color-accent);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.picker-create-btn:hover {
+    background: rgba(var(--color-accent-rgb), 0.08);
+    border-color: rgba(var(--color-accent-rgb), 0.15);
+}
+
+.picker-create-btn:active {
+    transform: scale(0.96);
+}
+
+.picker-close-btn {
+    background: transparent;
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
 }
 
 .picker-close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--text-secondary);
+}
+
+.picker-close-btn:active {
+    transform: scale(0.96);
 }
 
 /* ── Burnout Safe Mode — Planning Mode Reflection Prompt ──────── */
@@ -4720,7 +4790,6 @@
 /* Matching sidebar text color (rgb(129, 126, 125)) for tasks and micro sections */
 
 .light .task-main-name,
-.light .task-today-badge,
 .light .pinch-status-text,
 .light .pinch-explanation,
 .light .reward-name-inline,

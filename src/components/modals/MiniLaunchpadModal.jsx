@@ -36,12 +36,13 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
 
             if (!objective) {
                 objective = await backbone.addNode({
-                    name: "Initial Focus",
+                    name: "How much of this can I achieve in 7 days?",
                     type: NodeTypes.OBJECTIVE,
                     parentId: skill.id,
                     metadata: {
                         isActive: true,
                         status: "ACTIVE",
+                        durationInDays: 7,
                         createdAt: Date.now()
                     }
                 });
@@ -84,7 +85,7 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
             setQuickTaskName("");
             
             // 4. Navigate to focus mode with the new task id AND autoStart flag
-            navigate('/focus', { state: { taskId: newTask.id, autoStart: true } });
+            navigate('/focus', { state: { taskId: newTask.id, autoStart: true, returnRoute: `/skill/${skill.id}` } });
             onClose();
         } catch (err) {
             console.error("Failed to create quick task:", err);
@@ -171,7 +172,7 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
     const handleTaskClick = useCallback((task) => {
         // Navigate to focus mode with the task id AND autoStart flag
         // This triggers the existing Pleasure Prediction system in FocusPage
-        navigate('/focus', { state: { taskId: task.id, autoStart: true } });
+        navigate('/focus', { state: { taskId: task.id, autoStart: true, returnRoute: `/skill/${skill.id}` } });
         onClose();
     }, [navigate, onClose]);
 
@@ -254,9 +255,9 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
                                                     flex: 1,
                                                     padding: '12px 16px',
                                                     borderRadius: '6px',
-                                                    background: 'rgba(255, 255, 255, 0.03)',
-                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                                                    color: '#fff',
+                                                    background: 'var(--alpha-low)',
+                                                    border: '1px solid var(--color-border)',
+                                                    color: 'var(--text-primary)',
                                                     fontFamily: "'Lexend', sans-serif",
                                                     fontSize: '16px'
                                                 }}

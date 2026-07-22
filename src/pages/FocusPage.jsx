@@ -145,6 +145,7 @@ const FocusPage = () => {
         energyLevel
     } = useSession();
 
+    const exitRoute = location.state?.returnRoute || previousRoute || '/launchpad';
     const { todayRemovalMode } = useSettings();
 
 
@@ -621,7 +622,7 @@ const FocusPage = () => {
 
             if (task?.isTempOnboarding) {
                 if (isNavigatingAway) {
-                    navigate(previousRoute || '/launchpad');
+                    navigate(exitRoute);
                 } else {
                     loadNextTask();
                 }
@@ -649,7 +650,7 @@ const FocusPage = () => {
                 // Standard flow
                 if (isNavigatingAway) {
                     backbone.trackFocusMode(false).catch(console.error);
-                    navigate(previousRoute || '/launchpad');
+                    navigate(exitRoute);
                 } else {
                     loadNextTask();
                 }
@@ -659,7 +660,7 @@ const FocusPage = () => {
         } finally {
             console.timeEnd("sessionComplete");
         }
-    }, [task?.id, activeSessionId, actualPleasure, mastery, isNavigatingAway, navigate, previousRoute, energyLevel, loadNextTask, nextSuggestedTask]);
+    }, [task?.id, activeSessionId, actualPleasure, mastery, isNavigatingAway, navigate, exitRoute, energyLevel, loadNextTask, nextSuggestedTask]);
 
     const [pendingTaskComplete, setPendingTaskComplete] = useState(false);
 
@@ -690,7 +691,7 @@ const FocusPage = () => {
         try {
             if (task.isTempOnboarding) {
                 setTimeout(() => {
-                    navigate(previousRoute || '/launchpad');
+                    navigate(exitRoute);
                     setPendingTaskComplete(false);
                     console.timeEnd("taskCompleteTransition");
                 }, 1000);
@@ -744,7 +745,7 @@ const FocusPage = () => {
             setPendingTaskComplete(false);
             console.timeEnd("taskCompleteTransition");
         }
-    }, [task, skill, ack, loadNextTask]);
+    }, [task, skill, ack, loadNextTask, exitRoute]);
 
 
     const handleStopForNow = useCallback(async () => {
@@ -771,8 +772,8 @@ const FocusPage = () => {
         if (task && !task.isTempOnboarding) {
             await backbone.trackFocusMode(false);
         }
-        navigate(previousRoute || '/launchpad');
-    }, [task, todayRemovalMode, navigate, previousRoute]);
+        navigate(exitRoute);
+    }, [task, todayRemovalMode, navigate, exitRoute]);
 
     const handleSummarySubmit = useCallback(async () => {
         const isTaskDone = pendingTaskComplete;
@@ -839,7 +840,7 @@ const FocusPage = () => {
         } catch (error) {
             console.error("Failed to exit focus mode:", error);
         }
-        navigate(previousRoute || '/launchpad');
+        navigate(exitRoute);
     };
 
     const handleSaveForHighEnergy = async () => {
@@ -1426,7 +1427,7 @@ const FocusPage = () => {
                                 </button>
                                 <button 
                                     className="modal-submit-btn secondary"
-                                    onClick={() => navigate(previousRoute || '/launchpad')}
+                                    onClick={() => navigate(exitRoute)}
                                 >
                                     I'm done for now
                                 </button>
@@ -1507,7 +1508,7 @@ const FocusPage = () => {
                                     onClick={async () => {
                                         await completeBackboneSession();
                                         await backbone.trackFocusMode(false);
-                                        navigate(previousRoute || '/launchpad');
+                                        navigate(exitRoute);
                                     }}
                                 >
                                     Stop Cleanly

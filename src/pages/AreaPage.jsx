@@ -5,6 +5,7 @@ import CreateSkillModal from '../components/CreateSkillModal';
 import NodeIcon from '../components/NodeIcon';
 import SkillCard from '../components/SkillCard';
 import IconPickerModal from '../components/modals/IconPickerModal';
+import { Trash2 } from 'lucide-react';
 import './AreaPage.css';
 
 const SVG_ICONS = {
@@ -374,9 +375,10 @@ const AreaPage = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => handleDeleteSkill(skill.id, skill.name)}
-                                                className="btn btn-danger"
+                                                className="sleeping-skill-delete-btn"
+                                                title={`Delete ${skill.name}`}
                                             >
-                                                Delete
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
                                     ))}

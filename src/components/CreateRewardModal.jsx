@@ -4,7 +4,7 @@ import { useSettings } from '../context/SettingsContext';
 import { Coins } from 'lucide-react';
 import './CreateRewardModal.css';
 
-const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
+const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1, isTaskReward = false }) => {
     const { currencyName } = useSettings();
     const [name, setName] = useState('');
     const [sensoryDescription, setSensoryDescription] = useState('');
@@ -30,9 +30,14 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
         };
         if (isOpen) {
             fetchSkills();
-            setRewardTier(defaultTier);
+            if (isTaskReward) {
+                setRewardTier(1);
+                setIsLevelGated(false);
+            } else {
+                setRewardTier(defaultTier);
+            }
         }
-    }, [isOpen, defaultTier]);
+    }, [isOpen, defaultTier, isTaskReward]);
 
     const handleCostChange = (val) => {
         const cost = Number(val);
@@ -53,7 +58,7 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
 
         setIsSubmitting(true);
         try {
-            await backbone.addNode({
+            const createdNode = await backbone.addNode({
                 name: name.trim(),
                 type: NodeTypes.REWARD,
                 parentId: 'REWARD_BANK',
@@ -78,7 +83,7 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
             setRequiredSkillId(allSkills.length > 0 ? allSkills[0].id : '');
             setCoverUrl('');
 
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(createdNode);
             onClose();
         } catch (error) {
             console.error("Failed to create reward:", error);
@@ -121,32 +126,34 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>Category</label>
-                        <div className="category-toggle">
-                            <button
-                                type="button"
-                                className={`toggle-btn ${rewardTier === 1 ? 'active' : ''}`}
-                                onClick={() => setRewardTier(1)}
-                            >
-                                Micro-Reset
-                            </button>
-                            <button
-                                type="button"
-                                className={`toggle-btn ${rewardTier === 2 ? 'active' : ''}`}
-                                onClick={() => setRewardTier(2)}
-                            >
-                                Mid-Reset
-                            </button>
-                            <button
-                                type="button"
-                                className={`toggle-btn ${rewardTier === 3 ? 'active' : ''}`}
-                                onClick={() => setRewardTier(3)}
-                            >
-                                Epic Milestone
-                            </button>
+                    {!isTaskReward && (
+                        <div className="form-group">
+                            <label>Category</label>
+                            <div className="category-toggle">
+                                <button
+                                    type="button"
+                                    className={`toggle-btn ${rewardTier === 1 ? 'active' : ''}`}
+                                    onClick={() => setRewardTier(1)}
+                                >
+                                    Micro-Reset
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`toggle-btn ${rewardTier === 2 ? 'active' : ''}`}
+                                    onClick={() => setRewardTier(2)}
+                                >
+                                    Mid-Reset
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`toggle-btn ${rewardTier === 3 ? 'active' : ''}`}
+                                    onClick={() => setRewardTier(3)}
+                                >
+                                    Epic Milestone
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="form-group">
                         <label>{currencyName} Cost</label>
@@ -162,72 +169,73 @@ const CreateRewardModal = ({ isOpen, onClose, onSuccess, defaultTier = 1 }) => {
                             />
                         </div>
                     </div>
-
-                    <div className="form-group level-gate-group">
-                        <div className="gate-toggle-wrapper">
-                            <label className="checkbox-label custom-switch-container">
-                                <input 
-                                    type="checkbox" 
-                                    checked={isLevelGated}
-                                    onChange={e => setIsLevelGated(e.target.checked)}
-                                    className="custom-switch-input"
-                                />
-                                <span className="custom-switch-slider" />
-                                <span className="switch-text">Gate this by Aura Level?</span>
-                            </label>
-                            
-                            <div className="gate-toggle-right-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                {hryvniaCost >= 50 && !isLevelGated && (
-                                    <span className="smart-suggestion">Recommended</span>
-                                )}
-                                <div className="aura-help-wrapper">
-                                    <span className="aura-help-icon">?</span>
-                                    <div className="aura-help-tooltip">
-                                        Aura is how you'll track progress on your skills.
+                    {!isTaskReward && (
+                        <div className="form-group level-gate-group">
+                            <div className="gate-toggle-wrapper">
+                                <label className="checkbox-label custom-switch-container">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={isLevelGated}
+                                        onChange={e => setIsLevelGated(e.target.checked)}
+                                        className="custom-switch-input"
+                                    />
+                                    <span className="custom-switch-slider" />
+                                    <span className="switch-text">Gate this by Aura Level?</span>
+                                </label>
+                                
+                                <div className="gate-toggle-right-group" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    {hryvniaCost >= 50 && !isLevelGated && (
+                                        <span className="smart-suggestion">Recommended</span>
+                                    )}
+                                    <div className="aura-help-wrapper">
+                                        <span className="aura-help-icon">?</span>
+                                        <div className="aura-help-tooltip">
+                                            Aura is how you'll track progress on your skills.
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            {isLevelGated && (
+                                <div className="level-input-wrapper animated-fade-in">
+                                    <div className="gate-settings-row">
+                                        <div className="gate-field">
+                                            <label>Required Aura Level</label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="100"
+                                                value={requiredLevel}
+                                                onChange={e => setRequiredLevel(e.target.value)}
+                                                placeholder="e.g. 5"
+                                            />
+                                        </div>
+                                        <div className="gate-field">
+                                            <label>
+                                                Required In
+                                                {selectedSkill && (
+                                                    <span style={{ color: 'var(--color-accent)', textTransform: 'none', marginLeft: '6px' }}>
+                                                        (Current Lvl: {currentLevel})
+                                                    </span>
+                                                )}
+                                            </label>
+                                            <select 
+                                                value={requiredSkillId} 
+                                                onChange={e => setRequiredSkillId(e.target.value)}
+                                                className="skill-gate-select"
+                                                required={isLevelGated}
+                                            >
+                                                {allSkills.length === 0 && <option value="">No skills found</option>}
+                                                {allSkills.map(skill => (
+                                                    <option key={skill.id} value={skill.id}>{skill.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-
-                        {isLevelGated && (
-                            <div className="level-input-wrapper animated-fade-in">
-                                <div className="gate-settings-row">
-                                    <div className="gate-field">
-                                        <label>Required Aura Level</label>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            max="100"
-                                            value={requiredLevel}
-                                            onChange={e => setRequiredLevel(e.target.value)}
-                                            placeholder="e.g. 5"
-                                        />
-                                    </div>
-                                    <div className="gate-field">
-                                        <label>
-                                            Required In
-                                            {selectedSkill && (
-                                                <span style={{ color: 'var(--color-accent)', textTransform: 'none', marginLeft: '6px' }}>
-                                                    (Current Lvl: {currentLevel})
-                                                </span>
-                                            )}
-                                        </label>
-                                        <select 
-                                            value={requiredSkillId} 
-                                            onChange={e => setRequiredSkillId(e.target.value)}
-                                            className="skill-gate-select"
-                                            required={isLevelGated}
-                                        >
-                                            {allSkills.length === 0 && <option value="">No skills found</option>}
-                                            {allSkills.map(skill => (
-                                                <option key={skill.id} value={skill.id}>{skill.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    )}
 
                     <div className="form-group">
                         <label>Cover Image URL (ADHD visual anchor)</label>

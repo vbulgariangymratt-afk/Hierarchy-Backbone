@@ -1,7 +1,13 @@
 .area-page {
-    padding: 60px 80px;
+    padding: 30px 20px;
     max-width: 1400px;
     margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+    .area-page {
+        padding: 60px 80px;
+    }
 }
 
 @keyframes areaPageFadeIn {
@@ -991,22 +997,28 @@
     width: 100%;
     min-height: 72px;
     box-sizing: border-box;
+    container-type: inline-size;
+    z-index: 1;
+}
+
+.skill-card:hover {
+    z-index: 10;
 }
 
 /* ROW 1: single flat flex row — all elements are siblings, guaranteed same midline */
 .skill-card-row1 {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    gap: 8px 10px;
     width: 100%;
     min-width: 0;
 }
 
 /* Spacer between left content and right progress block */
 .skill-row1-spacer {
-    flex: 1;
-    min-width: 16px;
+    display: none;
 }
 
 /* ROW 2: experiment text left, buttons right */
@@ -1070,6 +1082,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 720px;
+    min-width: 0;
 }
 
 .skill-card-metadata-row {
@@ -1197,8 +1210,11 @@
 
 /* Progress track sits directly inside row1 as a sibling */
 .progress-track {
-    width: 180px;
-    flex-shrink: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: auto;
+    max-width: none;
+    min-width: 60px;
     height: 6px;
     background-color: var(--color-border);
     border-radius: var(--radius-full, 9999px);
@@ -1217,8 +1233,32 @@
     font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
-    min-width: 44px;
+    min-width: auto;
     text-align: right;
+}
+
+/* Container Queries for wide layouts */
+@container (min-width: 560px) {
+    .skill-card-row1 {
+        flex-wrap: nowrap;
+        gap: 10px;
+    }
+
+    .skill-row1-spacer {
+        display: block;
+        flex: 1;
+        min-width: 16px;
+    }
+
+    .progress-track {
+        flex-grow: 0;
+        flex-shrink: 0;
+        width: 180px;
+    }
+
+    .progress-percentage-label {
+        min-width: 44px;
+    }
 }
 
 /* Actions inside row2 — align to the right */
@@ -1483,6 +1523,36 @@
     background: var(--alpha-low, rgba(255, 255, 255, 0.02)) !important;
     border-radius: var(--radius-btn, 6px) !important;
     border: 1px solid var(--border, var(--color-border)) !important;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.area-edit-block .sleeping-skill-row:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.sleeping-skill-delete-btn {
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.4)) !important;
+    padding: 6px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer !important;
+    border-radius: 4px !important;
+    opacity: 0.5;
+    transition: color 0.15s, opacity 0.15s, background-color 0.15s, transform 0.1s !important;
+}
+
+.sleeping-skill-delete-btn:hover {
+    color: #EB5E28 !important; /* Soft rust/orange warning color */
+    background-color: rgba(235, 94, 40, 0.08) !important;
+    opacity: 1;
+}
+
+.sleeping-skill-delete-btn:active {
+    transform: scale(0.92);
 }
 
 /* Premium Buttons */

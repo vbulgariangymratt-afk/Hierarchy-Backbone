@@ -100,7 +100,7 @@ const ObjectiveCreationForm = ({ skillId, fetchData, onCancel }) => {
             </div>
             <div className="creation-row">
                 <input
-                    placeholder="Wish (What do I want?)"
+                    placeholder="Wish (How do you wanna feel when working on this?)"
                     value={newObjectiveWish}
                     onChange={e => setNewObjectiveWish(e.target.value)}
                     className="form-input"
@@ -108,7 +108,7 @@ const ObjectiveCreationForm = ({ skillId, fetchData, onCancel }) => {
             </div>
             <div className="creation-row">
                 <input
-                    placeholder="Outcome (What does success look like?)"
+                    placeholder="Outcome (Is there a measurable outcome for you to call 'success'?)"
                     value={newObjectiveOutcome}
                     onChange={e => setNewObjectiveOutcome(e.target.value)}
                     className="form-input"

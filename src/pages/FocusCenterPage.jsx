@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSettings, SLOT_ROLES } from '../context/SettingsContext';
 import { backbone, NodeTypes } from '../backbone-v2';
 import './FocusCenterPage.css';
@@ -63,6 +63,22 @@ const FocusCenterPage = () => {
             setTimeout(() => searchRef.current?.focus(), 50);
         }
     }, [showPicker]);
+
+    const highestFilledIndex = useMemo(() => {
+        let maxIdx = -1;
+        (focusSlots || []).forEach((slot, idx) => {
+            const skill = allSkills.find(s => s.id === slot);
+            if (slot && skill) {
+                maxIdx = idx;
+            }
+        });
+        return maxIdx;
+    }, [focusSlots, allSkills]);
+
+    const visibleSlots = useMemo(() => {
+        const count = Math.min(5, Math.max(1, highestFilledIndex + 2));
+        return (focusSlots || []).map((slotId, index) => ({ slotId, index })).slice(0, count);
+    }, [focusSlots, highestFilledIndex]);
 
     const filteredSkills = allSkills.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -149,7 +165,7 @@ const FocusCenterPage = () => {
             </header>
 
             <div className="slots-grid">
-                {focusSlots.map((slotSkillId, index) => {
+                {visibleSlots.map(({ slotId: slotSkillId, index }) => {
                     const skill = allSkills.find(s => s.id === slotSkillId);
                     const role = SLOT_ROLES[index];
                     return (
@@ -178,7 +194,7 @@ const FocusCenterPage = () => {
                             ) : (
                                 <div className="slot-content empty">
                                     <div className="empty-plus"><Plus size={32} strokeWidth={1} /></div>
-                                    <div className="empty-text">Empty Slot</div>
+                                    <div className="empty-text">{index === 0 ? "Your first obsession goes here" : "Empty Slot"}</div>
                                 </div>
                             )}
                         </GlassPanel>
@@ -221,15 +237,15 @@ const FocusCenterPage = () => {
                         {!(allSkills.length === 0 && searchQuery.trim() === '') && (
                             <div className="skills-list">
                                 {/* Option to clear the slot */}
-                                {focusSlots[showPicker] && (
+                                {focusSlots[showPicker] && allSkills.some(s => s.id === focusSlots[showPicker]) && (
                                     <div
                                         className="picker-skill-item clear-item"
-                                    onClick={() => handleSelectSkill(null)}
-                                >
-                                    <span className="item-icon"><X size={16} /></span>
-                                    <span className="item-name">Clear this slot</span>
-                                </div>
-                            )}
+                                        onClick={() => handleSelectSkill(null)}
+                                    >
+                                        <span className="item-icon"><X size={16} /></span>
+                                        <span className="item-name">Clear this slot</span>
+                                    </div>
+                                )}
 
                             {loadingSkills ? (
                                 <div className="picker-loading">Loading skills...</div>
@@ -260,7 +276,7 @@ const FocusCenterPage = () => {
                                             <strong>"Obsessions"</strong> is a status for skills, which live inside an identity.
                                         </p>
                                         <p style={{ margin: 0, fontSize: '16px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'left', fontFamily: "'Lexend', sans-serif" }}>
-                                            For example if you were obsessed with language learning <strong>"bilingual"</strong> or <strong>"a polyglot"</strong>, if you're obsessed with building and selling apps, you'd be a <strong>"software developer"</strong> or <strong>"an entrepreneur"</strong>.
+                                            For example if you were obsessed with language learning, you'd be <strong>"bilingual"</strong> or <strong>"a polyglot"</strong>. If you're obsessed with building and selling apps, you'd be a <strong>"software developer"</strong> or <strong>"an entrepreneur"</strong>.
                                         </p>
                                         <h4 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '8px 0 0 0', textAlign: 'left', lineHeight: '1.5', fontFamily: "'Lexend', sans-serif" }}>
                                             Who do you wanna become in relation to this obsession?
@@ -278,8 +294,8 @@ const FocusCenterPage = () => {
                                                     style={{
                                                         padding: '12px 16px',
                                                         borderRadius: '8px',
-                                                        background: 'rgba(255, 255, 255, 0.03)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        background: 'var(--alpha-low)',
+                                                        border: '1px solid var(--color-border)',
                                                         color: 'var(--text-primary)',
                                                         textAlign: 'left',
                                                         fontFamily: "'Lexend', sans-serif",
@@ -305,9 +321,9 @@ const FocusCenterPage = () => {
                                                     flex: 1,
                                                     padding: '12px 16px',
                                                     borderRadius: '8px',
-                                                    background: 'rgba(255, 255, 255, 0.03)',
-                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                                                    color: '#fff',
+                                                    background: 'var(--alpha-low)',
+                                                    border: '1px solid var(--color-border)',
+                                                    color: 'var(--text-primary)',
                                                     fontFamily: "'Lexend', sans-serif",
                                                     fontSize: '16px'
                                                 }}

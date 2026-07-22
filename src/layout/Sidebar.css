@@ -195,6 +195,10 @@
     transition: var(--transition-smooth);
 }
 
+.btn-icon.pulse-breathe {
+    animation: gear-blink 1.6s infinite ease-in-out;
+}
+
 .btn-text {
     font-family: inherit;
     font-size: 0.85rem; /* Exact sandbox spec: 0.85rem */
@@ -610,21 +614,17 @@
 }
 
 .header-action-btn.pulse-breathe {
-    opacity: 0.8 !important;
-    color: var(--color-accent) !important;
-    animation: gear-breathe 3s infinite ease-in-out;
+    /* Keep the element visible as base - opacity:0 default is overridden */
+    opacity: 1 !important;
+    /* Disable the opacity transition so it doesn't fight the animation */
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    animation: gear-blink 1.6s infinite ease-in-out;
 }
 
-@keyframes gear-breathe {
-    0%, 100% {
-        transform: scale(0.95);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.1);
-        filter: drop-shadow(0 0 6px var(--color-accent));
-        opacity: 0.8;
-    }
+@keyframes gear-blink {
+    /* Use filter:opacity() instead of opacity so !important rules can't block it */
+    0%, 100% { filter: opacity(5%);  }
+    50%       { filter: opacity(80%); }
 }
 
 .section-title-static,
@@ -1607,19 +1607,19 @@
 .liquid-mode.light .sidebar .segmented-control-label,
 .liquid-mode.light .sidebar .hryvnia-amount,
 .liquid-mode.light .sidebar .mode-toggle-btn,
-.liquid-mode.light .sidebar .header-action-btn,
+.liquid-mode.light .sidebar .header-action-btn:not(.pulse-breathe),
 .solid-mode.light .sidebar .energy-label,
 .solid-mode.light .sidebar .section-title-static,
 .solid-mode.light .sidebar .segmented-control-label,
 .solid-mode.light .sidebar .hryvnia-amount,
 .solid-mode.light .sidebar .mode-toggle-btn,
-.solid-mode.light .sidebar .header-action-btn,
+.solid-mode.light .sidebar .header-action-btn:not(.pulse-breathe),
 .wallpaper-mode.light .sidebar .energy-label,
 .wallpaper-mode.light .sidebar .section-title-static,
 .wallpaper-mode.light .sidebar .segmented-control-label,
 .wallpaper-mode.light .sidebar .hryvnia-amount,
 .wallpaper-mode.light .sidebar .mode-toggle-btn,
-.wallpaper-mode.light .sidebar .header-action-btn {
+.wallpaper-mode.light .sidebar .header-action-btn:not(.pulse-breathe) {
     color: rgba(0, 0, 0, 0.9) !important;
     font-weight: 600 !important;
     text-transform: none !important;

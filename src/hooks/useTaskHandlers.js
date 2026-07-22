@@ -13,7 +13,8 @@ export const useTaskHandlers = ({
     fetchData,
     getChildren,
     energyLevel,
-    handleLogPulse
+    handleLogPulse,
+    isReorderingRef
 }) => {
     // Aspect Creation State
     const [creatingAspectForObjId, setCreatingAspectForObjId] = useState(null);
@@ -38,6 +39,7 @@ export const useTaskHandlers = ({
     const [isSleepingExpanded, setIsSleepingExpanded] = useState(false);
     const [expandedTaskIds, setExpandedTaskIds] = useState([]);
     const [isSelectingRewardForTaskId, setIsSelectingRewardForTaskId] = useState(null);
+    const [rewardCreationTaskId, setRewardCreationTaskId] = useState(null);
 
     // UI Feedback State
     const [planningToast, setPlanningToast] = useState(null);
@@ -402,18 +404,15 @@ export const useTaskHandlers = ({
             overContainerId = overTask?.parentId;
         }
 
-        setAllNodes(prev => {
-            const activeIndex = prev.findIndex(n => n.id === activeId);
-            const overIndex = prev.findIndex(n => n.id === overId);
-            
-            if (activeIndex === -1 || overIndex === -1) return prev;
-
-            const reordered = arrayMove(prev, activeIndex, overIndex);
-            return reordered.map(n => {
-                if (n.id === activeId) return { ...n, parentId: overContainerId };
-                return n;
-            });
-        });
+        // Only update parentId if the task is crossing aspect boundaries.
+        // Do NOT reorder the full allNodes array here — that causes handleDragEnd
+        // to receive a corrupted intermediate state. The visual reordering within
+        // the current aspect is handled by @dnd-kit's own transform CSS.
+        if (overContainerId && overContainerId !== activeTask.parentId) {
+            setAllNodes(prev =>
+                prev.map(n => n.id === activeId ? { ...n, parentId: overContainerId } : n)
+            );
+        }
     }, [allNodes, setAllNodes]);
 
     const handleDragEnd = useCallback((event) => {
@@ -452,6 +451,7 @@ export const useTaskHandlers = ({
         const currentTargetTasks = getChildren(targetAspectId, NodeTypes.TASK);
         const currentSourceTasks = getChildren(sourceAspectId, NodeTypes.TASK);
 
+
         let reorderedNodes = [];
 
         if (targetAspectId === sourceAspectId) {
@@ -477,6 +477,7 @@ export const useTaskHandlers = ({
             reorderedNodes = [...reindexedSource, ...reindexedTarget];
         }
 
+
         setAllNodes(prev => {
             const otherNodes = prev.filter(n => !reorderedNodes.some(rn => rn.id === n.id));
             const aspectIndex = otherNodes.findIndex(n => n.id === targetAspectId);
@@ -484,9 +485,38 @@ export const useTaskHandlers = ({
             
             const newAll = [...otherNodes];
             newAll.splice(insertIndex, 0, ...reorderedNodes);
+
+
             return newAll;
         });
-    }, [allNodes, setAllNodes, getChildren]);
+
+        // Persist drag and drop changes to backend repository asynchronously.
+        // isReorderingRef blocks the repository subscription from calling fetchData()
+        // while writes are in flight — otherwise each updateNode fires the subscriber
+        // which overwrites our optimistic allNodes state before writes complete.
+        (async () => {
+            if (isReorderingRef) isReorderingRef.current = true;
+            try {
+                if (targetAspectId !== sourceAspectId) {
+                    await backbone.moveNode(activeTaskId, targetAspectId);
+                }
+                const promises = reorderedNodes.map(t =>
+                    backbone.updateNode(t.id, {
+                        metadata: {
+                            ...t.metadata,
+                            orderIndex: t.metadata.orderIndex
+                        }
+                    })
+                );
+                await Promise.all(promises);
+            } catch (err) {
+                console.error("[Drag-End Persistence Failed]", err);
+                fetchData(); // Only revert to DB state on actual failure
+            } finally {
+                if (isReorderingRef) isReorderingRef.current = false;
+            }
+        })();
+    }, [allNodes, setAllNodes, getChildren, fetchData]);
 
     // ─── Reward Handlers ──────────────────────────────────────────────────────
     const handleRemoveReward = useCallback(async (taskId) => {
@@ -543,6 +573,7 @@ export const useTaskHandlers = ({
         isSleepingExpanded, setIsSleepingExpanded,
         expandedTaskIds, setExpandedTaskIds,
         isSelectingRewardForTaskId, setIsSelectingRewardForTaskId,
+        rewardCreationTaskId, setRewardCreationTaskId,
 
         // Handlers
         handleCreateAspect,

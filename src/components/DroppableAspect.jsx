@@ -20,9 +20,10 @@ const DroppableAspect = React.memo(({
     children, 
     onToggleAspect 
 }) => {
-    // Dropping disabled
-    const setNodeRef = null;
-    const isOver = false;
+    const { setNodeRef, isOver } = useDroppable({
+        id: aspect.id,
+        data: { type: 'ASPECT', aspect }
+    });
 
     return (
         <motion.div

@@ -299,12 +299,22 @@ const Sidebar = ({ onSkillClick }) => {
     }, [allNodes, focusSlots]);
 
     const isEmptyObsessions = useMemo(() => {
-        return !focusSlots || focusSlots.every(slot => slot === null);
-    }, [focusSlots]);
+        if (!focusSlots || focusSlots.length === 0) return true;
+        return focusSlots.every(id => {
+            if (!id) return true;
+            return !allNodes.some(n => n.id === id && n.type === 'SKILL');
+        });
+    }, [focusSlots, allNodes]);
 
     const isEmptyMaintenance = useMemo(() => {
         return maintenanceSkills.length === 0;
     }, [maintenanceSkills]);
+
+    // Blink the Launchpad when: obsession exists but no tasks created yet (step 2 of onboarding)
+    const shouldBlinkLaunchpad = useMemo(() => {
+        if (isEmptyObsessions) return false; // Step 1 not done yet
+        return !allNodes.some(n => n.type === 'TASK');
+    }, [isEmptyObsessions, allNodes]);
 
     // ---------------------------------------------------------------------------
     // PILOT LIGHT DRAWER — compute spotlight and pilot light habits
@@ -581,7 +591,7 @@ const Sidebar = ({ onSkillClick }) => {
                             /* PLANNING MODE SIDEBAR CONTENT */
                             <>
                                 <NavLink to="/launchpad" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                    <span className="btn-icon">
+                                    <span className={`btn-icon ${shouldBlinkLaunchpad ? 'pulse-breathe' : ''}`} style={{ position: 'relative' }}>
                                         <LayoutDashboard size={16} />
                                     </span>
                                     <span className="btn-text">Launchpad</span>
@@ -625,7 +635,7 @@ const Sidebar = ({ onSkillClick }) => {
                                         <div className="section-content">
                                             {focusSlots
                                                 .map((slotId, idx) => ({ slotId, idx }))
-                                                .filter(({ slotId }) => !!slotId)
+                                                .filter(({ slotId }) => !!slotId && !!slotSkills[slotId])
                                                 .map(({ slotId, idx }) => {
                                                     const skill = slotSkills[slotId];
                                                     const role = SLOT_ROLES[idx];

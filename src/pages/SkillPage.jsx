@@ -34,6 +34,7 @@ import useTaskHandlers from '../hooks/useTaskHandlers';
 import SkillSurvivalView from '../components/SkillSurvivalView';
 import ObjectiveCreationForm from '../components/ObjectiveCreationForm';
 import ObjectiveCard from '../components/ObjectiveCard';
+import CreateRewardModal from '../components/CreateRewardModal';
 
 const bionicify = (text) => {
     if (!text) return '';
@@ -348,7 +349,7 @@ const SkillPage = () => {
     }, [fetchData]);
 
     const taskHandlers = useTaskHandlers({
-        id, allNodes, setAllNodes, fetchData, getChildren, energyLevel, handleLogPulse
+        id, allNodes, setAllNodes, fetchData, getChildren, energyLevel, handleLogPulse, isReorderingRef
     });
 
     const { 
@@ -786,32 +787,12 @@ const SkillPage = () => {
                 habits={activeHabits} navigate={navigate} handleHabitComplete={handleHabitComplete} getChildren={getChildren}
             />
         );
-    }    const PinchAnalysis = ({ skill, energyLevel }) => {
-        if (energyLevel < 4) return null;
-        const pinch = skill.metadata?.pinchState;
-        if (!pinch || pinch === 'NONE') return null;
-
-        const explanation = {
-            'NOVELTY': "Attention is decaying. The current experiment structure has become predictable.",
-            'CHALLENGE': "Mastery has plateaued. Increase the difficulty.",
-            'PASSION': "High value, high resistance. Break the next task into a 2-minute MVE.",
-            'INTEREST': null,
-            'HURRY': null
-        }[pinch];
-
-        if (!explanation) return null;
-
-        return (
-            <div className="pinch-explanation-banner">
-                <span className="pinch-explanation-icon">⚡</span>
-                <p className="pinch-explanation-text">{explanation}</p>
-            </div>
-        );
-    };
+    }
 
     return (
-        <div id="skill-page-wrapper" className={`skill-page energy-level-${energyLevel}`}>
-            <button className="back-button" onClick={() => navigate(-1)}><span>&larr;</span> Back to Area</button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleTaskDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+            <div id="skill-page-wrapper" className={`skill-page energy-level-${energyLevel}`}>
+                <button className="back-button" onClick={() => navigate(-1)}><span>&larr;</span> Back to Area</button>
 
             <header className="skill-header">
                 <div className="skill-header-main-row">
@@ -856,7 +837,7 @@ const SkillPage = () => {
                         )}
                     </div>
                 </div>
-                <PinchAnalysis skill={skill} energyLevel={energyLevel} />
+
             </header>
 
             <section className="skill-section habits-skill-wrapper">
@@ -984,7 +965,58 @@ const SkillPage = () => {
 
             {activeObjectives.length > 0 && !shouldHideTasksAndExperiments && (
                 <section className="skill-section active-experiments-section">
-                    <span className="section-label">Active Experiments</span>
+                    <span className="section-label" style={{ display: 'flex', alignItems: 'center' }}>
+                        Active Experiments
+                        <span className="tooltip-container" style={{ position: 'relative', display: 'inline-block', marginLeft: '6px' }}>
+                            <span 
+                                className="help-icon"
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '14px',
+                                    height: '14px',
+                                    borderRadius: '4px',
+                                    background: 'rgba(255, 255, 255, 0.03)',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '9px',
+                                    fontWeight: 'bold',
+                                    cursor: 'help',
+                                    fontFamily: "'Lexend', sans-serif"
+                                }}
+                            >
+                                ?
+                            </span>
+                            <div 
+                                className="tooltip-text"
+                                style={{
+                                    visibility: 'hidden',
+                                    width: '240px',
+                                    backgroundColor: 'var(--color-bg-card, #1c1c1c)',
+                                    border: '1px solid var(--color-border, rgba(255,255,255,0.08))',
+                                    color: 'var(--text-secondary)',
+                                    textAlign: 'left',
+                                    borderRadius: '6px',
+                                    padding: '10px',
+                                    position: 'absolute',
+                                    bottom: '125%',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    boxShadow: 'var(--shadow-lg)',
+                                    opacity: 0,
+                                    transition: 'opacity 0.2s, visibility 0.2s',
+                                    zIndex: 1000,
+                                    fontSize: '12px',
+                                    lineHeight: '1.4',
+                                    fontWeight: '400',
+                                    fontFamily: "'Lexend', sans-serif"
+                                }}
+                            >
+                                Experiments are 1-2 week focus sprints. Inside them, Aspects group your activities by theme (e.g. Speaking, Vocabulary).
+                            </div>
+                        </span>
+                    </span>
                     <LayoutGroup id="active-objectives">
                         <div className="active-experiments-list">
                             {activeObjectives.map(obj => (
@@ -1030,6 +1062,7 @@ const SkillPage = () => {
                                     handleRemoveReward={taskHandlers.handleRemoveReward}
                                     handleAttachReward={taskHandlers.handleAttachReward}
                                     handleSaveMVE={taskHandlers.handleSaveMVE}
+                                    onStartCreatingReward={taskHandlers.setRewardCreationTaskId}
                                     creatingTaskForAspectId={taskHandlers.creatingTaskForAspectId}
                                     setCreatingTaskForAspectId={taskHandlers.setCreatingTaskForAspectId}
                                     newTaskName={taskHandlers.newTaskName}
@@ -1126,6 +1159,7 @@ const SkillPage = () => {
                                         handleRemoveReward={taskHandlers.handleRemoveReward}
                                         handleAttachReward={taskHandlers.handleAttachReward}
                                         handleSaveMVE={taskHandlers.handleSaveMVE}
+                                        onStartCreatingReward={taskHandlers.setRewardCreationTaskId}
                                         creatingTaskForAspectId={taskHandlers.creatingTaskForAspectId}
                                         setCreatingTaskForAspectId={taskHandlers.setCreatingTaskForAspectId}
                                         newTaskName={taskHandlers.newTaskName}
@@ -1160,11 +1194,9 @@ const SkillPage = () => {
                 </section>
             )}
 
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleTaskDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-                <DragOverlay dropAnimation={null}>
-                    {dragActiveId ? <div className="drag-overlay-task">{allNodes.find(n => n.id === dragActiveId)?.name}</div> : null}
-                </DragOverlay>
-            </DndContext>
+            <DragOverlay dropAnimation={null}>
+                {dragActiveId ? <div className="drag-overlay-task">{allNodes.find(n => n.id === dragActiveId)?.name}</div> : null}
+            </DragOverlay>
 
             {/* ── Task Delete Confirmation Modal ── */}
             {taskHandlers.taskToDelete && (
@@ -1456,7 +1488,27 @@ const SkillPage = () => {
                     </div>
                 </div>
             )}
-        </div>
+
+            {/* ── Inline Reward Creation Modal ── */}
+            <CreateRewardModal
+                isOpen={!!taskHandlers.rewardCreationTaskId}
+                onClose={() => taskHandlers.setRewardCreationTaskId(null)}
+                defaultTier={1}
+                isTaskReward={true}
+                onSuccess={async (createdNode) => {
+                    await fetchData();
+                    if (taskHandlers.rewardCreationTaskId && createdNode?.id) {
+                        try {
+                            await taskHandlers.handleAttachReward(taskHandlers.rewardCreationTaskId, createdNode.id);
+                        } catch (err) {
+                            console.error("Auto-attaching created reward failed:", err);
+                        }
+                    }
+                    taskHandlers.setRewardCreationTaskId(null);
+                }}
+            />
+            </div>
+        </DndContext>
     );
 };
 

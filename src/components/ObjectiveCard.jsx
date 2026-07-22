@@ -1,10 +1,51 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Pencil, Moon, ChevronRight } from 'lucide-react';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import NodeIcon from './NodeIcon';
 import SortableTaskRow from './SortableTaskRow';
 import DroppableAspect from './DroppableAspect';
 import { NodeTypes, TaskStatuses } from '../backbone-v2/index';
+
+/**
+ * AspectTaskList - Isolated component so useMemo can stabilize the `items`
+ * array reference that is passed to SortableContext. Without this, every render
+ * of ObjectiveCard creates a new array via .slice().map(), causing the
+ * SortableContext useEffect to fire on every render and produce an infinite
+ * setState loop.
+ */
+const AspectTaskList = React.memo(({ visibleTasks, ...rowProps }) => {
+    const itemIds = useMemo(() => visibleTasks.map(t => t.id), [visibleTasks]);
+
+    return (
+        <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+            <AnimatePresence>
+                {visibleTasks.map(task => (
+                    <SortableTaskRow
+                        key={task.id}
+                        task={task}
+                        allNodes={rowProps.allNodes}
+                        isExpanded={rowProps.expandedTaskIds.includes(task.id)}
+                        expandedTaskIds={rowProps.expandedTaskIds}
+                        activeChallengeHighlight={rowProps.activeChallengeHighlight}
+                        skill={rowProps.skill}
+                        onToggleTask={rowProps.toggleTask}
+                        onToggleTaskStatus={rowProps.handleToggleTaskStatus}
+                        onAddToToday={rowProps.handleAddToToday}
+                        onIncrementRepetition={rowProps.handleIncrementRepetition}
+                        onDeleteTask={rowProps.setTaskToDelete}
+                        isSelectingRewardForTaskId={rowProps.isSelectingRewardForTaskId}
+                        onSetSelectingRewardForTaskId={rowProps.setIsSelectingRewardForTaskId}
+                        onRemoveReward={rowProps.handleRemoveReward}
+                        onAttachReward={rowProps.handleAttachReward}
+                        onSaveMVE={rowProps.handleSaveMVE}
+                        onStartCreatingReward={rowProps.onStartCreatingReward}
+                    />
+                ))}
+            </AnimatePresence>
+        </SortableContext>
+    );
+});
 
 /**
  * ObjectiveCard Component
@@ -54,6 +95,7 @@ const ObjectiveCard = ({
     handleRemoveReward,
     handleAttachReward,
     handleSaveMVE,
+    onStartCreatingReward,
     creatingTaskForAspectId,
     setCreatingTaskForAspectId,
     newTaskName,
@@ -115,7 +157,7 @@ const ObjectiveCard = ({
                         <label>Wish</label>
                         <input
                             className="edit-input"
-                            placeholder="What do I want?"
+                            placeholder="How do you wanna feel when working on this?"
                             value={objectiveEditForm?.wish}
                             onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, wish: e.target.value })}
                         />
@@ -124,7 +166,7 @@ const ObjectiveCard = ({
                         <label>Outcome</label>
                         <input
                             className="edit-input"
-                            placeholder="What does success look like?"
+                            placeholder="Is there a measurable outcome for you to call 'success'?"
                             value={objectiveEditForm?.outcome}
                             onChange={(e) => setObjectiveEditForm({ ...objectiveEditForm, outcome: e.target.value })}
                         />
@@ -338,13 +380,13 @@ const ObjectiveCard = ({
                                                 >
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '40px', padding: '12px 0 24px 0' }}>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', flex: 1 }}>
-                                                            <div style={{ lineHeight: '1.4' }}>
+                                                             <div style={{ lineHeight: '1.4' }}>
                                                                 <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>Wish</span>
-                                                                <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.wish || "the wish goes here"}</span>
+                                                                <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.wish || "How do you wanna feel when working on this?"}</span>
                                                             </div>
                                                             <div style={{ lineHeight: '1.4' }}>
                                                                 <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>Outcome</span>
-                                                                <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.outcome || "outcome goes here"}</span>
+                                                                <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.outcome || "Is there a measurable outcome for you to call 'success'?"}</span>
                                                             </div>
                                                         </div>
 
@@ -490,29 +532,24 @@ const ObjectiveCard = ({
                                                                     </div>
                                                                     {isCreatingTask && <div style={{ height: '0px', marginBottom: '16px' }} />}
                                                                     <div className="aspect-tasks">
-                                                                        <AnimatePresence>
-                                                                            {aspectTasks.slice(0, visibleTasksCount).map(task => (
-                                                                                <SortableTaskRow 
-                                                                                    key={task.id}
-                                                                                    task={task}
-                                                                                    allNodes={allNodes}
-                                                                                    isExpanded={expandedTaskIds.includes(task.id)}
-                                                                                    expandedTaskIds={expandedTaskIds}
-                                                                                    activeChallengeHighlight={activeChallengeHighlight}
-                                                                                    skill={skill}
-                                                                                    onToggleTask={toggleTask}
-                                                                                    onToggleTaskStatus={handleToggleTaskStatus}
-                                                                                    onAddToToday={handleAddToToday}
-                                                                                    onIncrementRepetition={handleIncrementRepetition}
-                                                                                    onDeleteTask={setTaskToDelete}
-                                                                                    isSelectingRewardForTaskId={isSelectingRewardForTaskId}
-                                                                                    onSetSelectingRewardForTaskId={setIsSelectingRewardForTaskId}
-                                                                                    onRemoveReward={handleRemoveReward}
-                                                                                    onAttachReward={handleAttachReward}
-                                                                                    onSaveMVE={handleSaveMVE}
-                                                                                />
-                                                                            ))}
-                                                                        </AnimatePresence>
+                                                                        <AspectTaskList
+                                                                            visibleTasks={aspectTasks.slice(0, visibleTasksCount)}
+                                                                            allNodes={allNodes}
+                                                                            expandedTaskIds={expandedTaskIds}
+                                                                            activeChallengeHighlight={activeChallengeHighlight}
+                                                                            skill={skill}
+                                                                            toggleTask={toggleTask}
+                                                                            handleToggleTaskStatus={handleToggleTaskStatus}
+                                                                            handleAddToToday={handleAddToToday}
+                                                                            handleIncrementRepetition={handleIncrementRepetition}
+                                                                            setTaskToDelete={setTaskToDelete}
+                                                                            isSelectingRewardForTaskId={isSelectingRewardForTaskId}
+                                                                            setIsSelectingRewardForTaskId={setIsSelectingRewardForTaskId}
+                                                                            handleRemoveReward={handleRemoveReward}
+                                                                            handleAttachReward={handleAttachReward}
+                                                                            handleSaveMVE={handleSaveMVE}
+                                                                            onStartCreatingReward={onStartCreatingReward}
+                                                                        />
                                                                     </div>
                                                                     {aspectTasks.length > 5 && (
                                                                         <div style={{ textAlign: 'center', marginTop: '4px' }}>
