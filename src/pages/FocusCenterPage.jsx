@@ -3,7 +3,49 @@ import { useSettings, SLOT_ROLES } from '../context/SettingsContext';
 import { backbone, NodeTypes } from '../backbone-v2';
 import './FocusCenterPage.css';
 import GlassPanel from '../components/ui/GlassPanel';
-import { Target, TrendingUp, Settings, Compass, Layers, Plus, X, BookOpen } from 'lucide-react';
+import {
+    Target,
+    TrendingUp,
+    Settings,
+    Compass,
+    Layers,
+    Plus,
+    X,
+    BookOpen,
+    Terminal,
+    Activity,
+    Languages,
+    Sparkles,
+    Heart
+} from 'lucide-react';
+
+const getSkillIcon = (skill, allLifeAreas, size = 24) => {
+    if (!skill) return <Plus size={size} strokeWidth={1.5} />;
+    
+    const parentArea = allLifeAreas.find(a => a.id === skill.parentId);
+    const areaName = parentArea ? parentArea.name.toLowerCase() : '';
+    const skillName = skill.name.toLowerCase();
+    
+    const combined = `${skillName} ${areaName}`;
+    
+    if (combined.includes('health') || combined.includes('fit') || combined.includes('gym') || combined.includes('sport') || combined.includes('body') || combined.includes('workout') || combined.includes('run')) {
+        return <Activity size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('code') || combined.includes('dev') || combined.includes('tech') || combined.includes('soft') || combined.includes('build') || combined.includes('saas') || combined.includes('system') || combined.includes('program')) {
+        return <Terminal size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('lang') || combined.includes('speak') || combined.includes('write') || combined.includes('read') || combined.includes('learn') || combined.includes('study') || combined.includes('chinese') || combined.includes('english') || combined.includes('spanish') || combined.includes('cantonese') || combined.includes('japanese') || combined.includes('french') || combined.includes('german') || combined.includes('廣東話')) {
+        return <Languages size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('mind') || combined.includes('medit') || combined.includes('spirit') || combined.includes('flow') || combined.includes('heart') || combined.includes('soul') || combined.includes('feel')) {
+        return <Heart size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('identity') || combined.includes('brand') || combined.includes('market') || combined.includes('media') || combined.includes('social') || combined.includes('x')) {
+        return <Sparkles size={size} strokeWidth={1.5} />;
+    }
+    
+    return <Target size={size} strokeWidth={1.5} />;
+};
 
 const FocusCenterPage = () => {
     const {
@@ -178,7 +220,7 @@ const FocusCenterPage = () => {
 
                             {skill ? (
                                 <div className="slot-content filled">
-                                    <div className="skill-icon"><BookOpen size={24} strokeWidth={1.5} /></div>
+                                    <div className="skill-icon">{getSkillIcon(skill, allLifeAreas, 24)}</div>
                                     <div className="skill-name">{skill.name}</div>
 
                                     <button
@@ -193,7 +235,7 @@ const FocusCenterPage = () => {
                                 </div>
                             ) : (
                                 <div className="slot-content empty">
-                                    <div className="empty-plus"><Plus size={32} strokeWidth={1} /></div>
+                                    <div className="empty-plus">{getSkillIcon(null, allLifeAreas, 24)}</div>
                                     <div className="empty-text">{index === 0 ? "Your first obsession goes here" : "Empty Slot"}</div>
                                 </div>
                             )}
@@ -256,7 +298,7 @@ const FocusCenterPage = () => {
                                         className={`picker-skill-item ${focusSlots[showPicker] === s.id ? 'is-active' : ''}`}
                                         onClick={() => handleSelectSkill(s.id)}
                                     >
-                                        <span className="item-icon"><BookOpen size={16} /></span>
+                                        <span className="item-icon">{getSkillIcon(s, allLifeAreas, 16)}</span>
                                         <span className="item-name">{s.name}</span>
                                         {focusSlots[showPicker] === s.id && (
                                             <span className="item-check">Active</span>

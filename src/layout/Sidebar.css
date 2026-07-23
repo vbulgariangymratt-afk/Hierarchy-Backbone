@@ -1607,19 +1607,16 @@
 .liquid-mode.light .sidebar .segmented-control-label,
 .liquid-mode.light .sidebar .hryvnia-amount,
 .liquid-mode.light .sidebar .mode-toggle-btn,
-.liquid-mode.light .sidebar .header-action-btn:not(.pulse-breathe),
 .solid-mode.light .sidebar .energy-label,
 .solid-mode.light .sidebar .section-title-static,
 .solid-mode.light .sidebar .segmented-control-label,
 .solid-mode.light .sidebar .hryvnia-amount,
 .solid-mode.light .sidebar .mode-toggle-btn,
-.solid-mode.light .sidebar .header-action-btn:not(.pulse-breathe),
 .wallpaper-mode.light .sidebar .energy-label,
 .wallpaper-mode.light .sidebar .section-title-static,
 .wallpaper-mode.light .sidebar .segmented-control-label,
 .wallpaper-mode.light .sidebar .hryvnia-amount,
-.wallpaper-mode.light .sidebar .mode-toggle-btn,
-.wallpaper-mode.light .sidebar .header-action-btn:not(.pulse-breathe) {
+.wallpaper-mode.light .sidebar .mode-toggle-btn {
     color: rgba(0, 0, 0, 0.9) !important;
     font-weight: 600 !important;
     text-transform: none !important;
@@ -1628,8 +1625,10 @@
     opacity: 1 !important;
 }
 
-.liquid-mode.light .sidebar .header-action-btn:hover {
-    background: rgba(0, 0, 0, 0.1) !important;
+.liquid-mode.light .sidebar .header-action-btn:hover,
+.solid-mode.light .sidebar .header-action-btn:hover,
+.wallpaper-mode.light .sidebar .header-action-btn:hover {
+    background: rgba(0, 0, 0, 0.06) !important;
     color: #000000 !important;
 }
 

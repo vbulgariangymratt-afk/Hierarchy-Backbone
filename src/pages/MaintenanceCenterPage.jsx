@@ -1,10 +1,55 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { backbone, NodeTypes, habitService } from '../backbone-v2';
 import './MaintenanceCenterPage.css';
 import GlassPanel from '../components/ui/GlassPanel';
-import { Shield, Search, X, Check, BookOpen } from 'lucide-react';
+import {
+    Shield,
+    Search,
+    X,
+    Check,
+    BookOpen,
+    Target,
+    TrendingUp,
+    Settings,
+    Compass,
+    Layers,
+    Plus,
+    Terminal,
+    Activity,
+    Languages,
+    Sparkles,
+    Heart
+} from 'lucide-react';
 import { getSkillEngagementStatus } from '../utils/engagementUtils';
+
+const getSkillIcon = (skill, allLifeAreas, size = 20) => {
+    if (!skill) return <Plus size={size} strokeWidth={1.5} />;
+    
+    const parentArea = allLifeAreas.find(a => a.id === skill.parentId);
+    const areaName = parentArea ? parentArea.name.toLowerCase() : '';
+    const skillName = skill.name.toLowerCase();
+    
+    const combined = `${skillName} ${areaName}`;
+    
+    if (combined.includes('health') || combined.includes('fit') || combined.includes('gym') || combined.includes('sport') || combined.includes('body') || combined.includes('workout') || combined.includes('run')) {
+        return <Activity size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('code') || combined.includes('dev') || combined.includes('tech') || combined.includes('soft') || combined.includes('build') || combined.includes('saas') || combined.includes('system') || combined.includes('program')) {
+        return <Terminal size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('lang') || combined.includes('speak') || combined.includes('write') || combined.includes('read') || combined.includes('learn') || combined.includes('study') || combined.includes('chinese') || combined.includes('english') || combined.includes('spanish') || combined.includes('cantonese') || combined.includes('japanese') || combined.includes('french') || combined.includes('german') || combined.includes('廣東話')) {
+        return <Languages size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('mind') || combined.includes('medit') || combined.includes('spirit') || combined.includes('flow') || combined.includes('heart') || combined.includes('soul') || combined.includes('feel')) {
+        return <Heart size={size} strokeWidth={1.5} />;
+    }
+    if (combined.includes('identity') || combined.includes('brand') || combined.includes('market') || combined.includes('media') || combined.includes('social') || combined.includes('x')) {
+        return <Sparkles size={size} strokeWidth={1.5} />;
+    }
+    
+    return <Target size={size} strokeWidth={1.5} />;
+};
 
 const MaintenanceCenterPage = () => {
     const {
@@ -21,6 +66,10 @@ const MaintenanceCenterPage = () => {
 
     const [allNodes, setAllNodes] = useState([]);
     const [allHabits, setAllHabits] = useState([]);
+
+    const allLifeAreas = useMemo(() => {
+        return allNodes.filter(n => n.type === NodeTypes.LIFE_AREA || n.type === 'LIFE_AREA');
+    }, [allNodes]);
 
     useEffect(() => {
         const loadSkills = async () => {
@@ -145,6 +194,7 @@ const MaintenanceCenterPage = () => {
                                             isFocus={focusSlots.includes(skill.id)}
                                             health={getSkillEngagementStatus(skill.id, allNodes, allHabits)}
                                             onToggle={toggleMaintenanceSkill}
+                                            allLifeAreas={allLifeAreas}
                                         />
                                     ))}
                                 </div>
@@ -164,6 +214,7 @@ const MaintenanceCenterPage = () => {
                                             isFocus={focusSlots.includes(skill.id)}
                                             health={getSkillEngagementStatus(skill.id, allNodes, allHabits)}
                                             onToggle={toggleMaintenanceSkill}
+                                            allLifeAreas={allLifeAreas}
                                         />
                                     ))}
                                 </div>
@@ -183,6 +234,7 @@ const MaintenanceCenterPage = () => {
                                             isFocus={focusSlots.includes(skill.id)}
                                             health={getSkillEngagementStatus(skill.id, allNodes, allHabits)}
                                             onToggle={toggleMaintenanceSkill}
+                                            allLifeAreas={allLifeAreas}
                                         />
                                     ))}
                                 </div>
@@ -199,21 +251,15 @@ const MaintenanceCenterPage = () => {
     );
 };
 
-const SkillCard = ({ skill, isSelected, isFocus, health, onToggle }) => {
+const SkillCard = ({ skill, isSelected, isFocus, health, onToggle, allLifeAreas }) => {
     return (
         <div
             className={`skill-selection-card ${isSelected ? 'selected' : ''} ${isFocus ? 'focus-protected' : ''}`}
             onClick={() => onToggle(skill.id)}
         >
-            <div className="card-selection-indicator">
-                <div className={`checkbox-circle ${isSelected ? 'checked' : ''}`}>
-                    {isSelected && <Check size={14} strokeWidth={3} />}
-                </div>
-            </div>
-            
             <div className="card-main-content">
                 <div className="skill-icon-wrap">
-                    <BookOpen size={20} strokeWidth={1.5} />
+                    {getSkillIcon(skill, allLifeAreas, 20)}
                     {health && (
                         <div className={`health-dot ${health.status}`} title={`Last engaged ${health.daysSince || 0} days ago`} />
                     )}
@@ -221,9 +267,15 @@ const SkillCard = ({ skill, isSelected, isFocus, health, onToggle }) => {
                 <div className="skill-details">
                     <div className="skill-name">{skill.name}</div>
                     <div className="skill-badges-row">
-                        {isFocus && <div className="focus-badge">Active Focus</div>}
-                        {skill.metadata?.status === 'ACTIVE' && !isFocus && <div className="status-active-badge">Manual Active</div>}
+                        {isFocus && <div className="focus-badge">Obsessed With</div>}
+                        {skill.metadata?.status === 'ACTIVE' && !isFocus && <div className="status-active-badge">Active</div>}
                     </div>
+                </div>
+            </div>
+
+            <div className="card-selection-indicator">
+                <div className={`checkbox-circle ${isSelected ? 'checked' : ''}`}>
+                    {isSelected && <Check size={14} strokeWidth={3} />}
                 </div>
             </div>
         </div>

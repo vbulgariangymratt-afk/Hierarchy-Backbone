@@ -1,17 +1,17 @@
 .maintenance-center-container {
     padding: 60px 40px;
-    max-width: 1400px;
+    max-width: 1000px;
     margin: 0 auto;
     color: var(--text-primary);
     min-height: 100vh;
 }
 
 .maintenance-center-header {
-    margin-bottom: 60px;
-    text-align: center;
+    margin-bottom: 40px;
+    text-align: left;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
 }
 
 .header-badge {
@@ -45,17 +45,17 @@
 }
 
 .maintenance-center-header h1 {
-    font-size: 42px;
-    font-weight: 800;
-    margin-bottom: 12px;
-    letter-spacing: -0.02em;
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: -0.03em;
 }
 
 .maintenance-center-header p {
-    font-size: 16px;
+    font-size: 15px;
     color: var(--text-secondary);
-    max-width: 580px;
-    margin: 0 auto 40px auto;
+    max-width: 600px;
+    margin: 0 0 32px 0;
     line-height: 1.6;
 }
 
@@ -73,20 +73,20 @@
 
 .search-icon {
     position: absolute;
-    left: 18px;
+    left: 14px;
     color: var(--text-tertiary);
     opacity: 0.5;
 }
 
 .search-input-wrapper input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 16px 48px;
+    background: var(--color-bg-card, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    padding: 12px 18px 12px 42px;
     color: var(--text-primary);
-    font-size: 15px;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    font-size: 14px;
+    transition: all 0.2s ease;
 }
 
 .liquid-mode .search-input-wrapper input {
@@ -160,17 +160,19 @@
 
 .skill-selection-card {
     position: relative;
-    padding: 24px;
-    border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    background: rgba(255, 255, 255, 0.015);
-    box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.04));
+    background: var(--color-bg-card, rgba(255, 255, 255, 0.015));
     cursor: pointer;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.2s;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
     gap: 16px;
     overflow: hidden;
+    min-height: 80px;
 }
 
 .liquid-mode .skill-selection-card {
@@ -191,18 +193,20 @@
 }
 
 .skill-selection-card:hover {
-    transform: translateY(-4px);
-    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-2px);
+    border-color: var(--color-accent);
 }
 
 .skill-selection-card.selected {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--alpha-low, rgba(255, 255, 255, 0.03));
+    border-color: var(--color-accent);
 }
 
 .card-selection-indicator {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .checkbox-circle {
@@ -227,6 +231,8 @@
     display: flex;
     align-items: center;
     gap: 16px;
+    flex: 1;
+    min-width: 0;
 }
 
 .skill-icon-wrap {
@@ -257,22 +263,26 @@
 .health-dot.grey { background: #6b7280; }
 
 .selected .skill-icon-wrap {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-accent);
 }
 
 .skill-details {
     flex: 1;
+    min-width: 0;
 }
 
 .skill-name {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 600;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .selected .skill-name {
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .skill-badges-row {
@@ -299,10 +309,10 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--color-primary);
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--color-primary);
-    padding: 1px 8px;
+    color: var(--color-accent, #5E6AD2);
+    background: var(--color-accent-muted, rgba(94, 106, 210, 0.15));
+    border: 1px solid rgba(94, 106, 210, 0.25);
+    padding: 2px 8px;
     border-radius: 4px;
     display: inline-block;
 }
