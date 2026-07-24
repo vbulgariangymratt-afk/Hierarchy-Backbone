@@ -2,11 +2,77 @@ import React, { useState, useEffect } from 'react';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
-import { backbone, NodeTypes } from '../backbone-v2/index';
+import SegmentedControl from '../components/ui/SegmentedControl';
+import { 
+    Sun, 
+    Moon, 
+    Monitor, 
+    Square, 
+    Droplet, 
+    Image, 
+    Activity, 
+    Circle, 
+    Zap, 
+    Clock, 
+    CheckCircle2, 
+    Coins, 
+    Sparkles, 
+    DollarSign 
+} from 'lucide-react';
 import './SettingsPage.css';
+
+const THEMES = [
+  { id: "light", title: "Light", icon: Sun },
+  { id: "system", title: "System", icon: Monitor },
+  { id: "dark", title: "Dark", icon: Moon },
+];
+
+const MODES = [
+  { id: "solid", title: "Solid", icon: Square },
+  { id: "liquid", title: "Liquid", icon: Droplet },
+  { id: "wallpaper", title: "Wallpaper", icon: Image },
+];
+
+const HEALTH_DOT_OPTIONS = [
+  { id: "glowing", title: "Glowing", icon: Activity },
+  { id: "static", title: "Static", icon: Circle },
+];
+
+const BLUR_QUALITY_OPTIONS = [
+  { id: "performance", title: "Performance", icon: Zap },
+  { id: "quality", title: "Live Desktop", icon: Monitor },
+];
+
+const TODAY_REMOVAL_OPTIONS = [
+  { id: "after_session", title: "After Session", icon: Clock },
+  { id: "on_completion", title: "On Completion", icon: CheckCircle2 },
+];
+
+const CURRENCY_PRESETS = [
+  { id: "Coins", title: "Coins", icon: Coins },
+  { id: "Ekkos", title: "Ekkos", icon: Sparkles },
+  { id: "Sparks", title: "Sparks", icon: Zap },
+  { id: "Orbs", title: "Orbs", icon: Circle },
+  { id: "Hryvnia", title: "Hryvnia", icon: DollarSign },
+  { id: "Pulsars", title: "Pulsars", icon: Activity },
+];
+
+const ToggleSwitch = ({ checked, onChange }) => (
+    <button
+        type="button"
+        className={`toggle-switch-btn ${checked ? 'active' : ''}`}
+        onClick={() => onChange(!checked)}
+        role="switch"
+        aria-checked={checked}
+    >
+        <span className="toggle-switch-knob" />
+    </button>
+);
 
 const SettingsPage = () => {
     const [user, setUser] = useState(null);
+    const [activeTab, setActiveTab] = useState('appearance');
+
     const { 
         themePreference,
         setTheme,
@@ -14,8 +80,6 @@ const SettingsPage = () => {
         setBackgroundMode,
         isSyncing,
         syncError,
-        solidAccentColor,
-        updateSolidAccentColor,
         lightWallpaperImage,
         darkWallpaperImage,
         updateLightWallpaperImage,
@@ -27,11 +91,6 @@ const SettingsPage = () => {
     const { 
         guidedSlotRoles, 
         updateGuidedSlotRoles,
-        focusSlots,
-        maintenanceSkillIds,
-        maintenanceEnabled,
-        updateMaintenanceSkillIds,
-        toggleMaintenanceEnabled,
         activeExperimentLimit,
         updateActiveExperimentLimit,
         dbSupportsExperimentLimit,
@@ -45,6 +104,9 @@ const SettingsPage = () => {
         updateTodayRemovalMode,
         isWhitelisted,
         applyWhitelist,
+        subscriptionStatus,
+        lemonSqueezySubscriptionId,
+        redirectToCheckout,
     } = useSettings();
 
     const [saveIndicator, setSaveIndicator] = useState(null);
@@ -55,7 +117,6 @@ const SettingsPage = () => {
         setTimeout(() => setSaveIndicator(null), 2000);
     };
 
-    const [allSkills, setAllSkills] = useState([]);
     const [manualSleep, setManualSleep] = useState(localStorage.getItem('pref_manual_sleep') === 'true');
     const [completionSoundsEnabled, setCompletionSoundsEnabled] = useState(localStorage.getItem('completion_sounds_enabled') !== 'false');
     const [experimentSoundsEnabled, setExperimentSoundsEnabled] = useState(localStorage.getItem('experiment_sounds_enabled') !== 'false');
@@ -71,15 +132,10 @@ const SettingsPage = () => {
         }
     };
 
-
-
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setUser(user);
         });
-
-        // Load all skills for the Maintenance selector
-        backbone.getNodesByType(NodeTypes.SKILL).then(setAllSkills);
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
@@ -97,584 +153,517 @@ const SettingsPage = () => {
         supabase.auth.signOut();
     };
 
+    const tabDescriptions = {
+        appearance: "Tailor visual atmosphere, themes, and background modes for ocular comfort.",
+        behavior: "Configure Obsession slot roles, task removal triggers, and experiment limits.",
+        signals: "Manage sleep tracking modes, completion sounds, and objective chimes.",
+        economy: "Customize currency names and economy rewards presets.",
+        account: "Manage your account identity, subscription tier, and local vault sync."
+    };
+
     return (
-        <div className="settings-page">
-            <header className="settings-header">
-                <h1 className="settings-title">Settings</h1>
-                <p className="settings-subtitle">Manage your account and preferences</p>
-            </header>
-
-            {/* ── Appearance Section ──────────────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">
-                    Appearance
-                    {isSyncing && <span className="sync-indicator syncing">Saving…</span>}
-                    {syncError && !isSyncing && <span className="sync-indicator error">Sync failed</span>}
-                </h2>
-                <div className="settings-card">
-
-                    {/* Unified Appearance Toggle */}
-                    <div className="settings-section">
-                        <p className="settings-section-label">Appearance</p>
-                        <div className="theme-sync-toggle">
-                            {[
-                                { value: "light", label: "Light" },
-                                { value: "system", label: "System" },
-                                { value: "dark", label: "Dark" },
-                            ].map(({ value, label }) => (
-                                <button
-                                    key={value}
-                                    className={`theme-sync-option ${themePreference === value ? "active" : ""}`}
-                                    onClick={() => setTheme(value)}
-                                >
-                                    {label}
-                                </button>
-                            ))}
+        <div className="settings-page-wrapper">
+            <div className="settings-container">
+                {/* ── Left Sidebar Navigation ──────────────────────────────── */}
+                <aside className="settings-sidebar">
+                    <div className="settings-sidebar-header">
+                        <div className="settings-user-avatar">
+                            {user ? (user.email?.[0]?.toUpperCase() || 'U') : 'G'}
+                        </div>
+                        <div className="settings-user-info">
+                            <span className="settings-user-name">
+                                {user ? (user.email?.split('@')[0] || 'User') : 'Guest'}
+                            </span>
+                            <span className="settings-user-badge">
+                                {isWhitelisted ? 'Beta Tester' : subscriptionStatus === 'active' ? 'Pro Member' : 'Free Tier'}
+                            </span>
                         </div>
                     </div>
 
-                    <div className="notion-divider" style={{ margin: '16px 0', opacity: 0.2 }} />
+                    <div className="settings-nav-group">
+                        <div className="settings-nav-label">Cognitive & UI</div>
+                        <button
+                            className={`settings-nav-item ${activeTab === 'appearance' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('appearance')}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                            <span>Appearance & Theme</span>
+                        </button>
 
-                    {/* Background Mode Control */}
-                    <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
-                        <div className="appearance-row-label">Background Mode</div>
-                        <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
-                            <button
-                                className={`segmented-control-item ${backgroundMode === 'solid' ? 'active' : ''}`}
-                                onClick={() => setBackgroundMode('solid')}
-                            >
-                                Solid
-                            </button>
-                            <button
-                                className={`segmented-control-item ${backgroundMode === 'liquid' ? 'active' : ''}`}
-                                onClick={() => setBackgroundMode('liquid')}
-                            >
-                                Liquid
-                            </button>
-                            <button
-                                className={`segmented-control-item ${backgroundMode === 'wallpaper' ? 'active' : ''}`}
-                                onClick={() => setBackgroundMode('wallpaper')}
-                            >
-                                Wallpaper
-                            </button>
-                        </div>
-                    </div>
-                    {/* Status Dot Style Control */}
-                    <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
-                        <div className="appearance-row-label">Status Dot Style</div>
-                        <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
-                            <button
-                                className={`segmented-control-item ${healthDotStyle === 'glowing' ? 'active' : ''}`}
-                                onClick={() => updateHealthDotStyle('glowing')}
-                            >
-                                Glowing
-                            </button>
-                            <button
-                                className={`segmented-control-item ${healthDotStyle === 'static' ? 'active' : ''}`}
-                                onClick={() => updateHealthDotStyle('static')}
-                            >
-                                Static
-                            </button>
-                        </div>
+                        <button
+                            className={`settings-nav-item ${activeTab === 'behavior' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('behavior')}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                            <span>Behavior & Obsessions</span>
+                        </button>
+
+                        <button
+                            className={`settings-nav-item ${activeTab === 'signals' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('signals')}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            <span>Signals & Tracking</span>
+                        </button>
                     </div>
 
-                    {backgroundMode === 'solid' && (
-                        <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
-                            <div className="appearance-row-label">Theme Color</div>
-                            <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
-                                Select a custom accent color for the interface.
-                            </p>
-                            <div className="accent-color-selector">
-                                {[
-                                    '#5E6AD2', // Blue (Backbone Sandbox Indigo)
-                                    '#5e5ce6', // Indigo
-                                    '#30d158', // Emerald
-                                    '#ff9f0a', // Orange
-                                    '#ff375f', // Rose
-                                    '#bf5af2', // Purple
-                                    '#ffd60a', // Gold
-                                ].map(color => (
-                                    <button
-                                        key={color}
-                                        className={`color-dot ${solidAccentColor === color ? 'active' : ''}`}
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => updateSolidAccentColor(color)}
-                                    />
-                                ))}
-                                <div className="color-custom-input-wrapper">
-                                    <input
-                                        type="color"
-                                        value={solidAccentColor || '#5E6AD2'}
-                                        onChange={(e) => updateSolidAccentColor(e.target.value)}
-                                        className="color-custom-picker"
-                                    />
-                                    <span className="custom-picker-label">Custom</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    <div className="settings-nav-group">
+                        <div className="settings-nav-label">System & Vault</div>
+                        <button
+                            className={`settings-nav-item ${activeTab === 'economy' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('economy')}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><line x1="12" y1="6" x2="12" y2="18"/></svg>
+                            <span>Economy & Currency</span>
+                        </button>
 
-                    {backgroundMode === 'liquid' && (
-                        <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
-                            <div className="appearance-row-label">Liquid Mode Quality</div>
-                            <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
-                                Performance keeps 60fps on all devices. Live Desktop Wallpaper enables full live blur (shows wallpaper movement), but performance may drop. <strong>Warning: High battery drain. Only recommended for PCs, not laptops.</strong>
-                            </p>
-                            <div className="segmented-control" style={{ width: '100%', maxWidth: '400px' }}>
-                                <button
-                                    className={`segmented-control-item ${blurQuality === 'performance' ? 'active' : ''}`}
-                                    onClick={() => updateBlurQuality('performance')}
-                                >
-                                    Performance
-                                </button>
-                                <button
-                                    className={`segmented-control-item ${blurQuality === 'quality' ? 'active' : ''}`}
-                                    onClick={() => updateBlurQuality('quality')}
-                                >
-                                    Live Desktop Wallpaper
-                                </button>
-                            </div>
-                        </div>
-                    )}
+                        <button
+                            className={`settings-nav-item ${activeTab === 'account' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('account')}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span>Account & Billing</span>
+                        </button>
+                    </div>
 
-                    {backgroundMode === 'wallpaper' && (
-                        <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '15px', width: '100%' }}>
-                            <div className="appearance-row-label">Wallpaper Images</div>
-                            <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: '5px' }}>
-                                Upload distinct background images for Light and Dark modes. They will be placed behind the app and automatically blurred and darkened.
-                            </p>
-                            
-                            <div className="appearance-hint" style={{ 
-                                marginTop: '0px', 
-                                padding: '12px', 
-                                borderLeft: '3px solid var(--color-accent, #5E6AD2)', 
-                                background: 'rgba(255, 255, 255, 0.03)', 
-                                borderRadius: '4px',
-                                fontSize: '13px',
-                                lineHeight: '1.5',
-                                maxWidth: '600px',
-                                opacity: 0.9,
-                                fontStyle: 'italic'
-                            }}>
-                                "If this setting were left completely unlocked... tweaking aesthetics would become a hyperfocus rabbit hole.<br /><br />
-                                Even I am locked out after two tries (owner & developer)"
-                            </div>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', width: '100%', marginTop: '10px' }}>
-                                {/* Light Mode Wallpaper */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>
-                                        Light Mode Wallpaper ({lightChangesRemaining} {lightChangesRemaining === 1 ? 'change' : 'changes'} left today)
-                                    </span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            id="wallpaper-upload-light"
-                                            disabled={lightChangesRemaining === 0}
-                                            style={{ display: 'none' }}
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    updateLightWallpaperImage(file);
-                                                }
-                                            }}
-                                        />
-                                        <label 
-                                            htmlFor={lightChangesRemaining > 0 ? "wallpaper-upload-light" : undefined} 
-                                            className="segmented-control-item" 
-                                            style={{ 
-                                                padding: '8px 12px', 
-                                                cursor: lightChangesRemaining === 0 ? 'not-allowed' : 'pointer', 
-                                                borderRadius: '8px',
-                                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                                textAlign: 'center',
-                                                fontSize: '13px',
-                                                opacity: lightChangesRemaining === 0 ? 0.4 : 1,
-                                                pointerEvents: lightChangesRemaining === 0 ? 'none' : 'auto'
-                                            }}
-                                        >
-                                            {lightChangesRemaining === 0 ? 'Choose Light (Locked)' : 'Choose Light'}
-                                        </label>
-                                        {lightWallpaperImage ? (
-                                            <>
-                                                <button
-                                                    className="segmented-control-item"
-                                                    style={{ 
-                                                        padding: '8px 12px', 
-                                                        borderRadius: '8px', 
-                                                        border: '1px solid rgba(255, 0, 0, 0.3)',
-                                                        color: '#ff453a',
-                                                        fontSize: '13px'
-                                                    }}
-                                                    onClick={() => updateLightWallpaperImage(null)}
-                                                >
-                                                    Remove
-                                                </button>
-                                                <div style={{ width: '36px', height: '36px', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-                                                    <img src={lightWallpaperImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Light Preview" />
+                    <div className="settings-sidebar-footer">
+                        <span className="settings-footer-text">Backbone Hierarchy</span>
+                    </div>
+                </aside>
+
+                {/* ── Main Settings Pane ─────────────────────────────────────── */}
+                <main className="settings-main-pane">
+                    <header className="settings-pane-header">
+                        <div>
+                            <h1 className="settings-pane-title">
+                                {activeTab === 'appearance' && 'Appearance & Theme'}
+                                {activeTab === 'behavior' && 'Behavior & Obsessions'}
+                                {activeTab === 'signals' && 'Signals & Tracking'}
+                                {activeTab === 'economy' && 'Economy & Currency'}
+                                {activeTab === 'account' && 'Account & Billing'}
+                            </h1>
+                            <p className="settings-pane-subtitle">{tabDescriptions[activeTab]}</p>
+                        </div>
+                        {isSyncing && <span className="sync-indicator syncing">Saving…</span>}
+                        {syncError && !isSyncing && <span className="sync-indicator error">Sync failed</span>}
+                    </header>
+
+                    <div className="settings-pane-body">
+
+                        {/* ── TAB 1: APPEARANCE ────────────────────────────────────── */}
+                        {activeTab === 'appearance' && (
+                            <div className="settings-tab-content">
+                                <div className="settings-group">
+
+                                    
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Theme Mode</span>
+                                            <span className="settings-row-desc">Synchronize with system preferences or lock to light/dark.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <SegmentedControl
+                                                options={THEMES}
+                                                value={themePreference}
+                                                onChange={setTheme}
+                                                layoutPrefix="settings-theme"
+                                                buttonSize={28}
+                                                fontSize="0.8rem"
+                                                activePadding="0 12px"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Background Mode + Direct Inline Wallpaper Uploader */}
+                                    <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                            <div className="settings-row-label">
+                                                <span className="settings-row-title">Background Atmosphere</span>
+                                                <span className="settings-row-desc">Select solid slate, liquid glass blur, or custom wallpaper backdrop.</span>
+                                            </div>
+                                            <div className="settings-row-control">
+                                                <SegmentedControl
+                                                    options={MODES}
+                                                    value={backgroundMode}
+                                                    onChange={setBackgroundMode}
+                                                    layoutPrefix="settings-bg"
+                                                    buttonSize={28}
+                                                    fontSize="0.8rem"
+                                                    activePadding="0 12px"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Direct Wallpaper Upload Box Below Wallpaper Mode */}
+                                        {backgroundMode === 'wallpaper' && (
+                                            <div className="inline-wallpaper-container">
+                                                <span className="inline-wallpaper-hint">
+                                                    Upload background images for Light and Dark modes.
+                                                </span>
+                                                <div className="inline-wallpaper-grid">
+                                                    {/* Light Mode Wallpaper */}
+                                                    <div className="wallpaper-upload-box">
+                                                        <span className="wallpaper-label">
+                                                            Light Wallpaper ({lightChangesRemaining} left)
+                                                        </span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                id="wallpaper-upload-light"
+                                                                disabled={lightChangesRemaining === 0}
+                                                                style={{ display: 'none' }}
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0];
+                                                                    if (file) updateLightWallpaperImage(file);
+                                                                }}
+                                                            />
+                                                            <label 
+                                                                htmlFor={lightChangesRemaining > 0 ? "wallpaper-upload-light" : undefined}
+                                                                className="wallpaper-btn-choose"
+                                                                style={{ 
+                                                                    opacity: lightChangesRemaining === 0 ? 0.4 : 1,
+                                                                    cursor: lightChangesRemaining === 0 ? 'not-allowed' : 'pointer'
+                                                                }}
+                                                            >
+                                                                {lightChangesRemaining === 0 ? 'Locked' : 'Choose Image'}
+                                                            </label>
+                                                            {lightWallpaperImage && (
+                                                                <button
+                                                                    className="wallpaper-btn-remove"
+                                                                    onClick={() => updateLightWallpaperImage(null)}
+                                                                >
+                                                                    Remove
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Dark Mode Wallpaper */}
+                                                    <div className="wallpaper-upload-box">
+                                                        <span className="wallpaper-label">
+                                                            Dark Wallpaper ({darkChangesRemaining} left)
+                                                        </span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                id="wallpaper-upload-dark"
+                                                                disabled={darkChangesRemaining === 0}
+                                                                style={{ display: 'none' }}
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0];
+                                                                    if (file) updateDarkWallpaperImage(file);
+                                                                }}
+                                                            />
+                                                            <label 
+                                                                htmlFor={darkChangesRemaining > 0 ? "wallpaper-upload-dark" : undefined}
+                                                                className="wallpaper-btn-choose"
+                                                                style={{ 
+                                                                    opacity: darkChangesRemaining === 0 ? 0.4 : 1,
+                                                                    cursor: darkChangesRemaining === 0 ? 'not-allowed' : 'pointer'
+                                                                }}
+                                                            >
+                                                                {darkChangesRemaining === 0 ? 'Locked' : 'Choose Image'}
+                                                            </label>
+                                                            {darkWallpaperImage && (
+                                                                <button
+                                                                    className="wallpaper-btn-remove"
+                                                                    onClick={() => updateDarkWallpaperImage(null)}
+                                                                >
+                                                                    Remove
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </>
-                                        ) : (
-                                            <span style={{ fontSize: '12px', opacity: 0.4 }}>None</span>
+                                            </div>
                                         )}
-                                    </div>
-                                </div>
 
-                                {/* Dark Mode Wallpaper */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <span style={{ fontSize: '12px', opacity: 0.7, fontWeight: 500 }}>
-                                        Dark Mode Wallpaper ({darkChangesRemaining} {darkChangesRemaining === 1 ? 'change' : 'changes'} left today)
-                                    </span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            id="wallpaper-upload-dark"
-                                            disabled={darkChangesRemaining === 0}
-                                            style={{ display: 'none' }}
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    updateDarkWallpaperImage(file);
-                                                }
-                                            }}
-                                        />
-                                        <label 
-                                            htmlFor={darkChangesRemaining > 0 ? "wallpaper-upload-dark" : undefined} 
-                                            className="segmented-control-item" 
-                                            style={{ 
-                                                padding: '8px 12px', 
-                                                cursor: darkChangesRemaining === 0 ? 'not-allowed' : 'pointer', 
-                                                borderRadius: '8px',
-                                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                                textAlign: 'center',
-                                                fontSize: '13px',
-                                                opacity: darkChangesRemaining === 0 ? 0.4 : 1,
-                                                pointerEvents: darkChangesRemaining === 0 ? 'none' : 'auto'
-                                            }}
-                                        >
-                                            {darkChangesRemaining === 0 ? 'Choose Dark (Locked)' : 'Choose Dark'}
-                                        </label>
-                                        {darkWallpaperImage ? (
-                                            <>
-                                                <button
-                                                    className="segmented-control-item"
-                                                    style={{ 
-                                                        padding: '8px 12px', 
-                                                        borderRadius: '8px', 
-                                                        border: '1px solid rgba(255, 0, 0, 0.3)',
-                                                        color: '#ff453a',
-                                                        fontSize: '13px'
-                                                    }}
-                                                    onClick={() => updateDarkWallpaperImage(null)}
-                                                >
-                                                    Remove
-                                                </button>
-                                                <div style={{ width: '36px', height: '36px', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)' }}>
-                                                    <img src={darkWallpaperImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Dark Preview" />
+                                        {/* Liquid Mode Quality option inline */}
+                                        {backgroundMode === 'liquid' && (
+                                            <div className="inline-wallpaper-container">
+                                                <span className="inline-wallpaper-hint">
+                                                    Performance keeps 60fps. Live Desktop Wallpaper enables full desktop blur.
+                                                </span>
+                                                <div style={{ marginTop: '8px' }}>
+                                                    <SegmentedControl
+                                                        options={BLUR_QUALITY_OPTIONS}
+                                                        value={blurQuality}
+                                                        onChange={updateBlurQuality}
+                                                        layoutPrefix="settings-blur"
+                                                        buttonSize={28}
+                                                        fontSize="0.8rem"
+                                                        activePadding="0 12px"
+                                                    />
                                                 </div>
-                                            </>
-                                        ) : (
-                                            <span style={{ fontSize: '12px', opacity: 0.4 }}>None</span>
+                                            </div>
                                         )}
+                                    </div>
+
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Status Dot Animation</span>
+                                            <span className="settings-row-desc">Choose glowing pulse or static indicator for habit health.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <SegmentedControl
+                                                options={HEALTH_DOT_OPTIONS}
+                                                value={healthDotStyle}
+                                                onChange={updateHealthDotStyle}
+                                                layoutPrefix="settings-healthdot"
+                                                buttonSize={28}
+                                                fontSize="0.8rem"
+                                                activePadding="0 12px"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                </div>
-            </section>
-
-            {/* ── Focus Set Section ───────────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">Obsessions</h2>
-                <div className="settings-card">
-                    <div className="appearance-row">
-                        <div>
-                            <div className="appearance-row-label">Guided Slot Roles</div>
-                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: 0 }}>
-                                Show role labels (Main Quest, Growth, Maintenance, Wildcard, Flex) and helper descriptions in the Obsession Center.
-                            </p>
-                        </div>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={guidedSlotRoles}
-                                onChange={(e) => updateGuidedSlotRoles(e.target.checked)}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Task Behavior Section ─────────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">Task Behavior</h2>
-                <div className="settings-card">
-                    <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '10px' }}>
-                        <div className="appearance-row-label">Today Task Auto-Removal</div>
-                        <p className="appearance-hint" style={{ marginTop: '-6px', marginBottom: 0 }}>
-                            Choose when a task should be removed from your "Today" list.
-                        </p>
-                        <div className="segmented-control" style={{ width: '100%', maxWidth: '400px', position: 'relative' }}>
-                            <button
-                                className={`segmented-control-item ${todayRemovalMode === 'after_session' ? 'active' : ''}`}
-                                onClick={() => handleUpdateTodayMode('after_session')}
-                            >
-                                After Session
-                            </button>
-                            <button
-                                className={`segmented-control-item ${todayRemovalMode === 'on_completion' ? 'active' : ''}`}
-                                onClick={() => handleUpdateTodayMode('on_completion')}
-                            >
-                                On Completion
-                            </button>
-                            {saveIndicator === 'today' && (
-                                <span className="sync-indicator" style={{ position: 'absolute', right: '-60px', top: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' }}>
-                                    Saved
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Experiments Section ─────────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">Experiments</h2>
-                <div className="settings-card">
-                    <div className="appearance-row">
-                        <div>
-                            <div className="appearance-row-label">Active Experiment Limit</div>
-                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: 0 }}>
-                                Maximum number of active experiments allowed per skill.
-                            </p>
-                        </div>
-                        <div className="limit-input-container">
-                            <input 
-                                type="number" 
-                                min="1" 
-                                max="10"
-                                className={`settings-number-input ${!dbSupportsExperimentLimit ? 'disabled' : ''}`}
-                                value={activeExperimentLimit || 1}
-                                disabled={!dbSupportsExperimentLimit}
-                                onChange={(e) => updateActiveExperimentLimit(e.target.value)}
-                            />
-                            {!dbSupportsExperimentLimit && (
-                                <p className="appearance-hint error" style={{ color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
-                                    Database column missing. Limits will not persist.
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-
-
-            {/* ── Biological Tracking Section ─────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">Biological Tracking</h2>
-                <div className="settings-card">
-                    <div className="appearance-row">
-                        <div className="appearance-row-label">Manual Sleep Logging</div>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={manualSleep}
-                                onChange={(e) => {
-                                    localStorage.setItem('pref_manual_sleep', e.target.checked);
-                                    setManualSleep(e.target.checked);
-                                }}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <p className="appearance-hint">
-                        Prefer manual sleep log (auto-detection becomes secondary)
-                    </p>
-                </div>
-            </section>
-
-            {/* ── Sound Effects Section ───────────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">Sound Effects</h2>
-                <div className="settings-card">
-                    <div className="appearance-row">
-                        <div className="appearance-row-label">Completion Sounds</div>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={completionSoundsEnabled}
-                                onChange={(e) => {
-                                    localStorage.setItem('completion_sounds_enabled', e.target.checked);
-                                    setCompletionSoundsEnabled(e.target.checked);
-                                }}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <p className="appearance-hint" style={{ marginBottom: '16px' }}>
-                        Play audio effects when completing tasks in planning mode, finishing focus sessions, or checking off habits.
-                    </p>
-
-                    <div className="notion-divider" style={{ margin: '16px 0', opacity: 0.2 }} />
-
-                    <div className="appearance-row">
-                        <div className="appearance-row-label">Experiment & Objective Chime</div>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={experimentSoundsEnabled}
-                                onChange={(e) => {
-                                    localStorage.setItem('experiment_sounds_enabled', e.target.checked);
-                                    setExperimentSoundsEnabled(e.target.checked);
-                                }}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <p className="appearance-hint">
-                        Play chime audio when an objective or experiment's status is set to complete.
-                    </p>
-                </div>
-            </section>
-
-            {/* ── Economy Section ─────────────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">Economy</h2>
-                <div className="settings-card">
-                    <div className="appearance-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }}>
-                        <div>
-                            <div className="appearance-row-label">Currency Name</div>
-                            <p className="appearance-hint" style={{ marginTop: '4px', marginBottom: '8px', borderTop: 'none', paddingTop: 0 }}>
-                                Choose a preset or set a custom name for your hard-earned currency.
-                            </p>
-                        </div>
-                        
-                        <div className="currency-presets">
-                            {['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].map(preset => (
-                                <button
-                                    key={preset}
-                                    className={`currency-preset-btn ${currencyName === preset ? 'active' : ''}`}
-                                    onClick={() => updateCurrencyName(preset)}
-                                >
-                                    {preset}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="custom-currency-container">
-                            <div className="appearance-row-label" style={{ fontSize: '11px', opacity: 0.6, marginBottom: '6px' }}>Custom Name</div>
-                            <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                                <input
-                                    type="text"
-                                    className="appearance-url-input"
-                                    placeholder="Enter custom name..."
-                                    value={!['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].includes(currencyName) ? currencyName : ''}
-                                    onChange={(e) => handleCurrencyNameChange(e.target.value)}
-                                    style={{ flex: 1 }}
-                                />
-                                {!['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].includes(currencyName) && currencyName && (
-                                    <div className="custom-active-indicator">Active</div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* ── Account Section ─────────────────────────────────────────── */}
-            <section className="settings-section">
-                <h2 className="settings-section-title">Account</h2>
-                <div className="settings-card">
-                    {user ? (
-                        <>
-                            <div className="account-row">
-                                <div className="account-avatar">
-                                    {user.email?.[0]?.toUpperCase() || '?'}
-                                </div>
-                                <div className="account-info">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span className="account-label">Signed in as</span>
-                                        {isWhitelisted && (
-                                            <span style={{ 
-                                                fontSize: '10px', 
-                                                background: 'rgba(16, 185, 129, 0.15)', 
-                                                color: '#10b981', 
-                                                padding: '2px 8px', 
-                                                borderRadius: '12px', 
-                                                fontWeight: 'bold',
-                                                letterSpacing: '0.5px',
-                                                textTransform: 'uppercase'
-                                            }}>
-                                                Beta Tester
-                                            </span>
-                                        )}
+                        {/* ── TAB 2: BEHAVIOR & OBSESSIONS ─────────────────────────── */}
+                        {activeTab === 'behavior' && (
+                            <div className="settings-tab-content">
+                                <div className="settings-group">
+                                    <div className="settings-group-header">Obsession Workflow</div>
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Guided Slot Roles</span>
+                                            <span className="settings-row-desc">Display role badges (Main Quest, Growth, Maintenance) in Obsession Center.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <ToggleSwitch
+                                                checked={guidedSlotRoles}
+                                                onChange={(val) => updateGuidedSlotRoles(val)}
+                                            />
+                                        </div>
                                     </div>
-                                    <span className="account-email">{user.email}</span>
-                                </div>
-                            </div>
 
-                            <div className="account-meta">
-                                <div className="meta-row">
-                                    <span className="meta-key">User ID</span>
-                                    <span className="meta-value meta-mono">{user.id}</span>
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Today Task Auto-Removal</span>
+                                            <span className="settings-row-desc">Specify when tasks clear from your daily view.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <SegmentedControl
+                                                options={TODAY_REMOVAL_OPTIONS}
+                                                value={todayRemovalMode}
+                                                onChange={handleUpdateTodayMode}
+                                                layoutPrefix="settings-today-removal"
+                                                buttonSize={28}
+                                                fontSize="0.8rem"
+                                                activePadding="0 12px"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="meta-row">
-                                    <span className="meta-key">Provider</span>
-                                    <span className="meta-value">
-                                        {user.app_metadata?.provider || 'google'}
-                                    </span>
-                                </div>
-                                <div className="meta-row">
-                                    <span className="meta-key">Last Sign-in</span>
-                                    <span className="meta-value">
-                                        {user.last_sign_in_at
-                                            ? new Date(user.last_sign_in_at).toLocaleString()
-                                            : '—'}
-                                    </span>
-                                </div>
-                            </div>
 
-                            <div className="account-actions">
-                                <button className="logout-btn" onClick={handleLogout}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                                        <polyline points="16 17 21 12 16 7" />
-                                        <line x1="21" y1="12" x2="9" y2="12" />
-                                    </svg>
-                                    Logout
-                                </button>
+                                <div className="settings-group">
+                                    <div className="settings-group-header">Experiments Limit</div>
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Active Experiment Limit</span>
+                                            <span className="settings-row-desc">Maximum concurrent active experiments allowed per skill area.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <div className={`stepper-control ${!dbSupportsExperimentLimit ? 'disabled' : ''}`}>
+                                                <button
+                                                    className="stepper-btn"
+                                                    onClick={() => updateActiveExperimentLimit(Math.max(1, (activeExperimentLimit || 1) - 1))}
+                                                    disabled={!dbSupportsExperimentLimit || (activeExperimentLimit || 1) <= 1}
+                                                    aria-label="Decrease"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><line x1="2" y1="6" x2="10" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                                                </button>
+                                                <span className="stepper-value">{activeExperimentLimit || 1}</span>
+                                                <button
+                                                    className="stepper-btn"
+                                                    onClick={() => updateActiveExperimentLimit(Math.min(10, (activeExperimentLimit || 1) + 1))}
+                                                    disabled={!dbSupportsExperimentLimit || (activeExperimentLimit || 1) >= 10}
+                                                    aria-label="Increase"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><line x1="6" y1="2" x2="6" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><line x1="2" y1="6" x2="10" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </>
-                    ) : (
-                        <div className="not-signed-in">
-                            <p className="not-signed-in-text" style={{ marginBottom: '18px', lineHeight: '1.5', fontSize: '0.85rem' }}>
-                                <strong>Nice bruv, you can login to save your data for when your brain's recharging.</strong>
-                                <span style={{ display: 'block', marginTop: '6px', opacity: 0.8 }}>
-                                    No password needed, cuz remembering passwords is a crime against working memory anyway.
-                                </span>
-                            </p>
-                            <button
-                                className="login-btn"
-                                onClick={async () => {
-                                    try {
-                                        await loginWithGoogle();
-                                    } catch (err) {
-                                        console.error('[SettingsPage] Login button error:', err);
-                                    }
-                                }}
-                            >
-                                Sign in with Google
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </section>
+                        )}
+
+                        {/* ── TAB 3: SIGNALS & TRACKING ───────────────────────────── */}
+                        {activeTab === 'signals' && (
+                            <div className="settings-tab-content">
+                                <div className="settings-group">
+                                    <div className="settings-group-header">Biological Tracking</div>
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Manual Sleep Logging</span>
+                                            <span className="settings-row-desc">Prioritize manual sleep entry over automated detection.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <ToggleSwitch
+                                                checked={manualSleep}
+                                                onChange={(val) => {
+                                                    localStorage.setItem('pref_manual_sleep', val);
+                                                    setManualSleep(val);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="settings-group">
+                                    <div className="settings-group-header">Audio Feedback</div>
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Completion Sound Effects</span>
+                                            <span className="settings-row-desc">Play audio feedback when checking off habits or focus tasks.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <ToggleSwitch
+                                                checked={completionSoundsEnabled}
+                                                onChange={(val) => {
+                                                    localStorage.setItem('completion_sounds_enabled', val);
+                                                    setCompletionSoundsEnabled(val);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="settings-row">
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Experiment & Objective Chimes</span>
+                                            <span className="settings-row-desc">Play acoustic chime on experiment completion.</span>
+                                        </div>
+                                        <div className="settings-row-control">
+                                            <ToggleSwitch
+                                                checked={experimentSoundsEnabled}
+                                                onChange={(val) => {
+                                                    localStorage.setItem('experiment_sounds_enabled', val);
+                                                    setExperimentSoundsEnabled(val);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── TAB 4: ECONOMY & CURRENCY ────────────────────────────── */}
+                        {activeTab === 'economy' && (
+                            <div className="settings-tab-content">
+                                <div className="settings-group">
+
+                                    <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
+                                        <div className="settings-row-label">
+                                            <span className="settings-row-title">Currency Name Presets</span>
+                                            <span className="settings-row-desc">Choose a currency title for completing habit loops and focus sessions.</span>
+                                        </div>
+                                        <div>
+                                            <SegmentedControl
+                                                options={CURRENCY_PRESETS}
+                                                value={currencyName}
+                                                onChange={updateCurrencyName}
+                                                layoutPrefix="settings-currency"
+                                                buttonSize={28}
+                                                fontSize="0.8rem"
+                                                activePadding="0 12px"
+                                            />
+                                        </div>
+
+                                        <div style={{ width: '100%', marginTop: '8px' }}>
+                                            <span className="settings-row-title" style={{ fontSize: '13px' }}>Custom Currency Name</span>
+                                            <div style={{ marginTop: '6px' }}>
+                                                <input
+                                                    type="text"
+                                                    className="appearance-url-input"
+                                                    placeholder="Enter custom currency name..."
+                                                    value={!['Coins', 'Ekkos', 'Sparks', 'Orbs', 'Hryvnia', 'Pulsars'].includes(currencyName) ? currencyName : ''}
+                                                    onChange={(e) => handleCurrencyNameChange(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── TAB 5: ACCOUNT & BILLING ────────────────────────────── */}
+                        {activeTab === 'account' && (
+                            <div className="settings-tab-content">
+                                <div className="settings-group">
+
+                                    {user ? (
+                                        <>
+                                            <div className="account-row" style={{ padding: '12px 0' }}>
+                                                <div className="account-avatar">
+                                                    {user.email?.[0]?.toUpperCase() || '?'}
+                                                </div>
+                                                <div className="account-info">
+                                                    <span className="account-label">Signed in as</span>
+                                                    <span className="account-email">{user.email}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="account-meta">
+                                                <div className="meta-row">
+                                                    <span className="meta-key">User ID</span>
+                                                    <span className="meta-value meta-mono">{user.id}</span>
+                                                </div>
+                                                <div className="meta-row">
+                                                    <span className="meta-key">Provider</span>
+                                                    <span className="meta-value">{user.app_metadata?.provider || 'google'}</span>
+                                                </div>
+                                                <div className="meta-row">
+                                                    <span className="meta-key">Status Tier</span>
+                                                    <span className="meta-value" style={{ fontWeight: 'bold', color: '#10b981' }}>
+                                                        {isWhitelisted ? 'Beta Tester Access' : subscriptionStatus === 'active' ? 'Active Pro' : 'Free Tier'}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                                                {!isWhitelisted && (
+                                                    <button 
+                                                        className="wallpaper-btn-choose"
+                                                        onClick={subscriptionStatus === 'active' ? () => {} : redirectToCheckout}
+                                                    >
+                                                        {subscriptionStatus === 'active' ? 'Manage Subscription' : 'Upgrade to Premium'}
+                                                    </button>
+                                                )}
+                                                <button className="wallpaper-btn-remove" onClick={handleLogout}>
+                                                    Sign Out
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="not-signed-in">
+                                            <p className="not-signed-in-text">
+                                                Sign in to sync your data across devices seamlessly.
+                                            </p>
+                                            <button
+                                                className="wallpaper-btn-choose"
+                                                onClick={async () => {
+                                                    try {
+                                                        await loginWithGoogle();
+                                                    } catch (err) {
+                                                        console.error('Login error:', err);
+                                                    }
+                                                }}
+                                            >
+                                                Sign in with Google
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

@@ -802,12 +802,286 @@
             background: var(--bg);
         }
 
-        .skill-progress-section {
+        /* -------------------------------------------------------------
+           REMODELED NEURO-LINEAR SETTINGS MODAL SYSTEM
+        ------------------------------------------------------------- */
+        .settings-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 11, 12, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             display: flex;
             align-items: center;
-            gap: 16px;
-            width: 50%;
-            max-width: 300px;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .settings-modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .settings-modal-container {
+            width: 900px;
+            max-width: 95vw;
+            height: 620px;
+            max-height: 90vh;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.6);
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            overflow: hidden;
+            transform: scale(0.96);
+            transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+        }
+
+        .settings-modal-overlay.open .settings-modal-container {
+            transform: scale(1);
+        }
+
+        /* Settings Sidebar */
+        .settings-sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .settings-user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, #8E9AF4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #FFF;
+        }
+
+        .user-meta-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--fg);
+            line-height: 1.2;
+        }
+
+        .user-meta-role {
+            font-size: 0.72rem;
+            color: var(--muted);
+            font-family: var(--font-data);
+        }
+
+        .settings-nav-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+
+        .settings-nav-title {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            padding: 6px 10px 4px 10px;
+            opacity: 0.8;
+        }
+
+        .settings-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--inactive-text);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+
+        .settings-nav-item:hover {
+            color: var(--fg);
+            background: var(--surface-elevated);
+        }
+
+        .settings-nav-item.active {
+            color: var(--fg);
+            background: var(--surface-elevated);
+            font-weight: 500;
+        }
+
+        .settings-nav-item.active .lucide {
+            color: var(--accent);
+        }
+
+        /* Settings Main Pane */
+        .settings-main {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            background: var(--surface);
+        }
+
+        .settings-header {
+            padding: 24px 32px 16px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .settings-header-titles h2 {
+            margin: 0 0 4px 0;
+            font-size: 1.35rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .settings-header-titles p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-weight: 300;
+        }
+
+        .settings-close-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .settings-close-btn:hover {
+            color: var(--fg);
+            border-color: var(--border-hover);
+            background: var(--surface-elevated);
+        }
+
+        .settings-body {
+            padding: 24px 32px 32px 32px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .settings-tab-pane {
+            display: none;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .settings-tab-pane.active {
+            display: flex;
+        }
+
+        .settings-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-group-header {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 20px;
+        }
+
+        .settings-row:last-child {
+            border-bottom: none;
+        }
+
+        .settings-row-label {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 440px;
+        }
+
+        .settings-row-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--fg);
+        }
+
+        .settings-row-desc {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-family: var(--font-data);
+            line-height: 1.45;
+        }
+
+        .settings-row-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .settings-select {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--fg);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-family: var(--font-ui);
+            font-size: 0.82rem;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.15s ease;
+        }
+
+        .settings-select:focus {
+            border-color: var(--accent);
         }
     </style>
 </head>
@@ -1091,8 +1365,288 @@
                         </div>
                     </div>
                 </div>
+            <!-- REMODELED SETTINGS SYSTEM DEMO SECTION -->
+            <div class="section-title">Remodeled Settings Experience (Neuro-Linear Architecture)</div>
+            <div class="gallery-grid">
+                <div class="card" style="grid-column: span 2; background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div>
+                            <h3>Neuro-Linear Settings Modal</h3>
+                            <p class="card-desc" style="max-width: 550px; margin-bottom: 0;">
+                                Modeled after Notion's clean 2-column preferences layout, upgraded with Backbone's dark slate OKLCH tokens, segmented pill selectors, bionic typography scaffolding, and RSD-safe delayed undo interactions.
+                            </p>
+                        </div>
+                        <button class="btn btn-primary" onclick="openSettingsModal()" style="height: 38px; padding: 0 20px; gap: 8px;">
+                            <i data-lucide="sliders" class="lucide"></i>
+                            Open Preferences Modal
+                        </button>
+                    </div>
+                </div>
             </div>
         </main>
+    </div>
+
+    <!-- REMODELED SETTINGS MODAL OVERLAY -->
+    <div class="settings-modal-overlay" id="settingsModalOverlay" onclick="handleOverlayClick(event)">
+        <div class="settings-modal-container">
+            <!-- Modal Sidebar -->
+            <aside class="settings-sidebar">
+                <div>
+                    <div class="settings-user-profile">
+                        <div class="user-avatar">W</div>
+                        <div>
+                            <div class="user-meta-name">Warhead</div>
+                            <div class="user-meta-role">Neuro-Linear Space</div>
+                        </div>
+                    </div>
+
+                    <div class="settings-nav-group">
+                        <div class="settings-nav-title">Cognitive & UI</div>
+                        <div class="settings-nav-item active" onclick="switchSettingsTab('preferences', this)">
+                            <i data-lucide="sliders" class="lucide"></i>
+                            <span>Preferences</span>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSettingsTab('scaffolding', this)">
+                            <i data-lucide="brain" class="lucide"></i>
+                            <span>Cognitive Scaffolding</span>
+                        </div>
+                        <div class="settings-nav-item" onclick="switchSettingsTab('notifications', this)">
+                            <i data-lucide="bell" class="lucide"></i>
+                            <span>Focus & Signals</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-nav-group">
+                        <div class="settings-nav-title">System & Vault</div>
+                        <div class="settings-nav-item" onclick="switchSettingsTab('account', this)">
+                            <i data-lucide="user" class="lucide"></i>
+                            <span>Account & Vault</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="padding-top: 12px; border-top: 1px solid var(--border);">
+                    <div class="data-text" style="font-size: 0.7rem; color: var(--muted);">
+                        Backbone OS v2.4 • Haptics Enabled
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Modal Content Pane -->
+            <main class="settings-main">
+                <header class="settings-header">
+                    <div class="settings-header-titles">
+                        <h2 id="settingsTabTitle">Preferences</h2>
+                        <p id="settingsTabSubtitle">Tailor Backbone to your cognitive workflow, energy levels, and visual comfort</p>
+                    </div>
+                    <button class="settings-close-btn" onclick="closeSettingsModal()" title="Close Settings">
+                        <i data-lucide="x" class="lucide"></i>
+                    </button>
+                </header>
+
+                <div class="settings-body">
+                    <!-- TAB 1: PREFERENCES -->
+                    <div class="settings-tab-pane active" id="tab-preferences">
+                        <div class="settings-group">
+                            <div class="settings-group-header">Visual Atmosphere & Theme</div>
+                            
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Interface Theme</span>
+                                    <span class="settings-row-desc">Select visual density and background halation protection for ocular fatigue.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="controls">
+                                        <button class="mode-btn active" onclick="setTheme('dark')">Solid Dark</button>
+                                        <button class="mode-btn" onclick="setTheme('light')">Solid Light</button>
+                                        <button class="mode-btn" onclick="setTheme('liquid')">Liquid Glass</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Default Energy Focus Level</span>
+                                    <span class="settings-row-desc">Initial daily baseline energy rating applied to auto-prioritize issue lists.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="energy-selector" style="margin-top: 0; padding: 2px;">
+                                        <button class="energy-pill-btn" onclick="setEnergy(1)" style="padding: 4px 10px;">1</button>
+                                        <button class="energy-pill-btn" onclick="setEnergy(2)" style="padding: 4px 10px;">2</button>
+                                        <button class="energy-pill-btn active" onclick="setEnergy(3)" style="padding: 4px 10px;">3</button>
+                                        <button class="energy-pill-btn" onclick="setEnergy(4)" style="padding: 4px 10px;">4</button>
+                                        <button class="energy-pill-btn" onclick="setEnergy(5)" style="padding: 4px 10px;">5</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <div class="settings-group-header">Input & Navigation</div>
+                            
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Submit Task on Cmd + Enter</span>
+                                    <span class="settings-row-desc">Use Enter for line breaks in input fields; press Cmd/Ctrl + Enter to send.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="switch-container" onclick="toggleSwitch(this)">
+                                        <div class="toggle-switch active">
+                                            <div class="toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Touch Target Expander</span>
+                                    <span class="settings-row-desc">Enforce invisible 72x72px minimum hitboxes around interactive buttons.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="switch-container" onclick="toggleSwitch(this)">
+                                        <div class="toggle-switch active">
+                                            <div class="toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: COGNITIVE SCAFFOLDING -->
+                    <div class="settings-tab-pane" id="tab-scaffolding">
+                        <div class="settings-group">
+                            <div class="settings-group-header">Reading & Visual Anchors</div>
+                            
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Bionic Reading Engine</span>
+                                    <span class="settings-row-desc">Automatically bold the initial ~45% of words across task lists and notes to anchor visual eye movement.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="switch-container" onclick="toggleSwitch(this)">
+                                        <div class="toggle-switch active">
+                                            <div class="toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Technical Typography Mode</span>
+                                    <span class="settings-row-desc">Use Atkinson Hyperlegible font for code snippets, hash strings, and contract terms.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="switch-container" onclick="toggleSwitch(this)">
+                                        <div class="toggle-switch active">
+                                            <div class="toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="settings-group">
+                            <div class="settings-group-header">Tactile & Motion Scaffolding</div>
+
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Tactile Vibration Receipts</span>
+                                    <span class="settings-row-desc">Provide physical double-pulse haptics on task completion and gentle taps on button presses.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="switch-container" onclick="toggleSwitch(this)">
+                                        <div class="toggle-switch active">
+                                            <div class="toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">10-Second Delayed Undo Buffer</span>
+                                    <span class="settings-row-desc">Bypass immediate confirm modals; perform actions instantly and display a 10s capsule undo bar.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="switch-container" onclick="toggleSwitch(this)">
+                                        <div class="toggle-switch active">
+                                            <div class="toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: NOTIFICATIONS & SIGNALS -->
+                    <div class="settings-tab-pane" id="tab-notifications">
+                        <div class="settings-group">
+                            <div class="settings-group-header">Neuro-Friendly Feedback</div>
+                            
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">RSD Threat Response Protection</span>
+                                    <span class="settings-row-desc">Suppress red warning exclamation points, abrupt modal popups, and flashing error alerts.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <div class="switch-container" onclick="toggleSwitch(this)">
+                                        <div class="toggle-switch active">
+                                            <div class="toggle-knob"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Gentle Signal Tone</span>
+                                    <span class="settings-row-desc">Soft, warm acoustic chime for scheduled focus reminders.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <select class="settings-select">
+                                        <option value="warm-chime">Warm Chime (Default)</option>
+                                        <option value="soft-bell">Soft Bell</option>
+                                        <option value="silent">Silent (Haptic Only)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 4: ACCOUNT & VAULT -->
+                    <div class="settings-tab-pane" id="tab-account">
+                        <div class="settings-group">
+                            <div class="settings-group-header">Profile & Data Sync</div>
+                            
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Workspace Vault</span>
+                                    <span class="settings-row-desc">Encrypted local SQLite storage location.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <span class="data-text" style="font-size: 0.8rem;">~/.backbone/vault.db</span>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-row-label">
+                                    <span class="settings-row-title">Reset All Preferences</span>
+                                    <span class="settings-row-desc">Restores default Linear slate theme and cognitive scaffolding configuration.</span>
+                                </div>
+                                <div class="settings-row-control">
+                                    <button class="btn btn-warning-soft" onclick="showUndoSnackbar(); closeSettingsModal();">
+                                        Reset to Defaults
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <!-- Lucide Library Link and Initialization -->
@@ -1115,7 +1669,6 @@
         }
 
         function triggerTap(button) {
-            // Simple visual active scale indicator
             button.style.transform = 'scale(0.95)';
             setTimeout(() => {
                 button.style.transform = '';
@@ -1129,13 +1682,66 @@
             const icon = document.getElementById('pause-icon');
             const isPaused = icon.getAttribute('data-lucide') === 'pause';
             icon.setAttribute('data-lucide', isPaused ? 'play' : 'pause');
-            lucide.createIcons(); // refresh icon
+            lucide.createIcons();
         }
 
         // Toggle Switch handler
         function toggleSwitch(container) {
             const sw = container.querySelector('.toggle-switch');
             sw.classList.toggle('active');
+        }
+
+        // Settings Modal Handlers
+        function openSettingsModal() {
+            const modal = document.getElementById('settingsModalOverlay');
+            modal.classList.add('open');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsModalOverlay');
+            modal.classList.remove('open');
+        }
+
+        function handleOverlayClick(event) {
+            if (event.target.id === 'settingsModalOverlay') {
+                closeSettingsModal();
+            }
+        }
+
+        const tabMetadata = {
+            'preferences': {
+                title: 'Preferences',
+                subtitle: 'Tailor Backbone to your cognitive workflow, energy levels, and visual comfort'
+            },
+            'scaffolding': {
+                title: 'Cognitive Scaffolding',
+                subtitle: 'Fine-tune Bionic reading anchors, haptics, and delayed undo behavior'
+            },
+            'notifications': {
+                title: 'Focus & Signals',
+                subtitle: 'Configure gentle alarms, quiet hours, and RSD-safe non-threat feedback'
+            },
+            'account': {
+                title: 'Account & Vault',
+                subtitle: 'Manage local data storage, encrypted backups, and security settings'
+            }
+        };
+
+        function switchSettingsTab(tabId, element) {
+            // Update sidebar nav state
+            document.querySelectorAll('.settings-nav-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+
+            // Update visible content pane
+            document.querySelectorAll('.settings-tab-pane').forEach(pane => pane.classList.remove('active'));
+            const targetPane = document.getElementById(`tab-${tabId}`);
+            if (targetPane) targetPane.classList.add('active');
+
+            // Update titles
+            if (tabMetadata[tabId]) {
+                document.getElementById('settingsTabTitle').textContent = tabMetadata[tabId].title;
+                document.getElementById('settingsTabSubtitle').textContent = tabMetadata[tabId].subtitle;
+            }
         }
 
         // Snackbar animation simulation

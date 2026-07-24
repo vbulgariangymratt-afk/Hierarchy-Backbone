@@ -151,7 +151,7 @@
 
 .trial-sidebar-subscribe-btn:active,
 .trial-sidebar-extend-btn:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.98);
 }
 
 [data-theme="light"] .trial-sidebar-subscribe-btn,

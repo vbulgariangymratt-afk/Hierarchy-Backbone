@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, loginWithGoogle } from '../lib/supabase';
 import { backbone as backboneService } from '../backbone-v2';
 
 const SettingsContext = createContext();
@@ -65,6 +65,10 @@ const _cache = {
     todayRemovalMode: localStorage.getItem('app-today-removal-mode') || 'on_completion',
     isWhitelisted: false,
     trialStartAt: null,
+    subscriptionStatus: null,
+    lemonSqueezyCustomerId: null,
+    lemonSqueezySubscriptionId: null,
+    subscriptionEndsAt: null,
     hasLoaded: false,
 };
 
@@ -82,6 +86,10 @@ export const SettingsProvider = ({ children }) => {
     const [todayRemovalMode, setTodayRemovalModeState] = useState(_cache.todayRemovalMode);
     const [isWhitelisted, setIsWhitelistedState] = useState(_cache.isWhitelisted);
     const [trialStartAt, setTrialStartAtState] = useState(_cache.trialStartAt);
+    const [subscriptionStatus, setSubscriptionStatusState] = useState(_cache.subscriptionStatus);
+    const [lemonSqueezyCustomerId, setLemonSqueezyCustomerIdState] = useState(_cache.lemonSqueezyCustomerId);
+    const [lemonSqueezySubscriptionId, setLemonSqueezySubscriptionIdState] = useState(_cache.lemonSqueezySubscriptionId);
+    const [subscriptionEndsAt, setSubscriptionEndsAtState] = useState(_cache.subscriptionEndsAt);
     const [loading, setLoading] = useState(!_cache.hasLoaded);
 
 
@@ -133,6 +141,10 @@ export const SettingsProvider = ({ children }) => {
                     energy_level: 5,
                     is_whitelisted: false,
                     trial_start_at: new Date().toISOString(),
+                    subscription_status: null,
+                    lemon_squeezy_customer_id: null,
+                    lemon_squeezy_subscription_id: null,
+                    subscription_ends_at: null,
                     ...(_cache.dbSupportsExperimentLimit ? { active_experiment_limit: 1 } : {})
                 };
                 
@@ -159,6 +171,10 @@ export const SettingsProvider = ({ children }) => {
                     _cache.todayRemovalMode = 'on_completion';
                     _cache.isWhitelisted = false;
                     _cache.trialStartAt = defaults.trial_start_at;
+                    _cache.subscriptionStatus = null;
+                    _cache.lemonSqueezyCustomerId = null;
+                    _cache.lemonSqueezySubscriptionId = null;
+                    _cache.subscriptionEndsAt = null;
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
                     setFocusSlots(_cache.focusSlots);
@@ -171,6 +187,10 @@ export const SettingsProvider = ({ children }) => {
                     setTodayRemovalModeState(_cache.todayRemovalMode);
                     setIsWhitelistedState(false);
                     setTrialStartAtState(defaults.trial_start_at);
+                    setSubscriptionStatusState(null);
+                    setLemonSqueezyCustomerIdState(null);
+                    setLemonSqueezySubscriptionIdState(null);
+                    setSubscriptionEndsAtState(null);
                 }
             } else if (!error && data) {
                 _cache.focusSlots = data.focus_slots || [null, null, null, null, null];
@@ -182,6 +202,10 @@ export const SettingsProvider = ({ children }) => {
                 _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
                 _cache.isWhitelisted = data.is_whitelisted || false;
+                _cache.subscriptionStatus = data.subscription_status || null;
+                _cache.lemonSqueezyCustomerId = data.lemon_squeezy_customer_id || null;
+                _cache.lemonSqueezySubscriptionId = data.lemon_squeezy_subscription_id || null;
+                _cache.subscriptionEndsAt = data.subscription_ends_at || null;
                 
                 let trialStart = data.trial_start_at;
                 if (!trialStart) {
@@ -205,6 +229,10 @@ export const SettingsProvider = ({ children }) => {
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(_cache.isWhitelisted);
                 setTrialStartAtState(_cache.trialStartAt);
+                setSubscriptionStatusState(_cache.subscriptionStatus);
+                setLemonSqueezyCustomerIdState(_cache.lemonSqueezyCustomerId);
+                setLemonSqueezySubscriptionIdState(_cache.lemonSqueezySubscriptionId);
+                setSubscriptionEndsAtState(_cache.subscriptionEndsAt);
             }
         } catch (err) {
             console.error('[SettingsContext] Unexpected error during load:', err);
@@ -370,6 +398,10 @@ export const SettingsProvider = ({ children }) => {
                 _cache.todayRemovalMode = 'on_completion';
                 _cache.isWhitelisted = false;
                 _cache.trialStartAt = null;
+                _cache.subscriptionStatus = null;
+                _cache.lemonSqueezyCustomerId = null;
+                _cache.lemonSqueezySubscriptionId = null;
+                _cache.subscriptionEndsAt = null;
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -380,6 +412,10 @@ export const SettingsProvider = ({ children }) => {
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(false);
                 setTrialStartAtState(null);
+                setSubscriptionStatusState(null);
+                setLemonSqueezyCustomerIdState(null);
+                setLemonSqueezySubscriptionIdState(null);
+                setSubscriptionEndsAtState(null);
                 setLoading(false);
             }
         });
@@ -457,9 +493,53 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
+    const redirectToCheckout = async () => {
+        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL;
+        
+        if (!checkoutBaseUrl) {
+            console.error('[SettingsContext] VITE_LEMON_SQUEEZY_CHECKOUT_URL is not configured.');
+            alert('Store checkout is currently not configured. Please configure VITE_LEMON_SQUEEZY_CHECKOUT_URL in your environment variables.');
+            return;
+        }
+
+        // Get the current user email and ID
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            alert('Please sign in with Google first so we can link your subscription to your account.');
+            await loginWithGoogle();
+            return;
+        }
+
+        // Append custom user ID and pre-populate email
+        let url;
+        try {
+            url = new URL(checkoutBaseUrl);
+        } catch (e) {
+            console.error('[SettingsContext] Invalid VITE_LEMON_SQUEEZY_CHECKOUT_URL:', e);
+            alert('Invalid checkout URL configuration.');
+            return;
+        }
+        url.searchParams.set('checkout[custom][user_id]', user.id);
+        url.searchParams.set('checkout[email]', user.email);
+
+        const checkoutUrl = url.toString();
+
+        try {
+            if (window.__TAURI_INTERNALS__) {
+                const { openUrl } = await import('@tauri-apps/plugin-opener');
+                await openUrl(checkoutUrl);
+            } else {
+                window.open(checkoutUrl, '_blank');
+            }
+        } catch (err) {
+            console.error('[SettingsContext] Failed to open checkout url:', err);
+            window.open(checkoutUrl, '_blank');
+        }
+    };
+
     const hasAccess = useMemo(() => {
-        return isWhitelisted || isTrialActive;
-    }, [isWhitelisted, isTrialActive]);
+        return isWhitelisted || isTrialActive || subscriptionStatus === 'active' || subscriptionStatus === 'on_trial';
+    }, [isWhitelisted, isTrialActive, subscriptionStatus]);
 
     const settingsValue = useMemo(() => ({
         focusSlots,
@@ -489,11 +569,16 @@ export const SettingsProvider = ({ children }) => {
         trialDaysRemaining,
         hasAccess,
         extendTrial,
+        subscriptionStatus,
+        lemonSqueezyCustomerId,
+        lemonSqueezySubscriptionId,
+        subscriptionEndsAt,
+        redirectToCheckout,
         dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, trialStartAt, isTrialActive, trialDaysRemaining, hasAccess, loading, refreshSettings, extendTrial]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, trialStartAt, isTrialActive, trialDaysRemaining, hasAccess, loading, refreshSettings, extendTrial, subscriptionStatus, lemonSqueezyCustomerId, lemonSqueezySubscriptionId, subscriptionEndsAt]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>

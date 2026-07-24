@@ -125,7 +125,7 @@ function App() {
                     <Route path="calendar" element={<TimelinePage />} />
                     <Route path="marketplace" element={<MarketplacePage />} />
                     <Route path="journal" element={<JournalPage />} />
-                    <Route path="settings" element={<SettingsPage />} />
+                    <Route path="settings" element={null} />
                     <Route path="focus-center" element={<FocusCenterPage />} />
                     <Route path="maintenance-center" element={<MaintenanceCenterPage />} />
                     <Route path="area/:id" element={<AreaPage />} />

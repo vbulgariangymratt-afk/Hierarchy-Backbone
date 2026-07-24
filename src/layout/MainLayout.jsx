@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Outlet, useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 
 import Sidebar from './Sidebar';
 import MiniLaunchpadModal from '../components/modals/MiniLaunchpadModal';
@@ -13,6 +14,7 @@ import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image, BookOpen }
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import SegmentedControl from '../components/ui/SegmentedControl';
+import SettingsPage from '../pages/SettingsPage';
 import JournalPage from '../pages/JournalPage';
 import Counter from '../components/ui/Counter';
 import CustomThemeSwitch from '../components/ui/CustomThemeSwitch';
@@ -233,6 +235,14 @@ const MainLayout = () => {
 
 
     const location = useLocation();
+    const navigate = useNavigate();
+    const isSettingsOpen = location.pathname === '/settings';
+
+    const closeSettings = useCallback(() => {
+        // navigate(-1) silently fails when there's no back history.
+        // Go to launchpad as a reliable fallback instead.
+        navigate('/launchpad');
+    }, [navigate]);
 
     return (
         <div className="main-layout">
@@ -341,16 +351,17 @@ const MainLayout = () => {
                                 activePadding="0 12px"
                             />
 
-                            <Link to="/settings" className="header-settings-btn-ghost" title="Settings">
+                            <button onClick={() => navigate('/settings')} className="header-settings-btn-ghost" title="Settings">
                                 <motion.div
                                     whileHover={{ rotate: 90 }}
                                     whileTap={{ rotate: 180 }}
+                                    animate={{ rotate: isSettingsOpen ? 90 : 0 }}
                                     transition={{ type: "spring", stiffness: 200, damping: 15 }}
                                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
                                     <Settings size={16} />
                                 </motion.div>
-                            </Link>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -413,6 +424,41 @@ const MainLayout = () => {
 
             {/* Global Delayed Undo Snackbar */}
             <UndoSnackbar />
+
+            {/* Settings Modal Overlay — portal always mounted, AnimatePresence inside */}
+            {createPortal(
+                <AnimatePresence>
+                    {isSettingsOpen && (
+                        <motion.div
+                            key="settings-scrim"
+                            className="settings-modal-scrim"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={(e) => { if (e.target === e.currentTarget) closeSettings(); }}
+                        >
+                            <motion.div
+                                key="settings-modal"
+                                className="settings-modal-panel"
+                                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                            >
+                                <button className="settings-modal-close" onClick={closeSettings} aria-label="Close settings">
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                        <line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                        <line x1="13" y1="1" x2="1" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                    </svg>
+                                </button>
+                                <SettingsPage />
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
         </div>
     );

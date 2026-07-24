@@ -2,6 +2,8 @@ import React from 'react';
 import { useBackboneStore } from '../store/backboneStore';
 import './TrialPaywallOverlay.css';
 
+import { useSettings } from '../context/SettingsContext';
+
 // Bionic Reading utility to format text
 const bionic = (text) => {
     if (!text) return '';
@@ -46,11 +48,13 @@ const bionic = (text) => {
 const TrialPaywallOverlay = () => {
     const showPaywall = useBackboneStore(state => state.showPaywall);
     const setShowPaywall = useBackboneStore(state => state.setShowPaywall);
+    const { redirectToCheckout } = useSettings();
 
     if (!showPaywall) return null;
 
     const handleSubscribe = () => {
-        alert("Subscription triggered!");
+        redirectToCheckout();
+        setShowPaywall(false);
     };
 
     const handleClose = () => {
@@ -62,7 +66,7 @@ const TrialPaywallOverlay = () => {
             <div className="trial-paywall-container">
                 
                 <h1 className="paywall-message-primary">
-                    {bionic("If this system helped you bypass your executive freeze this month, you can keep full access for $50/month")}
+                    {bionic("If this system helped you bypass your executive freeze, you can keep full access with a subscription")}
                 </h1>
                 
                 <p className="paywall-message-secondary">
@@ -74,7 +78,7 @@ const TrialPaywallOverlay = () => {
                         not right now
                     </button>
                     <button className="paywall-btn primary-btn" onClick={handleSubscribe}>
-                        Subscribe for $50/month
+                        Subscribe to Premium
                     </button>
                 </div>
             </div>
