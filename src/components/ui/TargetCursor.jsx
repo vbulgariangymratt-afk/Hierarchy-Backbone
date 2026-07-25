@@ -86,7 +86,9 @@ const TargetCursor = ({
     if (isMobile || !cursorRef.current) return;
 
     const originalCursor = document.body.style.cursor;
-    if (hideDefaultCursor) {
+    
+    // We will set this dynamically based on mouse position
+    if (hideDefaultCursor && !containerSelector) {
       document.body.style.cursor = 'none';
     }
 
@@ -166,18 +168,20 @@ const TargetCursor = ({
 
     const moveHandler = e => {
       if (containerSelector) {
-        const container = document.querySelector(containerSelector);
-        if (container) {
-          const inside = container.contains(document.elementFromPoint(e.clientX, e.clientY));
-          if (inside !== isInsideContainer) {
-            isInsideContainer = inside;
-            gsap.to(cursor, { opacity: inside ? 1 : 0, duration: 0.15 });
-            if (!inside && activeTarget) {
-              currentLeaveHandler?.();
-            }
+        // Dynamic viewport coordinate check:
+        // Header height is 56px, Sidebar width is 240px.
+        const inside = e.clientY >= 56 && e.clientX >= 240;
+        if (inside !== isInsideContainer) {
+          isInsideContainer = inside;
+          gsap.to(cursor, { opacity: inside ? 1 : 0, duration: 0.15 });
+          if (hideDefaultCursor) {
+            document.body.style.cursor = inside ? 'none' : originalCursor;
           }
-          if (!inside) return;
+          if (!inside && activeTarget) {
+            currentLeaveHandler?.();
+          }
         }
+        if (!inside) return;
       }
       moveCursor(e.clientX, e.clientY);
     };
@@ -216,6 +220,9 @@ const TargetCursor = ({
     window.addEventListener('mouseup', mouseUpHandler);
 
     const enterHandler = e => {
+      // If we are currently outside the allowed container, do not track hover highlights
+      if (containerSelector && !isInsideContainer) return;
+
       const directTarget = e.target;
       const allTargets = [];
       let current = directTarget;
@@ -226,6 +233,7 @@ const TargetCursor = ({
         current = current.parentElement;
       }
       const target = allTargets[0] || null;
+
       if (!target || !cursorRef.current || !cornersRef.current) return;
       if (activeTarget === target) return;
       if (activeTarget) {
@@ -405,7 +413,8 @@ const TargetCursor = ({
     hoverDuration,
     parallaxOn,
     cursorColor,
-    cursorColorOnTarget
+    cursorColorOnTarget,
+    containerSelector
   ]);
 
   useEffect(() => {

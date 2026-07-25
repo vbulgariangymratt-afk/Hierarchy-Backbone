@@ -10,7 +10,7 @@ import { backbone, NodeTypes } from '../backbone-v2/index';
 import { useBackboneStore } from '../store/backboneStore';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
-import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image, BookOpen, Brain } from 'lucide-react';
+import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image, BookOpen, Brain, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import SegmentedControl from '../components/ui/SegmentedControl';
@@ -227,6 +227,9 @@ const MainLayout = () => {
     // Modal state
     const [selectedSkill, setSelectedSkill] = useState(null);
     const [isLaunchpadOpen, setIsLaunchpadOpen] = useState(false);
+    const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+    const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+    const allNodes = useBackboneStore(state => state.nodes);
 
     const openLaunchpad = useCallback((skill) => {
         setSelectedSkill(skill);
@@ -254,146 +257,172 @@ const MainLayout = () => {
                 </div>
                 
                 <div className="header-right">
-                    {(energyLevel === 5 || energyLevel === 4) && (
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.96 }}
-                            onClick={() => navigate('/launchpad?prep=true')}
-                            className="hryvnia-display-header-pill cursor-target"
-                            style={{
-                                cursor: 'pointer',
-                                color: 'var(--text-primary)',
-                                fontWeight: 500
-                            }}
-                            title="Prepare everything for your future self"
-                        >
-                            <motion.div
-                                animate={{
-                                    scale: [1, 1.15, 1],
-                                }}
-                                transition={{
-                                    duration: 2.5,
-                                    repeat: Infinity,
-                                    repeatType: "reverse",
-                                    ease: "easeInOut"
-                                }}
-                                style={{ display: 'inline-flex', alignItems: 'center' }}
+                    {energyLevel >= 3 && (
+                        <div className="header-info-group">
+                            {/* Search icon */}
+                            <button
+                                onClick={() => setShowGlobalSearch(true)}
+                                className="header-daily-log-btn-ghost cursor-target"
+                                title="Search for a task"
                             >
-                                <Brain size={13} style={{ color: 'var(--color-accent)' }} />
-                            </motion.div>
-                            <span>Future Self</span>
-                        </motion.button>
-                    )}
-                    {energyLevel > 3 && (
-                        <div 
-                            className="hryvnia-display-header-pill interactive-balance-pill cursor-target"
-                            onClick={triggerCoinJiggle}
-                            style={{ cursor: 'pointer' }}
-                            title="Interactive Balance"
-                        >
-                            <Coins size={14} className="hryvnia-icon" />
-                            <span className="hryvnia-amount">
-                                <Counter value={displayedBalance} fontSize={14} fontWeight={600} />
-                            </span>
-                            <span className="hryvnia-name">{currencyName.charAt(0).toUpperCase() + currencyName.slice(1).toLowerCase()}</span>
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <Search size={16} />
+                                </motion.div>
+                            </button>
+
+                            {/* Future Self button */}
+                            {(energyLevel === 5 || energyLevel === 4) && (
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.96 }}
+                                    onClick={() => navigate('/launchpad?prep=true')}
+                                    className="hryvnia-display-header-pill cursor-target"
+                                    style={{
+                                        cursor: 'pointer',
+                                        color: 'var(--text-primary)',
+                                        fontWeight: 500
+                                    }}
+                                    title="Prepare everything for your future self"
+                                >
+                                    <motion.div
+                                        animate={{
+                                            scale: [1, 1.15, 1],
+                                        }}
+                                        transition={{
+                                            duration: 2.5,
+                                            repeat: Infinity,
+                                            repeatType: "reverse",
+                                            ease: "easeInOut"
+                                        }}
+                                        style={{ display: 'inline-flex', alignItems: 'center' }}
+                                    >
+                                        <Brain size={13} style={{ color: 'var(--color-accent)' }} />
+                                    </motion.div>
+                                    <span>Future Self</span>
+                                </motion.button>
+                            )}
+
+                            {/* Ekkos balance pill */}
+                            {energyLevel > 3 && (
+                                <div 
+                                    className="hryvnia-display-header-pill interactive-balance-pill cursor-target"
+                                    onClick={triggerCoinJiggle}
+                                    style={{ cursor: 'pointer' }}
+                                    title="Interactive Balance"
+                                >
+                                    <Coins size={14} className="hryvnia-icon" />
+                                    <span className="hryvnia-amount">
+                                        <Counter value={displayedBalance} fontSize={14} fontWeight={600} />
+                                    </span>
+                                    <span className="hryvnia-name">{currencyName.charAt(0).toUpperCase() + currencyName.slice(1).toLowerCase()}</span>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    <div className="header-daily-log-container">
-                        <button
-                            className={`header-daily-log-btn-ghost ${showDailyLog ? 'active' : ''}`}
-                            onClick={() => setShowDailyLog(!showDailyLog)}
-                            title="Daily Log"
-                        >
-                            <motion.div
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    <div className="header-controls-group">
+                        {/* Daily Log Button */}
+                        <div className="header-daily-log-container">
+                            <button
+                                className={`header-daily-log-btn-ghost ${showDailyLog ? 'active' : ''}`}
+                                onClick={() => setShowDailyLog(!showDailyLog)}
+                                title="Daily Log"
                             >
-                                <BookOpen size={16} />
-                            </motion.div>
-                        </button>
-                        
-                        <AnimatePresence>
-                            {showDailyLog && (
-                                <>
-                                    <motion.div
-                                        className="daily-log-backdrop"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        onClick={() => setShowDailyLog(false)}
-                                    />
-                                    <motion.div
-                                        ref={dailyLogContainerRef}
-                                        className="daily-log-popover liquid-glass"
-                                        style={{ transformOrigin: 'top right' }}
-                                        initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
-                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                        exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
-                                        transition={{ type: 'spring', stiffness: 700, damping: 20 }}
-                                    >
-                                        <div className="daily-log-popover-header">
-                                            <h3>Daily Log</h3>
-                                            <button className="close-popover-btn" onClick={() => setShowDailyLog(false)}>✕</button>
-                                        </div>
-                                        <div className="daily-log-popover-content scrollbar-hidden">
-                                            <JournalPage />
-                                        </div>
-                                    </motion.div>
-                                </>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                    
-                    {energyLevel > 3 && (
-                        <div className="header-controls-group">
-                            {showCustomSwitch ? (
-                                <div 
-                                    onDoubleClick={handleCustomSwitchDoubleClick}
-                                    title="Double click to switch back to normal theme controls"
-                                    style={{ display: 'flex', alignItems: 'center', height: '28px' }}
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
-                                    <CustomThemeSwitch
-                                        checked={themePreference === 'dark'}
-                                        onChange={handleCustomSwitchToggle}
+                                    <BookOpen size={16} />
+                                </motion.div>
+                            </button>
+                            
+                            <AnimatePresence>
+                                {showDailyLog && (
+                                    <>
+                                        <motion.div
+                                            className="daily-log-backdrop"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            onClick={() => setShowDailyLog(false)}
+                                        />
+                                        <motion.div
+                                            ref={dailyLogContainerRef}
+                                            className="daily-log-popover liquid-glass"
+                                            style={{ transformOrigin: 'top right' }}
+                                            initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
+                                            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                            exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
+                                            transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                                        >
+                                            <div className="daily-log-popover-header">
+                                                <h3>Daily Log</h3>
+                                                <button className="close-popover-btn" onClick={() => setShowDailyLog(false)}>✕</button>
+                                            </div>
+                                            <div className="daily-log-popover-content scrollbar-hidden">
+                                                <JournalPage />
+                                            </div>
+                                        </motion.div>
+                                    </>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                        
+                        {/* Appearance / Settings controls */}
+                        {energyLevel > 3 && (
+                            <>
+                                {showCustomSwitch ? (
+                                    <div 
+                                        onDoubleClick={handleCustomSwitchDoubleClick}
+                                        title="Double click to switch back to normal theme controls"
+                                        style={{ display: 'flex', alignItems: 'center', height: '28px' }}
+                                    >
+                                        <CustomThemeSwitch
+                                            checked={themePreference === 'dark'}
+                                            onChange={handleCustomSwitchToggle}
+                                        />
+                                    </div>
+                                ) : (
+                                    <SegmentedControl
+                                        options={THEMES}
+                                        value={themePreference}
+                                        onChange={handleThemeChange}
+                                        layoutPrefix="theme"
+                                        buttonSize={28}
+                                        fontSize="0.8rem"
+                                        activePadding="0 12px"
                                     />
-                                </div>
-                            ) : (
+                                )}
+                                
                                 <SegmentedControl
-                                    options={THEMES}
-                                    value={themePreference}
-                                    onChange={handleThemeChange}
-                                    layoutPrefix="theme"
+                                    options={MODES}
+                                    value={backgroundMode}
+                                    onChange={setBackgroundMode}
+                                    layoutPrefix="bg"
                                     buttonSize={28}
                                     fontSize="0.8rem"
                                     activePadding="0 12px"
                                 />
-                            )}
-                            
-                            <SegmentedControl
-                                options={MODES}
-                                value={backgroundMode}
-                                onChange={setBackgroundMode}
-                                layoutPrefix="bg"
-                                buttonSize={28}
-                                fontSize="0.8rem"
-                                activePadding="0 12px"
-                            />
 
-                            <button onClick={() => navigate('/settings')} className="header-settings-btn-ghost" title="Settings">
-                                <motion.div
-                                    whileHover={{ rotate: 90 }}
-                                    whileTap={{ rotate: 180 }}
-                                    animate={{ rotate: isSettingsOpen ? 90 : 0 }}
-                                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                >
-                                    <Settings size={16} />
-                                </motion.div>
-                            </button>
-                        </div>
-                    )}
+                                <button onClick={() => navigate('/settings')} className="header-settings-btn-ghost" title="Settings">
+                                    <motion.div
+                                        whileHover={{ rotate: 90 }}
+                                        whileTap={{ rotate: 180 }}
+                                        animate={{ rotate: isSettingsOpen ? 90 : 0 }}
+                                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                        <Settings size={16} />
+                                    </motion.div>
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
             </header>
 
@@ -483,6 +512,120 @@ const MainLayout = () => {
                                     </svg>
                                 </button>
                                 <SettingsPage />
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+
+            {/* Global Search Overlay Portal */}
+            {createPortal(
+                <AnimatePresence>
+                    {showGlobalSearch && (
+                        <motion.div
+                            key="global-search-scrim"
+                            className="settings-modal-scrim"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            onClick={() => {
+                                setShowGlobalSearch(false);
+                                setGlobalSearchQuery('');
+                            }}
+                            style={{
+                                backdropFilter: 'blur(12px)',
+                                zIndex: 99999
+                            }}
+                        >
+                            <motion.div
+                                key="global-search-modal"
+                                className="settings-modal-panel"
+                                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.96, y: 12 }}
+                                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    maxWidth: '500px',
+                                    padding: '40px',
+                                    fontFamily: "'Lexend', sans-serif"
+                                }}
+                            >
+                                <button 
+                                    className="settings-modal-close" 
+                                    onClick={() => {
+                                        setShowGlobalSearch(false);
+                                        setGlobalSearchQuery('');
+                                    }} 
+                                    aria-label="Close search"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                        <line x1="1" y1="1" x2="13" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                        <line x1="13" y1="1" x2="1" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                    </svg>
+                                </button>
+
+                                <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '12px', display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+                                    <Search size={24} color="var(--text-primary)" />
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="Type to search tasks..."
+                                        value={globalSearchQuery}
+                                        onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                                        style={{ 
+                                            background: 'transparent', 
+                                            border: 'none', 
+                                            color: 'var(--text-primary)', 
+                                            fontSize: '20px', 
+                                            outline: 'none', 
+                                            width: '100%',
+                                            fontFamily: "'Lexend', sans-serif"
+                                        }}
+                                    />
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '50vh', overflowY: 'auto' }}>
+                                    {globalSearchQuery.trim() !== '' && allNodes.filter(n => 
+                                        n.type === NodeTypes.TASK && 
+                                        n.metadata?.status !== 'DONE' && 
+                                        n.name.toLowerCase().includes(globalSearchQuery.toLowerCase())
+                                    ).slice(0, 10).map(task => (
+                                        <button
+                                            key={task.id}
+                                            className="e5-task-row visual-receipt-active cursor-target"
+                                            style={{ 
+                                                width: '100%', 
+                                                textAlign: 'left',
+                                                padding: '12px 16px',
+                                                border: '1px solid var(--color-border)',
+                                                borderRadius: '8px',
+                                                background: 'var(--color-bg-card)',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer',
+                                                fontFamily: "'Lexend', sans-serif"
+                                            }}
+                                            onClick={() => {
+                                                navigate('/focus', { state: { taskId: task.id, autoStart: true } });
+                                                setShowGlobalSearch(false);
+                                                setGlobalSearchQuery('');
+                                            }}
+                                        >
+                                            {task.name}
+                                        </button>
+                                    ))}
+                                    {globalSearchQuery.trim() !== '' && allNodes.filter(n => 
+                                        n.type === NodeTypes.TASK && 
+                                        n.metadata?.status !== 'DONE' && 
+                                        n.name.toLowerCase().includes(globalSearchQuery.toLowerCase())
+                                    ).length === 0 && (
+                                        <div style={{ color: 'var(--text-tertiary)', fontSize: '14px', textAlign: 'center', padding: '24px 0' }}>
+                                            No matching active tasks found.
+                                        </div>
+                                    )}
+                                </div>
                             </motion.div>
                         </motion.div>
                     )}

@@ -357,6 +357,13 @@
     gap: 6px; /* Reduced by 50% to group appearance settings closer together */
 }
 
+.header-info-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: -10px;
+}
+
 /* Ekkos display inside header */
 .hryvnia-display-header {
     display: flex;

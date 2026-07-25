@@ -8,8 +8,8 @@ import { backbone, NodeTypes, TaskStatuses } from '../backbone-v2/index';
 const getTaskStatusInfo = (task) => {
     const status = task.metadata?.status;
     if (status === TaskStatuses.DONE) return { symbol: <Check size={13} strokeWidth={2.5} />, colorClass: 'status-done' };
-    if (status === TaskStatuses.IN_PROGRESS) return { symbol: <Circle size={8} fill="currentColor" strokeWidth={0} />, colorClass: 'status-progress' };
-    return { symbol: <Circle size={8} strokeWidth={2} />, colorClass: 'status-todo' };
+    if (status === TaskStatuses.IN_PROGRESS) return { symbol: <Circle size={8} fill="currentColor" strokeWidth={0} style={{ width: '6px', height: '6px', minWidth: '6px' }} />, colorClass: 'status-progress' };
+    return { symbol: <Circle size={8} strokeWidth={2} style={{ width: '6px', height: '6px', minWidth: '6px' }} />, colorClass: 'status-todo' };
 };
 
 const SortableTaskRow = React.memo(({
