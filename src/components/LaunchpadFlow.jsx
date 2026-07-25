@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Search, Zap, ClipboardList, Brain, Sparkles, Flame, HelpCircle } from 'lucide-react';
 import { backbone, NodeTypes, TaskStatuses, habitService, habitRepo } from '../backbone-v2/index';
 import HabitCard from './HabitCard';
+import TargetCursor from './ui/TargetCursor';
 import { useSession } from '../context/SessionContext';
 import { useSettings } from '../context/SettingsContext';
 import { useBackboneStore } from '../store/backboneStore';
@@ -17,6 +18,7 @@ import './LaunchpadFlow.css';
  */
 const LaunchpadFlow = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [step, setStep] = useState('action'); // 'energy' | 'action'
     // --- ZUSTAND SELECTORS ---
     const { allNodes, storeLoading } = useBackboneStore(useShallow(state => ({
@@ -725,6 +727,18 @@ const LaunchpadFlow = () => {
         setPrepTasksAddedToAspect([]);
     };
 
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        if (queryParams.get('prep') === 'true') {
+            resetPrepFlow();
+            setStep('prep-flow');
+        } else {
+            if (step === 'prep-flow') {
+                setStep('action');
+            }
+        }
+    }, [location.search]);
+
     // Handler: create a task in the prep flow
     const handlePrepCreateTask = async () => {
         if (!prepNewTaskInput.trim() || !prepSelectedAspect) return;
@@ -1321,429 +1335,498 @@ const LaunchpadFlow = () => {
 
     return (
         <div className="launchpad-flow-overlay" onClick={() => navigate('/planning')}>
-            <div className="launchpad-flow-container" onClick={(e) => e.stopPropagation()}>
+            <div className={`launchpad-flow-container ${energyLevel >= 4 ? 'high-energy-flow-layout' : ''}`} onClick={(e) => e.stopPropagation()}>
                 {/* Removed redundant energy step in favor of Sidebar selector */}
 
                 {step === 'action' && (
                     <div className="flow-step action-step">
                         {energyLevel >= 4 ? (
-<div className="launchpad-high-energy-container" style={{ textAlign: 'center', width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <>
+                                <TargetCursor 
+                                    targetSelector=".cursor-target"
+                                    containerSelector=".launchpad-flow-container"
+                                    cursorColor="rgba(255, 255, 255, 0.6)"
+                                    cursorColorOnTarget="var(--color-accent)"
+                                />
+                                {energyLevel === 5 ? (
+                                    <div className="e5-container">
+                                    {/* HEADER */}
+                                    <h1 className="e5-title">
+                                        Come here when you don't know what to do but want to do something
+                                    </h1>
+                                    {highEnergyTasks.length > 0 && (
+                                        <p className="e5-subtitle">
+                                            Peak focus hours. Let's tackle your postponed tasks first.
+                                        </p>
+                                    )}
 
-    {/* FUTURE SELF BUTTON (Top placement for Energy 5) */}
-    {energyLevel === 5 && (
-        <button
-            className="future-self-btn"
-            onClick={() => { resetPrepFlow(); setStep('prep-flow'); }}
-            style={{ 
-                marginBottom: '48px', 
-                padding: '20px 48px', 
-                background: 'linear-gradient(145deg, var(--alpha-medium) 0%, var(--alpha-low) 100%)', 
-                border: '1px solid var(--color-border-active)', 
-                borderRadius: '24px', 
-                color: 'var(--text-primary)', 
-                fontSize: '18px', 
-                fontWeight: 700,
-                cursor: 'pointer', 
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-            }}
-            onMouseEnter={(e) => { 
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.background = 'linear-gradient(145deg, var(--alpha-high) 0%, var(--alpha-medium) 100%)';
-                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.4)';
-            }}
-            onMouseLeave={(e) => { 
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.background = 'linear-gradient(145deg, var(--alpha-medium) 0%, var(--alpha-low) 100%)';
-                e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.2)';
-            }}
-        >
-            <span style={{ opacity: 0.9 }}>🧠</span>
-            <span>Prepare everything for your future self</span>
-        </button>
-    )}
+                                    {/* 1. POSTPONED PRIORITIES (HERO SPOTLIGHT) */}
+                                    {highEnergyTasks.length > 0 ? (
+                                        <>
+                                            <h3 className="e5-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                <Zap size={14} className="lucide" style={{ color: 'var(--color-accent)' }} /> Postponed priorities
+                                            </h3>
+                                            {(() => {
+                                                const task = highEnergyTasks[highEnergyIndex];
+                                                const skill = getSkillFromTask(task, nodeMap);
+                                                const area = nodeMap.get(skill?.parentId);
+                                                return (
+                                                    <div
+                                                        className="e5-card e5-card-hero visual-receipt-active cursor-target"
+                                                        onClick={() => handleStartTask(task)}
+                                                        style={{ marginBottom: '32px' }}
+                                                    >
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-accent)', letterSpacing: '0.05em' }}>
+                                                                Postponed high energy priority
+                                                            </span>
+                                                            {highEnergyTasks.length > 1 && (
+                                                                <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                                                                     <button
+                                                                         onClick={() => setHighEnergyIndex(prev => (prev - 1 + highEnergyTasks.length) % highEnergyTasks.length)}
+                                                                         className="visual-receipt-active btn-touch-target"
+                                                                         style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '20px', cursor: 'pointer', padding: '0 8px' }}
+                                                                     >‹</button>
+                                                                     <button
+                                                                         onClick={() => setHighEnergyIndex(prev => (prev + 1) % highEnergyTasks.length)}
+                                                                         className="visual-receipt-active btn-touch-target"
+                                                                         style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '20px', cursor: 'pointer', padding: '0 8px' }}
+                                                                     >›</button>
+                                                                </div>
+                                                            )}
+                                                        </div>
 
-    {/* HEADER */}
-    <h1 style={{ fontSize: '32px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '64px', opacity: 0.9, padding: '0 40px', lineHeight: 1.3 }}>
-        Best use of your energy right now based on your recent activity
-    </h1>
+                                                        <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                                                            {area?.name || 'Untitled Area'}
+                                                        </div>
+                                                        <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px 0', lineHeight: 1.2 }}>
+                                                            {task.name}
+                                                        </h2>
+                                                        <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 500, marginBottom: '20px' }}>
+                                                            Skill: {skill?.name || 'Untitled Skill'}
+                                                        </div>
 
-    {/* 1. SPOTLIGHT CAROUSEL */}
-    <div className="carousel-wrapper" style={{ position: 'relative', width: '100%', marginBottom: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {highEnergyTasks.length > 0 ? (
-            <>
-                {highEnergyTasks.length > 1 && (
-                    <>
-                        <button
-                            onClick={() => setHighEnergyIndex(prev => (prev - 1 + highEnergyTasks.length) % highEnergyTasks.length)}
-                            style={{ position: 'absolute', left: '-80px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '56px', cursor: 'pointer', fontWeight: 200 }}
-                            onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
-                        >‹</button>
-                        <button
-                            onClick={() => setHighEnergyIndex(prev => (prev + 1) % highEnergyTasks.length)}
-                            style={{ position: 'absolute', right: '-80px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.2)', fontSize: '56px', cursor: 'pointer', fontWeight: 200 }}
-                            onMouseEnter={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.2)'}
-                        >›</button>
-                    </>
-                )}
+                                                        <button
+                                                             className="flow-primary-btn btn-touch-target visual-receipt-active"
+                                                             style={{ alignSelf: 'flex-start', padding: '12px 32px', borderRadius: '8px', fontSize: '15px' }}
+                                                        >
+                                                             Start task
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </>
+                                    ) : (
+                                         <div 
+                                             style={{ 
+                                                 display: 'inline-flex', 
+                                                 alignItems: 'center', 
+                                                 gap: '6px', 
+                                                 marginTop: '16px',
+                                                 marginBottom: '28px',
+                                                 position: 'relative',
+                                                 zIndex: 10
+                                             }}
+                                         >
+                                             <Zap size={14} className="lucide" style={{ opacity: 0.35 }} />
+                                             <span style={{ fontSize: '13px', fontWeight: 600, opacity: 0.35, color: 'var(--text-primary)' }}>Postponed priorities (0)</span>
+                                             <div className="info-tooltip-wrapper" style={{ zIndex: 100 }}>
+                                                 <span className="info-tooltip-icon">?</span>
+                                                 <div className="info-tooltip-content">
+                                                     <p>Deferred Focus Mode tasks saved via the <em>"Save for High Energy"</em> button (bottom-right) will appear here.</p>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                    )}
 
-                {(() => {
-                    const task = highEnergyTasks[highEnergyIndex];
-                    const skill = getSkillFromTask(task, nodeMap);
-                    const area = nodeMap.get(skill?.parentId);
-                    return (
-                        <div
-                            className="featured-card liquid-glass"
-                            style={{
-                                width: '100%',
-                                padding: '60px 40px',
-                                borderRadius: '40px',
-                                background: 'linear-gradient(145deg, var(--alpha-high) 0%, var(--alpha-low) 100%)',
-                                border: '1px solid var(--color-border)',
-                                boxShadow: '0 30px 60px rgba(0,0,0,0.4), inset 0 0 40px var(--alpha-low)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                gap: '16px'
-                            }}
-                        >
-                            {/* HIGH ENERGY BADGE */}
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(var(--color-accent-rgb), 0.12)', border: '1px solid rgba(var(--color-accent-rgb), 0.25)', borderRadius: '20px', padding: '4px 14px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-accent)' }}>
-                                ⚡ High Energy Task
-                            </div>
+                                    {/* 2-COLUMN ASYMMETRIC GRID */}
+                                    <div className="e5-grid">
+                                        {/* LEFT COLUMN: OTHER TACTICAL OPTIONS */}
+                                        <div className="e5-main-col">
+                                            {/* 2. OTHER TACTICAL OPTIONS */}
+                                            <h3 className="e5-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                <ClipboardList size={14} className="lucide" /> Other tactical options
+                                            </h3>
+                                            <div className="e5-row-list">
+                                                {tripleRecommendation.slice(0, 3).map(task => {
+                                                    const skill = getSkillFromTask(task, nodeMap);
+                                                    const area = nodeMap.get(skill?.parentId);
+                                                    const auraTotal = skill?.metadata?.auraTotal || 0;
+                                                    const auraLevel = skill?.metadata?.auraLevel || (Math.floor(auraTotal / 12) + 1);
+                                                    return (
+                                                        <div
+                                                            key={task.id}
+                                                            className="e5-task-row visual-receipt-active cursor-target"
+                                                            onClick={() => handleStartTask(task)}
+                                                        >
+                                                            <div className="e5-task-row-content">
+                                                                <span style={{ fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: '6px' }}>
+                                                                    {task.name}
+                                                                </span>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                                                                    <span>{area?.name || 'Untitled Area'}</span>
+                                                                    <span style={{ opacity: 0.5 }}>•</span>
+                                                                    <span>{skill?.name || 'Untitled Skill'}</span>
+                                                                </div>
+                                                            </div>
 
-                            {/* AREA IDENTITY */}
-                            <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--text-tertiary)' }}>
-                                {area?.name || skill?.name || 'Untitled Area'}
-                            </div>
-
-                            {/* DUAL LAYER */}
-                            <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                                Just open it for 2 minutes
-                            </div>
-                            <h2 style={{ fontSize: '36px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-                                {task.name}
-                            </h2>
-
-                            {/* SKILL NAME */}
-                            <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-                                {skill?.name || 'Untitled Skill'}
-                            </div>
-
-                            <button
-                                className="flow-primary-btn"
-                                onClick={() => handleStartTask(task)}
-                                style={{ padding: '16px 60px', borderRadius: '20px', fontSize: '18px', fontWeight: 700, background: 'var(--alpha-low)', border: '1px solid var(--color-border)', marginTop: '16px' }}
-                            >
-                                Start
-                            </button>
-                        </div>
-                    );
-                })()}
-            </>
-        ) : (
-            <div style={{ color: 'var(--text-tertiary)', fontSize: '15px' }}>No high energy tasks saved yet.</div>
-        )}
-    </div>
-
-    {/* 2. TACTICAL OPTIONS */}
-    {!isEnergy3ExplorePath && (
-        <section style={{ width: '100%', marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '32px' }}>
-                Other tactical options
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {tripleRecommendation.slice(0, energyLevel === 5 ? 3 : 2).map(task => {
-                    const skill = getSkillFromTask(task, nodeMap);
-                    const area = nodeMap.get(skill?.parentId);
-                    return (
-                        <button
-                            key={task.id}
-                            className="liquid-glass"
-                            onClick={() => handleStartTask(task)}
-                            style={{
-                                width: '100%',
-                                padding: '24px 32px',
-                                borderRadius: '24px',
-                                background: 'var(--alpha-low)',
-                                border: '1px solid var(--color-border)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '4px',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s ease, background 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.background = 'var(--alpha-medium)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'var(--alpha-low)'; }}
-                        >
-                            <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', opacity: 0.4, color: 'var(--text-primary)' }}>
-                                {area?.name || 'Untitled Area'}
-                            </div>
-                            <div style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', opacity: 0.75 }}>
-                                {task.name}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: 'fit-content', marginTop: '4px' }}>
-                                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                    {skill?.name || 'Untitled Skill'}
-                                </div>
-
-                                {/* AURA LEVEL INDICATOR - Energy 5 only */}
-                                {energyLevel === 5 && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '120px' }}>
-                                        <div style={{ flex: 1, height: '3px', background: 'var(--color-border)', borderRadius: '1.5px', overflow: 'hidden', opacity: 0.5 }}>
-                                            <div style={{ 
-                                                width: `${((skill?.metadata?.auraTotal || 0) % 12) / 12 * 100}%`, 
-                                                height: '100%', 
-                                                background: 'var(--aura-gradient)', 
-                                                borderRadius: '1.5px'
-                                            }} />
+                                                            <div className="e5-level-container" onClick={(e) => e.stopPropagation()}>
+                                                                <div className="e5-level-track">
+                                                                    <div style={{ 
+                                                                        width: `${((auraTotal) % 12) / 12 * 100}%`, 
+                                                                        height: '100%', 
+                                                                        background: 'var(--aura-gradient)', 
+                                                                        borderRadius: '1.5px'
+                                                                    }} />
+                                                                </div>
+                                                                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                                                    Lv. {auraLevel}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
-                                        <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', opacity: 0.6 }}>
-                                            Lv. {skill?.metadata?.auraLevel || (Math.floor((skill?.metadata?.auraTotal || 0) / 12) + 1)}
+
+                                        {/* RIGHT COLUMN: ACTIVE POTENTIAL & PILOT LIGHTS */}
+                                        <div className="e5-side-col">
+                                            {/* ACTIVE POTENTIAL (Aligns perfectly with Tactical Options) */}
+                                            {activeNonFocusSkills.length > 0 && e5ActiveSkillTask && (
+                                                <>
+                                                    <div className="e5-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                            <Sparkles size={14} className="lucide" style={{ color: 'var(--color-accent)' }} /> Side quest
+                                                        </span>
+                                                        <div className="info-tooltip-wrapper" style={{ zIndex: 100 }}>
+                                                            <span className="info-tooltip-icon">?</span>
+                                                            <div className="info-tooltip-content">
+                                                                <p>An active task from a skill currently outside your primary focus slots.</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <div
+                                                            className="e5-card visual-receipt-active cursor-target"
+                                                            onClick={() => handleStartTask(e5ActiveSkillTask)}
+                                                            style={{
+                                                                borderColor: 'rgba(var(--color-accent-rgb), 0.25)',
+                                                                background: 'linear-gradient(145deg, rgba(var(--color-accent-rgb), 0.03) 0%, rgba(var(--color-accent-rgb), 0) 100%), var(--color-bg-card)',
+                                                                minHeight: '140px'
+                                                            }}
+                                                        >
+                                                            {activeNonFocusSkills.length > 1 && (
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                                                    <span />
+                                                                    <div style={{ display: 'flex', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
+                                                                        <button
+                                                                            onClick={() => setE5ActiveSkillIndex(prev => (prev - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}
+                                                                            className="visual-receipt-active btn-touch-target"
+                                                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '20px', cursor: 'pointer', padding: '0 8px' }}
+                                                                        >‹</button>
+                                                                        <button
+                                                                            onClick={() => setE5ActiveSkillIndex(prev => (prev + 1) % activeNonFocusSkills.length)}
+                                                                            className="visual-receipt-active btn-touch-target"
+                                                                            style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '20px', cursor: 'pointer', padding: '0 8px' }}
+                                                                        >›</button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            <h2 style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 10px 0', lineHeight: 1.35 }}>
+                                                                {e5ActiveSkillTask.name}
+                                                            </h2>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600, marginBottom: '8px' }}>
+                                                                <span>{activeNonFocusSkills[e5ActiveSkillIndex % activeNonFocusSkills.length]?.name}</span>
+                                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                                <span>{nodeMap.get(e5ActiveSkillTask.parentId)?.name || 'Untitled Aspect'}</span>
+                                                            </div>
+
+                                                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', borderTop: '1px solid var(--color-border)', paddingTop: '12px' }}>
+                                                                {(() => {
+                                                                    const skill = activeNonFocusSkills[e5ActiveSkillIndex % activeNonFocusSkills.length];
+                                                                    const auraTotal = skill?.metadata?.auraTotal || 0;
+                                                                    const auraLevel = skill?.metadata?.auraLevel || (Math.floor(auraTotal / 12) + 1);
+                                                                    return (
+                                                                        <div className="e5-level-container" onClick={(e) => e.stopPropagation()}>
+                                                                            <div className="e5-level-track">
+                                                                                <div style={{ 
+                                                                                    width: `${(auraTotal % 12) / 12 * 100}%`, 
+                                                                                    height: '100%', 
+                                                                                    background: 'var(--aura-gradient)', 
+                                                                                    borderRadius: '1.5px'
+                                                                                }} />
+                                                                            </div>
+                                                                            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                                                                Lv. {auraLevel}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })()}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {/* PILOT LIGHT CHIPS */}
+                                            {energy2HabitsPool.length > 0 && (
+                                                <div style={{ marginTop: '16px' }}>
+                                                    <h3 className="e5-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                        <Flame size={14} className="lucide" style={{ color: 'var(--color-warning)' }} /> Pilot lights
+                                                    </h3>
+                                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                        {energy2HabitsPool.slice(0, 3).map(habit => (
+                                                            <button
+                                                                key={habit.id}
+                                                                onClick={() => handleHabitComplete(habit.id)}
+                                                                className="e5-task-row visual-receipt-active btn-touch-target cursor-target"
+                                                                style={{ 
+                                                                    padding: '8px 16px', 
+                                                                    borderRadius: '20px', 
+                                                                    fontSize: '13px', 
+                                                                    color: 'var(--text-secondary)',
+                                                                    border: '1px solid var(--color-border)',
+                                                                    background: 'var(--color-bg-card)',
+                                                                    width: 'auto'
+                                                                }}
+                                                            >
+                                                                {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        </button>
-                    );
-                })}
-            </div>
-        </section>
-    )}
 
-    {/* ACTIVE (NON-FOCUS) SKILL TASK CARD - Energy 5 only */}
-    {energyLevel === 5 && activeNonFocusSkills.length > 0 && e5ActiveSkillTask && (
-        <section style={{ width: '100%', marginBottom: '40px' }}>
-            <h3 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '16px' }}>
-                Active Potential
-            </h3>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
-                {activeNonFocusSkills.length > 1 && (
-                    <button
-                        onClick={() => setE5ActiveSkillIndex(prev => (prev - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}
-                        style={{ position: 'absolute', left: '-40px', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer', zIndex: 2 }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                    >‹</button>
-                )}
-                
-                <button
-                    className="liquid-glass"
-                    onClick={() => handleStartTask(e5ActiveSkillTask)}
-                    style={{
-                        flex: 1,
-                        padding: '24px 32px',
-                        borderRadius: '24px',
-                        background: 'linear-gradient(145deg, rgba(100, 100, 255, 0.05) 0%, rgba(100, 100, 255, 0.02) 100%)',
-                        border: '1px solid rgba(100, 100, 255, 0.2)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '4px',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-                    }}
-                    onMouseEnter={(e) => { 
-                        e.currentTarget.style.transform = 'translateY(-2px)'; 
-                        e.currentTarget.style.background = 'linear-gradient(145deg, rgba(100, 100, 255, 0.1) 0%, rgba(100, 100, 255, 0.05) 100%)';
-                        e.currentTarget.style.borderColor = 'rgba(100, 100, 255, 0.4)';
-                    }}
-                    onMouseLeave={(e) => { 
-                        e.currentTarget.style.transform = 'translateY(0)'; 
-                        e.currentTarget.style.background = 'linear-gradient(145deg, rgba(100, 100, 255, 0.05) 0%, rgba(100, 100, 255, 0.02) 100%)';
-                        e.currentTarget.style.borderColor = 'rgba(100, 100, 255, 0.2)';
-                    }}
-                >
-                    <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgb(100, 150, 255)', marginBottom: '4px' }}>
-                        Active Potential
-                    </div>
-                    <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
-                        {e5ActiveSkillTask.name}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 500, marginBottom: '8px' }}>
-                        {nodeMap.get(e5ActiveSkillTask.parentId)?.name || 'Untitled Aspect'}
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-                            {activeNonFocusSkills[e5ActiveSkillIndex % activeNonFocusSkills.length]?.name || 'Active Skill'}
-                        </div>
-
-                        {/* AURA LEVEL INDICATOR */}
-                        {(() => {
-                            const skill = activeNonFocusSkills[e5ActiveSkillIndex % activeNonFocusSkills.length];
-                            const auraTotal = skill?.metadata?.auraTotal || 0;
-                            const auraLevel = skill?.metadata?.auraLevel || (Math.floor(auraTotal / 12) + 1);
-                            return (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100px' }}>
-                                    <div style={{ flex: 1, height: '3px', background: 'var(--color-border)', borderRadius: '1.5px', overflow: 'hidden', opacity: 0.5 }}>
-                                        <div style={{ 
-                                            width: `${(auraTotal % 12) / 12 * 100}%`, 
-                                            height: '100%', 
-                                            background: 'var(--aura-gradient)', 
-                                            borderRadius: '1.5px'
-                                        }} />
-                                    </div>
-                                    <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', opacity: 0.6 }}>
-                                        Lv. {auraLevel}
-                                    </div>
+                                    {/* 6. TRIADIC REDIRECTION / REST OPTIONS */}
+                                    {!isEnergy3Expanded && !isEnergy3ExplorePath ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginTop: 'auto', padding: '60px 0 20px 0' }}>
+                                            <button
+                                                className="btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '15px', cursor: 'pointer', textDecoration: 'underline' }}
+                                                onClick={() => setIsEnergy3Expanded(true)}
+                                            >
+                                                Not feeling these suggestions?
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', marginTop: 'auto', padding: '60px 0 20px 0' }}>
+                                            {isEnergy3ExplorePath ? (
+                                                <>
+                                                    {e3ActiveSubStep === 'skills' && (
+                                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
+                                                            <button className="literal-target btn-touch-target visual-receipt-active" onClick={() => setE3ActiveSkillIndex(p => (p - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}>‹</button>
+                                                            <div
+                                                                style={{ textAlign: 'left', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
+                                                                onClick={() => { setE3ActiveSelectedSkillId(activeNonFocusSkills[e3ActiveSkillIndex].id); setE3ActiveSubStep('aspects'); }}
+                                                            >
+                                                                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-tertiary)', marginBottom: '8px' }}>Optional · No pressure</div>
+                                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
+                                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)' }}>Tap to explore</div>
+                                                            </div>
+                                                            <button className="literal-target btn-touch-target visual-receipt-active" onClick={() => setE3ActiveSkillIndex(p => (p + 1) % activeNonFocusSkills.length)}>›</button>
+                                                        </div>
+                                                    )}
+                                                    {e3ActiveSubStep === 'aspects' && (
+                                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
+                                                            <button className="literal-target btn-touch-target visual-receipt-active" onClick={() => setE3ActiveAspectIndex(p => (p - 1 + e3ActiveAspectsPool.length) % e3ActiveAspectsPool.length)}>‹</button>
+                                                            <div
+                                                                style={{ textAlign: 'left', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
+                                                                onClick={() => { setE3ActiveSelectedAspectId(e3ActiveAspectsPool[e3ActiveAspectIndex].id); setE3ActiveSubStep('tasks'); }}
+                                                            >
+                                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
+                                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)' }}>Select aspect</div>
+                                                            </div>
+                                                            <button className="literal-target btn-touch-target visual-receipt-active" onClick={() => setE3ActiveAspectIndex(p => (p + 1) % e3ActiveAspectsPool.length)}>›</button>
+                                                        </div>
+                                                    )}
+                                                    {e3ActiveSubStep === 'tasks' && (
+                                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
+                                                            <button className="literal-target btn-touch-target visual-receipt-active" onClick={() => setE3ActiveTaskIndex(p => (p - 1 + e3ActiveTasksPool.length) % e3ActiveTasksPool.length)}>‹</button>
+                                                            <div style={{ textAlign: 'left', width: '320px' }}>
+                                                                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-tertiary)', marginBottom: '8px' }}>No pressure · Stop anytime</div>
+                                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
+                                                                <button className="flow-primary-btn btn-touch-target visual-receipt-active" onClick={() => handleStartTask(e3ActiveTasksPool[e3ActiveTaskIndex])}>Start 2-minute sprint</button>
+                                                            </div>
+                                                            <button className="literal-target btn-touch-target visual-receipt-active" onClick={() => setE3ActiveTaskIndex(p => (p + 1) % e3ActiveTasksPool.length)}>›</button>
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginTop: '32px' }}
+                                                        onClick={() => { setIsEnergy3ExplorePath(false); setE3ActiveSubStep('skills'); setE3ActiveSelectedSkillId(null); setE3ActiveSelectedAspectId(null); }}
+                                                    >
+                                                        ← Back
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '400px', marginBottom: '32px' }}>
+                                                    <button
+                                                        className="flow-secondary-btn liquid-glass btn-touch-target visual-receipt-active"
+                                                        style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
+                                                        onClick={() => setIsEnergy3SwitchingSkill(true)}
+                                                    >
+                                                        Stay focused — Switch skill
+                                                    </button>
+                                                    <button
+                                                        className="flow-secondary-btn liquid-glass btn-touch-target visual-receipt-active"
+                                                        style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
+                                                        onClick={() => { setIsEnergy3SwitchingHabit(true); setIsEnergy3Expanded(false); }}
+                                                    >
+                                                        Keep it simple — Switch to habits
+                                                    </button>
+                                                    <button
+                                                        className="flow-secondary-btn liquid-glass btn-touch-target visual-receipt-active"
+                                                        style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
+                                                        onClick={() => { setIsEnergy3ExplorePath(true); setIsEnergy3Expanded(false); setE3ActiveSubStep('skills'); }}
+                                                    >
+                                                        Explore something else
+                                                    </button>
+                                                    <button
+                                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginTop: '16px' }}
+                                                        onClick={() => setIsEnergy3Expanded(false)}
+                                                    >
+                                                        ← Back
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                            );
-                        })()}
-                    </div>
-                </button>
+                            ) : (
+                                /* Energy 4 Block - Clean, Left-Aligned Single Column */
+                                <div className="launchpad-high-energy-container" style={{ textAlign: 'left', width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    {/* HEADER */}
+                                    <h1 style={{ fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '32px', opacity: 0.9, lineHeight: 1.3 }}>
+                                        Come here when you don't know what to do but want to do something
+                                    </h1>
 
-                {activeNonFocusSkills.length > 1 && (
-                    <button
-                        onClick={() => setE5ActiveSkillIndex(prev => (prev + 1) % activeNonFocusSkills.length)}
-                        style={{ position: 'absolute', right: '-40px', background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer', zIndex: 2 }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                    >›</button>
-                )}
-            </div>
-        </section>
-    )}
+                                    {/* SPOTLIGHT HERO CARD */}
+                                    <div style={{ width: '100%', marginBottom: '32px' }}>
+                                        {highEnergyTasks.length > 0 ? (
+                                            (() => {
+                                                const task = highEnergyTasks[highEnergyIndex];
+                                                const skill = getSkillFromTask(task, nodeMap);
+                                                const area = nodeMap.get(skill?.parentId);
+                                                return (
+                                                    <div
+                                                        className="featured-card liquid-glass visual-receipt-active cursor-target"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '40px 32px',
+                                                            borderRadius: '24px',
+                                                            background: 'linear-gradient(145deg, var(--alpha-high) 0%, var(--alpha-low) 100%)',
+                                                            border: '1px solid var(--color-border)',
+                                                            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'flex-start',
+                                                            gap: '12px'
+                                                        }}
+                                                        onClick={() => handleStartTask(task)}
+                                                    >
+                                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(var(--color-accent-rgb), 0.12)', border: '1px solid rgba(var(--color-accent-rgb), 0.25)', borderRadius: '20px', padding: '4px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--color-accent)' }}>
+                                                            <Zap size={10} className="lucide" style={{ color: 'var(--color-accent)' }} /> High energy task
+                                                        </div>
 
-    {/* 3. PILOT LIGHT CHIPS */}
-    {energy2HabitsPool.length > 0 && (
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '32px' }}>
-            {energy2HabitsPool.slice(0, 3).map(habit => (
-                <button
-                    key={habit.id}
-                    onClick={() => handleHabitComplete(habit.id)}
-                    style={{ background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--alpha-medium)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--alpha-low)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                >
-                    {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
-                </button>
-            ))}
-        </div>
-    )}
+                                                        <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-tertiary)' }}>
+                                                            {area?.name || skill?.name || 'Untitled Area'}
+                                                        </div>
 
-    {/* 4. TRIADIC REDIRECTION */}
-    {!isEnergy3Expanded && !isEnergy3ExplorePath ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
-            <button
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '16px', cursor: 'pointer', textDecoration: 'underline' }}
-                onClick={() => setIsEnergy3Expanded(true)}
-            >
-                Not feeling this?
-            </button>
-            <button
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline' }}
-                onClick={() => console.log("Rest for now clicked")}
-            >
-                I actually just need to rest today
-            </button>
-        </div>
-    ) : isEnergy3ExplorePath ? (
-        <>
-            {e3ActiveSubStep === 'skills' && (
-                <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
-                    <button className="literal-target" onClick={() => setE3ActiveSkillIndex(p => (p - 1 + activeNonFocusSkills.length) % activeNonFocusSkills.length)}>‹</button>
-                    <div
-                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
-                        onClick={() => { setE3ActiveSelectedSkillId(activeNonFocusSkills[e3ActiveSkillIndex].id); setE3ActiveSubStep('aspects'); }}
-                    >
-                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Optional · No Pressure</div>
-                        <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{activeNonFocusSkills[e3ActiveSkillIndex]?.name}</h1>
-                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Tap to explore</div>
-                    </div>
-                    <button className="literal-target" onClick={() => setE3ActiveSkillIndex(p => (p + 1) % activeNonFocusSkills.length)}>›</button>
-                </div>
-            )}
-            {e3ActiveSubStep === 'aspects' && (
-                <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
-                    <button className="literal-target" onClick={() => setE3ActiveAspectIndex(p => (p - 1 + e3ActiveAspectsPool.length) % e3ActiveAspectsPool.length)}>‹</button>
-                    <div
-                        style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
-                        onClick={() => { setE3ActiveSelectedAspectId(e3ActiveAspectsPool[e3ActiveAspectIndex].id); setE3ActiveSubStep('tasks'); }}
-                    >
-                        <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{e3ActiveAspectsPool[e3ActiveAspectIndex]?.name}</h1>
-                        <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Select Aspect</div>
-                    </div>
-                    <button className="literal-target" onClick={() => setE3ActiveAspectIndex(p => (p + 1) % e3ActiveAspectsPool.length)}>›</button>
-                </div>
-            )}
-            {e3ActiveSubStep === 'tasks' && (
-                <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px', marginTop: '24px' }}>
-                    <button className="literal-target" onClick={() => setE3ActiveTaskIndex(p => (p - 1 + e3ActiveTasksPool.length) % e3ActiveTasksPool.length)}>‹</button>
-                    <div style={{ textAlign: 'center', width: '320px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>No Pressure · Stop Anytime</div>
-                        <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '24px' }}>{e3ActiveTasksPool[e3ActiveTaskIndex]?.name}</h1>
-                        <button className="flow-primary-btn" onClick={() => handleStartTask(e3ActiveTasksPool[e3ActiveTaskIndex])}>Start 2-Minute Sprint</button>
-                    </div>
-                    <button className="literal-target" onClick={() => setE3ActiveTaskIndex(p => (p + 1) % e3ActiveTasksPool.length)}>›</button>
-                </div>
-            )}
-            <button
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginTop: '32px' }}
-                onClick={() => { setIsEnergy3ExplorePath(false); setE3ActiveSubStep('skills'); setE3ActiveSelectedSkillId(null); setE3ActiveSelectedAspectId(null); }}
-            >
-                ← Back
-            </button>
-            <button
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
-                onClick={() => console.log("Rest for now clicked")}
-            >
-                I actually just need to rest today
-            </button>
-        </>
-    ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginBottom: '32px' }}>
-            <button
-                className="flow-secondary-btn liquid-glass"
-                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
-                onClick={() => setIsEnergy3SwitchingSkill(true)}
-            >
-                Stay Focused — Switch skill
-            </button>
-            <button
-                className="flow-secondary-btn liquid-glass"
-                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
-                onClick={() => { setIsEnergy3SwitchingHabit(true); setIsEnergy3Expanded(false); }}
-            >
-                Keep it Simple — Switch to habits
-            </button>
-            <button
-                className="flow-secondary-btn liquid-glass"
-                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
-                onClick={() => { setIsEnergy3ExplorePath(true); setIsEnergy3Expanded(false); setE3ActiveSubStep('skills'); }}
-            >
-                Explore Something Else
-            </button>
-            <button
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '8px' }}
-                onClick={() => console.log("Rest for now clicked")}
-            >
-                I actually just need to rest today
-            </button>
-        </div>
-    )}
+                                                        <h2 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+                                                            {task.name}
+                                                        </h2>
 
-    {/* 5. FUTURE SELF BUTTON (Bottom placement for non-Energy 5) */}
-    {energyLevel !== 5 && (
-        <button
-            className="future-self-btn"
-            onClick={() => { resetPrepFlow(); setStep('prep-flow'); }}
-            style={{ marginTop: 'auto', padding: '16px 32px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '20px', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.border = '1px solid var(--color-border-active)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; e.currentTarget.style.border = '1px solid var(--color-border)'; }}
-        >
-            <span style={{ textDecoration: 'underline' }}>Prepare everything for your future self</span>
-        </button>
-    )}
-</div>
+                                                        <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                                                            {skill?.name || 'Untitled Skill'}
+                                                        </div>
+
+                                                        <button
+                                                            className="flow-primary-btn btn-touch-target visual-receipt-active"
+                                                            style={{ padding: '12px 40px', borderRadius: '8px', fontSize: '16px', fontWeight: 700, background: 'var(--alpha-low)', border: '1px solid var(--color-border)', marginTop: '16px' }}
+                                                        >
+                                                            Start
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()
+                                        ) : (
+                                            <div className="e5-hero-empty" style={{ width: '100%' }}>
+                                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>No high energy tasks saved yet.</div>
+                                                <div>Mark tasks as high energy during planning to pin them here.</div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* TACTICAL OPTIONS */}
+                                    <section style={{ width: '100%', marginBottom: '32px' }}>
+                                        <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-tertiary)', marginBottom: '16px' }}>
+                                            Other tactical options
+                                        </h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {tripleRecommendation.slice(0, 2).map(task => {
+                                                const skill = getSkillFromTask(task, nodeMap);
+                                                const area = nodeMap.get(skill?.parentId);
+                                                return (
+                                                    <button
+                                                        key={task.id}
+                                                        className="liquid-glass visual-receipt-active btn-touch-target cursor-target"
+                                                        onClick={() => handleStartTask(task)}
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '20px 24px',
+                                                            borderRadius: '16px',
+                                                            background: 'var(--alpha-low)',
+                                                            border: '1px solid var(--color-border)',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'flex-start',
+                                                            gap: '4px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <div style={{ fontSize: '10px', fontWeight: 800, opacity: 0.5, color: 'var(--text-primary)' }}>
+                                                            {area?.name || 'Untitled Area'}
+                                                        </div>
+                                                        <div style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                            {task.name}
+                                                        </div>
+                                                        <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                                                            {skill?.name || 'Untitled Skill'}
+                                                        </div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </section>
+
+                                    {/* PILOT LIGHTS */}
+                                    {energy2HabitsPool.length > 0 && (
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '32px' }}>
+                                            {energy2HabitsPool.slice(0, 3).map(habit => (
+                                                <button
+                                                    key={habit.id}
+                                                    onClick={() => handleHabitComplete(habit.id)}
+                                                    className="btn-touch-target visual-receipt-active cursor-target"
+                                                    style={{ background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '20px', padding: '8px 16px', color: 'var(--text-secondary)', fontSize: '13px', cursor: 'pointer' }}
+                                                >
+                                                    {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* FUTURE SELF BUTTON (Bottom placement for non-Energy 5) */}
+                                    <button
+                                        className="future-self-btn visual-receipt-active btn-touch-target cursor-target"
+                                        onClick={() => { resetPrepFlow(); setStep('prep-flow'); }}
+                                        style={{ marginTop: 'auto', padding: '16px 32px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', borderRadius: '20px', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer' }}
+                                    >
+                                        <span style={{ textDecoration: 'underline' }}>Prepare everything for your future self</span>
+                                    </button>
+                                </div>
+                            )}</>
                         ) : energyLevel === 3 ? (
                             <div className="recommended-focus-container" style={{ textAlign: 'center', width: '100%', maxWidth: '500px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '600px', justifyContent: 'center' }}>
                                 {isEnergy3SwitchingSkill ? (
@@ -2637,7 +2720,9 @@ const LaunchpadFlow = () => {
                             if (draftTasks.length === 0) {
                                 return (
                                     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                                        <h1 className="flow-title" style={{ fontSize: '48px', marginBottom: '16px' }}>✨</h1>
+                                        <h1 className="flow-title" style={{ fontSize: '48px', marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+                                            <Sparkles size={48} className="lucide" style={{ color: 'var(--color-accent)' }} />
+                                        </h1>
                                         <h2 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '12px' }}>You just made {dumpedTasks.length} tasks easier for your future self</h2>
                                         <p style={{ color: '#555', fontSize: '16px', marginBottom: '40px' }}>Your future self is going to love this on-ramp.</p>
                                         <button 

@@ -10,7 +10,7 @@ import { backbone, NodeTypes } from '../backbone-v2/index';
 import { useBackboneStore } from '../store/backboneStore';
 import { useSettings } from '../context/SettingsContext';
 import { useTheme } from '../context/ThemeContext';
-import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image, BookOpen } from 'lucide-react';
+import { Coins, Settings, Sun, Moon, Monitor, Square, Droplet, Image, BookOpen, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import SegmentedControl from '../components/ui/SegmentedControl';
@@ -254,9 +254,39 @@ const MainLayout = () => {
                 </div>
                 
                 <div className="header-right">
+                    {(energyLevel === 5 || energyLevel === 4) && (
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => navigate('/launchpad?prep=true')}
+                            className="hryvnia-display-header-pill cursor-target"
+                            style={{
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)',
+                                fontWeight: 500
+                            }}
+                            title="Prepare everything for your future self"
+                        >
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.15, 1],
+                                }}
+                                transition={{
+                                    duration: 2.5,
+                                    repeat: Infinity,
+                                    repeatType: "reverse",
+                                    ease: "easeInOut"
+                                }}
+                                style={{ display: 'inline-flex', alignItems: 'center' }}
+                            >
+                                <Brain size={13} style={{ color: 'var(--color-accent)' }} />
+                            </motion.div>
+                            <span>Future Self</span>
+                        </motion.button>
+                    )}
                     {energyLevel > 3 && (
                         <div 
-                            className="hryvnia-display-header-pill interactive-balance-pill"
+                            className="hryvnia-display-header-pill interactive-balance-pill cursor-target"
                             onClick={triggerCoinJiggle}
                             style={{ cursor: 'pointer' }}
                             title="Interactive Balance"
