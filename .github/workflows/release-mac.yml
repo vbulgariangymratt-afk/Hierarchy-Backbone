@@ -32,10 +32,10 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - name: Rename and Prepare Asset
-        run: |
-          cd src-tauri/target/release/bundle/macos
-          zip -r ../../../../../Backbone.zip Backbone.app || zip -r ../../../../../Backbone.zip *.app
+      - name: Generate Updater Metadata and Prepare macOS Asset
+        run: node scripts/update-metadata.js
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
 
       - name: Upload to Public Landing Page Releases
         uses: softprops/action-gh-release@v2
@@ -43,6 +43,6 @@ jobs:
           repository: vbulgariangymratt-afk/Backbone-s-minimal-webpage
           token: ${{ secrets.PUBLIC_REPO_TOKEN }}
           tag_name: latest
-          files: Backbone.zip
+          files: Backbone-macOS.tar.gz
           prerelease: false
           make_latest: true

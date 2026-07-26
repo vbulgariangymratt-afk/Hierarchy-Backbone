@@ -237,6 +237,26 @@ const MainLayout = () => {
     }, []);
 
 
+    const [hasUpdate, setHasUpdate] = useState(false);
+
+    useEffect(() => {
+        const checkForUpdates = async () => {
+            const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
+            if (isTauri) {
+                try {
+                    const { check } = await import('@tauri-apps/plugin-updater');
+                    const update = await check();
+                    if (update) {
+                        setHasUpdate(true);
+                    }
+                } catch (e) {
+                    console.error('Quiet update check failed:', e);
+                }
+            }
+        };
+        checkForUpdates();
+    }, []);
+
     const location = useLocation();
     const navigate = useNavigate();
     const isSettingsOpen = location.pathname === '/settings';
@@ -252,8 +272,37 @@ const MainLayout = () => {
             <div className="app-drag-region" data-tauri-drag-region />
             
             <header className={`app-header ${isFullscreen ? 'is-fullscreen' : ''}`} data-tauri-drag-region>
-                <div className="header-left" data-tauri-drag-region>
+                <div className="header-left" data-tauri-drag-region style={{ display: 'flex', alignItems: 'center' }}>
                     <span className="logo-text">Backbone Hierarchy</span>
+                    {hasUpdate && (
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => navigate('/settings', { state: { tab: 'updates' } })}
+                            className="update-pill cursor-target"
+                            style={{
+                                marginLeft: '12px',
+                                background: 'rgba(var(--color-accent-rgb), 0.1)',
+                                border: '1px solid rgba(var(--color-accent-rgb), 0.2)',
+                                color: 'var(--color-text-primary)',
+                                height: '28px',
+                                padding: '0 12px',
+                                borderRadius: '9999px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxSizing: 'border-box'
+                            }}
+                        >
+                            <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }} />
+                            Update Ready
+                        </motion.button>
+                    )}
                 </div>
                 
                 <div className="header-right">

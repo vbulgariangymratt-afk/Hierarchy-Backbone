@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
@@ -17,7 +18,10 @@ import {
     CheckCircle2, 
     Coins, 
     Sparkles, 
-    DollarSign 
+    DollarSign,
+    Download,
+    RefreshCw,
+    Cpu
 } from 'lucide-react';
 import './SettingsPage.css';
 
@@ -71,7 +75,8 @@ const ToggleSwitch = ({ checked, onChange }) => (
 
 const SettingsPage = () => {
     const [user, setUser] = useState(null);
-    const [activeTab, setActiveTab] = useState('appearance');
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(() => location.state?.tab || 'appearance');
 
     const { 
         themePreference,
@@ -110,6 +115,144 @@ const SettingsPage = () => {
     } = useSettings();
 
     const [saveIndicator, setSaveIndicator] = useState(null);
+
+    const [updaterState, setUpdaterState] = useState({
+        checking: false,
+        updateFound: false,
+        updateInstalled: false,
+        downloadProgress: 0,
+        error: null,
+        message: '',
+        versionInfo: null
+    });
+
+    const [appVersion, setAppVersion] = useState('0.1.0');
+
+    useEffect(() => {
+        const loadVersion = async () => {
+            const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
+            if (isTauri) {
+                try {
+                    const { getVersion } = await import('@tauri-apps/api/app');
+                    const version = await getVersion();
+                    setAppVersion(version);
+                } catch (e) {
+                    console.error('Failed to read app version:', e);
+                }
+            }
+        };
+        loadVersion();
+    }, []);
+
+    useEffect(() => {
+        if (activeTab === 'updates' && !updaterState.versionInfo && !updaterState.updateInstalled && !updaterState.checking) {
+            checkUpdate();
+        }
+    }, [activeTab]);
+
+    const checkUpdate = async () => {
+        setUpdaterState(prev => ({
+            ...prev,
+            checking: true,
+            error: null,
+            message: 'Checking for updates...'
+        }));
+
+        const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
+
+        if (!isTauri) {
+            setTimeout(() => {
+                setUpdaterState(prev => ({
+                    ...prev,
+                    checking: false,
+                    message: 'Running in browser. Updater only works on desktop builds.'
+                }));
+            }, 800);
+            return;
+        }
+
+        try {
+            const { check } = await import('@tauri-apps/plugin-updater');
+            const update = await check();
+            if (update) {
+                setUpdaterState(prev => ({
+                    ...prev,
+                    checking: false,
+                    updateFound: true,
+                    versionInfo: update,
+                    message: `Version ${update.version} is available!`
+                }));
+            } else {
+                setUpdaterState(prev => ({
+                    ...prev,
+                    checking: false,
+                    message: 'You are on the latest version.'
+                }));
+            }
+        } catch (err) {
+            console.error('Update check failed:', err);
+            setUpdaterState(prev => ({
+                ...prev,
+                checking: false,
+                error: err.message || String(err),
+                message: 'Could not connect to update server.'
+            }));
+        }
+    };
+
+    const downloadAndInstallUpdate = async () => {
+        if (!updaterState.versionInfo) return;
+
+        setUpdaterState(prev => ({
+            ...prev,
+            checking: false,
+            downloadProgress: 0,
+            message: 'Downloading update...'
+        }));
+
+        try {
+            let downloaded = 0;
+            let contentLength = 0;
+
+            await updaterState.versionInfo.downloadAndInstall((event) => {
+                switch (event.event) {
+                    case 'Started':
+                        contentLength = event.data.contentLength || 0;
+                        break;
+                    case 'Progress':
+                        downloaded += event.data.chunkLength;
+                        const pct = contentLength ? Math.round((downloaded / contentLength) * 100) : 50;
+                        setUpdaterState(prev => ({
+                            ...prev,
+                            downloadProgress: pct,
+                            message: `Downloading: ${pct}%`
+                        }));
+                        break;
+                    case 'Finished':
+                        setUpdaterState(prev => ({
+                            ...prev,
+                            downloadProgress: 100,
+                            message: 'Download finished. Installing...'
+                        }));
+                        break;
+                }
+            });
+
+            setUpdaterState(prev => ({
+                ...prev,
+                updateInstalled: true,
+                updateFound: false,
+                message: 'Update installed successfully. Please restart Backbone Hierarchy to apply.'
+            }));
+        } catch (err) {
+            console.error('Update installation failed:', err);
+            setUpdaterState(prev => ({
+                ...prev,
+                error: err.message || String(err),
+                message: 'Let\'s try that again.'
+            }));
+        }
+    };
 
     const handleUpdateTodayMode = (mode) => {
         updateTodayRemovalMode(mode);
@@ -158,7 +301,8 @@ const SettingsPage = () => {
         behavior: "Configure Obsession slot roles, task removal triggers, and experiment limits.",
         signals: "Manage sleep tracking modes, completion sounds, and objective chimes.",
         economy: "Customize currency names and economy rewards presets.",
-        account: "Manage your account identity, subscription tier, and local vault sync."
+        account: "Manage your account identity, subscription tier, and local vault sync.",
+        updates: "Check for software updates and view device & system diagnostics."
     };
 
     return (
@@ -223,6 +367,14 @@ const SettingsPage = () => {
                         >
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                             <span>Account & Billing</span>
+                        </button>
+
+                        <button
+                            className={`settings-nav-item ${activeTab === 'updates' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('updates')}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>Updates & System</span>
                         </button>
                     </div>
 
@@ -657,6 +809,149 @@ const SettingsPage = () => {
                                             </button>
                                         </div>
                                     )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── TAB 6: UPDATES & SYSTEM ──────────────────────────────── */}
+                        {activeTab === 'updates' && (
+                            <div className="settings-tab-content">
+                                <div className="settings-group">
+                                    <div className="settings-group-header">Software Updates</div>
+                                    <div className="settings-row" style={{ alignItems: 'flex-start', flexDirection: 'row', gap: '16px' }}>
+                                        {updaterState.updateFound ? (
+                                            <div className="settings-row-label" style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                                <span className="settings-row-title" style={{ color: 'var(--color-text-primary)' }}>
+                                                    New version: {updaterState.versionInfo?.version}
+                                                </span>
+                                                <span className="settings-row-desc" style={{ marginTop: '6px', maxWidth: '520px', lineHeight: '1.5', display: 'block', textAlign: 'left' }}>
+                                                    <strong>Changes:</strong> {updaterState.versionInfo?.notes}
+                                                </span>
+
+                                                <button
+                                                    className="wallpaper-btn-choose"
+                                                    onClick={downloadAndInstallUpdate}
+                                                    disabled={updaterState.downloadProgress > 0 && !updaterState.updateInstalled && !updaterState.error}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '8px',
+                                                        marginTop: '16px',
+                                                        background: 'var(--color-accent)',
+                                                        border: 'none',
+                                                        color: '#ffffff',
+                                                        padding: '8px 16px',
+                                                        borderRadius: '6px',
+                                                        fontWeight: '600',
+                                                        fontSize: '13px',
+                                                        boxShadow: '0 2px 8px rgba(var(--color-accent-rgb), 0.25)',
+                                                        transition: 'transform 0.15s ease, background-color 0.15s ease',
+                                                        transform: 'scale(1)',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.96)'}
+                                                    onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                >
+                                                    <Download size={14} style={{ stroke: '#ffffff' }} />
+                                                    <span>Install Update</span>
+                                                </button>
+
+                                                {updaterState.downloadProgress > 0 && !updaterState.updateInstalled && !updaterState.error && (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '16px', width: '100%', maxWidth: '320px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                                            <span>Downloading...</span>
+                                                            <span>{updaterState.downloadProgress}%</span>
+                                                        </div>
+                                                        <div className="update-progress-container" style={{ background: 'rgba(255, 255, 255, 0.08)', borderRadius: '8px', height: '5px', overflow: 'hidden', width: '100%' }}>
+                                                            <div
+                                                                className="update-progress-bar"
+                                                                style={{
+                                                                    background: 'var(--color-accent)',
+                                                                    height: '100%',
+                                                                    width: `${updaterState.downloadProgress}%`,
+                                                                    transition: 'width 0.3s ease-out'
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : updaterState.updateInstalled ? (
+                                            <div className="settings-row-label" style={{ width: '100%' }}>
+                                                <span className="settings-row-title" style={{ color: '#10b981' }}>
+                                                    Upgrade Complete (v{updaterState.versionInfo?.version || '0.2.0'})
+                                                </span>
+                                                <span className="settings-row-desc" style={{ marginTop: '6px', maxWidth: '520px', lineHeight: '1.5', display: 'block', textAlign: 'left' }}>
+                                                    The files have been written. Please restart Backbone Hierarchy to run the new version.
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="settings-row-label" style={{ width: '100%' }}>
+                                                    <span className="settings-row-title">
+                                                        Current Version: v{appVersion}
+                                                    </span>
+                                                    <span className="settings-row-desc" style={{ marginTop: '6px', display: 'block', textAlign: 'left' }}>
+                                                        {updaterState.message || "Your system is up to date."}
+                                                    </span>
+                                                </div>
+
+                                                <div className="settings-row-control">
+                                                    <button
+                                                        className="wallpaper-btn-choose"
+                                                        disabled={updaterState.checking}
+                                                        onClick={checkUpdate}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px',
+                                                            transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                            transform: 'scale(1)'
+                                                        }}
+                                                        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
+                                                        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                                    >
+                                                        {updaterState.checking ? (
+                                                            <>
+                                                                <RefreshCw size={14} className="animate-spin" />
+                                                                <span>Checking...</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <RefreshCw size={14} />
+                                                                <span>Check Now</span>
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="settings-group">
+                                    <div className="settings-group-header">System Diagnostics</div>
+                                    <div className="settings-row" style={{ display: 'block' }}>
+                                        <div className="diagnostics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '8px' }}>
+                                            <div className="diagnostic-card" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <Cpu size={24} style={{ color: '#60a5fa' }} />
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Platform</span>
+                                                    <span style={{ fontSize: '14px', fontWeight: 'bold' }}>
+                                                        {typeof window !== 'undefined' && window.__TAURI__ ? 'Desktop App' : 'Web Browser'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="diagnostic-card" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <Activity size={24} style={{ color: '#34d399' }} />
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <span style={{ fontSize: '11px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Database Status</span>
+                                                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399' }}>Connected</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

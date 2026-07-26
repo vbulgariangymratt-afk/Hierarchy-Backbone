@@ -29,10 +29,13 @@ jobs:
       - name: Build Tauri app for Windows
         run: npm run tauri:build
 
-      - name: Prepare Windows Asset
+      - name: Generate Updater Metadata and Prepare Windows Asset
         shell: bash
         run: |
           find src-tauri/target/release/bundle/nsis -name "*.exe" -exec cp {} ./Backbone-Setup.exe \;
+          node scripts/update-metadata.js
+        env:
+          PUBLIC_REPO_TOKEN: ${{ secrets.PUBLIC_REPO_TOKEN }}
 
       - name: Upload to Public Landing Page Releases
         uses: softprops/action-gh-release@v2
@@ -40,6 +43,8 @@ jobs:
           repository: vbulgariangymratt-afk/Backbone-s-minimal-webpage
           token: ${{ secrets.PUBLIC_REPO_TOKEN }}
           tag_name: latest
-          files: Backbone-Setup.exe
+          files: |
+            Backbone-Setup.exe
+            Backbone-Windows.zip
           prerelease: false
           make_latest: true
