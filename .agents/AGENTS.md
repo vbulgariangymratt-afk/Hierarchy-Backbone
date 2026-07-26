@@ -52,3 +52,12 @@ These rules exist because animation bugs in this codebase have been diagnosed an
     *   **The reusable component:** `src/components/ui/SegmentedControl.jsx` already implements this correctly. **Always use it** for segmented pill controls instead of re-implementing the pattern inline. Pass `layoutPrefix`, `options`, `value`, `onChange`, `buttonSize`, `fontSize`, and `activePadding` as props.
 *   **Never give `layoutId` to both a container and its child simultaneously:** If a parent button has `layoutId` and the pill inside it also has `layoutId`, they compete for coordinate resolution and the pill will teleport on reverse-direction transitions.
 *   **CSS transitions and Framer `layout` animations must not both own the same property:** If Framer is animating `width` via `layout`, remove `transition: width` from CSS, and vice versa. Two systems animating the same property simultaneously causes stretching and jitter.
+
+## 🌿 Branch & Release Rules (Branch Policy)
+
+*   **Default Progress Saves (Main Branch):** All regular work commits, daily progress saves, and draft code must be committed and pushed directly to the **`main`** branch.
+*   **Production Updates (Production Branch):** Official releases and user-facing updates must only be pushed to the **`production`** branch.
+*   **Release Requirements:** Publishing a production update strictly requires:
+    1. Bumping the version identifier in `src-tauri/tauri.conf.json`.
+    2. Merging code and pushing to the `production` branch.
+    3. Creating and pushing a Git version tag matching the version string (e.g. `v0.2.0`).
