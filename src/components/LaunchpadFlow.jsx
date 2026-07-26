@@ -1343,7 +1343,7 @@ const LaunchpadFlow = () => {
                                 <TargetCursor 
                                     targetSelector=".cursor-target"
                                     containerSelector=".launchpad-flow-container"
-                                    cursorColor="rgba(255, 255, 255, 0.6)"
+                                    cursorColor="var(--focus-color-status)"
                                     cursorColorOnTarget="var(--color-accent)"
                                 />
                                 <div className="e5-container">
