@@ -2147,11 +2147,10 @@ const LaunchpadFlow = () => {
 
                                 <div className="step-container" style={{ width: '100%' }}>
                                     {energy1SubStep === 'initial' && (() => {
-                                        const inProgressTask = energy1Pool.find(t => t.metadata?.status === 'IN_PROGRESS');
-                                        const isResume = !!inProgressTask;
+                                        const isResume = energy1Pool[0]?.metadata?.status === 'IN_PROGRESS';
                                         const pilotHabits = energy1HabitsPool.slice(0, 3);
-                                        const spotlightTask = e1SpotlightHabit ? null : (inProgressTask || energy1Pool[0]);
-                                        const spotlightHabit = e1SpotlightHabit || ((!inProgressTask && !energy1Pool[0]) ? energy1HabitsPool[0] : null);
+                                        const spotlightTask = e1SpotlightHabit ? null : (energy1Pool[0] || null);
+                                        const spotlightHabit = e1SpotlightHabit || ((!energy1Pool[0]) ? energy1HabitsPool[0] : null);
 
                                         // compute currentSkill for initial substep
                                         let initialSkill = null;
