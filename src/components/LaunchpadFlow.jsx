@@ -1856,8 +1856,8 @@ const LaunchpadFlow = () => {
                                         const pilotHabits = energy2HabitsPool.slice(0, 3);
                                         const spotlightTask = e2SpotlightHabit ? null : (inProgressTask || energy2Pool[0]);
                                         const spotlightHabit = e2SpotlightHabit || ((!inProgressTask && !energy2Pool[0]) ? energy2HabitsPool[0] : null);
-                                        return (
-                                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '680px', gap: '32px', fontFamily: "'Lexend', sans-serif" }}>
+                                return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', width: 'fit-content', gap: '32px', fontFamily: "'Lexend', sans-serif" }}>
                                                 {/* SPOTLIGHT HERO CARD */}
                                                 <div>
                                                     {spotlightTask ? (
@@ -1926,17 +1926,6 @@ const LaunchpadFlow = () => {
                                                         </div>
                                                     </div>
                                                 )}
-
-                                                {/* REDIRECTION ESCAPE HATCH (Bottom Left placement) */}
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '16px' }}>
-                                                    <button
-                                                        className="btn-touch-target visual-receipt-active"
-                                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '15px' }}
-                                                        onClick={() => setEnergy2SubStep('redirection')}
-                                                    >
-                                                        Not feeling this?
-                                                    </button>
-                                                </div>
                                             </div>
                                         );
                                     })()}
@@ -2080,6 +2069,14 @@ const LaunchpadFlow = () => {
                                         </div>
                                     )}
                                 </div>
+                                {energy2SubStep === 'initial' && (
+                                    <button
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px', marginTop: '16px', width: 'fit-content' }}
+                                        onClick={() => setEnergy2SubStep('redirection')}
+                                    >
+                                        Not feeling this?
+                                    </button>
+                                )}
                             </div>
                         ) : energyLevel === 1 ? (
                             <div className="energy-1-flow" style={{ width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh', position: 'relative' }}>
