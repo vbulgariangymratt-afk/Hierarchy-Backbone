@@ -147,6 +147,7 @@ const LaunchpadFlow = () => {
     const [e1SelectedAspectId, setE1SelectedAspectId] = useState(null);
     const [energy2SubStep, setEnergy2SubStep] = useState('initial');
     const [e2SpotlightHabit, setE2SpotlightHabit] = useState(null);
+    const [e1SpotlightHabit, setE1SpotlightHabit] = useState(null);
     const [e2SkillIndex, setE2SkillIndex] = useState(0);
     const [e2AspectIndex, setE2AspectIndex] = useState(0);
     const [e2TaskIndex, setE2TaskIndex] = useState(0);
@@ -2105,18 +2106,11 @@ const LaunchpadFlow = () => {
                                 )}
                             </div>
                         ) : energyLevel === 1 ? (
-                            <div className="energy-1-flow" style={{ width: '100%', maxWidth: '600px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '80vh', position: 'relative' }}>
-                                
-                                {/* IDENTITY ANCHOR */}
-                                {(() => {
+                            <div className="e5-container">
+                                {/* IDENTITY ANCHOR HEADER - shown in all substeps */}
+                                {energy1SubStep !== 'initial' && (() => {
                                     let currentSkill = null;
-                                    if (energy1SubStep === 'initial') {
-                                        if (energy1Pool.length > 0) {
-                                            currentSkill = getSkillFromTask(energy1Pool[0], nodeMap);
-                                        } else if (energy1HabitsPool.length > 0) {
-                                            currentSkill = nodeMap.get(energy1HabitsPool[0].parentId);
-                                        }
-                                    } else if (energy1SubStep === 'habits') {
+                                    if (energy1SubStep === 'habits') {
                                         currentSkill = nodeMap.get(energy1HabitsPool[energy1HabitIndex]?.parentId);
                                     } else if (energy1SubStep === 'skills') {
                                         currentSkill = activeFocusSkills[e1SkillIndex];
@@ -2125,14 +2119,13 @@ const LaunchpadFlow = () => {
                                     } else if (energy1SubStep === 'tasks') {
                                         currentSkill = nodeMap.get(e1SelectedSkillId);
                                     }
-
                                     if (!currentSkill) return null;
                                     return (
-                                        <div className="identity-anchor" style={{ position: 'absolute', top: '-100px', width: '100%', textAlign: 'center', opacity: 0.8 }}>
-                                            <div style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
-                                            <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                        <div style={{ marginBottom: '32px' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
+                                            <h1 className="e5-title" style={{ margin: 0, fontSize: '28px', fontWeight: 500 }}>
                                                 {currentSkill.metadata?.identityAnchor || currentSkill.name}
-                                            </div>
+                                            </h1>
                                         </div>
                                     );
                                 })()}
@@ -2146,80 +2139,130 @@ const LaunchpadFlow = () => {
                                             else if (energy1SubStep === 'aspects') setEnergy1SubStep('skills');
                                             else if (energy1SubStep === 'tasks') setEnergy1SubStep('aspects');
                                         }}
-                                        style={{ position: 'absolute', top: '-40px', left: '0', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: '24px', cursor: 'pointer' }}
+                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '14px', cursor: 'pointer', textDecoration: 'underline', marginBottom: '24px', display: 'flex', alignItems: 'center' }}
                                     >
                                         ← Back
                                     </button>
                                 )}
 
-                                <div className="step-container" style={{ transition: 'opacity 0.3s ease', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    {energy1SubStep === 'initial' && (
-                                        <div className="initiation-card liquid-glass" style={{ background: 'rgba(255,255,255,0.03)', padding: '60px 40px', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)', maxWidth: '440px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '32px', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}>
-                                            {energy1Pool.length > 0 ? (
-                                                <>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)' }}>
-                                                            {energy1Pool[0].metadata?.mve ? `Task: ${energy1Pool[0].name}` : "Today's Task"}
+                                <div className="step-container" style={{ width: '100%' }}>
+                                    {energy1SubStep === 'initial' && (() => {
+                                        const inProgressTask = energy1Pool.find(t => t.metadata?.status === 'IN_PROGRESS');
+                                        const isResume = !!inProgressTask;
+                                        const pilotHabits = energy1HabitsPool.slice(0, 3);
+                                        const spotlightTask = e1SpotlightHabit ? null : (inProgressTask || energy1Pool[0]);
+                                        const spotlightHabit = e1SpotlightHabit || ((!inProgressTask && !energy1Pool[0]) ? energy1HabitsPool[0] : null);
+
+                                        // compute currentSkill for initial substep
+                                        let initialSkill = null;
+                                        if (energy1Pool.length > 0) {
+                                            initialSkill = getSkillFromTask(energy1Pool[0], nodeMap);
+                                        } else if (energy1HabitsPool.length > 0) {
+                                            initialSkill = nodeMap.get(energy1HabitsPool[0].parentId);
+                                        }
+
+                                        return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', width: 'fit-content', gap: '24px', fontFamily: "'Lexend', sans-serif" }}>
+                                                {/* BECOMING HEADER */}
+                                                {initialSkill && (
+                                                    <div style={{ marginBottom: '32px' }}>
+                                                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
+                                                        <h1 className="e5-title" style={{ margin: 0, fontSize: '28px', fontWeight: 500 }}>
+                                                            {initialSkill.metadata?.identityAnchor || initialSkill.name}
+                                                        </h1>
+                                                    </div>
+                                                )}
+
+                                                {/* SPOTLIGHT HERO CARD */}
+                                                <div style={{ width: '100%' }}>
+                                                    {spotlightTask ? (
+                                                        <div className="e5-card e5-card-hero visual-receipt-active cursor-target" style={{ width: '100%', boxSizing: 'border-box' }} onClick={() => navigate('/focus', { state: { taskId: spotlightTask.id, autoStart: true } })}>
+                                                            <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                                                                {(spotlightTask.metadata?.mve || spotlightTask.mve) ? `Task: ${spotlightTask.name}` : "Just open it for 2 minutes"}
+                                                            </div>
+                                                            <h2 style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 20px 0', lineHeight: 1.2 }}>
+                                                                {(spotlightTask.metadata?.mve || spotlightTask.mve) || spotlightTask.name}
+                                                            </h2>
+                                                            <button
+                                                                className="flow-primary-btn btn-touch-target visual-receipt-active"
+                                                                style={{ alignSelf: 'flex-start', padding: '12px 32px', borderRadius: '8px', fontSize: '15px' }}
+                                                            >
+                                                                {isResume ? 'Hop back in' : 'Start 2-Minute Sprint'}
+                                                            </button>
                                                         </div>
-                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
-                                                            {energy1Pool[0].metadata?.mve || energy1Pool[0].name}
-                                                        </h1>
+                                                    ) : spotlightHabit ? (
+                                                        <div className="e5-card e5-card-hero visual-receipt-active cursor-target" style={{ width: '100%', boxSizing: 'border-box' }} onClick={() => { handleHabitComplete(spotlightHabit.id); setE1SpotlightHabit(null); }}>
+                                                            <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                                                                Just open it for 2 minutes
+                                                            </div>
+                                                            <h2 style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 20px 0', lineHeight: 1.2 }}>
+                                                                {spotlightHabit.phases?.[spotlightHabit.currentPhaseLevel]?.description || spotlightHabit.then || "Ready to maintain?"}
+                                                            </h2>
+                                                            <button
+                                                                className="flow-primary-btn btn-touch-target visual-receipt-active"
+                                                                style={{ alignSelf: 'flex-start', padding: '12px 32px', borderRadius: '8px', fontSize: '15px' }}
+                                                            >
+                                                                Complete Habit
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="e5-hero-empty">
+                                                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>All Clear</div>
+                                                            <div>No active low energy task or habits.</div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* PILOT LIGHT CHIPS */}
+                                                {pilotHabits.length > 1 && (
+                                                    <div>
+                                                        <h3 className="e5-section-title" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                            <Flame size={14} className="lucide" style={{ color: 'var(--color-warning)' }} /> Pilot lights
+                                                        </h3>
+                                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                            {pilotHabits.slice(1).map(habit => (
+                                                                <button
+                                                                    key={habit.id}
+                                                                    onClick={() => setE1SpotlightHabit(habit)}
+                                                                    className="e5-task-row visual-receipt-active btn-touch-target cursor-target"
+                                                                    style={{ 
+                                                                        padding: '8px 16px', 
+                                                                        borderRadius: '20px', 
+                                                                        fontSize: '13px', 
+                                                                        color: 'var(--text-secondary)',
+                                                                        border: '1px solid var(--color-border)',
+                                                                        background: 'var(--color-bg-card)',
+                                                                        width: 'auto'
+                                                                    }}
+                                                                >
+                                                                    {habit.phases?.[habit.currentPhaseLevel]?.description || habit.then || habit.name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    <button 
-                                                        className="flow-primary-btn" 
-                                                        style={{ padding: '20px', borderRadius: '16px', fontSize: '18px' }}
-                                                        onClick={() => navigate('/focus', { state: { taskId: energy1Pool[0].id, autoStart: true } })}
-                                                    >
-                                                        Start 2-Minute Sprint
-                                                    </button>
-                                                </>
-                                            ) : energy1HabitsPool.length > 0 ? (
-                                                <>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                        <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)' }}>Maintenance Habit</div>
-                                                        <h1 style={{ fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.1 }}>
-                                                            {energy1HabitsPool[0].phases?.[energy1HabitsPool[0].currentPhaseLevel]?.description || energy1HabitsPool[0].then || "Ready to maintain?"}
-                                                        </h1>
-                                                    </div>
-                                                    <button 
-                                                        className="flow-primary-btn" 
-                                                        style={{ padding: '20px', borderRadius: '16px', fontSize: '18px' }}
-                                                        onClick={() => handleHabitComplete(energy1HabitsPool[0].id)}
-                                                    >
-                                                        Complete Habit
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <h1 style={{ color: '#555' }}>All Clear</h1>
-                                            )}
-                                            
-                                            <button 
-                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px' }}
-                                                onClick={() => setEnergy1SubStep('redirection')}
-                                            >
-                                                Not feeling this?
-                                            </button>
-                                        </div>
-                                    )}
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
 
                                     {energy1SubStep === 'redirection' && (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '320px', marginTop: '40px' }}>
-                                            <button 
-                                                className="redirection-option-btn liquid-glass"
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '400px', margin: '32px 0' }}>
+                                            <button
+                                                className="flow-secondary-btn liquid-glass btn-touch-target visual-receipt-active"
                                                 onClick={() => setEnergy1SubStep('habits')}
-                                                style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', textAlign: 'left' }}
                                             >
                                                 Maintenance habits
                                             </button>
-                                            <button 
-                                                className="redirection-option-btn liquid-glass"
+                                            <button
+                                                className="flow-secondary-btn liquid-glass btn-touch-target visual-receipt-active"
                                                 onClick={() => setEnergy1SubStep('skills')}
-                                                style={{ padding: '32px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600, cursor: 'pointer' }}
+                                                style={{ width: '100%', padding: '16px', borderRadius: '16px', fontSize: '15px', color: 'var(--text-secondary)', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', textAlign: 'left' }}
                                             >
                                                 Obsessions
                                             </button>
-                                            <button 
-                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '14px', marginTop: '40px', textDecoration: 'underline', cursor: 'pointer' }}
+                                            <button
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '14px', marginTop: '16px', textDecoration: 'underline', cursor: 'pointer', width: 'fit-content' }}
                                                 onClick={() => console.log("Rest for now clicked")}
                                             >
                                                 I need to rest for now
@@ -2228,103 +2271,139 @@ const LaunchpadFlow = () => {
                                     )}
 
                                     {energy1SubStep === 'habits' && (
-                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                                            <button 
-                                                className="literal-target"
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '40px', padding: '40px 0' }}>
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setEnergy1HabitIndex(p => (p - 1 + energy1HabitsPool.length) % energy1HabitsPool.length)}
                                             >‹</button>
-                                            
-                                            <div style={{ textAlign: 'center', width: '320px' }}>
-                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', marginBottom: '24px' }}>
+                                            <div
+                                                style={{ textAlign: 'left', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
+                                                onClick={() => handleHabitComplete(energy1HabitsPool[energy1HabitIndex].id)}
+                                            >
+                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
                                                     {energy1HabitsPool[energy1HabitIndex]?.phases?.[energy1HabitsPool[energy1HabitIndex]?.currentPhaseLevel]?.description || energy1HabitsPool[energy1HabitIndex]?.then || "Ready?"}
                                                 </h1>
-                                                <button className="flow-primary-btn" onClick={() => handleHabitComplete(energy1HabitsPool[energy1HabitIndex].id)}>Complete</button>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Tap to Complete</div>
                                             </div>
-
-                                            <button 
-                                                className="literal-target"
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setEnergy1HabitIndex(p => (p + 1) % energy1HabitsPool.length)}
                                             >›</button>
                                         </div>
                                     )}
 
                                     {energy1SubStep === 'skills' && (
-                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                                            <button 
-                                                className="literal-target"
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '40px', padding: '40px 0' }}>
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setE1SkillIndex(p => (p - 1 + activeFocusSkills.length) % activeFocusSkills.length)}
                                             >‹</button>
-                                            
-                                            <div 
-                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                            <div
+                                                style={{ textAlign: 'left', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)', position: 'relative' }}
                                                 onClick={() => {
                                                     setE1SelectedSkillId(activeFocusSkills[e1SkillIndex].id);
                                                     setEnergy1SubStep('aspects');
                                                 }}
                                             >
-                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', margin: 0 }}>{activeFocusSkills[e1SkillIndex]?.name}</h1>
-                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Skill</div>
+                                                {/* HEALTH DOT */}
+                                                {(() => {
+                                                    const skill = activeFocusSkills[e1SkillIndex];
+                                                    if (!skill) return null;
+                                                    const engagement = getSkillEngagementStatus(skill.id, allNodes, energy1HabitsPool);
+                                                    if (!engagement) return null;
+                                                    return (
+                                                        <div style={{ position: 'absolute', top: '16px', right: '16px' }}>
+                                                            <div className={`health-dot ${engagement.status}`} title={engagement.label} />
+                                                        </div>
+                                                    );
+                                                })()}
+                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{activeFocusSkills[e1SkillIndex]?.name}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Select Skill</div>
                                             </div>
-
-                                            <button 
-                                                className="literal-target"
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setE1SkillIndex(p => (p + 1) % activeFocusSkills.length)}
                                             >›</button>
                                         </div>
                                     )}
 
                                     {energy1SubStep === 'aspects' && (
-                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                                            <button 
-                                                className="literal-target"
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '40px', padding: '40px 0' }}>
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setE1AspectIndex(p => (p - 1 + e1AspectsPool.length) % e1AspectsPool.length)}
                                             >‹</button>
-                                            
-                                            <div 
-                                                style={{ textAlign: 'center', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)' }}
+                                            <div
+                                                style={{ textAlign: 'left', width: '320px', cursor: 'pointer', padding: '40px', borderRadius: '24px', background: 'var(--alpha-low)', border: '1px solid var(--color-border)' }}
                                                 onClick={() => {
                                                     setE1SelectedAspectId(e1AspectsPool[e1AspectIndex].id);
                                                     setEnergy1SubStep('tasks');
                                                 }}
                                             >
-                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', margin: 0 }}>{e1AspectsPool[e1AspectIndex]?.name}</h1>
-                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' }}>Select Aspect</div>
+                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', margin: 0 }}>{e1AspectsPool[e1AspectIndex]?.name}</h1>
+                                                <div style={{ marginTop: '16px', fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Select Aspect</div>
                                             </div>
-
-                                            <button 
-                                                className="literal-target"
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setE1AspectIndex(p => (p + 1) % e1AspectsPool.length)}
                                             >›</button>
                                         </div>
                                     )}
 
                                     {energy1SubStep === 'tasks' && (
-                                        <div className="initiation-card" style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                                            <button 
-                                                className="literal-target"
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '40px', padding: '40px 0' }}>
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setE1TaskIndex(p => (p - 1 + e1TasksPool.length) % e1TasksPool.length)}
                                             >‹</button>
-                                            
-                                            <div style={{ textAlign: 'center', width: '320px' }}>
-                                                <div style={{ fontSize: '13px', fontWeight: 500, color: 'rgba(255,255,255,0.4)', marginBottom: '8px' }}>
-                                                    {e1TasksPool[e1TaskIndex]?.metadata?.mve ? `Task: ${e1TasksPool[e1TaskIndex].name}` : "Just open it for 2 minutes"}
+                                            <div style={{ textAlign: 'left', width: '320px' }}>
+                                                <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>
+                                                    {(e1TasksPool[e1TaskIndex]?.metadata?.mve || e1TasksPool[e1TaskIndex]?.mve) ? `Task: ${e1TasksPool[e1TaskIndex].name}` : "Just open it for 2 minutes"}
                                                 </div>
-                                                <h1 style={{ fontSize: '32px', color: 'var(--text-primary)', marginBottom: '24px' }}>{e1TasksPool[e1TaskIndex]?.metadata?.mve || e1TasksPool[e1TaskIndex]?.name}</h1>
-                                                <button 
-                                                    className="flow-primary-btn" 
+                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '24px', lineHeight: 1.2 }}>{(e1TasksPool[e1TaskIndex]?.metadata?.mve || e1TasksPool[e1TaskIndex]?.mve) || e1TasksPool[e1TaskIndex]?.name}</h1>
+                                                <button
+                                                    className="flow-primary-btn btn-touch-target visual-receipt-active"
+                                                    style={{ padding: '12px 32px', borderRadius: '8px', fontSize: '15px' }}
                                                     onClick={() => navigate('/focus', { state: { taskId: e1TasksPool[e1TaskIndex].id, autoStart: true } })}
                                                 >
                                                     Start 2-Minute Sprint
                                                 </button>
                                             </div>
-
-                                            <button 
-                                                className="literal-target"
+                                            <button
+                                                className="literal-target btn-touch-target visual-receipt-active"
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', fontSize: '24px', cursor: 'pointer' }}
                                                 onClick={() => setE1TaskIndex(p => (p + 1) % e1TasksPool.length)}
                                             >›</button>
                                         </div>
                                     )}
                                 </div>
+                                {energy1SubStep === 'initial' && (
+                                    <button
+                                        style={{ 
+                                            position: 'fixed',
+                                            bottom: '10vh',
+                                            left: 'calc(50% + 120px)',
+                                            transform: 'translateX(-50%)',
+                                            background: 'transparent', 
+                                            border: 'none', 
+                                            color: 'var(--text-tertiary)', 
+                                            textDecoration: 'underline', 
+                                            cursor: 'pointer', 
+                                            fontSize: '14px',
+                                            zIndex: 10
+                                        }}
+                                        onClick={() => setEnergy1SubStep('redirection')}
+                                    >
+                                        Not feeling this?
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <div className="golden-action-card">
