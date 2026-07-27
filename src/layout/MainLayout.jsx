@@ -423,54 +423,52 @@ const MainLayout = () => {
                         </div>
                         
                         {/* Appearance / Settings controls */}
-                        {energyLevel >= 3 && (
-                            <>
-                                {showCustomSwitch ? (
-                                    <div 
-                                        onDoubleClick={handleCustomSwitchDoubleClick}
-                                        title="Double click to switch back to normal theme controls"
-                                        style={{ display: 'flex', alignItems: 'center', height: '28px' }}
-                                    >
-                                        <CustomThemeSwitch
-                                            checked={themePreference === 'dark'}
-                                            onChange={handleCustomSwitchToggle}
-                                        />
-                                    </div>
-                                ) : (
-                                    <SegmentedControl
-                                        options={THEMES}
-                                        value={themePreference}
-                                        onChange={handleThemeChange}
-                                        layoutPrefix="theme"
-                                        buttonSize={28}
-                                        fontSize="0.8rem"
-                                        activePadding="0 12px"
+                        <div className={`header-appearance-controls ${energyLevel < 3 ? 'low-energy-dimmed' : ''}`}>
+                            {showCustomSwitch ? (
+                                <div 
+                                    onDoubleClick={handleCustomSwitchDoubleClick}
+                                    title="Double click to switch back to normal theme controls"
+                                    style={{ display: 'flex', alignItems: 'center', height: '28px' }}
+                                >
+                                    <CustomThemeSwitch
+                                        checked={themePreference === 'dark'}
+                                        onChange={handleCustomSwitchToggle}
                                     />
-                                )}
-                                
+                                </div>
+                            ) : (
                                 <SegmentedControl
-                                    options={MODES}
-                                    value={backgroundMode}
-                                    onChange={setBackgroundMode}
-                                    layoutPrefix="bg"
+                                    options={THEMES}
+                                    value={themePreference}
+                                    onChange={handleThemeChange}
+                                    layoutPrefix="theme"
                                     buttonSize={28}
                                     fontSize="0.8rem"
                                     activePadding="0 12px"
                                 />
+                            )}
+                            
+                            <SegmentedControl
+                                options={MODES}
+                                value={backgroundMode}
+                                onChange={setBackgroundMode}
+                                layoutPrefix="bg"
+                                buttonSize={28}
+                                fontSize="0.8rem"
+                                activePadding="0 12px"
+                            />
 
-                                <button onClick={() => navigate('/settings')} className="header-settings-btn-ghost" title="Settings">
-                                    <motion.div
-                                        whileHover={{ rotate: 90 }}
-                                        whileTap={{ rotate: 180 }}
-                                        animate={{ rotate: isSettingsOpen ? 90 : 0 }}
-                                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                    >
-                                        <Settings size={16} />
-                                    </motion.div>
-                                </button>
-                            </>
-                        )}
+                            <button onClick={() => navigate('/settings')} className="header-settings-btn-ghost" title="Settings">
+                                <motion.div
+                                    whileHover={{ rotate: 90 }}
+                                    whileTap={{ rotate: 180 }}
+                                    animate={{ rotate: isSettingsOpen ? 90 : 0 }}
+                                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <Settings size={16} />
+                                </motion.div>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>

@@ -357,6 +357,22 @@
     gap: 6px; /* Reduced by 50% to group appearance settings closer together */
 }
 
+.header-appearance-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-appearance-controls.low-energy-dimmed {
+    opacity: 0.25;
+}
+
+.header-appearance-controls.low-energy-dimmed:hover,
+.header-appearance-controls.low-energy-dimmed:focus-within {
+    opacity: 1;
+}
+
 .header-info-group {
     display: flex;
     align-items: center;
