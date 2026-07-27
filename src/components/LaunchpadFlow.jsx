@@ -1346,7 +1346,7 @@ const LaunchpadFlow = () => {
                 style={{
                     textAlign: 'left',
                     alignItems: 'flex-start',
-                    maxWidth: energyLevel >= 3 ? '1400px' : '640px'
+                    maxWidth: energyLevel >= 3 ? '1400px' : '820px'
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -1857,7 +1857,7 @@ const LaunchpadFlow = () => {
                                         const spotlightTask = e2SpotlightHabit ? null : (inProgressTask || energy2Pool[0]);
                                         const spotlightHabit = e2SpotlightHabit || ((!inProgressTask && !energy2Pool[0]) ? energy2HabitsPool[0] : null);
                                         return (
-                                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '600px', gap: '32px', fontFamily: "'Lexend', sans-serif" }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '800px', gap: '32px', fontFamily: "'Lexend', sans-serif" }}>
                                                 {/* SPOTLIGHT HERO CARD */}
                                                 <div>
                                                     {spotlightTask ? (
@@ -1927,8 +1927,8 @@ const LaunchpadFlow = () => {
                                                     </div>
                                                 )}
 
-                                                {/* REDIRECTION ESCAPE HATCH (Bottom Center placement) */}
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '16px' }}>
+                                                {/* REDIRECTION ESCAPE HATCH (Bottom Left placement) */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '16px' }}>
                                                     <button
                                                         className="btn-touch-target visual-receipt-active"
                                                         style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '15px' }}
