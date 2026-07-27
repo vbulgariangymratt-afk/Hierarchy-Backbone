@@ -1502,7 +1502,7 @@ const LaunchpadFlow = () => {
                                                                 <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
                                                                     {area?.name || 'Untitled Area'}
                                                                 </div>
-                                                                <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 12px 0', lineHeight: 1.2 }}>
+                                                                <h2 style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 12px 0', lineHeight: 1.2 }}>
                                                                     {task.name}
                                                                 </h2>
                                                                 <div style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 500, marginBottom: '20px' }}>
@@ -1820,7 +1820,7 @@ const LaunchpadFlow = () => {
                                     return (
                                         <div style={{ marginBottom: '32px' }}>
                                             <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
-                                            <h1 className="e5-title" style={{ margin: 0 }}>
+                                            <h1 className="e5-title" style={{ margin: 0, fontSize: '28px', fontWeight: 500 }}>
                                                 {currentSkill.metadata?.identityAnchor || currentSkill.name}
                                             </h1>
                                         </div>
@@ -1864,9 +1864,9 @@ const LaunchpadFlow = () => {
                                             <div style={{ display: 'flex', flexDirection: 'column', width: 'fit-content', gap: '24px', fontFamily: "'Lexend', sans-serif" }}>
                                                 {/* BECOMING HEADER — inside fit-content so card inherits same width */}
                                                 {initialSkill && (
-                                                    <div>
+                                                    <div style={{ marginBottom: '32px' }}>
                                                         <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
-                                                        <h1 className="e5-title" style={{ margin: 0 }}>
+                                                        <h1 className="e5-title" style={{ margin: 0, fontSize: '28px', fontWeight: 500 }}>
                                                             {initialSkill.metadata?.identityAnchor || initialSkill.name}
                                                         </h1>
                                                     </div>
@@ -1879,7 +1879,7 @@ const LaunchpadFlow = () => {
                                                             <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
                                                                 {(spotlightTask.metadata?.mve || spotlightTask.mve) ? `Task: ${spotlightTask.name}` : "Just open it for 2 minutes"}
                                                             </div>
-                                                            <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 20px 0', lineHeight: 1.2 }}>
+                                                            <h2 style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 20px 0', lineHeight: 1.2 }}>
                                                                 {(spotlightTask.metadata?.mve || spotlightTask.mve) || spotlightTask.name}
                                                             </h2>
                                                             <button
@@ -1894,7 +1894,7 @@ const LaunchpadFlow = () => {
                                                             <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
                                                                 Just open it for 2 minutes
                                                             </div>
-                                                            <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 20px 0', lineHeight: 1.2 }}>
+                                                            <h2 style={{ fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', margin: '0 0 20px 0', lineHeight: 1.2 }}>
                                                                 {spotlightHabit.phases?.[spotlightHabit.currentPhaseLevel]?.description || spotlightHabit.then || "Ready to maintain?"}
                                                             </h2>
                                                             <button
