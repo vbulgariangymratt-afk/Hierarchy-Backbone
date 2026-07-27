@@ -1857,7 +1857,7 @@ const LaunchpadFlow = () => {
                                         const spotlightTask = e2SpotlightHabit ? null : (inProgressTask || energy2Pool[0]);
                                         const spotlightHabit = e2SpotlightHabit || ((!inProgressTask && !energy2Pool[0]) ? energy2HabitsPool[0] : null);
                                         return (
-                                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '800px', gap: '32px', fontFamily: "'Lexend', sans-serif" }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '680px', gap: '32px', fontFamily: "'Lexend', sans-serif" }}>
                                                 {/* SPOTLIGHT HERO CARD */}
                                                 <div>
                                                     {spotlightTask ? (
