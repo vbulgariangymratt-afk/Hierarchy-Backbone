@@ -423,7 +423,7 @@ const MainLayout = () => {
                         </div>
                         
                         {/* Appearance / Settings controls */}
-                        {energyLevel > 3 && (
+                        {energyLevel >= 3 && (
                             <>
                                 {showCustomSwitch ? (
                                     <div 
