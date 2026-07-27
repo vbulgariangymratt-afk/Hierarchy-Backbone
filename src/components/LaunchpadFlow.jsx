@@ -1332,8 +1332,24 @@ const LaunchpadFlow = () => {
     const displayAction = selectedTask ? "Let's Go" : suggestion.action;
 
     return (
-        <div className="launchpad-flow-overlay" onClick={() => navigate('/planning')}>
-            <div className={`launchpad-flow-container ${energyLevel >= 3 ? 'high-energy-flow-layout' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div 
+            className="launchpad-flow-overlay" 
+            style={{
+                justifyContent: energyLevel >= 3 ? 'center' : 'flex-start',
+                paddingLeft: energyLevel >= 3 ? '24px' : '280px',
+                paddingTop: energyLevel >= 3 ? '80px' : '100px'
+            }}
+            onClick={() => navigate('/planning')}
+        >
+            <div 
+                className={`launchpad-flow-container ${energyLevel >= 3 ? 'high-energy-flow-layout' : ''}`} 
+                style={{
+                    textAlign: 'left',
+                    alignItems: 'flex-start',
+                    maxWidth: energyLevel >= 3 ? '1400px' : '640px'
+                }}
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Removed redundant energy step in favor of Sidebar selector */}
 
                 {step === 'action' && (
@@ -1847,10 +1863,10 @@ const LaunchpadFlow = () => {
                                                     {spotlightTask ? (
                                                         <div className="e5-card e5-card-hero visual-receipt-active cursor-target" onClick={() => navigate('/focus', { state: { taskId: spotlightTask.id, autoStart: true } })}>
                                                             <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                                                                {spotlightTask.metadata?.mve ? `Task: ${spotlightTask.name}` : "Just open it for 2 minutes"}
+                                                                {(spotlightTask.metadata?.mve || spotlightTask.mve) ? `Task: ${spotlightTask.name}` : "Just open it for 2 minutes"}
                                                             </div>
                                                             <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 20px 0', lineHeight: 1.2 }}>
-                                                                {spotlightTask.metadata?.mve || spotlightTask.name}
+                                                                {(spotlightTask.metadata?.mve || spotlightTask.mve) || spotlightTask.name}
                                                             </h2>
                                                             <button
                                                                 className="flow-primary-btn btn-touch-target visual-receipt-active"
@@ -2045,9 +2061,9 @@ const LaunchpadFlow = () => {
                                             >‹</button>
                                             <div style={{ textAlign: 'left', width: '320px' }}>
                                                 <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>
-                                                    {e2TasksPool[e2TaskIndex]?.metadata?.mve ? `Task: ${e2TasksPool[e2TaskIndex].name}` : "Just open it for 2 minutes"}
+                                                    {(e2TasksPool[e2TaskIndex]?.metadata?.mve || e2TasksPool[e2TaskIndex]?.mve) ? `Task: ${e2TasksPool[e2TaskIndex].name}` : "Just open it for 2 minutes"}
                                                 </div>
-                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '24px', lineHeight: 1.2 }}>{e2TasksPool[e2TaskIndex]?.metadata?.mve || e2TasksPool[e2TaskIndex]?.name}</h1>
+                                                <h1 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '24px', lineHeight: 1.2 }}>{(e2TasksPool[e2TaskIndex]?.metadata?.mve || e2TasksPool[e2TaskIndex]?.mve) || e2TasksPool[e2TaskIndex]?.name}</h1>
                                                 <button
                                                     className="flow-primary-btn btn-touch-target visual-receipt-active"
                                                     style={{ padding: '12px 32px', borderRadius: '8px', fontSize: '15px' }}
