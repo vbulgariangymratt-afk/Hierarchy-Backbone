@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useSettings, SLOT_ROLES } from '../context/SettingsContext';
 import { backbone, NodeTypes } from '../backbone-v2';
 import './FocusCenterPage.css';
@@ -16,7 +17,8 @@ import {
     Activity,
     Languages,
     Sparkles,
-    Heart
+    Heart,
+    ChevronRight
 } from 'lucide-react';
 
 const getSkillIcon = (skill, allLifeAreas, size = 24) => {
@@ -247,10 +249,15 @@ const FocusCenterPage = () => {
             {/* Skill Picker Modal */}
             {showPicker !== null && (
                 <div className="skill-picker-overlay" onClick={() => { setShowPicker(null); setSearchQuery(''); }}>
-                    <div className="skill-picker-modal" onClick={e => e.stopPropagation()}>
+                    <motion.div 
+                        layout 
+                        className="skill-picker-modal" 
+                        onClick={e => e.stopPropagation()}
+                        transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                    >
                         <header className="picker-header">
                             <div className="picker-title-group">
-                                <h3>{allSkills.length === 0 ? "Define an Obsession" : "Select a Skill"}</h3>
+                                <h3>{allSkills.length < 3 ? "Define an Obsession" : "Select a Skill"}</h3>
                             </div>
                             <button
                                 className="close-picker"
@@ -260,23 +267,28 @@ const FocusCenterPage = () => {
                             </button>
                         </header>
 
-                        {allSkills.length === 0 && searchQuery.trim() === '' && (
-                            <div style={{ padding: '20px 28px 0 28px', fontSize: '15px', color: 'var(--text-secondary)', fontFamily: "'Lexend', sans-serif", textAlign: 'left', lineHeight: '1.5' }}>
+                        {allSkills.length < 3 && searchQuery.trim() === '' && (
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.2 }}
+                                style={{ padding: '4px 28px 0 28px', fontSize: '15px', color: 'var(--text-secondary)', fontFamily: "'Lexend', sans-serif", textAlign: 'left', lineHeight: '1.5' }}
+                            >
                                 How would you title the page of the thing you're currently obsessed with?
-                            </div>
+                            </motion.div>
                         )}
 
-                        <div className="picker-search" style={allSkills.length === 0 && searchQuery.trim() === '' ? { borderBottom: 'none', padding: '16px 28px 28px 28px' } : {}}>
+                        <div className="picker-search" style={allSkills.length < 3 && searchQuery.trim() === '' ? { borderBottom: 'none', padding: '16px 28px 28px 28px' } : {}}>
                             <input
                                 ref={searchRef}
                                 type="text"
-                                placeholder={allSkills.length === 0 ? "e.g. Russian, Calisthenics, SaaS..." : "Search skills..."}
+                                placeholder={allSkills.length < 3 ? "e.g. Russian, Calisthenics, SaaS..." : "Search skills..."}
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                             />
                         </div>
 
-                        {!(allSkills.length === 0 && searchQuery.trim() === '') && (
+                        {!(allSkills.length < 3 && searchQuery.trim() === '') && (
                             <div className="skills-list">
                                 {/* Option to clear the slot */}
                                 {focusSlots[showPicker] && allSkills.some(s => s.id === focusSlots[showPicker]) && (
@@ -309,50 +321,29 @@ const FocusCenterPage = () => {
                                 null
                             ) : isDebouncing ? (
                                 <div className="no-skills-found" style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-tertiary)', fontFamily: "'Lexend', sans-serif", fontSize: '15px' }}>
-                                    Searching...
+                                    {allSkills.length < 3 ? "1 second pls" : "Searching..."}
                                 </div>
                             ) : (
-                                <div className="become-flow-container" style={{ padding: '24px 0 0 0', fontFamily: "'Lexend', sans-serif" }}>
+                                <motion.div 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.2, delay: 0.05 }}
+                                    className="become-flow-container" 
+                                    style={{ padding: '4px 0 0 0', fontFamily: "'Lexend', sans-serif" }}
+                                >
                                     <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                                         <p style={{ margin: 0, fontSize: '16px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'left', fontFamily: "'Lexend', sans-serif" }}>
-                                            <strong>"Obsessions"</strong> is a status for skills, which live inside an identity.
+                                            <strong>"Obsession"</strong> is a status for skills, which live inside an identity.
                                         </p>
                                         <p style={{ margin: 0, fontSize: '16px', color: 'var(--text-secondary)', lineHeight: '1.6', textAlign: 'left', fontFamily: "'Lexend', sans-serif" }}>
-                                            For example if you were obsessed with language learning, you'd be <strong>"bilingual"</strong> or <strong>"a polyglot"</strong>. If you're obsessed with building and selling apps, you'd be a <strong>"software developer"</strong> or <strong>"an entrepreneur"</strong>.
+                                            If you were obsessed with language learning, you'd be <strong>"A polyglot"</strong>. If you're obsessed with building and selling apps, you'd be a <strong>"Software developer"</strong>.
                                         </p>
                                         <h4 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '8px 0 0 0', textAlign: 'left', lineHeight: '1.5', fontFamily: "'Lexend', sans-serif" }}>
                                             Who do you wanna become in relation to this obsession?
                                         </h4>
                                     </div>
 
-                                    {allLifeAreas.length > 0 && (
-                                        <div className="identity-options-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginBottom: '16px' }}>
-                                            {allLifeAreas.map(area => (
-                                                <button
-                                                    key={area.id}
-                                                    type="button"
-                                                    className="identity-option-btn"
-                                                    onClick={() => handleCreateSkillAndArea(searchQuery, area.name, area.id)}
-                                                    style={{
-                                                        padding: '12px 16px',
-                                                        borderRadius: '8px',
-                                                        background: 'var(--alpha-low)',
-                                                        border: '1px solid var(--color-border)',
-                                                        color: 'var(--text-primary)',
-                                                        textAlign: 'left',
-                                                        fontFamily: "'Lexend', sans-serif",
-                                                        fontSize: '16px',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s'
-                                                    }}
-                                                >
-                                                    I am becoming a <strong>{area.name}</strong>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left', marginBottom: '16px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
                                             <input
                                                 type="text"
@@ -393,11 +384,43 @@ const FocusCenterPage = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+
+                                    {allLifeAreas.length > 0 && (
+                                        <div className="identity-options-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                                            {allLifeAreas.map(area => (
+                                                <button
+                                                    key={area.id}
+                                                    type="button"
+                                                    className="identity-option-btn"
+                                                    onClick={() => handleCreateSkillAndArea(searchQuery, area.name, area.id)}
+                                                    style={{
+                                                        padding: '12px 16px',
+                                                        borderRadius: '8px',
+                                                        background: 'var(--alpha-low)',
+                                                        border: '1px solid var(--color-border)',
+                                                        color: 'var(--text-primary)',
+                                                        textAlign: 'left',
+                                                        fontFamily: "'Lexend', sans-serif",
+                                                        fontSize: '16px',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        width: '100%',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <span>I am becoming a <strong>{area.name}</strong></span>
+                                                    <ChevronRight size={16} style={{ opacity: 0.6, color: 'var(--color-accent)' }} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </motion.div>
                             )}
                         </div>
                     )}
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>

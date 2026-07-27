@@ -284,7 +284,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 16px 0 100px; /* 100px left padding for macOS traffic lights, 16px right padding to align with corner bounds */
-    background: var(--color-bg-sidebar-solid);
+    background: var(--color-bg-main);
     border-bottom: 1px solid var(--color-border);
     z-index: 999999 !important;
     box-sizing: border-box;
@@ -309,12 +309,14 @@
     -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
 }
 
-.light.solid-mode .app-header {
+/* Mirror sidebar's exact selectors so the header resolves the same token value */
+[data-theme="light"][data-background-mode="solid"] .app-header {
     background: var(--color-bg-sidebar-solid) !important;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
 [data-theme="dark"][data-background-mode="solid"] .app-header {
+    background: var(--color-bg-sidebar-solid) !important;
     border-bottom: 1px solid !important;
     border-image: linear-gradient(to right, 
         rgba(255, 255, 255, 0.28) 0%, 

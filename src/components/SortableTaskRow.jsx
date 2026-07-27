@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
@@ -50,6 +50,19 @@ const SortableTaskRow = React.memo(({
         id: task.id,
         data: { type: 'TASK', task }
     });
+
+    const isNewUser = useMemo(() => {
+        if (!allNodes) return false;
+        let completedSessions = 0;
+        allNodes.forEach(node => {
+            if (node.type === 'TASK' && node.metadata?.sessions) {
+                node.metadata.sessions.forEach(s => {
+                    if (s.status === 'completed') completedSessions++;
+                });
+            }
+        });
+        return completedSessions === 0;
+    }, [allNodes]);
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -241,8 +254,20 @@ const SortableTaskRow = React.memo(({
                 <div className="task-actions-col">
                     {!isDone && !isLocked && (
                         <span
-                            className={`task-today-badge ${task.metadata?.isToday ? 'active' : ''} ${task.metadata?.tomorrow ? 'tomorrow' : ''}`}
-                            onClick={(e) => onAddToToday(e, task.id)}
+                            className={`task-today-badge ${task.metadata?.isToday ? 'active' : ''} ${task.metadata?.tomorrow ? 'tomorrow' : ''} ${isNewUser && !task.metadata?.isToday && !task.metadata?.tomorrow ? 'new-user-guide' : ''}`}
+                            onClick={(e) => {
+                                const isWillBeToday = !task.metadata?.isToday && !task.metadata?.tomorrow;
+                                onAddToToday(e, task.id);
+                                if (isNewUser && isWillBeToday) {
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    window.dispatchEvent(new CustomEvent('trigger-focus-orb', {
+                                        detail: {
+                                            startX: rect.left + rect.width / 2,
+                                            startY: rect.top + rect.height / 2
+                                        }
+                                    }));
+                                }
+                            }}
                         >
                             {task.metadata?.tomorrow ? 'Tomorrow' : (task.metadata?.isToday ? 'Today' : 'Add to Today')}
                         </span>

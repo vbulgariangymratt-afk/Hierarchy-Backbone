@@ -124,6 +124,12 @@ const ObjectiveCard = ({
     allNodes,
     mveFocusTask
 }) => {
+    const isFirstExperiment = useMemo(() => {
+        if (!allNodes) return true;
+        const objectives = allNodes.filter(n => n.type === NodeTypes.OBJECTIVE || n.type === 'OBJECTIVE');
+        return objectives.length <= 1;
+    }, [allNodes]);
+
     if (isEditing) {
         return (
             <div className="experiment-edit-container" key={obj.id}>
@@ -381,11 +387,15 @@ const ObjectiveCard = ({
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '40px', padding: '12px 0 24px 0' }}>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', flex: 1 }}>
                                                              <div style={{ lineHeight: '1.4' }}>
-                                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>Wish</span>
+                                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>
+                                                                    Wish {!obj.metadata?.wish && isFirstExperiment && <span style={{ fontSize: '11px', opacity: 0.7 }}>(optional)</span>}
+                                                                </span>
                                                                 <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.wish || "How do you wanna feel when working on this?"}</span>
                                                             </div>
                                                             <div style={{ lineHeight: '1.4' }}>
-                                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>Outcome</span>
+                                                                <span style={{ color: 'var(--text-tertiary)', fontWeight: '400', marginRight: '8px', userSelect: 'none' }}>
+                                                                    Outcome {!obj.metadata?.outcome && isFirstExperiment && <span style={{ fontSize: '11px', opacity: 0.7 }}>(optional)</span>}
+                                                                </span>
                                                                 <span style={{ color: 'var(--text-secondary)' }}>{obj.metadata?.outcome || "Is there a measurable outcome for you to call 'success'?"}</span>
                                                             </div>
                                                         </div>

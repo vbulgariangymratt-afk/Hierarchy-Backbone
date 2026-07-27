@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy, useMemo } from 'react';
 import { Outlet, useLocation, useNavigate, Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 
@@ -18,6 +18,7 @@ import SettingsPage from '../pages/SettingsPage';
 import JournalPage from '../pages/JournalPage';
 import Counter from '../components/ui/Counter';
 import CustomThemeSwitch from '../components/ui/CustomThemeSwitch';
+import FlyingOrbsOverlay from '../components/ui/FlyingOrbsOverlay';
 import './MainLayout.css';
 
 
@@ -230,6 +231,10 @@ const MainLayout = () => {
     const [showGlobalSearch, setShowGlobalSearch] = useState(false);
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
     const allNodes = useBackboneStore(state => state.nodes);
+    const systemTasksCount = useMemo(() => {
+        if (!allNodes) return 0;
+        return allNodes.filter(n => n.type === NodeTypes.TASK).length;
+    }, [allNodes]);
 
     const openLaunchpad = useCallback((skill) => {
         setSelectedSkill(skill);
@@ -309,19 +314,21 @@ const MainLayout = () => {
                     {energyLevel >= 3 && (
                         <div className="header-info-group">
                             {/* Search icon */}
-                            <button
-                                onClick={() => setShowGlobalSearch(true)}
-                                className="header-daily-log-btn-ghost cursor-target"
-                                title="Search for a task"
-                            >
-                                <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            {systemTasksCount > 3 && (
+                                <button
+                                    onClick={() => setShowGlobalSearch(true)}
+                                    className="header-daily-log-btn-ghost cursor-target"
+                                    title="Search for a task"
                                 >
-                                    <Search size={16} />
-                                </motion.div>
-                            </button>
+                                    <motion.div
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                        <Search size={16} />
+                                    </motion.div>
+                                </button>
+                            )}
 
                             {/* Future Self button */}
                             {(energyLevel === 5 || energyLevel === 4) && (
@@ -410,8 +417,12 @@ const MainLayout = () => {
                                             transition={{ type: 'spring', stiffness: 700, damping: 20 }}
                                         >
                                             <div className="daily-log-popover-header">
-                                                <h3>Daily Log</h3>
-                                                <button className="close-popover-btn" onClick={() => setShowDailyLog(false)}>✕</button>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                    <h3>Daily Log</h3>
+                                                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: '400', lineHeight: '1.4', maxWidth: '100%' }}>
+                                                        Actually useful performance predictors for our adhd brains. I'll add AI pattern detection in the next update.
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="daily-log-popover-content scrollbar-hidden">
                                                 <JournalPage />
@@ -680,6 +691,10 @@ const MainLayout = () => {
                 document.body
             )}
 
+            {createPortal(
+                <FlyingOrbsOverlay />,
+                document.body
+            )}
         </div>
     );
 };

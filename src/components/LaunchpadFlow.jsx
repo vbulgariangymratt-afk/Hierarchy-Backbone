@@ -58,6 +58,11 @@ const LaunchpadFlow = () => {
         return new Map(allNodes.map(n => [n.id, n]));
     }, [allNodes]);
 
+    const totalTasksCount = useMemo(() => {
+        if (!allNodes) return 0;
+        return allNodes.filter(n => n.type === NodeTypes.TASK).length;
+    }, [allNodes]);
+
     const aspectStats = useMemo(() => getAspectStats(allNodes), [allNodes]);
 
     const getSkillFromTask = useCallback((task, map) => {
@@ -851,14 +856,7 @@ const LaunchpadFlow = () => {
 
     const handleStartTask = (task) => {
         if (!task) return;
-        setPendingTask(task);
-        setShowPleasureModal(true);
-    };
-
-    const confirmStartTask = (expectedPleasure) => {
-        if (!pendingTask) return;
-        console.log(`Starting task ${pendingTask.name} with expected pleasure: ${expectedPleasure}`);
-        navigate('/focus', { state: { taskId: pendingTask.id, expectedPleasure, autoStart: true } });
+        navigate('/focus', { state: { taskId: task.id } });
     };
 
     const topActiveExperiments = useMemo(() => {
@@ -1258,61 +1256,19 @@ const LaunchpadFlow = () => {
 
 
     if (!allNodes || allNodes.length === 0 || tasks.length === 0) {
-        const text = "The launchpad acts as your prosthetic frontal lobes, once you dump your activities into Backbone, it will only show you what you can handle at the moment based on how much energy you got (1-5 slider)";
-        const bionicText = text.split(' ').map((word, i) => {
-            if (!word) return null;
-            const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-            if (cleanWord.length === 0) return <span key={i}>{word} </span>;
-            
-            const boldLen = Math.max(1, Math.ceil(cleanWord.length * 0.45));
-            let charIndex = 0;
-            let letterCount = 0;
-            while (charIndex < word.length && letterCount < boldLen) {
-                if (/[a-zA-Z0-9]/.test(word[charIndex])) {
-                    letterCount++;
-                }
-                charIndex++;
-            }
-            
-            const bold = word.slice(0, charIndex);
-            const rest = word.slice(charIndex);
-            
-            return (
-                <span key={i} style={{ display: 'inline-block', marginRight: '0.28em' }}>
-                    <strong>{bold}</strong>{rest}
-                </span>
-            );
-        });
-
         return (
-            <div className="launchpad-flow-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '40px', fontFamily: 'Lexend, sans-serif' }}>
-                <div className="launchpad-empty-state" style={{
-                    maxWidth: '560px',
-                    padding: '48px 32px',
-                    borderRadius: '24px',
-                    background: 'linear-gradient(145deg, var(--alpha-medium) 0%, var(--alpha-low) 100%)',
-                    border: '1px solid var(--color-border)',
-                    boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'stretch',
-                    gap: '24px',
-                    fontFamily: 'Lexend, sans-serif'
+            <div className="launchpad-flow-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '85vh', padding: '40px' }}>
+                <div style={{
+                    fontSize: '16px',
+                    color: 'var(--text-secondary, #708090)',
+                    fontFamily: "'Lexend', sans-serif",
+                    fontWeight: 400,
+                    textAlign: 'center',
+                    opacity: 0.85,
+                    letterSpacing: '0.02em',
+                    lineHeight: '1.5'
                 }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', margin: 0, lineHeight: 1.4, fontFamily: 'Lexend, sans-serif', textAlign: 'center' }}>
-                        Your Launchpad is Empty
-                    </h2>
-                    <p style={{ 
-                        fontSize: '16px', 
-                        lineHeight: '1.65', 
-                        color: 'var(--text-secondary)', 
-                        margin: 0,
-                        fontWeight: 400,
-                        fontFamily: 'Lexend, sans-serif',
-                        textAlign: 'left'
-                    }}>
-                        {bionicText}
-                    </p>
+                    this will be the last self management app you'll ever need ;)
                 </div>
             </div>
         );
@@ -1457,6 +1413,18 @@ const LaunchpadFlow = () => {
                                             {/* HEADER */}
                                             <h1 className="e5-title">
                                                 Come here when you don't know what to do but want to do something
+                                                {totalTasksCount <= 2 && (
+                                                    <div className="e5-helper-note" style={{
+                                                        fontSize: '14px',
+                                                        color: 'var(--text-secondary, #708090)',
+                                                        marginTop: '8px',
+                                                        fontWeight: 'normal',
+                                                        textTransform: 'none',
+                                                        letterSpacing: 'normal'
+                                                    }}>
+                                                        (Click a task to start it in Focus Mode when you are ready)
+                                                    </div>
+                                                )}
                                             </h1>
                                             {highEnergyTasks.length > 0 && (
                                                 <p className="e5-subtitle">
@@ -3417,48 +3385,7 @@ const LaunchpadFlow = () => {
                 )}
             </div>
 
-            {/* PLEASURE PREDICTION MODAL */}
-            {showPleasureModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ maxWidth: '400px', width: '90%', textAlign: 'center' }}>
-                        <h2 style={{ fontSize: '24px', color: '#fff', marginBottom: '8px' }}>How much do you expect to enjoy this?</h2>
-                        <p style={{ color: '#666', fontSize: '14px', marginBottom: '32px' }}>Estimate the pleasure or satisfaction of completing {pendingTask?.name}.</p>
-                        
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '40px' }}>
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                                <button
-                                    key={num}
-                                    onClick={() => {
-                                        setShowPleasureModal(false);
-                                        confirmStartTask(num);
-                                    }}
-                                    style={{ 
-                                        background: '#222', 
-                                        border: '1px solid #333', 
-                                        color: '#fff', 
-                                        padding: '16px 0', 
-                                        borderRadius: '12px', 
-                                        fontSize: '18px', 
-                                        fontWeight: 700,
-                                        cursor: 'pointer'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#333'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = '#222'}
-                                >
-                                    {num}
-                                </button>
-                            ))}
-                        </div>
 
-                        <button 
-                            style={{ background: 'transparent', border: 'none', color: '#444', fontSize: '14px', cursor: 'pointer' }}
-                            onClick={() => setShowPleasureModal(false)}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
             {/* FUTURE SELF TOAST */}
             {showFutureSelfToast && (
                 <div style={{

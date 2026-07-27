@@ -56,7 +56,7 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
 
             if (!aspect) {
                 aspect = await backbone.addNode({
-                    name: "General",
+                    name: "One way I can tackle this experiment",
                     type: NodeTypes.ASPECT,
                     parentId: objective.id,
                     metadata: {
@@ -72,7 +72,7 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
                 parentId: aspect.id,
                 metadata: {
                     status: TaskStatuses.IN_PROGRESS,
-                    isToday: true,
+                    isToday: false,
                     itemType: 'REPETITION',
                     type: 'REPETITION',
                     unitName: 'times',
@@ -84,8 +84,8 @@ const MiniLaunchpadModal = ({ isOpen, onClose, skill }) => {
 
             setQuickTaskName("");
             
-            // 4. Navigate to focus mode with the new task id AND autoStart flag
-            navigate('/focus', { state: { taskId: newTask.id, autoStart: true, returnRoute: `/skill/${skill.id}` } });
+            // 4. Navigate to the skill page
+            navigate(`/skill/${skill.id}`);
             onClose();
         } catch (err) {
             console.error("Failed to create quick task:", err);

@@ -404,3 +404,14 @@
 @keyframes fc-spin {
     to { transform: rotate(360deg); }
 }
+
+.identity-option-btn {
+    transition: all 0.2s ease-in-out !important;
+}
+
+.identity-option-btn:hover {
+    background: var(--color-bg-hover) !important;
+    border-color: var(--color-accent) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--color-accent-alpha-low, rgba(94, 106, 210, 0.15));
+}

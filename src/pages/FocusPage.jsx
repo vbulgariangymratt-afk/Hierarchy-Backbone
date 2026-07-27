@@ -145,8 +145,25 @@ const FocusPage = () => {
         energyLevel
     } = useSession();
 
-    const exitRoute = location.state?.returnRoute || previousRoute || '/launchpad';
+    const isNewUser = React.useMemo(() => {
+        if (!allNodes || allNodes.length === 0) return false;
+        let completedSessions = 0;
+        allNodes.forEach(node => {
+            if (node.type === 'TASK' && node.metadata?.sessions) {
+                node.metadata.sessions.forEach(s => {
+                    if (s.status === 'completed') completedSessions++;
+                });
+            }
+        });
+        return completedSessions === 0;
+    }, [allNodes]);
+
+    const exitRoute = isNewUser ? '/launchpad' : (location.state?.returnRoute || previousRoute || '/launchpad');
     const { todayRemovalMode } = useSettings();
+    useEffect(() => {
+        localStorage.setItem('has_visited_focus_mode', 'true');
+        window.dispatchEvent(new CustomEvent('focus-mode-visited'));
+    }, []);
 
 
     useEffect(() => {
@@ -1188,6 +1205,23 @@ const FocusPage = () => {
                         )}
                     </div>
                     
+                    {isNewUser && (
+                        <p className="focus-new-user-note" style={{
+                            fontSize: '15px',
+                            color: 'var(--text-secondary, #708090)',
+                            marginTop: '8px',
+                            marginBottom: '24px',
+                            lineHeight: '1.5',
+                            textAlign: 'center',
+                            fontFamily: "'Lexend', sans-serif",
+                            maxWidth: '480px',
+                            marginLeft: 'auto',
+                            marginRight: 'auto'
+                        }}>
+                            Come here when you want to work on a task, the timer will help your brain.
+                        </p>
+                    )}
+                    
 
 
                     <AnimatePresence>
@@ -1720,7 +1754,7 @@ const FocusPage = () => {
             )}
 
             <button 
-                className={`focus-save-energy-btn ${task.metadata?.highEnergy ? 'saved' : ''}`}
+                className={`focus-save-energy-btn ${task.metadata?.highEnergy ? 'saved' : ''} ${isNewUser && !task.metadata?.highEnergy ? 'pulse-breathe' : ''}`}
                 onClick={handleSaveForHighEnergy}
                 disabled={task.metadata?.highEnergy === true}
             >

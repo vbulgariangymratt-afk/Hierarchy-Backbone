@@ -207,6 +207,22 @@
     cursor: default;
 }
 
+.focus-save-energy-btn.pulse-breathe {
+    opacity: 1 !important;
+    animation: focus-button-blink 1.6s infinite ease-in-out !important;
+    border-color: var(--color-accent, #5E6AD2) !important;
+    color: var(--color-accent, #5E6AD2) !important;
+}
+
+@keyframes focus-button-blink {
+    0%, 100% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
 .focus-footer {
     width: 100%;
     max-width: 600px;

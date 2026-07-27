@@ -183,6 +183,12 @@
     transform: scale(0.96) !important;
 }
 
+.focus-toggle-btn.pulse-breathe {
+    animation: gear-blink 1.6s infinite ease-in-out !important;
+    border-color: var(--color-accent, #5E6AD2) !important;
+    box-shadow: 0 0 12px var(--color-accent-alpha-low, rgba(94, 106, 210, 0.25)) !important;
+}
+
 .btn-icon {
     font-size: 20px;
     display: flex;
@@ -196,6 +202,10 @@
 }
 
 .btn-icon.pulse-breathe {
+    animation: gear-blink 1.6s infinite ease-in-out;
+}
+
+.slot-nav-item.pulse-breathe {
     animation: gear-blink 1.6s infinite ease-in-out;
 }
 
@@ -1404,6 +1414,22 @@
    margin-top: 28px !important; /* Spacing scale: 28px separation between Status control valve and Navigation deck */
 }
 
+/* Onboarding Overrides: Shift navigation deck up when energy slider is hidden */
+.sidebar.no-energy-slider .mode-toggle-row {
+   margin-bottom: 12px !important;
+}
+.sidebar.no-energy-slider .sidebar-nav {
+   margin-top: 12px !important;
+}
+
+/* Tight Stack: Shift flush when both energy slider and focus button are hidden */
+.sidebar.no-energy-slider.focus-button-hidden .mode-toggle-row {
+   margin-bottom: 0 !important;
+}
+.sidebar.no-energy-slider.focus-button-hidden .sidebar-nav {
+   margin-top: 2px !important;
+}
+
 .light.solid-mode .sidebar,
 .light .sidebar:not(.liquid-mode):not(.wallpaper-mode) {
     background: #ffffff !important;
@@ -1732,6 +1758,14 @@
     opacity: 1 !important;
 }
 
+/* Ensure grey status dots are visible as charcoal/dark grey in light themes */
+.liquid-mode.light .sidebar .health-dot.grey,
+.solid-mode.light .sidebar .health-dot.grey,
+.wallpaper-mode.light .sidebar .health-dot.grey {
+    background-color: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
 /* Universal Button Text Sync (Go to focus mode) */
 .mode-toggle-icon {
     width: 24px !important;
@@ -1896,6 +1930,10 @@
     justify-content: center;
 }
 
+.sidebar.capture-open {
+    z-index: 10005 !important;
+}
+
 .quick-capture-popover {
     position: absolute;
     top: 48px;
@@ -1906,7 +1944,7 @@
     border-radius: 16px;
     padding: 14px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 999;
+    z-index: 10006;
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -2066,8 +2104,62 @@
     overflow: visible !important;
 }
 
+.capture-toggle-btn.single-button {
+    justify-content: flex-start !important;
+    padding-left: 12px !important;
+    gap: 10px !important;
+}
+
+.capture-toggle-btn.single-button .btn-text {
+    flex-grow: 0 !important;
+    text-align: left !important;
+}
+
 .liquid-mode .capture-badge,
 .wallpaper-mode .capture-badge {
     color: #111111;
 }
 
+/* ── Energy Level First-Use Tooltip ── */
+.energy-explain-tooltip {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: 'Lexend', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #222222; /* Soft charcoal text */
+    width: 200px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    pointer-events: none;
+    line-height: 1.4;
+    text-align: left;
+    animation: tooltip-fade-in 0.2s ease-out forwards;
+}
+
+/* Tooltip arrow pointing left */
+.energy-explain-tooltip::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border-left: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+@keyframes tooltip-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}

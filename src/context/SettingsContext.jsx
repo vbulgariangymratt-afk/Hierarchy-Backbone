@@ -56,7 +56,7 @@ const _cache = {
     maintenanceSkillIds: [],
     maintenanceEnabled: true,
     guidedSlotRoles: true,
-    energyLevel: 5,
+    energyLevel: parseInt(localStorage.getItem('app-energy-level')) || 3,
     activeExperimentLimit: 1,
     dbSupportsExperimentLimit: true, // Track if column exists to avoid save errors
     healthDotStyle: localStorage.getItem('app-health-dot-style') || 'glowing',
@@ -138,7 +138,7 @@ export const SettingsProvider = ({ children }) => {
                     maintenance_skill_ids: [],
                     maintenance_enabled: true,
                     guided_slot_roles: true,
-                    energy_level: 5,
+                    energy_level: 3,
                     is_whitelisted: false,
                     trial_start_at: new Date().toISOString(),
                     subscription_status: null,
@@ -197,7 +197,8 @@ export const SettingsProvider = ({ children }) => {
                 _cache.maintenanceSkillIds = data.maintenance_skill_ids || [];
                 _cache.maintenanceEnabled = data.maintenance_enabled !== undefined ? data.maintenance_enabled : true;
                 _cache.guidedSlotRoles = data.guided_slot_roles !== undefined ? data.guided_slot_roles : true;
-                _cache.energyLevel = data.energy_level !== undefined ? data.energy_level : 5;
+                _cache.energyLevel = data.energy_level !== undefined && data.energy_level !== null ? data.energy_level : (parseInt(localStorage.getItem('app-energy-level')) || 3);
+                localStorage.setItem('app-energy-level', _cache.energyLevel.toString());
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
@@ -311,6 +312,7 @@ export const SettingsProvider = ({ children }) => {
         const clampedLevel = Math.max(1, Math.min(5, level));
         _cache.energyLevel = clampedLevel;
         setEnergyLevel(clampedLevel);
+        localStorage.setItem('app-energy-level', clampedLevel.toString());
         saveSettings({ energy_level: clampedLevel });
     };
 

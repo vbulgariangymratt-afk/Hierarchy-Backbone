@@ -73,6 +73,17 @@ const Sidebar = ({ onSkillClick }) => {
     const [isScrolling, setIsScrolling] = useState(false);
     const [glowingNodeId, setGlowingNodeId] = useState(null);
     const scrollTimeoutRef = useRef(null);
+    const [showEnergyToast, setShowEnergyToast] = useState(false);
+    const energyToastTimerRef = useRef(null);
+    const energySelectorRef = useRef(null);
+    const [tooltipTop, setTooltipTop] = useState(0);
+
+    useEffect(() => {
+        if (showEnergyToast && energySelectorRef.current) {
+            const rect = energySelectorRef.current.getBoundingClientRect();
+            setTooltipTop(rect.top + rect.height / 2);
+        }
+    }, [showEnergyToast]);
 
     // --- QUICK CAPTURE STATE & HANDLERS ---
     const [showCapture, setShowCapture] = useState(false);
@@ -226,6 +237,24 @@ const Sidebar = ({ onSkillClick }) => {
         currencyName
     } = useSettings();
 
+    const systemTasksCount = useMemo(() => {
+        if (!allNodes) return 0;
+        return allNodes.filter(n => n.type === 'TASK').length;
+    }, [allNodes]);
+
+    const handleEnergyClick = useCallback((level) => {
+        updateEnergyLevel(level);
+        const hasFewTasks = systemTasksCount <= 1;
+        const alreadyExplained = localStorage.getItem('backbone_energy_slider_explained');
+        
+        if (!alreadyExplained || hasFewTasks) {
+            localStorage.setItem('backbone_energy_slider_explained', 'true');
+            setShowEnergyToast(true);
+            if (energyToastTimerRef.current) clearTimeout(energyToastTimerRef.current);
+            energyToastTimerRef.current = setTimeout(() => setShowEnergyToast(false), 3000);
+        }
+    }, [updateEnergyLevel, systemTasksCount]);
+
     // --- LEVEL UP LISTENER ---
     useEffect(() => {
         const handleLevelUp = (e) => {
@@ -310,11 +339,64 @@ const Sidebar = ({ onSkillClick }) => {
         return maintenanceSkills.length === 0;
     }, [maintenanceSkills]);
 
-    // Blink the Launchpad when: obsession exists but no tasks created yet (step 2 of onboarding)
-    const shouldBlinkLaunchpad = useMemo(() => {
-        if (isEmptyObsessions) return false; // Step 1 not done yet
-        return !allNodes.some(n => n.type === 'TASK');
-    }, [isEmptyObsessions, allNodes]);
+    // Map which skills have tasks created under them
+    const skillsWithTasksMap = useMemo(() => {
+        const map = {};
+        if (!allNodes) return map;
+        allNodes.forEach(node => {
+            if (node.type === 'TASK' && node.parentId) {
+                const aspect = allNodes.find(a => a.id === node.parentId && a.type === 'ASPECT');
+                if (aspect && aspect.parentId) {
+                    const objective = allNodes.find(o => o.id === aspect.parentId && o.type === 'OBJECTIVE');
+                    if (objective && objective.parentId) {
+                        map[objective.parentId] = true;
+                    }
+                }
+            }
+        });
+        return map;
+    }, [allNodes]);
+
+    const [isPopping, setIsPopping] = useState(false);
+    const [hasVisitedFocus, setHasVisitedFocus] = useState(
+        () => !!localStorage.getItem('has_visited_focus_mode')
+    );
+
+    useEffect(() => {
+        const handleLand = () => {
+            setIsPopping(true);
+            setTimeout(() => setIsPopping(false), 500);
+        };
+        const handleFocusVisited = () => {
+            setHasVisitedFocus(true);
+        };
+        window.addEventListener('focus-orb-landed', handleLand);
+        window.addEventListener('focus-mode-visited', handleFocusVisited);
+        return () => {
+            window.removeEventListener('focus-orb-landed', handleLand);
+            window.removeEventListener('focus-mode-visited', handleFocusVisited);
+        };
+    }, []);
+
+    const isNewUser = useMemo(() => {
+        if (!allNodes) return false;
+        let completedSessions = 0;
+        allNodes.forEach(node => {
+            if (node.type === 'TASK' && node.metadata?.sessions) {
+                node.metadata.sessions.forEach(s => {
+                    if (s.status === 'completed') completedSessions++;
+                });
+            }
+        });
+        return completedSessions === 0;
+    }, [allNodes]);
+
+    const hasTodayTasks = useMemo(() => {
+        if (!allNodes) return false;
+        return allNodes.some(n => n.type === 'TASK' && n.metadata?.isToday);
+    }, [allNodes]);
+
+    const shouldBlinkFocus = isNewUser && hasTodayTasks && !isFocusMode && !hasVisitedFocus;
 
     // ---------------------------------------------------------------------------
     // PILOT LIGHT DRAWER — compute spotlight and pilot light habits
@@ -501,25 +583,34 @@ const Sidebar = ({ onSkillClick }) => {
     };
 
     return (
-        <aside className={`sidebar ${backgroundMode}-mode ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''}`} data-tauri-drag-region>
+        <aside className={`sidebar ${backgroundMode}-mode ${isFocusMode ? 'mode-focus' : 'mode-planning'} energy-level-${energyLevel} ${energyLevel <= 2 ? 'low-energy-ghosting' : ''} ${systemTasksCount === 0 ? 'no-energy-slider' : ''} ${showCapture ? 'capture-open' : ''} ${!hasTodayTasks && !isFocusMode ? 'focus-button-hidden' : ''}`} data-tauri-drag-region>
             <div className={`sidebar-scroll-content ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
                 <div className="sidebar-top">
                     {energyLevel > 1 && (
                         <div className="mode-toggle-row">
+                            {(hasTodayTasks || isFocusMode) && (
+                                <motion.button
+                                    className={`btn btn-ghost focus-toggle-btn ${shouldBlinkFocus ? 'pulse-breathe' : ''}`}
+                                    onClick={toggleMode}
+                                    disabled={storeLoading}
+                                    animate={{
+                                        scale: isPopping ? [1, 1.15, 0.95, 1.05, 1] : 1
+                                    }}
+                                    transition={{
+                                        duration: 0.5,
+                                        ease: "easeInOut"
+                                    }}
+                                >
+                                    <div className="btn-icon mode-toggle-icon">
+                                        {isFocusMode ? <Target size={14} /> : <ClipboardList size={14} />}
+                                    </div>
+                                    <span className="btn-text">
+                                        {isFocusMode ? 'Planning' : 'Focus'}
+                                    </span>
+                                </motion.button>
+                            )}
                             <button
-                                className="btn btn-ghost focus-toggle-btn"
-                                onClick={toggleMode}
-                                disabled={storeLoading}
-                            >
-                                <div className="btn-icon mode-toggle-icon">
-                                    {isFocusMode ? <Target size={14} /> : <ClipboardList size={14} />}
-                                </div>
-                                <span className="btn-text">
-                                    {isFocusMode ? 'Planning' : 'Focus'}
-                                </span>
-                            </button>
-                            <button
-                                className={`btn btn-ghost capture-toggle-btn ${showCapture ? 'active' : ''}`}
+                                className={`btn btn-ghost capture-toggle-btn ${showCapture ? 'active' : ''} ${!(hasTodayTasks || isFocusMode) ? 'single-button' : ''}`}
                                 style={{ position: 'relative' }}
                                 onClick={() => {
                                     if (showCapture) {
@@ -543,55 +634,57 @@ const Sidebar = ({ onSkillClick }) => {
                     )}
                     
                     {/* Energy Level Selector */}
-                    <div className="energy-selector-container">
-                        <div className="energy-label">Energy</div>
-                        <motion.div className="energy-pills" layout>
-                            {[1, 2, 3, 4, 5].map(level => {
-                                const isActive = energyLevel === level;
-                                return (
-                                    <motion.button
-                                        key={level}
-                                        className={`energy-pill ${isActive ? 'active' : ''}`}
-                                        onClick={() => updateEnergyLevel(level)}
-                                        title={`Set Energy to ${level}`}
-                                        layout /* Enables smooth spring layout tracking for width and position shifts */
-                                        transition={{
-                                            layout: {
-                                                type: "spring",
-                                                damping: 20,
-                                                stiffness: 230,
-                                                mass: 1.2
-                                            }
-                                        }}
-                                        style={{ position: 'relative' }}
-                                    >
-                                        {isActive && (
-                                            <motion.div
-                                                layoutId="energy-active-indicator"
-                                                className="energy-active-pill"
-                                                transition={{
+                    {systemTasksCount > 0 && (
+                        <div ref={energySelectorRef} className="energy-selector-container" style={{ position: 'relative' }}>
+                            <div className="energy-label">Energy</div>
+                            <motion.div className="energy-pills" layout>
+                                {[1, 2, 3, 4, 5].map(level => {
+                                    const isActive = energyLevel === level;
+                                    return (
+                                        <motion.button
+                                            key={level}
+                                            className={`energy-pill ${isActive ? 'active' : ''}`}
+                                            onClick={() => handleEnergyClick(level)}
+                                            title={`Set Energy to ${level}`}
+                                            layout /* Enables smooth spring layout tracking for width and position shifts */
+                                            transition={{
+                                                layout: {
                                                     type: "spring",
                                                     damping: 20,
                                                     stiffness: 230,
                                                     mass: 1.2
-                                                }}
-                                            />
-                                        )}
-                                        <motion.div className="energy-pill-content" layout>
-                                            <span className="energy-pill-label">{level}</span>
-                                        </motion.div>
-                                    </motion.button>
-                                );
-                            })}
-                        </motion.div>
-                    </div>
+                                                }
+                                            }}
+                                            style={{ position: 'relative' }}
+                                        >
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="energy-active-indicator"
+                                                    className="energy-active-pill"
+                                                    transition={{
+                                                        type: "spring",
+                                                        damping: 20,
+                                                        stiffness: 230,
+                                                        mass: 1.2
+                                                    }}
+                                                />
+                                            )}
+                                            <motion.div className="energy-pill-content" layout>
+                                                <span className="energy-pill-label">{level}</span>
+                                            </motion.div>
+                                        </motion.button>
+                                    );
+                                })}
+                            </motion.div>
+                        </div>
+                    )}
 
                     <nav className="sidebar-nav">
                         {!isFocusMode ? (
                             /* PLANNING MODE SIDEBAR CONTENT */
                             <>
                                 <NavLink to="/launchpad" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                    <span className={`btn-icon ${shouldBlinkLaunchpad ? 'pulse-breathe' : ''}`} style={{ position: 'relative' }}>
+                                    <span className="btn-icon">
                                         <LayoutDashboard size={16} />
                                     </span>
                                     <span className="btn-text">Launchpad</span>
@@ -613,6 +706,15 @@ const Sidebar = ({ onSkillClick }) => {
                                     </span>
                                     <span className="btn-text">Timeline</span>
                                 </NavLink>
+
+                                {systemTasksCount === 0 && (
+                                    <div className="sidebar-onboarding-divider" style={{
+                                        height: '1px',
+                                        background: 'var(--sidebar-border, rgba(255,255,255,0.08))',
+                                        margin: '16px var(--sidebar-h-padding)',
+                                        opacity: 0.8
+                                    }} />
+                                )}
 
 
                                 {/* FOCUS SLOTS SECTION (Partially visible in Energy 2, hidden in Energy 1) */}
@@ -643,10 +745,13 @@ const Sidebar = ({ onSkillClick }) => {
                                                     // Compute engagement status from pre-computed map
                                                     const engagement = slotId ? engagementMap[slotId] : null;
 
+                                                    // Blink this obsession if it has no tasks yet
+                                                    const shouldBlinkSkill = !skillsWithTasksMap[slotId];
+
                                                     return (
                                                         <div 
                                                             key={idx} 
-                                                            className={`nav-item slot-nav-item ${glowingNodeId === slotId ? 'aura-glow-active' : ''}`}
+                                                            className={`nav-item slot-nav-item ${glowingNodeId === slotId ? 'aura-glow-active' : ''} ${shouldBlinkSkill ? 'pulse-breathe' : ''}`}
                                                             onClick={() => {
                                                                 if (onSkillClick) onSkillClick(skill);
                                                                 else navigate(`/skill/${slotId}`);
@@ -660,7 +765,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                                     </HealthTooltip>
                                                                 ) : (
                                                                     /* Empty Slot Placeholder Icon space holder */
-                                                                    <div className="dot-placeholder" />
+                                                                    <div className="health-dot grey" />
                                                                 )}
                                                             </span>
                                                             <span className="btn-text">
@@ -684,7 +789,7 @@ const Sidebar = ({ onSkillClick }) => {
                                             <span className="section-title-static">Keep it alive</span>
                                             <Link 
                                                 to="/maintenance-center" 
-                                                className={`header-action-btn ${isEmptyMaintenance ? (isEmptyObsessions ? 'force-visible' : 'pulse-breathe') : ''}`}
+                                                className="header-action-btn"
                                                 onClick={(e) => e.stopPropagation()}
                                                 title="Manage Maintenance Skills"
                                             >
@@ -738,7 +843,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                                 <span className="btn-icon">
                                                                     {(() => {
                                                                         const engagement = engagementMap[skill.id];
-                                                                        if (!engagement) return <div className="dot-placeholder" />;
+                                                                        if (!engagement) return <div className="health-dot grey" />;
                                                                         return (
                                                                             <HealthTooltip engagement={engagement}>
                                                                                 <div className={`health-dot ${engagement.status}`} />
@@ -915,6 +1020,20 @@ const Sidebar = ({ onSkillClick }) => {
                 onSelect={handleIconSelect}
                 currentIcon={editingIconNode?.metadata?.iconUrl}
             />
+
+            {showEnergyToast && (
+                <div 
+                    className="energy-explain-tooltip"
+                    style={{
+                        position: 'fixed',
+                        left: 'calc(var(--sidebar-width) + 12px)',
+                        top: `${tooltipTop}px`,
+                        transform: 'translateY(-50%)'
+                    }}
+                >
+                    Backbone's UI adapts to your energy level, 1 is low 5 is high
+                </div>
+            )}
         </aside>
     );
 };

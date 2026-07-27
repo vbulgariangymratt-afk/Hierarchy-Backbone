@@ -1008,6 +1008,22 @@
     vertical-align: middle;
 }
 
+.task-today-badge.new-user-guide {
+    display: inline-flex !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    animation: gear-blink 1.6s infinite ease-in-out !important;
+    background: var(--color-accent-alpha-low, rgba(94, 106, 210, 0.25)) !important;
+    border: 1px solid var(--color-accent, #5E6AD2) !important;
+    color: var(--text-primary) !important;
+}
+
+.task-today-badge.new-user-guide:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px var(--color-accent, rgba(94, 106, 210, 0.4));
+    opacity: 0.95 !important;
+}
+
 .task-row:hover .task-today-badge {
     display: inline-flex;
     opacity: 0.4;
