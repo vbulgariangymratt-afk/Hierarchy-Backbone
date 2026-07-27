@@ -1804,16 +1804,10 @@ const LaunchpadFlow = () => {
                                 </div>
                             </>                        ) : energyLevel === 2 ? (
                             <div className="e5-container">
-                                {/* IDENTITY ANCHOR HEADER */}
-                                {(() => {
+                                {/* IDENTITY ANCHOR HEADER - shown in all substeps */}
+                                {energy2SubStep !== 'initial' && (() => {
                                     let currentSkill = null;
-                                    if (energy2SubStep === 'initial') {
-                                        if (energy2Pool.length > 0) {
-                                            currentSkill = getSkillFromTask(energy2Pool[0], nodeMap);
-                                        } else if (energy2HabitsPool.length > 0) {
-                                            currentSkill = nodeMap.get(energy2HabitsPool[0].parentId);
-                                        }
-                                    } else if (energy2SubStep === 'habits') {
+                                    if (energy2SubStep === 'habits') {
                                         currentSkill = nodeMap.get(energy2HabitsPool[energy2HabitIndex]?.parentId);
                                     } else if (energy2SubStep === 'skills') {
                                         currentSkill = activeFocusSkills[e2SkillIndex];
@@ -1822,7 +1816,6 @@ const LaunchpadFlow = () => {
                                     } else if (energy2SubStep === 'tasks') {
                                         currentSkill = nodeMap.get(e2SelectedSkillId);
                                     }
-
                                     if (!currentSkill) return null;
                                     return (
                                         <div style={{ marginBottom: '32px' }}>
@@ -1856,12 +1849,33 @@ const LaunchpadFlow = () => {
                                         const pilotHabits = energy2HabitsPool.slice(0, 3);
                                         const spotlightTask = e2SpotlightHabit ? null : (inProgressTask || energy2Pool[0]);
                                         const spotlightHabit = e2SpotlightHabit || ((!inProgressTask && !energy2Pool[0]) ? energy2HabitsPool[0] : null);
-                                return (
-                                            <div style={{ display: 'flex', flexDirection: 'column', width: 'fit-content', gap: '32px', fontFamily: "'Lexend', sans-serif" }}>
-                                                {/* SPOTLIGHT HERO CARD */}
-                                                <div>
+
+                                        // compute currentSkill for initial substep
+                                        let initialSkill = null;
+                                        if (energy2Pool.length > 0) {
+                                            initialSkill = getSkillFromTask(energy2Pool[0], nodeMap);
+                                        } else if (energy2HabitsPool.length > 0) {
+                                            initialSkill = nodeMap.get(energy2HabitsPool[0].parentId);
+                                        }
+
+                                        return (
+                                            // fit-content wrapper: both the Becoming header AND card live here,
+                                            // so the card naturally matches the longest title line width.
+                                            <div style={{ display: 'flex', flexDirection: 'column', width: 'fit-content', gap: '24px', fontFamily: "'Lexend', sans-serif" }}>
+                                                {/* BECOMING HEADER — inside fit-content so card inherits same width */}
+                                                {initialSkill && (
+                                                    <div>
+                                                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Becoming</div>
+                                                        <h1 className="e5-title" style={{ margin: 0 }}>
+                                                            {initialSkill.metadata?.identityAnchor || initialSkill.name}
+                                                        </h1>
+                                                    </div>
+                                                )}
+
+                                                {/* SPOTLIGHT HERO CARD — width: 100% fills the fit-content container */}
+                                                <div style={{ width: '100%' }}>
                                                     {spotlightTask ? (
-                                                        <div className="e5-card e5-card-hero visual-receipt-active cursor-target" onClick={() => navigate('/focus', { state: { taskId: spotlightTask.id, autoStart: true } })}>
+                                                        <div className="e5-card e5-card-hero visual-receipt-active cursor-target" style={{ width: '100%', boxSizing: 'border-box' }} onClick={() => navigate('/focus', { state: { taskId: spotlightTask.id, autoStart: true } })}>
                                                             <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
                                                                 {(spotlightTask.metadata?.mve || spotlightTask.mve) ? `Task: ${spotlightTask.name}` : "Just open it for 2 minutes"}
                                                             </div>
@@ -1876,7 +1890,7 @@ const LaunchpadFlow = () => {
                                                             </button>
                                                         </div>
                                                     ) : spotlightHabit ? (
-                                                        <div className="e5-card e5-card-hero visual-receipt-active cursor-target" onClick={() => { handleHabitComplete(spotlightHabit.id); setE2SpotlightHabit(null); }}>
+                                                        <div className="e5-card e5-card-hero visual-receipt-active cursor-target" style={{ width: '100%', boxSizing: 'border-box' }} onClick={() => { handleHabitComplete(spotlightHabit.id); setE2SpotlightHabit(null); }}>
                                                             <div style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '8px' }}>
                                                                 Just open it for 2 minutes
                                                             </div>
@@ -2071,7 +2085,19 @@ const LaunchpadFlow = () => {
                                 </div>
                                 {energy2SubStep === 'initial' && (
                                     <button
-                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', textDecoration: 'underline', cursor: 'pointer', fontSize: '14px', marginTop: '16px', width: 'fit-content' }}
+                                        style={{ 
+                                            position: 'fixed',
+                                            bottom: '10vh',
+                                            left: 'calc(50% + 120px)',
+                                            transform: 'translateX(-50%)',
+                                            background: 'transparent', 
+                                            border: 'none', 
+                                            color: 'var(--text-tertiary)', 
+                                            textDecoration: 'underline', 
+                                            cursor: 'pointer', 
+                                            fontSize: '14px',
+                                            zIndex: 10
+                                        }}
                                         onClick={() => setEnergy2SubStep('redirection')}
                                     >
                                         Not feeling this?
