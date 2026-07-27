@@ -1335,9 +1335,9 @@ const LaunchpadFlow = () => {
         <div 
             className="launchpad-flow-overlay" 
             style={{
-                justifyContent: energyLevel >= 3 ? 'center' : 'flex-start',
-                paddingLeft: energyLevel >= 3 ? '24px' : '280px',
-                paddingTop: energyLevel >= 3 ? '80px' : '100px'
+                justifyContent: 'flex-start',
+                paddingLeft: '40px',
+                paddingTop: '80px'
             }}
             onClick={() => navigate('/planning')}
         >
