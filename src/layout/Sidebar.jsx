@@ -328,6 +328,10 @@ const Sidebar = ({ onSkillClick }) => {
     }, [allNodes, focusSlots]);
 
     const isEmptyObsessions = useMemo(() => {
+        // If the user has any tasks in the system, they're not "empty" — stop blinking
+        const hasAnyTasks = allNodes?.some(n => n.type === 'TASK');
+        if (hasAnyTasks) return false;
+
         if (!focusSlots || focusSlots.length === 0) return true;
         return focusSlots.every(id => {
             if (!id) return true;
