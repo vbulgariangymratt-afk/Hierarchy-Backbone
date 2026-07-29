@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FlyingOrbsOverlay = () => {
@@ -8,27 +8,32 @@ const FlyingOrbsOverlay = () => {
         const handleTrigger = (e) => {
             const { startX, startY } = e.detail;
 
-            // Get target Focus button element in sidebar
+            // Try the real button first (best case - it's already rendered)
+            let destX, destY;
             const destEl = document.querySelector('.focus-toggle-btn');
-            if (!destEl) return;
-            const destRect = destEl.getBoundingClientRect();
-            const destX = destRect.left + destRect.width / 2;
-            const destY = destRect.top + destRect.height / 2;
+            if (destEl) {
+                const rect = destEl.getBoundingClientRect();
+                destX = rect.left + rect.width / 2;
+                destY = rect.top + rect.height / 2;
+            } else {
+                // Button not rendered yet — aim at the sidebar's top area
+                // where the Focus button will appear. Sidebar is always in DOM.
+                const sidebar = document.querySelector('.sidebar');
+                const sidebarRect = sidebar
+                    ? sidebar.getBoundingClientRect()
+                    : { left: 0, top: 0, width: 240 };
+                destX = sidebarRect.left + sidebarRect.width / 2;
+                destY = sidebarRect.top + 120; // approx y where the button lives
+            }
 
             const orbId = Math.random().toString(36).substring(2, 9);
-            const newOrb = {
-                id: orbId,
-                startX,
-                startY,
-                destX,
-                destY
-            };
-
-            setOrbs(prev => [...prev, newOrb]);
+            setOrbs(prev => [...prev, { id: orbId, startX, startY, destX, destY }]);
         };
 
         window.addEventListener('trigger-focus-orb', handleTrigger);
-        return () => window.removeEventListener('trigger-focus-orb', handleTrigger);
+        return () => {
+            window.removeEventListener('trigger-focus-orb', handleTrigger);
+        };
     }, []);
 
     return (
@@ -59,13 +64,13 @@ const FlyingOrbsOverlay = () => {
                             x: [orb.startX, orb.startX + 140, orb.destX],
                             y: [orb.startY, orb.startY - 90, orb.destY],
                             scale: [1.2, 1.5, 0.3],
-                            opacity: [0.9, 1.0, 1.0, 0.0]
+                            opacity: [0.9, 1.0, 0.0]
                         }}
                         exit={{ opacity: 0 }}
                         transition={{
-                            duration: 2.5, // Slower overall duration to emphasize the curve
-                            ease: ["easeOut", "easeIn"], // Slower during the curve, accelerates in the straight line
-                            times: [0, 0.45, 1] // Spend 45% of the time in the slow launch curve
+                            duration: 2.5,
+                            ease: ["easeOut", "easeIn"],
+                            times: [0, 0.45, 1]
                         }}
                         onAnimationComplete={() => {
                             setOrbs(prev => prev.filter(o => o.id !== orb.id));
@@ -89,4 +94,4 @@ const FlyingOrbsOverlay = () => {
     );
 };
 
-export default FlyingOrbsOverlay;
+export default memo(FlyingOrbsOverlay);

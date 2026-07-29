@@ -43,6 +43,7 @@ import { useAppInitialization } from './hooks/useAppInitialization';
 import BackgroundLayer from './components/background/BackgroundLayer';
 
 import TrialPaywallOverlay from './components/TrialPaywallOverlay';
+import FlyingOrbsOverlay from './components/ui/FlyingOrbsOverlay';
 
 const LandingLog = () => {
   useEffect(() => { ; }, []);
@@ -139,6 +140,7 @@ function App() {
               </Suspense>
               <HabitUpgradeFlow />
               <TrialPaywallOverlay />
+              <FlyingOrbsOverlay />
             </SessionProvider>
           </SettingsProvider>
         )}

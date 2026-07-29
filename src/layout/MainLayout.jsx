@@ -18,7 +18,6 @@ import SettingsPage from '../pages/SettingsPage';
 import JournalPage from '../pages/JournalPage';
 import Counter from '../components/ui/Counter';
 import CustomThemeSwitch from '../components/ui/CustomThemeSwitch';
-import FlyingOrbsOverlay from '../components/ui/FlyingOrbsOverlay';
 import './MainLayout.css';
 
 
@@ -688,11 +687,6 @@ const MainLayout = () => {
                         </motion.div>
                     )}
                 </AnimatePresence>,
-                document.body
-            )}
-
-            {createPortal(
-                <FlyingOrbsOverlay />,
                 document.body
             )}
         </div>
