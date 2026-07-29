@@ -8,26 +8,28 @@ const FlyingOrbsOverlay = () => {
         const handleTrigger = (e) => {
             const { startX, startY } = e.detail;
 
-            // Try the real button first (best case - it's already rendered)
-            let destX, destY;
-            const destEl = document.querySelector('.focus-toggle-btn');
-            if (destEl) {
-                const rect = destEl.getBoundingClientRect();
-                destX = rect.left + rect.width / 2;
-                destY = rect.top + rect.height / 2;
-            } else {
-                // Button not rendered yet — aim at the sidebar's top area
-                // where the Focus button will appear. Sidebar is always in DOM.
-                const sidebar = document.querySelector('.sidebar');
-                const sidebarRect = sidebar
-                    ? sidebar.getBoundingClientRect()
-                    : { left: 0, top: 0, width: 240 };
-                destX = sidebarRect.left + sidebarRect.width / 2;
-                destY = sidebarRect.top + 120; // approx y where the button lives
-            }
+            // Defer coordinate calculation slightly to let React render the Focus button
+            setTimeout(() => {
+                let destX, destY;
+                const destEl = document.querySelector('.focus-toggle-btn');
+                console.log('DEST ELEMENT FOUND:', destEl, 'RECT:', destEl?.getBoundingClientRect());
+                if (destEl) {
+                    const rect = destEl.getBoundingClientRect();
+                    destX = rect.left + rect.width / 2;
+                    destY = rect.top + rect.height / 2;
+                } else {
+                    // Fallback to top-middle of the sidebar
+                    const sidebar = document.querySelector('.sidebar');
+                    const sidebarRect = sidebar
+                        ? sidebar.getBoundingClientRect()
+                        : { left: 0, top: 0, width: 240 };
+                    destX = sidebarRect.left + sidebarRect.width / 2;
+                    destY = sidebarRect.top + 120;
+                }
 
-            const orbId = Math.random().toString(36).substring(2, 9);
-            setOrbs(prev => [...prev, { id: orbId, startX, startY, destX, destY }]);
+                const orbId = Math.random().toString(36).substring(2, 9);
+                setOrbs(prev => [...prev, { id: orbId, startX, startY, destX, destY }]);
+            }, 60);
         };
 
         window.addEventListener('trigger-focus-orb', handleTrigger);
@@ -61,16 +63,16 @@ const FlyingOrbsOverlay = () => {
                             opacity: 0.9
                         }}
                         animate={{
-                            x: [orb.startX, orb.startX + 140, orb.destX],
-                            y: [orb.startY, orb.startY - 90, orb.destY],
-                            scale: [1.2, 1.5, 0.3],
-                            opacity: [0.9, 1.0, 0.0]
+                            x: [orb.startX, orb.startX + 140, orb.destX, orb.destX],
+                            y: [orb.startY, orb.startY - 90, orb.destY, orb.destY],
+                            scale: [1.2, 1.5, 0.8, 0.3],
+                            opacity: [0.9, 1.0, 1.0, 0.0]
                         }}
                         exit={{ opacity: 0 }}
                         transition={{
                             duration: 2.5,
                             ease: ["easeOut", "easeIn"],
-                            times: [0, 0.45, 1]
+                            times: [0, 0.45, 0.85, 1]
                         }}
                         onAnimationComplete={() => {
                             setOrbs(prev => prev.filter(o => o.id !== orb.id));

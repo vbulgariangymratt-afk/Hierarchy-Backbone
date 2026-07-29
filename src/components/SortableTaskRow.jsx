@@ -258,7 +258,7 @@ const SortableTaskRow = React.memo(({
                             onClick={(e) => {
                                 const isWillBeToday = !task.metadata?.isToday && !task.metadata?.tomorrow;
                                 onAddToToday(e, task.id);
-                                if (isNewUser && isWillBeToday) {
+                                if (isWillBeToday) {
                                     const rect = e.currentTarget.getBoundingClientRect();
                                     window.dispatchEvent(new CustomEvent('trigger-focus-orb', {
                                         detail: {
