@@ -5,7 +5,7 @@ import CreateSkillModal from '../components/CreateSkillModal';
 import NodeIcon from '../components/NodeIcon';
 import SkillCard from '../components/SkillCard';
 import IconPickerModal from '../components/modals/IconPickerModal';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit3 } from 'lucide-react';
 import './AreaPage.css';
 
 const SVG_ICONS = {
@@ -431,6 +431,7 @@ const AreaPage = () => {
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                                     <div 
+                                        className="area-interactive-icon-wrapper"
                                         onClick={() => {
                                             setAreaEditForm({
                                                 name: area.name,
@@ -439,10 +440,12 @@ const AreaPage = () => {
                                             });
                                             setIsIconPickerOpen(true);
                                         }}
-                                        style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                        title="Click to select Lucide icon"
+                                        title="Click to change icon"
                                     >
-                                        <NodeIcon iconUrl={area.metadata?.iconUrl} emoji={area.icon} size={32} />
+                                        <NodeIcon iconUrl={area.metadata?.iconUrl || 'Sparkles'} emoji={area.icon} size={48} />
+                                        <div className="icon-edit-overlay">
+                                            <Edit3 size={12} className="edit-pen-icon" />
+                                        </div>
                                     </div>
                                     {inlineEditingId === area.id ? (
                                         <input

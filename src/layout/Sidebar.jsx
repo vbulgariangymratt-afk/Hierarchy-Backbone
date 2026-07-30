@@ -924,7 +924,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                             style={{ border: 'none', background: 'none', padding: 0, margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                         >
                                                             <NodeIcon
-                                                                iconUrl={area.metadata?.iconUrl}
+                                                                iconUrl={area.metadata?.iconUrl || 'Sparkles'}
                                                                 defaultIcon="🌐"
                                                             />
                                                         </div>

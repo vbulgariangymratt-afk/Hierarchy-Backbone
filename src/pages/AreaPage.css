@@ -1616,3 +1616,54 @@
 .area-edit-block .btn-danger-solid:hover {
     background-color: #f0713d !important;
 }
+
+/* Interactive Icon Wrapper on Area Page */
+.area-interactive-icon-wrapper {
+    position: relative;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 2px;
+    transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.area-interactive-icon-wrapper:hover {
+    background-color: var(--alpha-low, rgba(255, 255, 255, 0.04));
+    transform: scale(1.05);
+}
+
+.area-interactive-icon-wrapper:active {
+    transform: scale(0.95);
+}
+
+/* Hover hint overlay */
+.area-interactive-icon-wrapper .icon-edit-overlay {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    background-color: var(--color-accent, #5E6AD2);
+    color: #ffffff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    border: 1.5px solid var(--color-bg-primary, #1e1e1e);
+}
+
+.area-interactive-icon-wrapper:hover .icon-edit-overlay {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.area-interactive-icon-wrapper .edit-pen-icon {
+    display: block;
+}

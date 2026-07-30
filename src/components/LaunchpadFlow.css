@@ -800,7 +800,7 @@
     transform: scale(0.96) !important;
 }
 
-.lucide {
+.launchpad-flow-container .lucide {
     width: 14px;
     height: 14px;
     stroke-width: 2px;

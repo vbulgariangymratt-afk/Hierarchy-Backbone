@@ -30,7 +30,7 @@ const AreaCard = React.memo(({ area, isSelected, onToggle }) => {
             <div className="area-card-header">
                 <div className="area-icon-container">
                     <NodeIcon
-                        iconUrl={area.metadata?.iconUrl}
+                        iconUrl={area.metadata?.iconUrl || 'Sparkles'}
                         defaultIcon="🌐"
                         size={24}
                     />
