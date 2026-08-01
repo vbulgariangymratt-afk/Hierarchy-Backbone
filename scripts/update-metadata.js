@@ -84,28 +84,28 @@ if (platform === 'darwin') {
   // Windows updater build targets
   const nsisDir = path.resolve('src-tauri/target/release/bundle/nsis');
   const files = fs.readdirSync(nsisDir);
-  const zipFile = files.find(f => f.endsWith('.zip'));
+  const exeFile = files.find(f => f.endsWith('.exe'));
   
-  if (zipFile) {
-    const sigFile = `${zipFile}.sig`;
+  if (exeFile) {
+    const sigFile = `${exeFile}.sig`;
     const sigPath = path.join(nsisDir, sigFile);
     
     if (fs.existsSync(sigPath)) {
       const signature = fs.readFileSync(sigPath, 'utf8').trim();
-      const downloadUrl = `https://github.com/${targetRepo}/releases/download/latest/Backbone-Windows.zip`;
+      const downloadUrl = `https://github.com/${targetRepo}/releases/download/latest/Backbone-Setup.exe`;
       
       updaterJson.platforms['windows-x86_64'] = { signature, url: downloadUrl };
       
       console.log('Added Windows signature and platform URL.');
       
       // Copy asset to root folder for upload
-      fs.copyFileSync(path.join(nsisDir, zipFile), path.resolve('Backbone-Windows.zip'));
+      fs.copyFileSync(path.join(nsisDir, exeFile), path.resolve('Backbone-Setup.exe'));
     } else {
       console.error(`Signature file not found at ${sigPath}`);
       process.exit(1);
     }
   } else {
-    console.error('No Windows .zip updater package found in nsis directory.');
+    console.error('No Windows .exe updater package found in nsis directory.');
     process.exit(1);
   }
 }
