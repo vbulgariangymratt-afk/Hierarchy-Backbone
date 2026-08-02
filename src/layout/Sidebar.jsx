@@ -749,8 +749,8 @@ const Sidebar = ({ onSkillClick }) => {
                                                     // Compute engagement status from pre-computed map
                                                     const engagement = slotId ? engagementMap[slotId] : null;
 
-                                                    // Blink this obsession if it has no tasks yet
-                                                    const shouldBlinkSkill = !skillsWithTasksMap[slotId];
+                                                    // Blink only the first obsession for new users if it has no tasks yet
+                                                    const shouldBlinkSkill = isNewUser && idx === 0 && !skillsWithTasksMap[slotId];
 
                                                     return (
                                                         <div 

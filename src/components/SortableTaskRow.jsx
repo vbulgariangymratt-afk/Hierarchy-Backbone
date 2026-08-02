@@ -64,6 +64,11 @@ const SortableTaskRow = React.memo(({
         return completedSessions === 0;
     }, [allNodes]);
 
+    const hasAnyTodayTasks = useMemo(() => {
+        if (!allNodes) return false;
+        return allNodes.some(n => n.type === 'TASK' && n.metadata?.isToday);
+    }, [allNodes]);
+
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -258,7 +263,7 @@ const SortableTaskRow = React.memo(({
                             onClick={(e) => {
                                 const isWillBeToday = !task.metadata?.isToday && !task.metadata?.tomorrow;
                                 onAddToToday(e, task.id);
-                                if (isWillBeToday) {
+                                if (isWillBeToday && isNewUser && !hasAnyTodayTasks) {
                                     const rect = e.currentTarget.getBoundingClientRect();
                                     window.dispatchEvent(new CustomEvent('trigger-focus-orb', {
                                         detail: {

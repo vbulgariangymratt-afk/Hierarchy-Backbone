@@ -890,229 +890,26 @@ const FocusPage = () => {
     }
 
     if (!task) {
-        const completedTasksCount = allNodes.filter(n => 
-            n.type === NodeTypes.TASK && 
-            n.metadata?.status === TaskStatuses.DONE
-        ).length;
-
-        const hasAnyTasksAtAll = allNodes.some(n => n.type === NodeTypes.TASK);
-
-        // Version A: New user OR empty hierarchy forced demo
-        if (forceOnboardingDemo || (completedTasksCount < 3 && !hasAnyTasksAtAll)) {
-            const toBionic = (textStr) => {
-                return textStr.split(' ').map((word, idx) => {
-                    if (!word) return null;
-                    const cleanWord = word.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-                    if (cleanWord.length === 0) return <span key={idx}>{word} </span>;
-                    
-                    const boldLen = Math.max(1, Math.ceil(cleanWord.length * 0.45));
-                    let charIndex = 0;
-                    let letterCount = 0;
-                    while (charIndex < word.length && letterCount < boldLen) {
-                        if (/[a-zA-Z0-9]/.test(word[charIndex])) {
-                            letterCount++;
-                        }
-                        charIndex++;
-                    }
-                    
-                    const bold = word.slice(0, charIndex);
-                    const rest = word.slice(charIndex);
-                    
-                    return (
-                        <span key={idx} style={{ display: 'inline-block', marginRight: '0.28em' }}>
-                            <strong>{bold}</strong>{rest}
-                        </span>
-                    );
-                });
-            };
-
-            return (
-                <div className="focus-container empty onboarding-empty-hierarchy" style={{ padding: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', position: 'relative' }}>
-                    <button className="focus-exit-btn" onClick={handleExit}>Back to Planning</button>
-                    <div className="focus-empty-state" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'left', fontFamily: "'Lexend', sans-serif" }}>
-                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.65', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            {toBionic('Doing Mode is your distraction shield. It separates "planning" from "doing" so your brain doesn\'t have to keep re-deciding what to do once you start.')}
-                        </p>
-                        
-                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.65', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            {toBionic('Right now doing mode is empty, you can either write a 2 minute task you can complete right now')}
-                        </p>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '520px', margin: '2rem auto' }}>
-                            <input 
-                                type="text"
-                                className="temp-task-input"
-                                placeholder="What is a 2-minute micro-task you can do right now?"
-                                value={tempTaskName}
-                                onChange={(e) => setTempTaskName(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleStartTempOnboardingTask();
-                                }}
-                                style={{
-                                    padding: '0.5rem 0',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    borderBottom: '2px solid var(--text-primary, #000000)',
-                                    color: 'var(--text-primary, #000000)',
-                                    fontSize: '1.1rem',
-                                    outline: 'none',
-                                    textAlign: 'center',
-                                    fontFamily: "'Lexend', sans-serif",
-                                    width: '100%'
-                                }}
-                            />
-                            <button 
-                                className="focus-back-btn primary"
-                                onClick={handleStartTempOnboardingTask}
-                                disabled={!tempTaskName.trim()}
-                                style={{
-                                    padding: '0.8rem 1.5rem',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: tempTaskName.trim() ? 'var(--color-accent)' : 'var(--color-bg-panel, rgba(255,255,255,0.1))',
-                                    color: tempTaskName.trim() ? '#ffffff' : 'var(--text-secondary, rgba(255,255,255,0.4))',
-                                    fontWeight: 'bold',
-                                    cursor: tempTaskName.trim() ? 'pointer' : 'not-allowed',
-                                    transition: 'all 0.2s ease',
-                                    fontFamily: "'Lexend', sans-serif"
-                                }}
-                            >
-                                Try Focus Mode
-                            </button>
-                        </div>
-
-                        <p style={{ marginTop: '2rem', lineHeight: '1.65', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            {toBionic('Or when you fill the app with your life context just click the "today" button in a task and come here (top left corner)')}
-                        </p>
-                    </div>
-                </div>
-            );
-        }
-
-        // Version B: Experienced user OR seasoned empty forced demo
-        if (forceOnboardingDemoB || completedTasksCount >= 3 || hasAnyTasksAtAll) {
-            const availableTasks = allNodes.filter(n => 
-                n.type === NodeTypes.TASK && 
-                n.metadata?.status !== TaskStatuses.DONE
-            );
-            
-            const scoreTaskEase = (t) => {
-                let score = 0;
-                if (t.metadata?.highEnergy) return -100;
-                if (t.metadata?.status === TaskStatuses.IN_PROGRESS) score += 10;
-                if (t.metadata?.mve) score += 5;
-                const subStepsCount = t.metadata?.subSteps?.length || 0;
-                score += Math.max(0, 5 - subStepsCount);
-                const nameLength = t.name?.length || 100;
-                score += Math.max(0, 100 - nameLength) * 0.05;
-                return score;
-            };
-
-            const suggestedTasks = [...availableTasks]
-                .sort((a, b) => scoreTaskEase(b) - scoreTaskEase(a))
-                .slice(0, 2);
-
-            return (
-                <div className="focus-container empty onboarding-seasoned-empty" style={{ padding: '2rem' }}>
-                    <div className="focus-empty-state" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            <strong>Foc</strong>us <strong>Mo</strong>de <strong>i</strong>s <strong>emp</strong>ty. <strong>Yo</strong>u <strong>hav</strong>en't <strong>ass</strong>igned <strong>any</strong>thing <strong>fo</strong>r <strong>Tod</strong>ay. <strong>Goi</strong>ng <strong>ba</strong>ck <strong>t</strong>o <strong>loo</strong>k <strong>a</strong>t <strong>yo</strong>ur <strong>ent</strong>ire <strong>bac</strong>klog <strong>rig</strong>ht <strong>n</strong>ow <strong>i</strong>s <strong>a</strong> <strong>tra</strong>p <strong>th</strong>at <strong>lea</strong>ds <strong>t</strong>o <strong>dec</strong>ision <strong>par</strong>alysis.
-                        </p>
-
-                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            <strong>Her</strong>e <strong>ar</strong>e <strong>2</strong> <strong>tas</strong>ks <strong>th</strong>at <strong>mat</strong>ch <strong>yo</strong>ur <strong>cur</strong>rent <strong>ene</strong>rgy <strong>lev</strong>el. <strong>Pi</strong>ck <strong>on</strong>e <strong>an</strong>d <strong>jus</strong>t <strong>hi</strong>t <strong>sta</strong>rt:
-                        </p>
-
-                        {suggestedTasks.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', width: '100%', maxWidth: '400px', margin: '0 auto 2rem auto' }}>
-                                {suggestedTasks.map(t => (
-                                    <button
-                                        key={t.id}
-                                        onClick={() => setTask(t)}
-                                        style={{
-                                            padding: '0.8rem 1.5rem',
-                                            borderRadius: '8px',
-                                            border: '2px solid var(--text-primary, #000000)',
-                                            background: 'transparent',
-                                            color: 'var(--text-primary, #000000)',
-                                            fontWeight: 'bold',
-                                            cursor: 'pointer',
-                                            fontFamily: "'Lexend', sans-serif",
-                                            fontSize: '1rem',
-                                            transition: 'all 0.2s ease',
-                                            textAlign: 'center',
-                                            width: '100%'
-                                        }}
-                                    >
-                                        {t.name}
-                                    </button>
-                                ))}
-                            </div>
-                        ) : (
-                            <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginBottom: '2rem', fontFamily: "'Lexend', sans-serif" }}>
-                                No tasks available in backlog to suggest.
-                            </p>
-                        )}
-
-                        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.15rem', fontWeight: 'normal', color: 'var(--text-primary)', fontFamily: "'Lexend', sans-serif" }}>
-                            <strong>Bra</strong>in <strong>rej</strong>ecting <strong>bo</strong>th? <strong>Ski</strong>p <strong>th</strong>e <strong>pla</strong>n. <strong>Typ</strong>e <strong>th</strong>e <strong>abs</strong>olute <strong>sma</strong>llest, <strong>mos</strong>t <strong>tri</strong>vial <strong>thi</strong>ng <strong>yo</strong>u <strong>ca</strong>n <strong>d</strong>o <strong>rig</strong>ht <strong>n</strong>ow <strong>jus</strong>t <strong>t</strong>o <strong>ge</strong>t <strong>a</strong> <strong>wi</strong>n <strong>o</strong>n <strong>th</strong>e <strong>boa</strong>rd.
-                        </p>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '520px', margin: '0 auto' }}>
-                            <input 
-                                type="text"
-                                className="temp-task-input"
-                                placeholder="What's one tiny thing?"
-                                value={tempTaskName}
-                                onChange={(e) => setTempTaskName(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleStartTempOnboardingTask();
-                                }}
-                                style={{
-                                    padding: '0.5rem 0',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    borderBottom: '2px solid var(--text-primary, #000000)',
-                                    color: 'var(--text-primary, #000000)',
-                                    fontSize: '1.1rem',
-                                    outline: 'none',
-                                    textAlign: 'center',
-                                    fontFamily: "'Lexend', sans-serif",
-                                    width: '100%'
-                                }}
-                            />
-                            <button 
-                                className="focus-back-btn primary"
-                                onClick={handleStartTempOnboardingTask}
-                                disabled={!tempTaskName.trim()}
-                                style={{
-                                    padding: '0.8rem 1.5rem',
-                                    borderRadius: '8px',
-                                    border: 'none',
-                                    background: tempTaskName.trim() ? 'var(--focus-color-status, #00fff0)' : 'var(--color-bg-panel, rgba(255,255,255,0.1))',
-                                    color: tempTaskName.trim() ? 'var(--color-bg-main, #000)' : 'var(--text-secondary, rgba(255,255,255,0.4))',
-                                    fontWeight: 'bold',
-                                    cursor: tempTaskName.trim() ? 'pointer' : 'not-allowed',
-                                    transition: 'all 0.2s ease',
-                                    fontFamily: "'Lexend', sans-serif"
-                                }}
-                            >
-                                Start Timer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
         return (
-            <div className="focus-container empty">
-                <div className="focus-empty-state">
-                    <h2>Focus Session Over</h2>
-                    <p>All "Today" tasks are complete.</p>
-                    <button className="focus-back-btn" onClick={handleExit}>
-                        Return to Planning
-                    </button>
+            <div className="focus-container empty" style={{ 
+                padding: '2rem', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                minHeight: '80vh', 
+                position: 'relative' 
+            }}>
+                <button className="focus-exit-btn" onClick={handleExit}>Back to Planning</button>
+                <div className="focus-empty-state" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
+                    <p style={{ 
+                        lineHeight: '1.65', 
+                        fontSize: '1.25rem', 
+                        fontWeight: 'normal', 
+                        color: 'var(--text-secondary, #767676)', 
+                        fontFamily: "'Lexend', sans-serif" 
+                    }}>
+                        Tag a task as "today" for it to appear here and help you work on it or select one from the Launchpad
+                    </p>
                 </div>
             </div>
         );
