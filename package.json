@@ -29,6 +29,7 @@
     "gsap": "^3.15.0",
     "lucide-react": "^0.562.0",
     "ogl": "^1.0.11",
+    "posthog-js": "^1.414.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.11.0",

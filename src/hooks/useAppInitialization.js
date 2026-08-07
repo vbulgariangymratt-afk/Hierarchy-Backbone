@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import posthog from 'posthog-js';
 import { 
   backbone, 
   repository, 
@@ -52,6 +53,9 @@ export const useAppInitialization = (setSession) => {
         // SIGNED_IN event is treated as a token refresh, not a new login
         if (initialSession?.user?.id) {
           _lastKnownUid = initialSession.user.id;
+          posthog.identify(initialSession.user.id, {
+            email: initialSession.user.email
+          });
           
           // Migrate any pending guest data on startup
           if (repository?.migrateGuestData) {
@@ -76,6 +80,9 @@ export const useAppInitialization = (setSession) => {
           setSession(newSession);
 
           if (event === 'SIGNED_IN' && newSession) {
+            posthog.identify(newSession.user.id, {
+              email: newSession.user.email
+            });
             // macOS Performance Fix: Skip re-load if it's just a token refresh
             const isNewUser = newSession.user.id !== _lastKnownUid;
             
@@ -110,6 +117,7 @@ export const useAppInitialization = (setSession) => {
 
           if (event === 'SIGNED_OUT') {
             _lastKnownUid = null;
+            posthog.reset();
             clearAllData();
             initializeNodes([]); // Clear the Zustand store
             setRepositoriesReady(false);
