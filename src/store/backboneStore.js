@@ -15,8 +15,28 @@ export const useBackboneStore = create((set) => ({
     activeUpgradeHabit: null,
     undoToast: null, // { message: string, onUndo: function, timeoutId: number }
     hasDismissedOnboarding: typeof window !== 'undefined' && localStorage.getItem('has_dismissed_onboarding_hub') === 'true',
+    availableUpdate: null,
 
     // 2. Actions: Methods to manipulate the state immutably
+
+    setAvailableUpdate: (update) => set({ availableUpdate: update }),
+
+    checkForAppUpdates: async () => {
+        try {
+            const { check } = await import('@tauri-apps/plugin-updater');
+            const update = await check();
+            if (update) {
+                set({ availableUpdate: update });
+                return update;
+            } else {
+                set({ availableUpdate: null });
+                return null;
+            }
+        } catch (e) {
+            console.error('App update check error:', e);
+            return null;
+        }
+    },
 
     setHasDismissedOnboarding: (val) => {
         if (typeof window !== 'undefined') {

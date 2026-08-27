@@ -158,22 +158,8 @@ const SettingsPage = () => {
             message: 'Checking for updates...'
         }));
 
-        const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
-
-        if (!isTauri) {
-            setTimeout(() => {
-                setUpdaterState(prev => ({
-                    ...prev,
-                    checking: false,
-                    message: 'Running in browser. Updater only works on desktop builds.'
-                }));
-            }, 800);
-            return;
-        }
-
         try {
-            const { check } = await import('@tauri-apps/plugin-updater');
-            const update = await check();
+            const update = await useBackboneStore.getState().checkForAppUpdates();
             if (update) {
                 setUpdaterState(prev => ({
                     ...prev,
@@ -186,6 +172,7 @@ const SettingsPage = () => {
                 setUpdaterState(prev => ({
                     ...prev,
                     checking: false,
+                    updateFound: false,
                     message: 'You are on the latest version.'
                 }));
             }

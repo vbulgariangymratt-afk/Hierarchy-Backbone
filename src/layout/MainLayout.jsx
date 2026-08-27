@@ -37,6 +37,7 @@ const MainLayout = () => {
     const safeMode = useBackboneStore(state =>
         state.nodes.some(n => n.type === NodeTypes.OBJECTIVE && n.metadata?.burnoutRisk === true)
     );
+    const availableUpdate = useBackboneStore(state => state.availableUpdate);
     const { energyLevel, hasAccess, subscriptionDaysRemaining, redirectToCheckout, loading: settingsLoading } = useSettings();
 
     const { theme, themePreference, setTheme, backgroundMode, setBackgroundMode } = useTheme();
@@ -221,24 +222,24 @@ const MainLayout = () => {
     }, []);
 
 
-    const [hasUpdate, setHasUpdate] = useState(false);
-
     useEffect(() => {
-        const checkForUpdates = async () => {
-            const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
-            if (isTauri) {
-                try {
-                    const { check } = await import('@tauri-apps/plugin-updater');
-                    const update = await check();
-                    if (update) {
-                        setHasUpdate(true);
-                    }
-                } catch (e) {
-                    console.error('Quiet update check failed:', e);
-                }
-            }
+        const check = () => {
+            useBackboneStore.getState().checkForAppUpdates();
         };
-        checkForUpdates();
+
+        // Check on mount
+        check();
+
+        // Check when window gains focus
+        window.addEventListener('focus', check);
+
+        // Check periodically every 15 minutes
+        const intervalId = setInterval(check, 15 * 60 * 1000);
+
+        return () => {
+            window.removeEventListener('focus', check);
+            clearInterval(intervalId);
+        };
     }, []);
 
     const location = useLocation();
@@ -321,7 +322,7 @@ const MainLayout = () => {
                         </motion.button>
                     )}
 
-                    {hasUpdate && (
+                    {availableUpdate && (
                         <motion.button
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -331,8 +332,8 @@ const MainLayout = () => {
                             className="update-pill cursor-target"
                             style={{
                                 marginLeft: '12px',
-                                background: 'rgba(var(--color-accent-rgb), 0.1)',
-                                border: '1px solid rgba(var(--color-accent-rgb), 0.2)',
+                                background: 'rgba(var(--color-accent-rgb), 0.12)',
+                                border: '1px solid rgba(var(--color-accent-rgb), 0.3)',
                                 color: 'var(--color-text-primary)',
                                 height: '28px',
                                 padding: '0 12px',
@@ -347,7 +348,7 @@ const MainLayout = () => {
                             }}
                         >
                             <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }} />
-                            Update Ready
+                            Update Ready ({availableUpdate.version ? `v${availableUpdate.version}` : 'New'})
                         </motion.button>
                     )}
                 </div>
