@@ -29,16 +29,13 @@ jobs:
       - name: Setup Signing Key
         run: |
           mkdir -p ~/.tauri
-          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > ~/.tauri/backbone-signing.key
-          chmod 600 ~/.tauri/backbone-signing.key
+          echo "$PRIVATE_KEY" > ~/.tauri/backbone-signing.key
+        env:
+          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
 
       - name: Build Tauri App
-        run: npm run tauri:build -- --ci --verbose
-        env:
-          TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ env.HOME }}/.tauri/backbone-signing.key
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
-          CI: true
+        run: |
+          TAURI_SIGNING_PRIVATE_KEY="$(cat ~/.tauri/backbone-signing.key)" TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" npm run tauri:build
 
       - name: Generate Updater Metadata and Prepare macOS Asset
         run: node scripts/update-metadata.js
