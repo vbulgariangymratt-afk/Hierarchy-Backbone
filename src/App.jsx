@@ -41,51 +41,58 @@ import { useDevAuthPoller } from './hooks/useDevAuthPoller';
 import { useDeepLinkAuth } from './hooks/useDeepLinkAuth';
 import { useAppInitialization } from './hooks/useAppInitialization';
 import BackgroundLayer from './components/background/BackgroundLayer';
-
-import TrialPaywallOverlay from './components/TrialPaywallOverlay';
+import ReadOnlyInterceptor from './components/TrialPaywallOverlay';
+import AuthGate from './components/TrialExpiredSidebar';
 import FlyingOrbsOverlay from './components/ui/FlyingOrbsOverlay';
+import UndoSnackbar from './components/UndoSnackbar';
 
 const LandingLog = () => {
   useEffect(() => { ; }, []);
   return null;
 };
 
-// Global interceptor for trial/access limits
-const TrialInterceptor = () => {
-  const { hasAccess, loading } = useSettings();
-  const setShowPaywall = useBackboneStore(state => state.setShowPaywall);
+const AuthenticatedWorkspace = ({ user }) => {
+  const { hasAccess, loading: settingsLoading } = useSettings();
 
-  useEffect(() => {
-    if (loading) return;
+  if (settingsLoading) {
+    return <PremiumLoadingScreen secondaryText="Verifying License..." />;
+  }
 
-    // 1. Monkeypatch backbone.addNode
-    const originalAddNode = backbone.addNode;
-    backbone.addNode = async function(...args) {
-      if (hasAccess === false) {
-        setShowPaywall(true);
-        return Promise.reject(new Error("Trial expired. New creations are locked."));
-      }
-      return originalAddNode.apply(this, args);
-    };
+  if (!hasAccess) {
+    return <AuthGate user={user} />;
+  }
 
-    // 2. Monkeypatch activeUpgradeHabit setter in Zustand store
-    const originalSetActiveUpgrade = useBackboneStore.getState().setActiveUpgradeHabit;
-    useBackboneStore.getState().setActiveUpgradeHabit = function(habit) {
-      if (habit && hasAccess === false) {
-        setShowPaywall(true);
-        return;
-      }
-      return originalSetActiveUpgrade(habit);
-    };
-
-    return () => {
-      // Restore original implementations on cleanup
-      backbone.addNode = originalAddNode;
-      useBackboneStore.getState().setActiveUpgradeHabit = originalSetActiveUpgrade;
-    };
-  }, [hasAccess, loading, setShowPaywall]);
-
-  return null;
+  return (
+    <SessionProvider>
+      <ReadOnlyInterceptor />
+      <KeyboardShortcuts />
+      <EnergyModeTag />
+      <Suspense fallback={<PremiumLoadingScreen secondaryText="Loading Perspective..." />}>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<LaunchpadFlow />} />
+            <Route path="launchpad" element={<LaunchpadFlow />} />
+            <Route path="planning" element={<Navigate to="/launchpad" replace />} />
+            <Route path="calendar" element={<TimelinePage />} />
+            <Route path="marketplace" element={<MarketplacePage />} />
+            <Route path="journal" element={<JournalPage />} />
+            <Route path="settings" element={null} />
+            <Route path="focus-center" element={<FocusCenterPage />} />
+            <Route path="maintenance-center" element={<MaintenanceCenterPage />} />
+            <Route path="area/:id" element={<AreaPage />} />
+            <Route path="skill/:id" element={<SkillPage />} />
+            <Route path="*" element={<LandingLog />} />
+          </Route>
+          <Route path="/focus" element={<FocusPage />} />
+          <Route path="/create-life-area" element={<CreateLifeAreaPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+        </Routes>
+      </Suspense>
+      <HabitUpgradeFlow />
+      <FlyingOrbsOverlay />
+      <UndoSnackbar />
+    </SessionProvider>
+  );
 };
 
 function App() {
@@ -111,37 +118,14 @@ function App() {
           <PremiumLoadingScreen 
             secondaryText={!loading ? 'Synchronizing Repository Data...' : ''} 
           />
+        ) : !session?.user ? (
+          <Routes>
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="*" element={<AuthGate />} />
+          </Routes>
         ) : (
           <SettingsProvider>
-            <SessionProvider>
-              <TrialInterceptor />
-              <KeyboardShortcuts />
-              <EnergyModeTag />
-              <Suspense fallback={<PremiumLoadingScreen secondaryText="Loading Perspective..." />}>
-                <Routes>
-                  <Route path="/" element={<MainLayout />}>
-                    <Route index element={<LaunchpadFlow />} />
-                    <Route path="launchpad" element={<LaunchpadFlow />} />
-                    <Route path="planning" element={<Navigate to="/launchpad" replace />} />
-                    <Route path="calendar" element={<TimelinePage />} />
-                    <Route path="marketplace" element={<MarketplacePage />} />
-                    <Route path="journal" element={<JournalPage />} />
-                    <Route path="settings" element={null} />
-                    <Route path="focus-center" element={<FocusCenterPage />} />
-                    <Route path="maintenance-center" element={<MaintenanceCenterPage />} />
-                    <Route path="area/:id" element={<AreaPage />} />
-                    <Route path="skill/:id" element={<SkillPage />} />
-                    <Route path="*" element={<LandingLog />} />
-                  </Route>
-                  <Route path="/focus" element={<FocusPage />} />
-                  <Route path="/create-life-area" element={<CreateLifeAreaPage />} />
-                  <Route path="/auth/callback" element={<AuthCallback />} />
-                </Routes>
-              </Suspense>
-              <HabitUpgradeFlow />
-              <TrialPaywallOverlay />
-              <FlyingOrbsOverlay />
-            </SessionProvider>
+            <AuthenticatedWorkspace user={session.user} />
           </SettingsProvider>
         )}
       </Router>

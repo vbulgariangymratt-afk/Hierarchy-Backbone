@@ -74,13 +74,6 @@ Deno.serve(async (req) => {
     return new Response(`Event ${eventName} ignored`, { status: 200 });
   }
 
-  // 7. Extract custom data user_id
-  const userId = payload.meta?.custom_data?.user_id;
-  if (!userId) {
-    console.error("[Webhook] Missing user_id in meta.custom_data. Cannot associate this event with a user.");
-    return new Response("Missing user_id in custom data", { status: 200 }); // Return 200 so Lemon Squeezy does not retry endlessly
-  }
-
   // Initialize Supabase Client with Service Role Key to bypass RLS policies
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -90,26 +83,58 @@ Deno.serve(async (req) => {
   }
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+  // 7. Extract custom data user_id OR look up by email (for website purchases)
+  let targetUserId = payload.meta?.custom_data?.user_id;
+  const customerEmail = payload.data.attributes?.user_email || payload.data.attributes?.customer_email;
+
+  if (!targetUserId && customerEmail) {
+    console.log(`[Webhook] No user_id in custom_data. Searching for user by email: ${customerEmail}`);
+    try {
+      const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
+      if (!userError && userData?.users) {
+        const matched = userData.users.find(
+          (u: { email?: string }) => u.email?.toLowerCase() === customerEmail.toLowerCase()
+        );
+        if (matched) {
+          targetUserId = matched.id;
+          console.log(`[Webhook] Found matching Supabase user ID: ${targetUserId}`);
+        }
+      }
+    } catch (searchErr) {
+      console.warn("[Webhook] User search by email threw:", searchErr);
+    }
+  }
+
+  if (!targetUserId) {
+    console.error(`[Webhook] Cannot associate purchase to a user. Email: ${customerEmail}, UserID: ${targetUserId}`);
+    return new Response("User not found for this purchase", { status: 200 }); // Return 200 so Lemon Squeezy does not retry endlessly
+  }
+
   // 8. Extract subscription data attributes
   const data = payload.data;
   const subscriptionId = data.id;
   const customerId = data.attributes?.customer_id;
   const status = data.attributes?.status || "active";
-  const endsAt = data.attributes?.ends_at || data.attributes?.renews_at;
+  let endsAt = data.attributes?.ends_at || data.attributes?.renews_at;
 
-  console.log(`[Webhook] Processing subscription update for User ID: ${userId}, Status: ${status}`);
+  // If this is a one-time order and no renewal date was provided, set a 30-day timer
+  if (!endsAt && eventName.startsWith("order_")) {
+    endsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  console.log(`[Webhook] Processing subscription update for User ID: ${targetUserId}, Status: ${status}, EndsAt: ${endsAt}`);
 
   try {
     const { data: updateData, error } = await supabase
       .from("user_settings")
-      .update({
+      .upsert({
+        user_id: targetUserId,
         subscription_status: status,
         lemon_squeezy_customer_id: customerId ? String(customerId) : null,
         lemon_squeezy_subscription_id: subscriptionId ? String(subscriptionId) : null,
         subscription_ends_at: endsAt ? new Date(endsAt).toISOString() : null,
         updated_at: new Date().toISOString()
-      })
-      .eq("user_id", userId)
+      }, { onConflict: 'user_id' })
       .select();
 
     if (error) {
@@ -117,7 +142,7 @@ Deno.serve(async (req) => {
       return new Response("Database update failed", { status: 500 });
     }
 
-    console.log(`[Webhook] Database updated successfully for user ${userId}. Rows affected:`, updateData?.length);
+    console.log(`[Webhook] Database updated successfully for user ${targetUserId}. Rows affected:`, updateData?.length);
   } catch (err) {
     console.error("[Webhook] Unexpected error during database update:", err);
     return new Response("Unexpected database error", { status: 500 });

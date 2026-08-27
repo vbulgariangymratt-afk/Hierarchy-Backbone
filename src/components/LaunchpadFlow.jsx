@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Zap, ClipboardList, Brain, Sparkles, Flame, HelpCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, Zap, ClipboardList, Brain, Sparkles, Flame, HelpCircle, ArrowRight } from 'lucide-react';
 import { backbone, NodeTypes, TaskStatuses, habitService, habitRepo } from '../backbone-v2/index';
 import HabitCard from './HabitCard';
 import TargetCursor from './ui/TargetCursor';
@@ -21,9 +22,18 @@ const LaunchpadFlow = () => {
     const location = useLocation();
     const [step, setStep] = useState('action'); // 'energy' | 'action'
     // --- ZUSTAND SELECTORS ---
-    const { allNodes, storeLoading } = useBackboneStore(useShallow(state => ({
+    const { 
+        allNodes, 
+        storeLoading, 
+        addUndoToast,
+        hasDismissedOnboarding,
+        setHasDismissedOnboarding 
+    } = useBackboneStore(useShallow(state => ({
         allNodes: state.nodes,
-        storeLoading: state.loading
+        storeLoading: state.loading,
+        addUndoToast: state.addUndoToast,
+        hasDismissedOnboarding: state.hasDismissedOnboarding,
+        setHasDismissedOnboarding: state.setHasDismissedOnboarding
     })));
 
     const tasks = useBackboneStore(useShallow(state => 
@@ -37,6 +47,7 @@ const LaunchpadFlow = () => {
     const { focusSlots, energyLevel, loading: settingsLoading, maintenanceSkillIds, maintenanceEnabled } = useSettings();
     const [isKeepAliveExpanded, setIsKeepAliveExpanded] = useState(false);
     const [habitTrigger, setHabitTrigger] = useState(0);
+    const [isPlayingOnboardingVideo, setIsPlayingOnboardingVideo] = useState(false);
 
     // Initial expansion for low energy
     useEffect(() => {
@@ -1255,21 +1266,109 @@ const LaunchpadFlow = () => {
     };
 
 
-    if (!allNodes || allNodes.length === 0 || tasks.length === 0) {
+    if ((!allNodes || allNodes.length === 0 || tasks.length === 0) && !hasDismissedOnboarding) {
         return (
-            <div className="launchpad-flow-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '85vh', padding: '40px' }}>
-                <div style={{
-                    fontSize: '16px',
-                    color: 'var(--text-secondary, #708090)',
-                    fontFamily: "'Lexend', sans-serif",
-                    fontWeight: 400,
-                    textAlign: 'center',
-                    opacity: 0.85,
-                    letterSpacing: '0.02em',
-                    lineHeight: '1.5'
-                }}>
-                    this will be the last self management app you'll ever need ;)
-                </div>
+            <div className="onboarding-hub-overlay">
+                <motion.div 
+                    className="onboarding-hub-card"
+                    layout
+                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                >
+                    {!isPlayingOnboardingVideo ? (
+                        <>
+                            <h2 className="onboarding-hub-title" style={{ marginBottom: '28px' }}>
+                                This will be the last self management app you'll ever need ;)
+                            </h2>
+
+                            {/* Two-Option Decision Grid */}
+                            <div className="onboarding-hub-actions-grid" style={{ marginBottom: 0, width: '100%' }}>
+                                <motion.button 
+                                    className="onboarding-action-card cursor-target"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => {
+                                        setIsPlayingOnboardingVideo(true);
+                                    }}
+                                >
+                                    <div className="onboarding-action-header">
+                                        <span>Lemme teach u how to use Backbone</span>
+                                        <ArrowRight size={16} className="onboarding-action-arrow" />
+                                    </div>
+                                    <span className="onboarding-action-desc">
+                                        So u can milk it as much as I am
+                                    </span>
+                                </motion.button>
+
+                                <motion.button 
+                                    className="onboarding-action-card cursor-target"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => {
+                                        setHasDismissedOnboarding(true);
+                                        addUndoToast('Video guide will always be in Settings in "Workflow Video Guide". Go break stuff bruvski ;)');
+                                    }}
+                                >
+                                    <div className="onboarding-action-header">
+                                        <span>Go click around by yourself</span>
+                                        <ArrowRight size={16} className="onboarding-action-arrow" />
+                                    </div>
+                                    <span className="onboarding-action-desc">
+                                        (might be confusing cuz my mom didn’t get it)
+                                    </span>
+                                </motion.button>
+                            </div>
+                        </>
+                    ) : (
+                        <motion.div 
+                            style={{ width: '100%' }}
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Personal Workflow Walkthrough</span>
+                                <button 
+                                    type="button"
+                                    className="btn btn-secondary cursor-target" 
+                                    onClick={() => setIsPlayingOnboardingVideo(false)} 
+                                    style={{ padding: '6px 14px', fontSize: '13px' }}
+                                >
+                                    Back
+                                </button>
+                            </div>
+
+                            {/* Horizontal 16:9 Video Box */}
+                            <div 
+                                className="onboarding-video-box cursor-target"
+                                onClick={() => {
+                                    console.log('[Onboarding] Video clicked');
+                                }}
+                            >
+                                <div className="onboarding-video-placeholder-inner">
+                                    <div className="onboarding-video-play-icon">
+                                        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                    <span className="onboarding-video-label">Personal Workflow Walkthrough Video</span>
+                                </div>
+                            </div>
+
+                            <button 
+                                type="button"
+                                className="btn btn-primary cursor-target" 
+                                onClick={() => {
+                                    setHasDismissedOnboarding(true);
+                                }} 
+                                style={{ width: '100%', marginTop: '8px', height: '44px', fontSize: '14px', fontWeight: 600, borderRadius: '10px' }}
+                            >
+                                Oki, I wanna explore Backbone now 👉🏻👈🏻 sir
+                            </button>
+                        </motion.div>
+                    )}
+                </motion.div>
             </div>
         );
     }

@@ -44,11 +44,13 @@ const Sidebar = ({ onSkillClick }) => {
     const { 
         allNodes, 
         engagementMap, 
-        loading: storeLoading 
+        loading: storeLoading,
+        hasDismissedOnboarding
     } = useBackboneStore(useShallow(state => ({
         allNodes: state.nodes,
         engagementMap: state.engagementMap,
-        loading: state.loading
+        loading: state.loading,
+        hasDismissedOnboarding: state.hasDismissedOnboarding
     })));
 
     const rootNode = useBackboneStore(state => state.nodes.find(n => n.id === 'ROOT'));
@@ -328,16 +330,36 @@ const Sidebar = ({ onSkillClick }) => {
     }, [allNodes, focusSlots]);
 
     const isEmptyObsessions = useMemo(() => {
-        // If the user has any tasks in the system, they're not "empty" — stop blinking
-        const hasAnyTasks = allNodes?.some(n => n.type === 'TASK');
-        if (hasAnyTasks) return false;
+        // Do not blink if user is still on the First-Time Onboarding Decision Hub
+        const isFirstTimeHubActive = (!allNodes || allNodes.length === 0 || !allNodes.some(n => n.type === 'TASK')) && !hasDismissedOnboarding;
+        let result = false;
+        if (isFirstTimeHubActive) {
+            result = false;
+        } else {
+            const hasAnyTasks = allNodes?.some(n => n.type === 'TASK');
+            if (hasAnyTasks) {
+                result = false;
+            } else if (!focusSlots || focusSlots.length === 0) {
+                result = true;
+            } else {
+                result = focusSlots.every(id => {
+                    if (!id) return true;
+                    return !allNodes.some(n => n.id === id && n.type === 'SKILL');
+                });
+            }
+        }
 
-        if (!focusSlots || focusSlots.length === 0) return true;
-        return focusSlots.every(id => {
-            if (!id) return true;
-            return !allNodes.some(n => n.id === id && n.type === 'SKILL');
+        console.log('[DIAG]', {
+            allNodesLen: allNodes?.length,
+            hasTask: allNodes?.some(n => n.type === 'TASK'),
+            hasDismissedOnboarding,
+            isFirstTimeHubActive,
+            focusSlotsLen: focusSlots?.length,
+            result
         });
-    }, [focusSlots, allNodes]);
+
+        return result;
+    }, [focusSlots, allNodes, hasDismissedOnboarding]);
 
     const isEmptyMaintenance = useMemo(() => {
         return maintenanceSkills.length === 0;

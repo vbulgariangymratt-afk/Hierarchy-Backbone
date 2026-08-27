@@ -36,14 +36,14 @@ export const useDeepLinkAuth = (setSession) => {
         console.error('[AUTH] Unexpected error during deep link handling:', err);
       }
     };
-    if (!import.meta.env.DEV) {
+    const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
+    if (isTauri) {
       import('@tauri-apps/plugin-deep-link').then(({ onOpenUrl }) => {
         onOpenUrl((urls) => { urls.forEach(handleOAuthUrl); }).then(unsub => {
           unsubscribers.push(unsub);
-        });
-      });
-    }
-    if (window.__TAURI_INTERNALS__) {
+        }).catch(err => console.warn('[AUTH] onOpenUrl error:', err));
+      }).catch(err => console.warn('[AUTH] Could not load deep link plugin:', err));
+
       import('@tauri-apps/api/event').then(({ listen }) => {
         ['tauri://url', 'app://open-url'].forEach(eventName => {
           listen(eventName, (event) => {
@@ -55,7 +55,7 @@ export const useDeepLinkAuth = (setSession) => {
             unsubscribers.push(unsub);
           });
         });
-      });
+      }).catch(err => console.warn('[AUTH] Event listener error:', err));
     }
     return () => {
       unsubscribers.forEach(unsub => {

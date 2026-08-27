@@ -1,89 +1,51 @@
-import React from 'react';
-import { useBackboneStore } from '../store/backboneStore';
-import './TrialPaywallOverlay.css';
-
+import { useEffect } from 'react';
 import { useSettings } from '../context/SettingsContext';
+import { useBackboneStore } from '../store/backboneStore';
+import { backbone } from '../backbone-v2';
 
-// Bionic Reading utility to format text
-const bionic = (text) => {
-    if (!text) return '';
-    return text.split(' ').map((word, i) => {
-        if (!word) return null;
-        const cleanWord = word.replace(/[^a-zA-Z0-9]/g, '');
-        if (cleanWord.length === 0) {
-            return <span key={i} style={{ marginRight: '0.28em' }}>{word}</span>;
-        }
-        
-        // Bold the first ceil(length/2) characters
-        const mid = Math.ceil(cleanWord.length / 2);
-        let cleanCharCount = 0;
-        let splitIndex = 0;
-        
-        for (let j = 0; j < word.length; j++) {
-            if (/[a-zA-Z0-9]/.test(word[j])) {
-                cleanCharCount++;
+/**
+ * Global interceptor that freezes data creation in Read-Only Mode when subscription is not active.
+ */
+const ReadOnlyInterceptor = () => {
+    const { hasAccess, loading } = useSettings();
+    const addUndoToast = useBackboneStore(state => state.addUndoToast);
+
+    useEffect(() => {
+        if (loading) return;
+
+        // 1. Monkeypatch backbone.addNode to freeze new tasks, areas, skills, rewards
+        const originalAddNode = backbone.addNode;
+        backbone.addNode = async function(...args) {
+            if (hasAccess === false) {
+                if (addUndoToast) {
+                    addUndoToast("Subscription paused. Your account is in read-only mode.", null);
+                }
+                return Promise.reject(new Error("Subscription paused. Account is in read-only mode."));
             }
-            if (cleanCharCount === mid) {
-                splitIndex = j + 1;
-                break;
+            return originalAddNode.apply(this, args);
+        };
+
+        // 2. Monkeypatch activeUpgradeHabit setter in Zustand store
+        const originalSetActiveUpgrade = useBackboneStore.getState().setActiveUpgradeHabit;
+        useBackboneStore.getState().setActiveUpgradeHabit = function(habit) {
+            if (habit && hasAccess === false) {
+                if (addUndoToast) {
+                    addUndoToast("Subscription paused. Your account is in read-only mode.", null);
+                }
+                return;
             }
-        }
-        
-        if (splitIndex === 0) {
-            splitIndex = Math.ceil(word.length / 2);
-        }
+            return originalSetActiveUpgrade(habit);
+        };
 
-        const boldPart = word.substring(0, splitIndex);
-        const restPart = word.substring(splitIndex);
+        return () => {
+            // Restore original implementations on cleanup / access restoration
+            backbone.addNode = originalAddNode;
+            useBackboneStore.getState().setActiveUpgradeHabit = originalSetActiveUpgrade;
+        };
+    }, [hasAccess, loading, addUndoToast]);
 
-        return (
-            <span key={i} className="bionic-word" style={{ marginRight: '0.28em', display: 'inline-block' }}>
-                <strong className="bionic-bold">{boldPart}</strong>
-                <span className="bionic-muted">{restPart}</span>
-            </span>
-        );
-    });
+    return null;
 };
 
-const TrialPaywallOverlay = () => {
-    const showPaywall = useBackboneStore(state => state.showPaywall);
-    const setShowPaywall = useBackboneStore(state => state.setShowPaywall);
-    const { redirectToCheckout } = useSettings();
+export default ReadOnlyInterceptor;
 
-    if (!showPaywall) return null;
-
-    const handleSubscribe = () => {
-        redirectToCheckout();
-        setShowPaywall(false);
-    };
-
-    const handleClose = () => {
-        setShowPaywall(false);
-    };
-
-    return (
-        <div className="trial-paywall-overlay fade-in">
-            <div className="trial-paywall-container">
-                
-                <h1 className="paywall-message-primary">
-                    {bionic("If this system helped you bypass your executive freeze, you can keep full access with a subscription")}
-                </h1>
-                
-                <p className="paywall-message-secondary">
-                    {bionic("There are no hidden fees anywhere, and this is the only tier of Backbone Hierarchy, and if you ever need to pause or stop you can cancel anytime with a single button in your settings")}
-                </p>
-
-                <div className="paywall-actions">
-                    <button className="paywall-btn secondary-btn" onClick={handleClose}>
-                        not right now
-                    </button>
-                    <button className="paywall-btn primary-btn" onClick={handleSubscribe}>
-                        Subscribe to Premium
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default TrialPaywallOverlay;

@@ -91,6 +91,9 @@ export const useAppInitialization = (setSession) => {
               _lastKnownUid = newSession.user.id;
               setRepositoriesReady(false);
               try {
+                // Brief 300ms pause to let Supabase auth session timestamp settle (prevents clock skew errors)
+                await new Promise(r => setTimeout(r, 300));
+
                 // Migrate local guest data to Supabase first
                 if (repository?.migrateGuestData) {
                   await repository.migrateGuestData(newSession.user.id);

@@ -13,13 +13,20 @@ export const useBackboneStore = create((set) => ({
     loading: true,
     engagementMap: {}, // Stores { skillId: { status, daysSince, label, ... } }
     activeUpgradeHabit: null,
-    showPaywall: false,
     undoToast: null, // { message: string, onUndo: function, timeoutId: number }
+    hasDismissedOnboarding: typeof window !== 'undefined' && localStorage.getItem('has_dismissed_onboarding_hub') === 'true',
 
     // 2. Actions: Methods to manipulate the state immutably
 
+    setHasDismissedOnboarding: (val) => {
+        if (typeof window !== 'undefined') {
+            if (val) localStorage.setItem('has_dismissed_onboarding_hub', 'true');
+            else localStorage.removeItem('has_dismissed_onboarding_hub');
+        }
+        set({ hasDismissedOnboarding: !!val });
+    },
+
     setActiveUpgradeHabit: (habit) => set({ activeUpgradeHabit: habit }),
-    setShowPaywall: (show) => set({ showPaywall: show }),
 
     /**
      * 10-Second Delayed Undo System

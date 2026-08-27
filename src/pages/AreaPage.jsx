@@ -327,7 +327,7 @@ const AreaPage = () => {
                     <div className="area-edit-block">
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '16px' }}>
                             <div className="edit-field">
-                                <label>Area Name</label>
+                                <label>Identity Name</label>
                                 <input
                                     className="edit-input"
                                     value={areaEditForm.name}
@@ -344,7 +344,7 @@ const AreaPage = () => {
                             </div>
                         </div>
                         <div className="edit-field" style={{ marginBottom: '20px' }}>
-                            <label>Area Icon</label>
+                            <label>Identity Icon</label>
                             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                 <button
                                     type="button"
@@ -420,7 +420,7 @@ const AreaPage = () => {
                                     }}
                                     className="btn btn-danger"
                                 >
-                                    Delete Area
+                                    Delete Identity
                                 </button>
                              )}
                         </div>

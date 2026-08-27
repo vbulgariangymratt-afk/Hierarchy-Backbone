@@ -45,6 +45,10 @@ export const SLOT_ROLES = [
     },
 ];
 
+const WHITELISTED_EMAILS = [
+    'hyperactivewarhead@gmail.com',
+];
+
 // ---------------------------------------------------------------------------
 // Module-level singleton cache — survives component re-mounts and HMR
 // This is the key fix: the loaded settings are stored OUTSIDE React state
@@ -64,7 +68,6 @@ const _cache = {
     currencyName: localStorage.getItem('app-currency-name') || 'Coins',
     todayRemovalMode: localStorage.getItem('app-today-removal-mode') || 'on_completion',
     isWhitelisted: false,
-    trialStartAt: null,
     subscriptionStatus: null,
     lemonSqueezyCustomerId: null,
     lemonSqueezySubscriptionId: null,
@@ -74,6 +77,7 @@ const _cache = {
 
 export const SettingsProvider = ({ children }) => {
     // Initialise from cache so we never flash the empty state on re-mount
+    const [userId, setUserId] = useState(_cache.uid);
     const [focusSlots, setFocusSlots] = useState(_cache.focusSlots);
     const [maintenanceSkillIds, setMaintenanceSkillIdsState] = useState(_cache.maintenanceSkillIds);
     const [maintenanceEnabled, setMaintenanceEnabledState] = useState(_cache.maintenanceEnabled);
@@ -85,7 +89,6 @@ export const SettingsProvider = ({ children }) => {
     const [currencyName, setCurrencyNameState] = useState(_cache.currencyName);
     const [todayRemovalMode, setTodayRemovalModeState] = useState(_cache.todayRemovalMode);
     const [isWhitelisted, setIsWhitelistedState] = useState(_cache.isWhitelisted);
-    const [trialStartAt, setTrialStartAtState] = useState(_cache.trialStartAt);
     const [subscriptionStatus, setSubscriptionStatusState] = useState(_cache.subscriptionStatus);
     const [lemonSqueezyCustomerId, setLemonSqueezyCustomerIdState] = useState(_cache.lemonSqueezyCustomerId);
     const [lemonSqueezySubscriptionId, setLemonSqueezySubscriptionIdState] = useState(_cache.lemonSqueezySubscriptionId);
@@ -130,6 +133,15 @@ export const SettingsProvider = ({ children }) => {
                 }
             }
 
+            let userEmail = null;
+            try {
+                const { data: userData } = await supabase.auth.getUser();
+                userEmail = userData?.user?.email?.toLowerCase();
+            } catch (e) {
+                // ignore
+            }
+            const isEmailWhitelisted = Boolean(userEmail && WHITELISTED_EMAILS.includes(userEmail));
+
             if (error && error.code === 'PGRST116') {
                 // Row doesn't exist yet — create with defaults
                 const defaults = {
@@ -139,9 +151,8 @@ export const SettingsProvider = ({ children }) => {
                     maintenance_enabled: true,
                     guided_slot_roles: true,
                     energy_level: 3,
-                    is_whitelisted: false,
-                    trial_start_at: new Date().toISOString(),
-                    subscription_status: null,
+                    is_whitelisted: isEmailWhitelisted,
+                    subscription_status: isEmailWhitelisted ? 'active' : null,
                     lemon_squeezy_customer_id: null,
                     lemon_squeezy_subscription_id: null,
                     subscription_ends_at: null,
@@ -169,14 +180,14 @@ export const SettingsProvider = ({ children }) => {
                     _cache.activeExperimentLimit = 1;
                     _cache.currencyName = 'Coins';
                     _cache.todayRemovalMode = 'on_completion';
-                    _cache.isWhitelisted = false;
-                    _cache.trialStartAt = defaults.trial_start_at;
-                    _cache.subscriptionStatus = null;
+                    _cache.isWhitelisted = isEmailWhitelisted;
+                    _cache.subscriptionStatus = isEmailWhitelisted ? 'active' : null;
                     _cache.lemonSqueezyCustomerId = null;
                     _cache.lemonSqueezySubscriptionId = null;
                     _cache.subscriptionEndsAt = null;
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
+                    setUserId(uid);
                     setFocusSlots(_cache.focusSlots);
                     setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                     setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -185,9 +196,8 @@ export const SettingsProvider = ({ children }) => {
                     setActiveExperimentLimitState(_cache.activeExperimentLimit);
                     setCurrencyNameState(_cache.currencyName);
                     setTodayRemovalModeState(_cache.todayRemovalMode);
-                    setIsWhitelistedState(false);
-                    setTrialStartAtState(defaults.trial_start_at);
-                    setSubscriptionStatusState(null);
+                    setIsWhitelistedState(isEmailWhitelisted);
+                    setSubscriptionStatusState(isEmailWhitelisted ? 'active' : null);
                     setLemonSqueezyCustomerIdState(null);
                     setLemonSqueezySubscriptionIdState(null);
                     setSubscriptionEndsAtState(null);
@@ -202,24 +212,15 @@ export const SettingsProvider = ({ children }) => {
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
-                _cache.isWhitelisted = data.is_whitelisted || false;
+                _cache.isWhitelisted = isEmailWhitelisted || data.is_whitelisted || false;
                 _cache.subscriptionStatus = data.subscription_status || null;
                 _cache.lemonSqueezyCustomerId = data.lemon_squeezy_customer_id || null;
                 _cache.lemonSqueezySubscriptionId = data.lemon_squeezy_subscription_id || null;
                 _cache.subscriptionEndsAt = data.subscription_ends_at || null;
                 
-                let trialStart = data.trial_start_at;
-                if (!trialStart) {
-                    trialStart = new Date().toISOString();
-                    supabase.from('user_settings')
-                        .update({ trial_start_at: trialStart })
-                        .eq('user_id', uid)
-                        .then(() => {});
-                }
-                _cache.trialStartAt = trialStart;
-                
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
+                setUserId(uid);
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -229,7 +230,6 @@ export const SettingsProvider = ({ children }) => {
                 setCurrencyNameState(_cache.currencyName);
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(_cache.isWhitelisted);
-                setTrialStartAtState(_cache.trialStartAt);
                 setSubscriptionStatusState(_cache.subscriptionStatus);
                 setLemonSqueezyCustomerIdState(_cache.lemonSqueezyCustomerId);
                 setLemonSqueezySubscriptionIdState(_cache.lemonSqueezySubscriptionId);
@@ -370,6 +370,7 @@ export const SettingsProvider = ({ children }) => {
             if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
                 const uid = session?.user?.id;
                 if (uid && uid !== _cache.uid) {
+                    setUserId(uid);
                     loadSettings(uid).then(() => {
                         // Check if there's a pending whitelist to sync
                         if (localStorage.getItem('pending_beta_whitelist') === 'true') {
@@ -385,6 +386,7 @@ export const SettingsProvider = ({ children }) => {
                         }
                     });
                 } else if (!uid) {
+                    setUserId(null);
                     setLoading(false);
                 }
             } else if (event === 'SIGNED_OUT') {
@@ -399,11 +401,11 @@ export const SettingsProvider = ({ children }) => {
                 _cache.currencyName = 'Coins';
                 _cache.todayRemovalMode = 'on_completion';
                 _cache.isWhitelisted = false;
-                _cache.trialStartAt = null;
                 _cache.subscriptionStatus = null;
                 _cache.lemonSqueezyCustomerId = null;
                 _cache.lemonSqueezySubscriptionId = null;
                 _cache.subscriptionEndsAt = null;
+                setUserId(null);
                 setFocusSlots(_cache.focusSlots);
                 setMaintenanceSkillIdsState(_cache.maintenanceSkillIds);
                 setMaintenanceEnabledState(_cache.maintenanceEnabled);
@@ -413,7 +415,6 @@ export const SettingsProvider = ({ children }) => {
                 setCurrencyNameState(_cache.currencyName);
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(false);
-                setTrialStartAtState(null);
                 setSubscriptionStatusState(null);
                 setLemonSqueezyCustomerIdState(null);
                 setLemonSqueezySubscriptionIdState(null);
@@ -425,14 +426,59 @@ export const SettingsProvider = ({ children }) => {
         // Initial check if already authenticated
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (session?.user?.id) {
+                setUserId(session.user.id);
                 loadSettings(session.user.id);
             } else {
+                setUserId(null);
                 setLoading(false);
             }
         });
 
         return () => subscription.unsubscribe();
     }, [loadSettings]);
+
+    // Realtime Supabase listener on user_settings table to auto-unlock live upon payment
+    useEffect(() => {
+        if (!userId) return;
+
+        const channel = supabase
+            .channel(`user_settings_${userId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'user_settings',
+                    filter: `user_id=eq.${userId}`
+                },
+                (payload) => {
+                    if (payload.new) {
+                        const newStatus = payload.new.subscription_status || null;
+                        const newWhitelisted = payload.new.is_whitelisted || false;
+                        const newEndsAt = payload.new.subscription_ends_at || null;
+                        const newCustId = payload.new.lemon_squeezy_customer_id || null;
+                        const newSubId = payload.new.lemon_squeezy_subscription_id || null;
+
+                        _cache.subscriptionStatus = newStatus;
+                        _cache.isWhitelisted = newWhitelisted;
+                        _cache.subscriptionEndsAt = newEndsAt;
+                        _cache.lemonSqueezyCustomerId = newCustId;
+                        _cache.lemonSqueezySubscriptionId = newSubId;
+
+                        setSubscriptionStatusState(newStatus);
+                        setIsWhitelistedState(newWhitelisted);
+                        setSubscriptionEndsAtState(newEndsAt);
+                        setLemonSqueezyCustomerIdState(newCustId);
+                        setLemonSqueezySubscriptionIdState(newSubId);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [userId]);
 
     const refreshSettings = useCallback(() => {
         if (_cache.uid) loadSettings(_cache.uid);
@@ -463,35 +509,6 @@ export const SettingsProvider = ({ children }) => {
         } catch (err) {
             console.error('[SettingsContext] Failed to apply whitelist:', err);
             return { success: false, message: err.message || "An unexpected error occurred." };
-        }
-    };
-
-    const isTrialActive = useMemo(() => {
-        if (!trialStartAt) return true; // Guest user: local access remains unrestricted
-        const start = new Date(trialStartAt).getTime();
-        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-        return Date.now() - start < thirtyDays;
-    }, [trialStartAt]);
-
-    const trialDaysRemaining = useMemo(() => {
-        if (!trialStartAt) return 30;
-        const start = new Date(trialStartAt).getTime();
-        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-        const remainingMs = thirtyDays - (Date.now() - start);
-        return Math.max(0, remainingMs / (24 * 60 * 60 * 1000));
-    }, [trialStartAt]);
-
-    const extendTrial = async () => {
-        if (!trialStartAt) return;
-        const currentStart = new Date(trialStartAt).getTime();
-        // Add 7 days to the current trial start date so the math `Date.now() - start < thirtyDays` gives them 7 more days.
-        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-        const newStart = new Date(currentStart + sevenDaysMs).toISOString();
-
-        _cache.trialStartAt = newStart;
-        setTrialStartAtState(newStart);
-        if (_cache.uid) {
-            await saveSettings({ trial_start_at: newStart });
         }
     };
 
@@ -539,9 +556,29 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
+    const subscriptionDaysRemaining = useMemo(() => {
+        if (!subscriptionEndsAt) return null;
+        const msRemaining = new Date(subscriptionEndsAt).getTime() - Date.now();
+        if (msRemaining <= 0) return 0;
+        return Math.ceil(msRemaining / (24 * 60 * 60 * 1000));
+    }, [subscriptionEndsAt]);
+
     const hasAccess = useMemo(() => {
-        return isWhitelisted || isTrialActive || subscriptionStatus === 'active' || subscriptionStatus === 'on_trial';
-    }, [isWhitelisted, isTrialActive, subscriptionStatus]);
+        if (!userId) return false;
+        if (isWhitelisted) return true;
+
+        // If subscription period has an end date, strictly verify it is still in the future
+        if (subscriptionEndsAt) {
+            const isNotExpired = new Date(subscriptionEndsAt).getTime() > Date.now();
+            if (!isNotExpired) return false;
+        }
+
+        if (subscriptionStatus === 'active' || subscriptionStatus === 'on_trial') {
+            return true;
+        }
+
+        return false;
+    }, [userId, isWhitelisted, subscriptionStatus, subscriptionEndsAt]);
 
     const settingsValue = useMemo(() => ({
         focusSlots,
@@ -566,11 +603,8 @@ export const SettingsProvider = ({ children }) => {
         updateTodayRemovalMode,
         isWhitelisted,
         applyWhitelist,
-        trialStartAt,
-        isTrialActive,
-        trialDaysRemaining,
         hasAccess,
-        extendTrial,
+        subscriptionDaysRemaining,
         subscriptionStatus,
         lemonSqueezyCustomerId,
         lemonSqueezySubscriptionId,
@@ -580,7 +614,7 @@ export const SettingsProvider = ({ children }) => {
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, trialStartAt, isTrialActive, trialDaysRemaining, hasAccess, loading, refreshSettings, extendTrial, subscriptionStatus, lemonSqueezyCustomerId, lemonSqueezySubscriptionId, subscriptionEndsAt]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, hasAccess, subscriptionDaysRemaining, loading, refreshSettings, subscriptionStatus, lemonSqueezyCustomerId, lemonSqueezySubscriptionId, subscriptionEndsAt]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>

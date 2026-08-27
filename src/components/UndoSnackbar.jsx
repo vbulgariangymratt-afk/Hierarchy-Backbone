@@ -18,13 +18,15 @@ export default function UndoSnackbar() {
         <div className="undo-snackbar-container">
             <div className="undo-snackbar capsule-shadow spring-transition">
                 <span className="undo-message">{undoToast.message}</span>
-                <button 
-                    className="undo-btn neuro-btn" 
-                    onClick={handleUndo}
-                    aria-label="Undo action"
-                >
-                    Undo
-                </button>
+                {typeof undoToast.onUndo === 'function' && (
+                    <button 
+                        className="undo-btn neuro-btn" 
+                        onClick={handleUndo}
+                        aria-label="Undo action"
+                    >
+                        Undo
+                    </button>
+                )}
                 <button 
                     className="undo-dismiss-btn" 
                     onClick={clearUndoToast}

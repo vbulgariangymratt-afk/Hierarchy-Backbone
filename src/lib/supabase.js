@@ -35,6 +35,9 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 export const loginWithGoogle = async () => {
     await logToFile('Starting Google login flow via loginWithGoogle()');
+    
+    // In dev mode, use Vite's dev auth poller on localhost:5173/auth/callback
+    // In production desktop app, use macOS deep-link scheme (backbone://auth/callback)
     let redirectTo = import.meta.env.DEV
         ? 'http://localhost:5173/auth/callback'
         : 'backbone://auth/callback';
@@ -42,6 +45,7 @@ export const loginWithGoogle = async () => {
     if (!window.__TAURI_INTERNALS__ && import.meta.env.DEV) {
         redirectTo += '?mode=web';
     }
+        
     try {
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',

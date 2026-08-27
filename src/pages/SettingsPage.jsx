@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import { useTheme } from '../context/ThemeContext';
 import { useSettings } from '../context/SettingsContext';
+import { useBackboneStore } from '../store/backboneStore';
 import SegmentedControl from '../components/ui/SegmentedControl';
 import { 
     Sun, 
@@ -109,8 +110,7 @@ const SettingsPage = () => {
         updateTodayRemovalMode,
         isWhitelisted,
         applyWhitelist,
-        subscriptionStatus,
-        lemonSqueezySubscriptionId,
+        hasAccess,
         redirectToCheckout,
     } = useSettings();
 
@@ -301,7 +301,8 @@ const SettingsPage = () => {
         behavior: "Configure Obsession slot roles, task removal triggers, and experiment limits.",
         signals: "Manage sleep tracking modes, completion sounds, and objective chimes.",
         economy: "Customize currency names and economy rewards presets.",
-        account: "Manage your account identity, subscription tier, and local vault sync.",
+        account: "Manage your account identity and local vault sync.",
+        guide: "Watch my personal workflow video and learn how to structure your cognitive architecture.",
         updates: "Check for software updates and view device & system diagnostics."
     };
 
@@ -317,9 +318,6 @@ const SettingsPage = () => {
                         <div className="settings-user-info">
                             <span className="settings-user-name">
                                 {user ? (user.email?.split('@')[0] || 'User') : 'Guest'}
-                            </span>
-                            <span className="settings-user-badge">
-                                {isWhitelisted ? 'Beta Tester' : subscriptionStatus === 'active' ? 'Pro Member' : 'Free Tier'}
                             </span>
                         </div>
                     </div>
@@ -367,6 +365,14 @@ const SettingsPage = () => {
                         >
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                             <span>Account & Billing</span>
+                        </button>
+
+                        <button
+                            className={`settings-nav-item ${activeTab === 'guide' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('guide')}
+                        >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>Workflow Video Guide</span>
                         </button>
 
                         <button
@@ -769,20 +775,20 @@ const SettingsPage = () => {
                                                     <span className="meta-value">{user.app_metadata?.provider || 'google'}</span>
                                                 </div>
                                                 <div className="meta-row">
-                                                    <span className="meta-key">Status Tier</span>
-                                                    <span className="meta-value" style={{ fontWeight: 'bold', color: '#10b981' }}>
-                                                        {isWhitelisted ? 'Beta Tester Access' : subscriptionStatus === 'active' ? 'Active Pro' : 'Free Tier'}
+                                                    <span className="meta-key">Subscription</span>
+                                                    <span className="meta-value" style={{ fontWeight: '500', color: hasAccess ? '#10b981' : '#F59E0B' }}>
+                                                        {hasAccess ? 'Active' : 'Paused (Read-Only Mode)'}
                                                     </span>
                                                 </div>
                                             </div>
 
                                             <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
-                                                {!isWhitelisted && (
+                                                {!hasAccess && (
                                                     <button 
                                                         className="wallpaper-btn-choose"
-                                                        onClick={subscriptionStatus === 'active' ? () => {} : redirectToCheckout}
+                                                        onClick={redirectToCheckout}
                                                     >
-                                                        {subscriptionStatus === 'active' ? 'Manage Subscription' : 'Upgrade to Premium'}
+                                                        Renew Subscription
                                                     </button>
                                                 )}
                                                 <button className="wallpaper-btn-remove" onClick={handleLogout}>
@@ -950,6 +956,59 @@ const SettingsPage = () => {
                                                     <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399' }}>Connected</span>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'guide' && (
+                            <div className="settings-tab-content">
+                                <div className="settings-group">
+                                    <div className="settings-group-header">Personal Workflow Walkthrough</div>
+                                    <div className="settings-row" style={{ display: 'block', padding: '20px 24px' }}>
+                                        <div style={{
+                                            width: '100%',
+                                            aspectRatio: '16 / 9',
+                                            background: 'rgba(0, 0, 0, 0.4)',
+                                            border: '1px dashed rgba(255, 255, 255, 0.16)',
+                                            borderRadius: '14px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '12px',
+                                            color: 'var(--color-text-secondary, #9da1b0)',
+                                            cursor: 'pointer'
+                                        }}>
+                                            <div style={{
+                                                width: '52px',
+                                                height: '52px',
+                                                borderRadius: '50%',
+                                                background: 'rgba(var(--color-accent-rgb, 99, 102, 241), 0.15)',
+                                                border: '1px solid rgba(var(--color-accent-rgb, 99, 102, 241), 0.3)',
+                                                color: 'var(--color-accent, #6366f1)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </div>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Personal Workflow Walkthrough Video</span>
+                                        </div>
+
+                                        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+                                            <button 
+                                                className="wallpaper-btn-choose"
+                                                onClick={() => {
+                                                    useBackboneStore.getState().setHasDismissedOnboarding(false);
+                                                    alert('Onboarding Hub reset! Open the Launchpad tab to view the 2 options.');
+                                                }}
+                                            >
+                                                Reset First-Time Onboarding Screen
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

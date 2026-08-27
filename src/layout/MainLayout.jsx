@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 
 import Sidebar from './Sidebar';
 import MiniLaunchpadModal from '../components/modals/MiniLaunchpadModal';
-import TrialExpiredSidebar from '../components/TrialExpiredSidebar';
 import UndoSnackbar from '../components/UndoSnackbar';
 import { backbone, NodeTypes } from '../backbone-v2/index';
 import { useBackboneStore } from '../store/backboneStore';
@@ -38,7 +37,8 @@ const MainLayout = () => {
     const safeMode = useBackboneStore(state =>
         state.nodes.some(n => n.type === NodeTypes.OBJECTIVE && n.metadata?.burnoutRisk === true)
     );
-    const { isTrialActive, trialDaysRemaining, hasAccess, loading: settingsLoading, energyLevel } = useSettings();
+    const { energyLevel, hasAccess, subscriptionDaysRemaining, redirectToCheckout, loading: settingsLoading } = useSettings();
+
     const { theme, themePreference, setTheme, backgroundMode, setBackgroundMode } = useTheme();
 
     const rootNode = useBackboneStore(state => state.nodes.find(n => n.id === 'ROOT'));
@@ -124,12 +124,6 @@ const MainLayout = () => {
     const [safetyNetDismissed, setSafetyNetDismissed] = useState(
         localStorage.getItem('safety_net_dismissed') === 'true'
     );
-    const [extensionWarningDismissed, setExtensionWarningDismissed] = useState(
-        localStorage.getItem('trial_extension_warning_dismissed') === 'true'
-    );
-
-    // Sidebar overlay state
-    const [isTrialSidebarOpen, setIsTrialSidebarOpen] = useState(false);
 
     // Daily Log popover state
     const [showDailyLog, setShowDailyLog] = useState(false);
@@ -191,19 +185,11 @@ const MainLayout = () => {
         return () => subscription.unsubscribe();
     }, []);
 
-    // Check if trial has expired (isTrialActive === false / hasAccess === false)
-    // and they are in Planning Mode (which is any page rendered under MainLayout, i.e. not "/focus")
-    // Removed automatic lockout sidebar popup as trial expiration now uses Read-Only Paywall Interceptor instead.
-
     const completedTasksCount = useBackboneStore(state =>
         state.nodes.filter(n => n.type === NodeTypes.TASK && n.metadata?.completedAt).length
     );
 
     const showSafetyNetBanner = !authLoading && !user && completedTasksCount >= 3 && !safetyNetDismissed;
-
-    // Check if we should show the 2-day reminder warning (trialDaysRemaining <= 2 and > 0)
-    const [forceShowExtensionWarning, setForceShowExtensionWarning] = useState(false);
-    const showExtensionWarning = (forceShowExtensionWarning || (!settingsLoading && isTrialActive && trialDaysRemaining <= 2)) && !extensionWarningDismissed;
 
     const handleGoogleLogin = async () => {
         try {
@@ -216,12 +202,6 @@ const MainLayout = () => {
     const dismissSafetyNet = () => {
         localStorage.setItem('safety_net_dismissed', 'true');
         setSafetyNetDismissed(true);
-    };
-
-    const dismissExtensionWarning = () => {
-        localStorage.setItem('trial_extension_warning_dismissed', 'true');
-        setExtensionWarningDismissed(true);
-        setForceShowExtensionWarning(false);
     };
 
     // Modal state
@@ -278,6 +258,69 @@ const MainLayout = () => {
             <header className={`app-header ${isFullscreen ? 'is-fullscreen' : ''}`} data-tauri-drag-region>
                 <div className="header-left" data-tauri-drag-region style={{ display: 'flex', alignItems: 'center' }}>
                     <span className="logo-text">Backbone Hierarchy</span>
+                    
+                    {!settingsLoading && !hasAccess && (
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={user ? redirectToCheckout : handleGoogleLogin}
+                            className="update-pill cursor-target"
+                            style={{
+                                marginLeft: '12px',
+                                background: 'rgba(var(--color-accent-rgb), 0.1)',
+                                border: '1px solid rgba(var(--color-accent-rgb), 0.2)',
+                                color: 'var(--color-text-primary)',
+                                height: '28px',
+                                padding: '0 12px',
+                                borderRadius: '9999px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxSizing: 'border-box'
+                            }}
+                            title={user ? "Subscription paused (Read-Only Mode). Click to renew." : "Sign in to activate your subscription."}
+                        >
+                            <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }} />
+                            {user ? 'Renew Subscription' : 'Sign in / Activate'}
+                        </motion.button>
+                    )}
+
+                    {!settingsLoading && hasAccess && (subscriptionDaysRemaining === 2 || subscriptionDaysRemaining === 1) && (
+                        <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={redirectToCheckout}
+                            className="update-pill cursor-target"
+                            style={{
+                                marginLeft: '12px',
+                                background: 'rgba(var(--color-accent-rgb), 0.1)',
+                                border: '1px solid rgba(var(--color-accent-rgb), 0.2)',
+                                color: 'var(--color-text-primary)',
+                                height: '28px',
+                                padding: '0 12px',
+                                borderRadius: '9999px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxSizing: 'border-box'
+                            }}
+                            title="Your access period is ending soon. Click to renew with 1 click."
+                        >
+                            <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-accent)', boxShadow: '0 0 8px var(--color-accent)' }} />
+                            {subscriptionDaysRemaining === 1 ? '1 day left • Renew' : '2 days left • Renew'}
+                        </motion.button>
+                    )}
+
                     {hasUpdate && (
                         <motion.button
                             initial={{ opacity: 0, scale: 0.8 }}
@@ -478,6 +521,7 @@ const MainLayout = () => {
                                     <Settings size={16} />
                                 </motion.div>
                             </button>
+
                         </div>
                     </div>
                 </div>
@@ -492,31 +536,21 @@ const MainLayout = () => {
                                 <span className="safety-net-emoji">🧠</span>
                                 <div>
                                     <strong style={{ display: 'block', fontWeight: '600' }}>
-                                        Nice bruv, you can login to save your data for when your brain's recharging
+                                        Your brain is currently saved locally on this browser.
                                     </strong>
                                     <span style={{ display: 'block', marginTop: '4px', opacity: 0.8, fontSize: '0.78rem' }}>
-                                        No password needed, cuz remembering passwords is a crime against working memory anyway
+                                        To protect your routines from accidental deletion and access Backbone on your phone, link your Google account. It takes one click, and it's completely free.
                                     </span>
                                 </div>
                             </div>
                             <div className="safety-net-actions">
                                 <button className="safety-net-login-btn" onClick={handleGoogleLogin}>
-                                    Sign in with Google
+                                    Link Google Account
                                  </button>
                                 <button className="safety-net-dismiss-btn" onClick={dismissSafetyNet} title="Dismiss">
                                     ✕
                                 </button>
                             </div>
-                        </div>
-                    )}
-                    {showExtensionWarning && (
-                        <div className="trial-extension-warning-toast">
-                            <span className="trial-warning-text">
-                                Hey, your 7-day extension on Backbone wraps up in a couple days. No action needed right now, its just so there are no surprises ;)
-                            </span>
-                            <button className="trial-warning-dismiss-btn" onClick={dismissExtensionWarning} title="Dismiss warning">
-                                ✕
-                            </button>
                         </div>
                     )}
                     <div style={{ height: '100%', width: '100%' }}>
@@ -531,15 +565,6 @@ const MainLayout = () => {
                 onClose={() => setIsLaunchpadOpen(false)} 
                 skill={selectedSkill}
             />
-
-            {/* Trial Expired Sidebar */}
-            <TrialExpiredSidebar 
-                isOpen={isTrialSidebarOpen}
-                onClose={() => setIsTrialSidebarOpen(false)}
-            />
-
-            {/* Global Delayed Undo Snackbar */}
-            <UndoSnackbar />
 
             {/* Settings Modal Overlay — portal always mounted, AnimatePresence inside */}
             {createPortal(
