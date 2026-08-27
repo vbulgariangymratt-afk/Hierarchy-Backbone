@@ -188,30 +188,51 @@ const SettingsPage = () => {
     };
 
     const downloadAndInstallUpdate = async () => {
-        if (!updaterState.versionInfo) return;
+        let versionInfo = updaterState.versionInfo || useBackboneStore.getState().availableUpdate;
+        
+        if (!versionInfo) {
+            setUpdaterState(prev => ({ ...prev, checking: true, message: 'Checking for update package...' }));
+            versionInfo = await useBackboneStore.getState().checkForAppUpdates();
+        }
+
+        if (!versionInfo) {
+            setUpdaterState(prev => ({ 
+                ...prev, 
+                checking: false, 
+                error: 'Could not find update package.', 
+                message: 'No update available to download.' 
+            }));
+            return;
+        }
 
         setUpdaterState(prev => ({
             ...prev,
             checking: false,
-            downloadProgress: 0,
-            message: 'Downloading update...'
+            downloadProgress: 5,
+            error: null,
+            message: 'Starting download...'
         }));
 
         try {
             let downloaded = 0;
             let contentLength = 0;
 
-            await updaterState.versionInfo.downloadAndInstall((event) => {
+            await versionInfo.downloadAndInstall((event) => {
                 switch (event.event) {
                     case 'Started':
                         contentLength = event.data.contentLength || 0;
+                        setUpdaterState(prev => ({
+                            ...prev,
+                            downloadProgress: 10,
+                            message: 'Download started...'
+                        }));
                         break;
                     case 'Progress':
                         downloaded += event.data.chunkLength;
                         const pct = contentLength ? Math.round((downloaded / contentLength) * 100) : 50;
                         setUpdaterState(prev => ({
                             ...prev,
-                            downloadProgress: pct,
+                            downloadProgress: Math.max(10, pct),
                             message: `Downloading: ${pct}%`
                         }));
                         break;
@@ -219,14 +240,16 @@ const SettingsPage = () => {
                         setUpdaterState(prev => ({
                             ...prev,
                             downloadProgress: 100,
-                            message: 'Download finished. Installing...'
+                            message: 'Download finished. Applying update...'
                         }));
                         break;
                 }
             });
 
+            useBackboneStore.getState().setAvailableUpdate(null);
             setUpdaterState(prev => ({
                 ...prev,
+                downloadProgress: 0,
                 updateInstalled: true,
                 updateFound: false,
                 message: 'Update installed successfully. Please restart Backbone Hierarchy to apply.'
@@ -235,8 +258,9 @@ const SettingsPage = () => {
             console.error('Update installation failed:', err);
             setUpdaterState(prev => ({
                 ...prev,
+                downloadProgress: 0,
                 error: err.message || String(err),
-                message: 'Let\'s try that again.'
+                message: err.message || 'Update failed. Let\'s try that again.'
             }));
         }
     };
@@ -847,11 +871,22 @@ const SettingsPage = () => {
                                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                                 >
                                                     <Download size={14} style={{ stroke: '#ffffff' }} />
-                                                    <span>Install Update</span>
+                                                    <span>{updaterState.downloadProgress > 0 ? 'Installing...' : 'Install Update'}</span>
                                                 </button>
 
+                                                {updaterState.message && (
+                                                    <div style={{ 
+                                                        marginTop: '10px', 
+                                                        fontSize: '12px', 
+                                                        color: updaterState.error ? '#ef4444' : 'var(--color-text-secondary, #9da1b0)',
+                                                        fontWeight: '500'
+                                                    }}>
+                                                        {updaterState.message}
+                                                    </div>
+                                                )}
+
                                                 {updaterState.downloadProgress > 0 && !updaterState.updateInstalled && !updaterState.error && (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '16px', width: '100%', maxWidth: '320px' }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '12px', width: '100%', maxWidth: '320px' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)' }}>
                                                             <span>Downloading...</span>
                                                             <span>{updaterState.downloadProgress}%</span>
