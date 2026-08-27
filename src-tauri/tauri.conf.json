@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Backbone Hierarchy",
-  "version": "3.0.8",
+  "version": "3.0.9",
   "identifier": "com.warhead.backbonehierarchy",
   "build": {
     "frontendDist": "../dist",
@@ -44,7 +44,7 @@
       "endpoints": [
         "https://raw.githubusercontent.com/vbulgariangymratt-afk/Backbone-s-minimal-webpage/main/updater.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMxRjBGMzUwNDgzNkJCQ0YKUldUUHV6WklVUFB3d1FWS0RZTFhIRVIrS1NTQkNibXUrYWdyc2VrRUdXenpDaS9hWkxtcHlYeWUK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM0MzJBNTI4RkMyOEE2MEUKUldRT3BpajhLS1V5eEowZTJ1Sjl2UVBvQW05Z0FjYnR0WmZjY21xYWJvVW1MKzhkWlNrMVZ5T3kK"
     }
   },
   "bundle": {

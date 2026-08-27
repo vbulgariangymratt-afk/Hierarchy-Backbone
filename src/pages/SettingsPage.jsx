@@ -263,11 +263,12 @@ const SettingsPage = () => {
             }
         } catch (err) {
             console.error('Update installation failed:', err);
+            const errStr = typeof err === 'string' ? err : (err?.message || JSON.stringify(err) || String(err));
             setUpdaterState(prev => ({
                 ...prev,
                 downloadProgress: 0,
-                error: err.message || String(err),
-                message: err.message || 'Update failed. Let\'s try that again.'
+                error: errStr,
+                message: `Update failed: ${errStr}`
             }));
         }
     };
