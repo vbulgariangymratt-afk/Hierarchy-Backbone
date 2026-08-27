@@ -195,7 +195,7 @@ const SettingsPage = () => {
                 ...prev,
                 checking: false,
                 error: err.message || String(err),
-                message: 'Could not connect to update server.'
+                message: err.message || 'Could not connect to update server.'
             }));
         }
     };
