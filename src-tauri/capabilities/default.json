@@ -17,6 +17,8 @@
     "deep-link:default",
     "opener:default",
     "updater:default",
-    "fs:default"
+    "fs:default",
+    "process:default",
+    "process:allow-restart"
   ]
 }

@@ -252,8 +252,15 @@ const SettingsPage = () => {
                 downloadProgress: 0,
                 updateInstalled: true,
                 updateFound: false,
-                message: 'Update installed successfully. Please restart Backbone Hierarchy to apply.'
+                message: 'Update installed successfully! Relaunching Backbone...'
             }));
+
+            try {
+                const { relaunch } = await import('@tauri-apps/plugin-process');
+                await relaunch();
+            } catch (relaunchErr) {
+                console.warn('Auto-relaunch failed, user can restart manually:', relaunchErr);
+            }
         } catch (err) {
             console.error('Update installation failed:', err);
             setUpdaterState(prev => ({
