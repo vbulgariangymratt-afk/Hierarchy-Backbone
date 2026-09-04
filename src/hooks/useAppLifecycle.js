@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
 
 /**
  * Hook to manage Tauri window maximization (on double-click in title bar zone)

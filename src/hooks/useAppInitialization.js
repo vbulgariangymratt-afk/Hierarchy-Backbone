@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import posthog from 'posthog-js';
+import * as Sentry from '@sentry/react';
 import { 
   backbone, 
   repository, 
@@ -34,97 +35,98 @@ export const useAppInitialization = (setSession) => {
   useEffect(() => {
 
     const initApp = async () => {
-      // ENSURE backbone is ready before anything else
-      if (!backbone || typeof backbone.initialize !== 'function') {
-      }
-
       try {
-        await backbone.initialize();
-        
-        // --- STEP 1: Initial hydration from cache/database ---
-        const allNodes = await backbone.getAllNodes();
-        initializeNodes(allNodes);
+        // --- STEP 1: Recover session first & set UID immediately to prevent startup reload race ---
+        let initialSession = null;
+        try {
+          const sessionPromise = supabase.auth.getSession();
+          const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 4000));
+          const result = await Promise.race([sessionPromise, timeoutPromise]);
+          initialSession = result?.data?.session || null;
+        } catch (authErr) {
+          console.warn('[App Init] Session recovery warning:', authErr);
+        }
 
-        
-        // --- STEP 2: Client-side session recovery ---
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
-        // Set this BEFORE registering the auth listener so the startup
-        // SIGNED_IN event is treated as a token refresh, not a new login
         if (initialSession?.user?.id) {
           _lastKnownUid = initialSession.user.id;
           posthog.identify(initialSession.user.id, {
             email: initialSession.user.email
           });
-          
-          // Migrate any pending guest data on startup
-          if (repository?.migrateGuestData) {
-            await repository.migrateGuestData(initialSession.user.id);
-          }
-          if (habitRepo?.migrateGuestData) {
-            await habitRepo.migrateGuestData(initialSession.user.id);
-          }
-          if (journalRepo?.migrateGuestData) {
-            await journalRepo.migrateGuestData(initialSession.user.id);
-          }
+          Sentry.setUser({
+            id: initialSession.user.id,
+            email: initialSession.user.email
+          });
         }
+
+        // --- STEP 2: Hydrate backbone with safety timeout ---
+        const bootstrapPromise = (async () => {
+          if (backbone?.initialize) {
+            await backbone.initialize();
+          }
+          const allNodes = await backbone.getAllNodes();
+          initializeNodes(allNodes);
+
+          if (initialSession?.user?.id) {
+            if (repository?.migrateGuestData) await repository.migrateGuestData(initialSession.user.id);
+            if (habitRepo?.migrateGuestData) await habitRepo.migrateGuestData(initialSession.user.id);
+            if (journalRepo?.migrateGuestData) await journalRepo.migrateGuestData(initialSession.user.id);
+          }
+        })();
+
+        // Cap bootstrap wait at 6s so the UI never deadlocks
+        const bootstrapTimeout = new Promise(resolve => setTimeout(resolve, 6000));
+        await Promise.race([bootstrapPromise, bootstrapTimeout]);
 
         setSession(initialSession);
         setLoading(false);
         setRepositoriesReady(true);
 
-
-        // --- STEP 3: Listen for system-level auth state changes ---
+        // --- STEP 3: Listen for auth state changes ---
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-          
           setSession(newSession);
 
-          if (event === 'SIGNED_IN' && newSession) {
+          if (event === 'SIGNED_IN' && newSession?.user?.id) {
             posthog.identify(newSession.user.id, {
               email: newSession.user.email
             });
-            // macOS Performance Fix: Skip re-load if it's just a token refresh
-            const isNewUser = newSession.user.id !== _lastKnownUid;
+            Sentry.setUser({
+              id: newSession.user.id,
+              email: newSession.user.email
+            });
+
+            // Only trigger reload if user explicitly switched or logged in fresh after startup
+            const isDifferentUser = _lastKnownUid && newSession.user.id !== _lastKnownUid;
             
-            if (isNewUser && !_isReloading) {
+            if (isDifferentUser && !_isReloading) {
               _isReloading = true;
               _lastKnownUid = newSession.user.id;
               setRepositoriesReady(false);
               try {
-                // Brief 300ms pause to let Supabase auth session timestamp settle (prevents clock skew errors)
                 await new Promise(r => setTimeout(r, 300));
-
-                // Migrate local guest data to Supabase first
-                if (repository?.migrateGuestData) {
-                  await repository.migrateGuestData(newSession.user.id);
-                }
-                if (habitRepo?.migrateGuestData) {
-                  await habitRepo.migrateGuestData(newSession.user.id);
-                }
-                if (journalRepo?.migrateGuestData) {
-                  await journalRepo.migrateGuestData(newSession.user.id);
-                }
+                if (repository?.migrateGuestData) await repository.migrateGuestData(newSession.user.id);
+                if (habitRepo?.migrateGuestData) await habitRepo.migrateGuestData(newSession.user.id);
+                if (journalRepo?.migrateGuestData) await journalRepo.migrateGuestData(newSession.user.id);
 
                 await reloadAllData();
                 initializeNodes(await backbone.getAllNodes());
               } catch (err) {
-                console.error('[App] Reload and migration failed after sign-in:', err);
+                console.error('[App] Reload failed after sign-in:', err);
               } finally {
                 _isReloading = false;
                 setRepositoriesReady(true);
               }
             } else {
+              _lastKnownUid = newSession.user.id;
             }
           }
-
 
           if (event === 'SIGNED_OUT') {
             _lastKnownUid = null;
             posthog.reset();
+            Sentry.setUser(null);
             clearAllData();
-            initializeNodes([]); // Clear the Zustand store
-            setRepositoriesReady(false);
-            setRepositoriesReady(true); // Force re-render of providers
+            initializeNodes([]);
+            setRepositoriesReady(true);
           }
         });
         
@@ -133,7 +135,6 @@ export const useAppInitialization = (setSession) => {
           const nodes = await backbone.getAllNodes();
           const habits = habitRepo ? habitRepo.getAll() : [];
           
-          // Recompute global engagement map for O(1) Lookups
           const newMap = {};
           nodes.filter(n => n.type === NodeTypes.SKILL).forEach(skill => {
             newMap[skill.id] = getSkillEngagementStatus(skill.id, nodes, habits);
@@ -143,11 +144,9 @@ export const useAppInitialization = (setSession) => {
           initializeNodes(nodes);
         };
 
-        // Subscribe to any/all low-level repository changes
         const unsubNodes = repository.subscribe(syncStore);
         const unsubHabits = habitRepo.subscribe(syncStore);
 
-        // Perform initial sync immediately to bridge any latency
         await syncStore();
 
         return () => {
@@ -156,7 +155,7 @@ export const useAppInitialization = (setSession) => {
           unsubHabits();
         };
       } catch (error) {
-        console.error('[App Init] CRITICAL FAILURE during bootstrap:', error);
+        console.error('[App Init] Initialization error caught:', error);
         setLoading(false);
         setRepositoriesReady(true);
       }

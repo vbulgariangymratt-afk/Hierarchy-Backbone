@@ -45,7 +45,7 @@ export const useDeepLinkAuth = (setSession) => {
       }).catch(err => console.warn('[AUTH] Could not load deep link plugin:', err));
 
       import('@tauri-apps/api/event').then(({ listen }) => {
-        ['tauri://url', 'app://open-url'].forEach(eventName => {
+        ['tauri://url', 'app://open-url', 'deep-link-received'].forEach(eventName => {
           listen(eventName, (event) => {
             const url = typeof event.payload === 'string' 
               ? event.payload 

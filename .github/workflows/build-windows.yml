@@ -43,7 +43,7 @@ jobs:
       - name: Upload to Public Landing Page Releases
         uses: softprops/action-gh-release@v2
         with:
-          repository: vbulgariangymratt-afk/Backbone-s-minimal-webpage
+          repository: vbulgariangymratt-afk/BH-minimal-webpage
           token: ${{ secrets.PUBLIC_REPO_TOKEN }}
           tag_name: latest
           files: |

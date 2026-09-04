@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-const targetRepo = 'vbulgariangymratt-afk/Backbone-s-minimal-webpage';
+const targetRepo = 'vbulgariangymratt-afk/BH-minimal-webpage';
 const githubToken = process.env.PUBLIC_REPO_TOKEN;
 
 if (!githubToken) {
@@ -79,6 +79,21 @@ if (platform === 'darwin') {
   } else {
     console.error('No macOS .tar.gz updater package found in bundle directory.');
     process.exit(1);
+  }
+
+  // Find and copy .dmg installer for public landing page direct download
+  const dmgDir = path.resolve('src-tauri/target/release/bundle/dmg');
+  if (fs.existsSync(dmgDir)) {
+    const dmgFiles = fs.readdirSync(dmgDir);
+    const dmgFile = dmgFiles.find(f => f.endsWith('.dmg'));
+    if (dmgFile) {
+      fs.copyFileSync(path.join(dmgDir, dmgFile), path.resolve('Backbone.dmg'));
+      console.log(`Successfully prepared Backbone.dmg from ${dmgFile}`);
+    } else {
+      console.warn('No .dmg file found in dmg bundle directory.');
+    }
+  } else {
+    console.warn('DMG bundle directory not found.');
   }
 } else if (platform === 'win32') {
   // Windows updater build targets

@@ -25,12 +25,12 @@ export default function AuthGate({ user }) {
 
     const handleOpenWebsite = async (e) => {
         e?.preventDefault?.();
-        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL || 'https://backbonehierarchy.com';
+        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL || 'https://backbone.lemonsqueezy.com/checkout';
         let url;
         try {
             url = new URL(checkoutBaseUrl);
         } catch {
-            url = new URL('https://backbonehierarchy.com');
+            url = new URL('https://backbone.lemonsqueezy.com/checkout');
         }
 
         if (user?.id) {
@@ -139,9 +139,6 @@ export default function AuthGate({ user }) {
             >
                 <div className="auth-gate-header">
                     <h1 className="auth-gate-title">Backbone Hierarchy</h1>
-                    <p className="auth-gate-subtitle">
-                        Prosthetic brain for adhd founders & entrepreneurs with depression
-                    </p>
                 </div>
 
                 <div className="auth-gate-body">
@@ -167,12 +164,9 @@ export default function AuthGate({ user }) {
                         <span>{isLoggingIn ? 'Connecting...' : 'Sign in with Google'}</span>
                     </motion.button>
 
-                    <div className="auth-gate-footer">
-                        <span>Tryna go around payment?</span>
-                        <button className="auth-gate-link-btn cursor-target" onClick={handleOpenWebsite}>
-                            Subscribe bruv
-                        </button>
-                    </div>
+                    <p className="auth-gate-hint">
+                        (use the same email u bought this with)
+                    </p>
                 </div>
             </motion.div>
         </div>

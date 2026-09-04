@@ -1,5 +1,5 @@
-# Navigate to the project folder explicitly
-cd "/Users/Casa/Documents/Terminal app"
+# Navigate to this project folder automatically
+cd "$(dirname "$0")"
 # Add common paths for npm
 export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin
 

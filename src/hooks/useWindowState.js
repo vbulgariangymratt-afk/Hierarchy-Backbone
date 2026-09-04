@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const isTauri = typeof window !== 'undefined' && window.__TAURI__ !== undefined;
+const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
 
 const WINDOW_STATE_KEY = 'tauri-window-state';
 

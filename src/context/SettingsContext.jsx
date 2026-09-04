@@ -513,7 +513,7 @@ export const SettingsProvider = ({ children }) => {
     };
 
     const redirectToCheckout = async () => {
-        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL;
+        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL || 'https://backbone.lemonsqueezy.com/checkout';
         
         if (!checkoutBaseUrl) {
             console.error('[SettingsContext] VITE_LEMON_SQUEEZY_CHECKOUT_URL is not configured.');
