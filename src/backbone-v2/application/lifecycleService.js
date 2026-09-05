@@ -189,10 +189,12 @@ export const LifecycleService = (repository, deps = {}) => {
                     return; // Early return: wait for reloadAllData() post-login
                 }
 
-                // [CRITICAL SAFETY GUARD]: Before creating a new ROOT, verify it doesn't exist in Supabase
+                // [CRITICAL SAFETY GUARD]: Before creating a new ROOT, verify it doesn't exist in Supabase.
+                // Filter by user_id explicitly (RLS also enforces this, but belt-and-suspenders).
                 const { data: existingRoot, error } = await supabase
                     .from('nodes')
                     .select('*')
+                    .eq('user_id', user.id)
                     .eq('id', 'ROOT')
                     .single();
 
@@ -207,6 +209,7 @@ export const LifecycleService = (repository, deps = {}) => {
                         createdAt: existingRoot.created_at,
                         updatedAt: existingRoot.updated_at
                     });
+                    console.log("HierarchyService [Setup]: ROOT node confirmed");
                 } else if (!error || error.code === 'PGRST116') { // PGRST116 = No Rows Found
                     // [GUARD 2]: Only initialize fresh ROOT if cloud definitely lacks it
                     console.log("HierarchyService [Setup]: ROOT genuinely missing, initializing fresh.");
@@ -226,10 +229,10 @@ export const LifecycleService = (repository, deps = {}) => {
                         createdAt: Date.now(),
                         updatedAt: Date.now()
                     });
+                    console.log("HierarchyService [Setup]: ROOT node confirmed");
                 } else {
                     console.error("HierarchyService: Supabase query failed. Aborting ROOT initialization to prevent balance reset.", error);
                 }
-                console.log("HierarchyService [Setup]: ROOT node confirmed");
             }
 
             // 2. Structural Safeguard: Ensure REWARD_BANK exists
@@ -244,7 +247,9 @@ export const LifecycleService = (repository, deps = {}) => {
                     createdAt: Date.now(),
                     updatedAt: Date.now()
                 });
-                console.log("HierarchyService [Setup]: REWARD_BANK node confirmed");
+                console.log("HierarchyService [Setup]: REWARD_BANK node confirmed (created fresh)");
+            } else {
+                console.log("HierarchyService [Setup]: REWARD_BANK node confirmed (already exists)");
             }
 
             if (ensureRewardVaultSetup) await ensureRewardVaultSetup();

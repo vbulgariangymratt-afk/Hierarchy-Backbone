@@ -8,6 +8,7 @@ import { NodeTypes, ObjectiveStatuses, TaskStatuses, IdentityTiers } from './dom
 import { createHabitRepository } from '../habit-engine/habitRepository';
 import { createHabitService } from '../habit-engine/habitService';
 import { TimelineService } from './application/timelineService';
+import { logErrorToFile } from '../lib/logger';
 
 
 /**

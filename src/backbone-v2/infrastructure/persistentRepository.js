@@ -16,34 +16,32 @@ export const createPersistentRepository = () => {
 
     // Internal helper to save to cloud or local storage
     const persist = async (nodes) => {
-        let userId = await getUserId();
+        const userId = await getUserId();
         if (!userId) {
             // Unauthenticated guest user: Save to local storage
             localStorage.setItem('guest_nodes', JSON.stringify(storage));
             return;
         }
 
-        try {
-            // Transform nodes for Supabase
-            const nodesToUpsert = (Array.isArray(nodes) ? nodes : [nodes]).map(node => {
-                return {
-                    id: node.id,
-                    user_id: userId,
-                    name: node.name || 'Untitled',
-                    type: node.type || 'NODE',
-                    parent_id: node.parentId,
-                    metadata: node.metadata || {},
-                    updated_at: new Date().toISOString()
-                };
-            });
+        const nodesToUpsert = (Array.isArray(nodes) ? nodes : [nodes]).map(node => ({
+            id: node.id,
+            user_id: userId,
+            name: node.name || 'Untitled',
+            type: node.type || 'NODE',
+            parent_id: node.parentId,
+            metadata: node.metadata || {},
+            updated_at: new Date().toISOString()
+        }));
 
-            const { error } = await supabase
-                .from('nodes')
-                .upsert(nodesToUpsert);
+        // onConflict targets the composite PK (user_id, id) so that hardcoded
+        // node IDs like 'ROOT' and 'REWARD_BANK' resolve per-user, not globally.
+        const { error } = await supabase
+            .from('nodes')
+            .upsert(nodesToUpsert, { onConflict: 'user_id,id' });
 
-            if (error) throw error;
-        } catch (e) {
-            console.error('Failed to persist to Supabase:', e);
+        if (error) {
+            console.error('Failed to persist to Supabase:', error);
+            throw error;
         }
     };
 
@@ -288,7 +286,7 @@ export const createPersistentRepository = () => {
 
                 const { error } = await supabase
                     .from('nodes')
-                    .upsert(nodesToUpsert);
+                    .upsert(nodesToUpsert, { onConflict: 'user_id,id' });
 
                 if (error) throw error;
                 localStorage.removeItem('guest_nodes');

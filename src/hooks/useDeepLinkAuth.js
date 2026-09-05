@@ -2,6 +2,10 @@ import { useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { logToFile } from '../lib/logger';
 
+// Track the last processed PKCE code to prevent double-delivery bugs from macOS
+let lastProcessedCode = null;
+let lastProcessedTime = 0;
+
 export const useDeepLinkAuth = (setSession) => {
   useEffect(() => {
     let unsubscribers = [];
@@ -21,6 +25,14 @@ export const useDeepLinkAuth = (setSession) => {
           return;
         }
         if (code) {
+          const now = Date.now();
+          if (code === lastProcessedCode && (now - lastProcessedTime < 10000)) {
+            console.log('[AUTH] Duplicate PKCE code detected (delivered twice by macOS). Skipping duplicate token exchange attempt.');
+            return;
+          }
+          lastProcessedCode = code;
+          lastProcessedTime = now;
+
           console.log('[AUTH] PKCE code detected — exchanging for session...');
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {

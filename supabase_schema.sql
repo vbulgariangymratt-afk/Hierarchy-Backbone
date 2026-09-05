@@ -2,15 +2,21 @@
 create extension if not exists "uuid-ossp";
 
 -- 1. Nodes Table (Central hierarchy for Life Areas, Skills, Tasks, etc.)
+-- NOTE: Primary key is composite (user_id, id) to allow hardcoded node IDs
+-- like 'ROOT' and 'REWARD_BANK' to be unique per user rather than globally.
+-- The self-referential FK on parent_id was dropped (see supabase_migration_composite_pk.sql)
+-- because it referenced the old single-column PK. parent_id is now a plain
+-- text column; referential integrity is enforced by RLS + application logic.
 create table if not exists public.nodes (
-    id text primary key, -- Using text to support existing custom IDs during migration
+    id text not null,
     user_id uuid references auth.users(id) on delete cascade not null,
     name text not null,
     type text not null,
-    parent_id text references public.nodes(id) on delete cascade,
+    parent_id text, -- No FK: self-referential FK dropped in favour of composite PK
     metadata jsonb default '{}'::jsonb,
     created_at timestamp with time zone default now(),
-    updated_at timestamp with time zone default now()
+    updated_at timestamp with time zone default now(),
+    primary key (user_id, id)
 );
 
 -- Index for parent searches
