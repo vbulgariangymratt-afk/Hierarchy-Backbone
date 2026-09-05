@@ -90,8 +90,6 @@ const SettingsPage = () => {
         darkWallpaperImage,
         updateLightWallpaperImage,
         updateDarkWallpaperImage,
-        lightChangesRemaining,
-        darkChangesRemaining,
     } = useTheme();
 
     const { 
@@ -475,42 +473,29 @@ const SettingsPage = () => {
                                         {backgroundMode === 'wallpaper' && (
                                             <div className="inline-wallpaper-container">
                                                 <span className="inline-wallpaper-hint">
-                                                    Upload background images for Light and Dark modes.
+                                                    Paste an image URL for Light and Dark modes.
                                                 </span>
                                                 <div className="inline-wallpaper-grid">
                                                     {/* Light Mode Wallpaper */}
                                                     <div className="wallpaper-upload-box">
                                                         <span className="wallpaper-label">
-                                                            Light Wallpaper ({lightChangesRemaining} left)
+                                                            Light Wallpaper URL
                                                         </span>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
                                                             <input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                id="wallpaper-upload-light"
-                                                                disabled={lightChangesRemaining === 0}
-                                                                style={{ display: 'none' }}
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0];
-                                                                    if (file) updateLightWallpaperImage(file);
-                                                                }}
+                                                                type="url"
+                                                                className="appearance-url-input"
+                                                                placeholder="https://..."
+                                                                value={lightWallpaperImage || ''}
+                                                                onChange={(e) => updateLightWallpaperImage(e.target.value)}
+                                                                style={{ flex: 1 }}
                                                             />
-                                                            <label 
-                                                                htmlFor={lightChangesRemaining > 0 ? "wallpaper-upload-light" : undefined}
-                                                                className="wallpaper-btn-choose"
-                                                                style={{ 
-                                                                    opacity: lightChangesRemaining === 0 ? 0.4 : 1,
-                                                                    cursor: lightChangesRemaining === 0 ? 'not-allowed' : 'pointer'
-                                                                }}
-                                                            >
-                                                                {lightChangesRemaining === 0 ? 'Locked' : 'Choose Image'}
-                                                            </label>
                                                             {lightWallpaperImage && (
                                                                 <button
                                                                     className="wallpaper-btn-remove"
                                                                     onClick={() => updateLightWallpaperImage(null)}
                                                                 >
-                                                                    Remove
+                                                                    Clear
                                                                 </button>
                                                             )}
                                                         </div>
@@ -519,36 +504,23 @@ const SettingsPage = () => {
                                                     {/* Dark Mode Wallpaper */}
                                                     <div className="wallpaper-upload-box">
                                                         <span className="wallpaper-label">
-                                                            Dark Wallpaper ({darkChangesRemaining} left)
+                                                            Dark Wallpaper URL
                                                         </span>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
                                                             <input
-                                                                type="file"
-                                                                accept="image/*"
-                                                                id="wallpaper-upload-dark"
-                                                                disabled={darkChangesRemaining === 0}
-                                                                style={{ display: 'none' }}
-                                                                onChange={(e) => {
-                                                                    const file = e.target.files?.[0];
-                                                                    if (file) updateDarkWallpaperImage(file);
-                                                                }}
+                                                                type="url"
+                                                                className="appearance-url-input"
+                                                                placeholder="https://..."
+                                                                value={darkWallpaperImage || ''}
+                                                                onChange={(e) => updateDarkWallpaperImage(e.target.value)}
+                                                                style={{ flex: 1 }}
                                                             />
-                                                            <label 
-                                                                htmlFor={darkChangesRemaining > 0 ? "wallpaper-upload-dark" : undefined}
-                                                                className="wallpaper-btn-choose"
-                                                                style={{ 
-                                                                    opacity: darkChangesRemaining === 0 ? 0.4 : 1,
-                                                                    cursor: darkChangesRemaining === 0 ? 'not-allowed' : 'pointer'
-                                                                }}
-                                                            >
-                                                                {darkChangesRemaining === 0 ? 'Locked' : 'Choose Image'}
-                                                            </label>
                                                             {darkWallpaperImage && (
                                                                 <button
                                                                     className="wallpaper-btn-remove"
                                                                     onClick={() => updateDarkWallpaperImage(null)}
                                                                 >
-                                                                    Remove
+                                                                    Clear
                                                                 </button>
                                                             )}
                                                         </div>

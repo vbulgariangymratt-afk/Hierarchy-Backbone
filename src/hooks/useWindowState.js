@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 
 const isTauri = typeof window !== 'undefined' && (window.__TAURI__ !== undefined || window.__TAURI_INTERNALS__ !== undefined);
-
 const WINDOW_STATE_KEY = 'tauri-window-state';
 
 export const useWindowState = () => {
@@ -12,22 +11,26 @@ export const useWindowState = () => {
         let appWindow;
         let saveTimeout;
 
+        const getAppWindow = async () => {
+            if (!appWindow) {
+                const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                appWindow = getCurrentWindow();
+            }
+            return appWindow;
+        };
+
         const restoreWindowState = async () => {
             try {
-                if (!appWindow) {
-                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
-                    appWindow = getCurrentWindow();
-                }
+                const win = await getAppWindow();
                 const savedState = localStorage.getItem(WINDOW_STATE_KEY);
                 if (savedState) {
                     const { width, height, x, y } = JSON.parse(savedState);
                     const { LogicalSize, LogicalPosition } = await import('@tauri-apps/api/window');
-
                     if (width && height) {
-                        await appWindow.setSize(new LogicalSize(width, height));
+                        await win.setSize(new LogicalSize(width, height));
                     }
                     if (x !== undefined && y !== undefined) {
-                        await appWindow.setPosition(new LogicalPosition(x, y));
+                        await win.setPosition(new LogicalPosition(x, y));
                     }
                 }
             } catch (error) {
@@ -36,24 +39,18 @@ export const useWindowState = () => {
 
         const saveWindowState = async () => {
             try {
-                if (!appWindow) {
-                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
-                    appWindow = getCurrentWindow();
-                }
-                const factor = await appWindow.scaleFactor();
-                const size = await appWindow.innerSize();
-                const position = await appWindow.outerPosition();
-
+                const win = await getAppWindow();
+                const factor = await win.scaleFactor();
+                const size = await win.innerSize();
+                const position = await win.outerPosition();
                 const logicalSize = size.toLogical(factor);
                 const logicalPosition = position.toLogical(factor);
-
                 const state = {
                     width: logicalSize.width,
                     height: logicalSize.height,
                     x: logicalPosition.x,
                     y: logicalPosition.y
                 };
-
                 localStorage.setItem(WINDOW_STATE_KEY, JSON.stringify(state));
             } catch (error) {
                 console.error('WindowState: Failed to save:', error);
@@ -65,19 +62,20 @@ export const useWindowState = () => {
             saveTimeout = setTimeout(saveWindowState, 500);
         };
 
-        // 1. Initial Restore
-        restoreWindowState();
-
-        // 2. Setup Listeners
         let unlistenResize;
         let unlistenMove;
 
-        const setupListeners = async () => {
-            unlistenResize = await appWindow.onResized(debouncedSave);
-            unlistenMove = await appWindow.onMoved(debouncedSave);
+        const init = async () => {
+            // 1. Initial Restore
+            await restoreWindowState();
+
+            // 2. Setup Listeners (guaranteed to have a ready window now)
+            const win = await getAppWindow();
+            unlistenResize = await win.onResized(debouncedSave);
+            unlistenMove = await win.onMoved(debouncedSave);
         };
 
-        setupListeners();
+        init();
 
         // 3. Cleanup
         return () => {

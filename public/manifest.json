@@ -1,0 +1,21 @@
+{
+  "name": "Backbone Hierarchy",
+  "short_name": "Backbone",
+  "description": "Prosthetic brain for adhd entrepreneurs",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "any",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
