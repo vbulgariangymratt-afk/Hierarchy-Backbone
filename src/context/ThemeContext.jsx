@@ -154,9 +154,19 @@ export const ThemeProvider = ({ children }) => {
         }
     };
 
-    // Load remote wallpaper config on login
+    // Load remote wallpaper config on login / user change.
+    // Reset wallpaper state BEFORE the async fetch so a new user never sees
+    // a leftover wallpaper from the previous session on the same device.
     useEffect(() => {
+        // Always clear first — this is synchronous and takes effect immediately,
+        // before the fetch resolves, regardless of what the new user's config says.
+        setLightWallpaperImage(null);
+        setDarkWallpaperImage(null);
+        localStorage.removeItem('app-light-wallpaper-image');
+        localStorage.removeItem('app-dark-wallpaper-image');
+
         if (!currentUser) return;
+
         const loadWallpaperConfig = async () => {
             try {
                 const { data, error } = await supabase
@@ -171,24 +181,24 @@ export const ThemeProvider = ({ children }) => {
                 }
 
                 if (data && data.config) {
+                    // Apply only the fields that are actually saved — absent fields
+                    // remain null (already cleared above) rather than showing stale data.
                     const config = data.config;
-                    if (config.light) {
-                        setLightWallpaperImage(config.light);
-                        localStorage.setItem('app-light-wallpaper-image', config.light);
+                    const light = config.light || null;
+                    const dark = config.dark || null;
+
+                    setLightWallpaperImage(light);
+                    if (light) {
+                        localStorage.setItem('app-light-wallpaper-image', light);
                     }
-                    if (config.dark) {
-                        setDarkWallpaperImage(config.dark);
-                        localStorage.setItem('app-dark-wallpaper-image', config.dark);
-                    }
-                    if (config.light_changes) {
-                        setLightWallpaperChanges(config.light_changes);
-                        localStorage.setItem('app-light-wallpaper-changes', JSON.stringify(config.light_changes));
-                    }
-                    if (config.dark_changes) {
-                        setDarkWallpaperChanges(config.dark_changes);
-                        localStorage.setItem('app-dark-wallpaper-changes', JSON.stringify(config.dark_changes));
+
+                    setDarkWallpaperImage(dark);
+                    if (dark) {
+                        localStorage.setItem('app-dark-wallpaper-image', dark);
                     }
                 }
+                // PGRST116 (no row) or empty config: state is already null from the
+                // synchronous reset above — nothing more to do.
             } catch (err) {
                 console.error('[ThemeContext] Failed loading wallpaper config:', err);
             }
