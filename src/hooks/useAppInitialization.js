@@ -102,7 +102,40 @@ export const useAppInitialization = (setSession) => {
               _lastKnownUid = newSession.user.id;
               setRepositoriesReady(false);
               try {
-                await new Promise(r => setTimeout(r, 300));
+                // Wait until Supabase has fully committed the session before fetching data.
+                // Supabase fires SIGNED_IN while exchangeCodeForSession is still in-flight,
+                // so getUserId() inside the repository can return null if we proceed immediately.
+                // We poll getSession() every 250ms until the UID matches, then proceed.
+                // Safety cap: give up and continue anyway after 9s — always leaves headroom
+                // for the outer 15s reloadAllData timeout to act as the final safety net.
+                const _expectedUid = newSession.user.id;
+                const _pollStart = Date.now();
+                const POLL_INTERVAL_MS = 250;
+                const POLL_CAP_MS = 9000;
+                const GET_SESSION_TIMEOUT_MS = 2500;
+                let _sessionReady = false;
+                while (!_sessionReady) {
+                  const sessionPromise = supabase.auth.getSession();
+                  const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ __timeout: true }), GET_SESSION_TIMEOUT_MS));
+                  const result = await Promise.race([sessionPromise, timeoutPromise]);
+                  
+                  let _polled = null;
+                  if (result?.__timeout) {
+                    console.warn(`[AUTH] getSession() call stalled, treating as not-ready and retrying`);
+                  } else {
+                    _polled = result?.data;
+                  }
+
+                  if (_polled?.session?.user?.id === _expectedUid) {
+                    console.log(`[AUTH] Session confirmed ready after ${Date.now() - _pollStart}ms — proceeding to reload.`);
+                    _sessionReady = true;
+                  } else if (Date.now() - _pollStart >= POLL_CAP_MS) {
+                    console.warn(`[AUTH] Session not confirmed after ${Date.now() - _pollStart}ms — proceeding anyway (safety cap reached).`);
+                    break;
+                  } else {
+                    await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+                  }
+                }
                 if (repository?.migrateGuestData) await repository.migrateGuestData(newSession.user.id);
                 if (habitRepo?.migrateGuestData) await habitRepo.migrateGuestData(newSession.user.id);
                 if (journalRepo?.migrateGuestData) await journalRepo.migrateGuestData(newSession.user.id);
