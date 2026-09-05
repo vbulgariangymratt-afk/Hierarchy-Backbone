@@ -8,9 +8,10 @@
     "build": "vite build",
     "tauri:dev": "tauri dev -c src-tauri/tauri.dev.conf.json",
     "tauri:build": "tauri build",
+    "build:debug": "tauri build --debug --config '{\"bundle\": {\"createUpdaterArtifacts\": false}}'",
+    "clean:sweep": "cargo sweep --time 3 src-tauri",
     "lint": "eslint .",
     "preview": "vite preview",
-    "clean:sweep": "cargo sweep --time 3 src-tauri",
     "clean": "cd src-tauri && cargo clean"
   },
   "dependencies": {

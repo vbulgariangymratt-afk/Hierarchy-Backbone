@@ -217,7 +217,7 @@ export default defineConfig(({ mode }) => {
     build: {
       minify: 'terser',
       terserOptions: {
-        compress: {
+        compress: process.env.TAURI_ENV_DEBUG === 'true' ? false : {
           drop_console: true,
           pure_funcs: ['console.log', 'console.debug', 'console.info', 'console.warn'],
         }

@@ -110,31 +110,56 @@ Deno.serve(async (req) => {
     return new Response("User not found for this purchase", { status: 200 }); // Return 200 so Lemon Squeezy does not retry endlessly
   }
 
-  // 8. Extract subscription data attributes
+  // 8. Extract data attributes
   const data = payload.data;
+  const attrs = data.attributes ?? {};
   const subscriptionId = data.id;
-  const customerId = data.attributes?.customer_id;
-  const status = data.attributes?.status || "active";
-  let endsAt = data.attributes?.ends_at || data.attributes?.renews_at;
+  const customerId = attrs.customer_id;
 
-  // If this is a one-time order and no renewal date was provided, set a 30-day timer
-  if (!endsAt && eventName.startsWith("order_")) {
-    endsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  let updatePayload: Record<string, unknown> | null = null;
+
+  if (eventName === "order_created" || eventName === "order_refunded") {
+    const orderStatus = attrs.status; // "paid" | "refunded" | "pending" | "failed" | "void"
+    if (orderStatus === "paid") {
+      // One-time purchase: grant 30 days of active access from purchase timestamp
+      const purchasedAt = attrs.created_at ? new Date(attrs.created_at) : new Date();
+      const endsAt = new Date(purchasedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      updatePayload = {
+        user_id: targetUserId,
+        subscription_status: "active",
+        subscription_ends_at: endsAt,
+        lemon_squeezy_customer_id: customerId ? String(customerId) : null,
+      };
+    } else if (orderStatus === "refunded") {
+      updatePayload = {
+        user_id: targetUserId,
+        subscription_status: "refunded",
+        subscription_ends_at: null,
+        lemon_squeezy_customer_id: customerId ? String(customerId) : null,
+      };
+    }
+  } else if (eventName.startsWith("subscription_")) {
+    updatePayload = {
+      user_id: targetUserId,
+      subscription_status: attrs.status,
+      subscription_ends_at: attrs.ends_at || attrs.renews_at || null,
+      lemon_squeezy_customer_id: customerId ? String(customerId) : null,
+      lemon_squeezy_subscription_id: subscriptionId ? String(subscriptionId) : null,
+    };
   }
 
-  console.log(`[Webhook] Processing subscription update for User ID: ${targetUserId}, Status: ${status}, EndsAt: ${endsAt}`);
+  if (!updatePayload) {
+    console.log(`[Webhook] Skipped event ${eventName} with status ${attrs.status}`);
+    return new Response("Ignored", { status: 200 });
+  }
+
+  updatePayload.updated_at = new Date().toISOString();
+  console.log(`[Webhook] Processing update for User ID: ${targetUserId}, Payload:`, updatePayload);
 
   try {
     const { data: updateData, error } = await supabase
       .from("user_settings")
-      .upsert({
-        user_id: targetUserId,
-        subscription_status: status,
-        lemon_squeezy_customer_id: customerId ? String(customerId) : null,
-        lemon_squeezy_subscription_id: subscriptionId ? String(subscriptionId) : null,
-        subscription_ends_at: endsAt ? new Date(endsAt).toISOString() : null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' })
+      .upsert(updatePayload, { onConflict: 'user_id' })
       .select();
 
     if (error) {

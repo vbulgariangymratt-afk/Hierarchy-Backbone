@@ -94,10 +94,10 @@ export const useAppInitialization = (setSession) => {
               email: newSession.user.email
             });
 
-            // Only trigger reload if user explicitly switched or logged in fresh after startup
-            const isDifferentUser = _lastKnownUid && newSession.user.id !== _lastKnownUid;
+            // Trigger reload if user switched accounts OR if they are logging in from a logged-out state
+            const needsReload = !_lastKnownUid || newSession.user.id !== _lastKnownUid;
             
-            if (isDifferentUser && !_isReloading) {
+            if (needsReload && !_isReloading) {
               _isReloading = true;
               _lastKnownUid = newSession.user.id;
               setRepositoriesReady(false);

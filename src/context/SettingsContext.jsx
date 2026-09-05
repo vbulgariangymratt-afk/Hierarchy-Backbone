@@ -45,9 +45,6 @@ export const SLOT_ROLES = [
     },
 ];
 
-const WHITELISTED_EMAILS = [
-    'hyperactivewarhead@gmail.com',
-];
 
 // ---------------------------------------------------------------------------
 // Module-level singleton cache — survives component re-mounts and HMR
@@ -67,11 +64,11 @@ const _cache = {
     blurQuality: localStorage.getItem('app-blur-quality') || 'performance',
     currencyName: localStorage.getItem('app-currency-name') || 'Coins',
     todayRemovalMode: localStorage.getItem('app-today-removal-mode') || 'on_completion',
-    isWhitelisted: false,
-    subscriptionStatus: null,
+    isWhitelisted: localStorage.getItem('app-offline-whitelisted') === 'true',
+    subscriptionStatus: localStorage.getItem('app-offline-sub-status') || null,
     lemonSqueezyCustomerId: null,
     lemonSqueezySubscriptionId: null,
-    subscriptionEndsAt: null,
+    subscriptionEndsAt: localStorage.getItem('app-offline-sub-ends') || null,
     hasLoaded: false,
 };
 
@@ -133,15 +130,6 @@ export const SettingsProvider = ({ children }) => {
                 }
             }
 
-            let userEmail = null;
-            try {
-                const { data: userData } = await supabase.auth.getUser();
-                userEmail = userData?.user?.email?.toLowerCase();
-            } catch (e) {
-                // ignore
-            }
-            const isEmailWhitelisted = Boolean(userEmail && WHITELISTED_EMAILS.includes(userEmail));
-
             if (error && error.code === 'PGRST116') {
                 // Row doesn't exist yet — create with defaults
                 const defaults = {
@@ -151,8 +139,8 @@ export const SettingsProvider = ({ children }) => {
                     maintenance_enabled: true,
                     guided_slot_roles: true,
                     energy_level: 3,
-                    is_whitelisted: isEmailWhitelisted,
-                    subscription_status: isEmailWhitelisted ? 'active' : null,
+                    is_whitelisted: false,
+                    subscription_status: null,
                     lemon_squeezy_customer_id: null,
                     lemon_squeezy_subscription_id: null,
                     subscription_ends_at: null,
@@ -180,11 +168,16 @@ export const SettingsProvider = ({ children }) => {
                     _cache.activeExperimentLimit = 1;
                     _cache.currencyName = 'Coins';
                     _cache.todayRemovalMode = 'on_completion';
-                    _cache.isWhitelisted = isEmailWhitelisted;
-                    _cache.subscriptionStatus = isEmailWhitelisted ? 'active' : null;
+                    _cache.isWhitelisted = false;
+                    _cache.subscriptionStatus = null;
                     _cache.lemonSqueezyCustomerId = null;
                     _cache.lemonSqueezySubscriptionId = null;
                     _cache.subscriptionEndsAt = null;
+                    
+                    // Cache for offline access
+                    localStorage.setItem('app-offline-whitelisted', _cache.isWhitelisted);
+                    localStorage.setItem('app-offline-sub-status', _cache.subscriptionStatus || '');
+                    localStorage.setItem('app-offline-sub-ends', _cache.subscriptionEndsAt || '');
                     _cache.hasLoaded = true;
                     _cache.uid = uid;
                     setUserId(uid);
@@ -196,8 +189,8 @@ export const SettingsProvider = ({ children }) => {
                     setActiveExperimentLimitState(_cache.activeExperimentLimit);
                     setCurrencyNameState(_cache.currencyName);
                     setTodayRemovalModeState(_cache.todayRemovalMode);
-                    setIsWhitelistedState(isEmailWhitelisted);
-                    setSubscriptionStatusState(isEmailWhitelisted ? 'active' : null);
+                    setIsWhitelistedState(false);
+                    setSubscriptionStatusState(null);
                     setLemonSqueezyCustomerIdState(null);
                     setLemonSqueezySubscriptionIdState(null);
                     setSubscriptionEndsAtState(null);
@@ -212,11 +205,16 @@ export const SettingsProvider = ({ children }) => {
                 _cache.activeExperimentLimit = data.active_experiment_limit !== undefined ? data.active_experiment_limit : 1;
                 _cache.currencyName = data.currency_name ?? 'Coins';
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
-                _cache.isWhitelisted = isEmailWhitelisted || data.is_whitelisted || false;
+                _cache.isWhitelisted = data.is_whitelisted || false;
                 _cache.subscriptionStatus = data.subscription_status || null;
                 _cache.lemonSqueezyCustomerId = data.lemon_squeezy_customer_id || null;
                 _cache.lemonSqueezySubscriptionId = data.lemon_squeezy_subscription_id || null;
                 _cache.subscriptionEndsAt = data.subscription_ends_at || null;
+                
+                // Cache for offline access
+                localStorage.setItem('app-offline-whitelisted', _cache.isWhitelisted);
+                localStorage.setItem('app-offline-sub-status', _cache.subscriptionStatus || '');
+                localStorage.setItem('app-offline-sub-ends', _cache.subscriptionEndsAt || '');
                 
                 _cache.hasLoaded = true;
                 _cache.uid = uid;
@@ -438,6 +436,7 @@ export const SettingsProvider = ({ children }) => {
     }, [loadSettings]);
 
     // Realtime Supabase listener on user_settings table to auto-unlock live upon payment
+    /*
     useEffect(() => {
         if (!userId) return;
 
@@ -446,7 +445,7 @@ export const SettingsProvider = ({ children }) => {
             .on(
                 'postgres_changes',
                 {
-                    event: 'UPDATE',
+                    event: '*',
                     schema: 'public',
                     table: 'user_settings',
                     filter: `user_id=eq.${userId}`
@@ -473,12 +472,16 @@ export const SettingsProvider = ({ children }) => {
                     }
                 }
             )
-            .subscribe();
+            .subscribe((status, err) => {
+                console.log(`[Realtime] Channel status for user_settings_${userId}:`, status);
+                if (err) console.error('[Realtime] Channel error:', err);
+            });
 
         return () => {
             supabase.removeChannel(channel);
         };
     }, [userId]);
+    */
 
     const refreshSettings = useCallback(() => {
         if (_cache.uid) loadSettings(_cache.uid);
@@ -564,21 +567,56 @@ export const SettingsProvider = ({ children }) => {
     }, [subscriptionEndsAt]);
 
     const hasAccess = useMemo(() => {
+        console.log('[hasAccess check]', { userId, isWhitelisted, subscriptionStatus, subscriptionEndsAt });
         if (!userId) return false;
         if (isWhitelisted) return true;
 
-        // If subscription period has an end date, strictly verify it is still in the future
-        if (subscriptionEndsAt) {
-            const isNotExpired = new Date(subscriptionEndsAt).getTime() > Date.now();
-            if (!isNotExpired) return false;
-        }
-
+        // Both subscriptions and one-time purchases use 'active' status with subscription_ends_at.
         if (subscriptionStatus === 'active' || subscriptionStatus === 'on_trial') {
-            return true;
+            if (subscriptionEndsAt) {
+                return new Date(subscriptionEndsAt).getTime() > Date.now();
+            }
+            return true; // active subscription with no known end date
         }
 
         return false;
     }, [userId, isWhitelisted, subscriptionStatus, subscriptionEndsAt]);
+
+    // Short-lived polling fallback while user does not have access
+    useEffect(() => {
+        if (!userId || hasAccess) return;
+
+        const intervalId = setInterval(async () => {
+            console.log('[SettingsContext] Polling user_settings...');
+            const { data, error } = await supabase
+                .from('user_settings')
+                .select('subscription_status, is_whitelisted, subscription_ends_at, lemon_squeezy_customer_id, lemon_squeezy_subscription_id')
+                .eq('user_id', userId)
+                .maybeSingle();
+
+            if (data && !error) {
+                const newStatus = data.subscription_status || null;
+                const newWhitelisted = data.is_whitelisted || false;
+                const newEndsAt = data.subscription_ends_at || null;
+                const newCustId = data.lemon_squeezy_customer_id || null;
+                const newSubId = data.lemon_squeezy_subscription_id || null;
+
+                _cache.subscriptionStatus = newStatus;
+                _cache.isWhitelisted = newWhitelisted;
+                _cache.subscriptionEndsAt = newEndsAt;
+                _cache.lemonSqueezyCustomerId = newCustId;
+                _cache.lemonSqueezySubscriptionId = newSubId;
+
+                setSubscriptionStatusState(newStatus);
+                setIsWhitelistedState(newWhitelisted);
+                setSubscriptionEndsAtState(newEndsAt);
+                setLemonSqueezyCustomerIdState(newCustId);
+                setLemonSqueezySubscriptionIdState(newSubId);
+            }
+        }, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [userId, hasAccess]);
 
     const settingsValue = useMemo(() => ({
         focusSlots,

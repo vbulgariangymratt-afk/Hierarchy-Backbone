@@ -25,12 +25,12 @@ export default function AuthGate({ user }) {
 
     const handleOpenWebsite = async (e) => {
         e?.preventDefault?.();
-        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL || 'https://backbone.lemonsqueezy.com/checkout';
+        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL || 'https://backbone.lemonsqueezy.com/checkout/buy/98b89652-5293-4e9a-bc63-234e11f4f4d7';
         let url;
         try {
             url = new URL(checkoutBaseUrl);
         } catch {
-            url = new URL('https://backbone.lemonsqueezy.com/checkout');
+            url = new URL('https://backbone.lemonsqueezy.com/checkout/buy/98b89652-5293-4e9a-bc63-234e11f4f4d7');
         }
 
         if (user?.id) {
