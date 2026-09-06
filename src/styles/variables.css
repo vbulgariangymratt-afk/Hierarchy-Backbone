@@ -178,3 +178,65 @@
   --color-warning: #EB5E28;
   --color-danger: #EB5E28;
 }
+
+/* ==========================================================================
+   WALLPAPER MODE UNIFIED GLASS MATERIAL TOKENS
+   One cohesive visual language for Wallpaper Mode (Light & Dark).
+   Source of truth: Skill Page Dark Wallpaper Aspect Card Reference.
+   ========================================================================== */
+
+/* WALLPAPER GLOBAL CANVAS CONSTANTS */
+:root {
+  --wallpaper-blur: 8px;
+  --wallpaper-scale: 1.02;
+  --wallpaper-scrim-dark: rgba(10, 10, 10, 0.58);
+  --wallpaper-scrim-light: rgba(255, 255, 255, 0.70);
+  --wallpaper-brightness-dark: 0.75;
+  --wallpaper-brightness-light: 1.1;
+  --wallpaper-saturation-dark: 1.3;
+  --wallpaper-saturation-light: 1.6;
+
+  /* Universal Glass Material Metrics */
+  --wallpaper-glass-radius: var(--radius-lg, 12px);
+  --wallpaper-hover-transform: translateY(-4px);
+}
+
+/* WALLPAPER DARK MODE */
+[data-theme="dark"][data-background-mode="wallpaper"],
+.dark.wallpaper-mode {
+  /* Canvas */
+  --wallpaper-scrim: var(--wallpaper-scrim-dark);
+  --wallpaper-brightness: var(--wallpaper-brightness-dark);
+  --wallpaper-saturation: var(--wallpaper-saturation-dark);
+
+  /* Unified Wallpaper Glass Material */
+  --wallpaper-glass-bg: transparent;
+  --wallpaper-glass-blur: 16px;
+  --wallpaper-glass-saturation: 160%;
+  --wallpaper-glass-border: var(--color-border);
+  --wallpaper-glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+
+  /* Hover Interaction */
+  --wallpaper-hover-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), 0 0 20px rgba(var(--color-accent-rgb), 0.1);
+  --wallpaper-hover-glow: rgba(var(--color-accent-rgb), 0.95);
+}
+
+/* WALLPAPER LIGHT MODE */
+[data-theme="light"][data-background-mode="wallpaper"],
+.light.wallpaper-mode {
+  /* Canvas */
+  --wallpaper-scrim: var(--wallpaper-scrim-light);
+  --wallpaper-brightness: var(--wallpaper-brightness-light);
+  --wallpaper-saturation: var(--wallpaper-saturation-light);
+
+  /* Unified Wallpaper Glass Material */
+  --wallpaper-glass-bg: rgba(255, 255, 255, 0.30);
+  --wallpaper-glass-blur: 16px;
+  --wallpaper-glass-saturation: 160%;
+  --wallpaper-glass-border: rgba(0, 0, 0, 0.08);
+  --wallpaper-glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+
+  /* Hover Interaction */
+  --wallpaper-hover-shadow: 0 16px 36px rgba(0, 0, 0, 0.12), 0 0 20px rgba(var(--color-accent-rgb), 0.15);
+  --wallpaper-hover-glow: rgba(var(--color-accent-rgb), 0.80);
+}

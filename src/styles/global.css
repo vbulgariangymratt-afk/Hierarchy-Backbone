@@ -207,22 +207,33 @@ video {
 .liquid-mode .modal-content,
 .liquid-mode .reward-modal,
 .liquid-mode .floating-ui,
-.liquid-mode .popover,
-.wallpaper-mode .liquid-glass,
-.wallpaper-mode .modal-content,
-.wallpaper-mode .reward-modal,
-.wallpaper-mode .create-reward-modal,
-.wallpaper-mode .create-skill-modal,
-.wallpaper-mode .limit-modal,
-.wallpaper-mode .floating-ui,
-.wallpaper-mode .popover,
-.wallpaper-mode .page-panel {
+.liquid-mode .popover {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     box-shadow:
         0 8px 30px rgba(0, 0, 0, 0.28);
+}
+
+.wallpaper-mode .liquid-glass,
+.wallpaper-mode .modal-content,
+.wallpaper-mode .reward-modal,
+.wallpaper-mode .create-reward-modal,
+.wallpaper-mode .edit-rewards-modal,
+.wallpaper-mode .create-skill-modal,
+.wallpaper-mode .limit-modal,
+.wallpaper-mode .floating-ui,
+.wallpaper-mode .popover,
+.wallpaper-mode .page-panel,
+.wallpaper-mode .mini-launchpad-modal.glass-panel,
+.wallpaper-mode .icon-picker-container,
+.wallpaper-mode .evolution-architect-modal {
+    background: var(--wallpaper-glass-bg);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
 }
 
 .liquid-mode.light .liquid-glass {
@@ -693,8 +704,10 @@ video {
     color: var(--text-primary);
 }
 
-:not(.solid-mode)[data-theme='light'] .liquid-glass.hover-trigger,
-:not(.solid-mode)[data-theme='light'] .liquid-glass:not(.primary-button) {
+.liquid-mode[data-theme='light'] .liquid-glass.hover-trigger,
+.liquid-mode.light .liquid-glass.hover-trigger,
+.liquid-mode[data-theme='light'] .liquid-glass:not(.primary-button),
+.liquid-mode.light .liquid-glass:not(.primary-button) {
     background: rgba(255, 255, 255, 0.2) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
     color: var(--text-primary);
@@ -796,9 +809,7 @@ body.dark.liquid-mode .metric {
 }
 
 .liquid-mode .skill-card.is-active,
-.wallpaper-mode .skill-card.is-active,
-.liquid-mode .area-card.is-selected,
-.wallpaper-mode .area-card.is-selected {
+.liquid-mode .area-card.is-selected {
     border-color: rgba(255, 255, 255, 0.2) !important;
     background: transparent !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25) !important;

@@ -15,16 +15,7 @@ export const ThemeProvider = ({ children }) => {
 
     const [systemTheme, setSystemTheme] = useState(getSystemTheme);
 
-    const [backgroundMode, setBackgroundMode] = useState(() => {
-        // Migration: Check old localStorage flags
-        const savedBg = localStorage.getItem('app-background-mode');
-        if (savedBg === 'wallpaper') return 'wallpaper';
-
-        const savedSurface = localStorage.getItem('app-surface-mode');
-        if (savedSurface === 'liquid' || savedSurface === 'glass') return 'liquid';
-
-        return 'solid';
-    });
+    const [backgroundMode, setBackgroundMode] = useState('solid');
     
     // Derived resolved theme with fallback logic for neutral mode
     const resolvedTheme = (() => {

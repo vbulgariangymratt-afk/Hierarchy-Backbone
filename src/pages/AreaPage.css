@@ -121,8 +121,11 @@
 
 .wallpaper-mode .skill-card,
 .wallpaper-mode .add-skill-card-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--wallpaper-glass-bg);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
 }
 
 .liquid-mode.light .skill-card {
@@ -193,10 +196,13 @@
     box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.35);
 }
 
-.liquid-mode .skill-card.is-active,
-.wallpaper-mode .skill-card.is-active {
+.liquid-mode .skill-card.is-active {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.12);
+}
+
+.wallpaper-mode .skill-card.is-active {
+    border-color: rgba(var(--color-accent-rgb), 0.4);
 }
 
 /* Removed duplicate block */
@@ -481,16 +487,17 @@
     background: rgba(255, 255, 255, 0.02) !important;
 }
 
-.liquid-mode .creation-card,
-.wallpaper-mode .creation-card {
+.liquid-mode .creation-card {
     border: 1px dashed rgba(255, 255, 255, 0.3) !important;
     background: rgba(255, 255, 255, 0.1) !important;
 }
 
-.liquid-mode .creation-card,
 .wallpaper-mode .creation-card {
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px dashed var(--wallpaper-glass-border) !important;
+    background: var(--wallpaper-glass-bg) !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
 }
 
 .creation-form {
@@ -622,8 +629,11 @@
 
 .wallpaper-mode .area-page-loading,
 .wallpaper-mode .area-page-error {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--wallpaper-glass-bg);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
 }
 
 /* ── Skill Management Enhancements ────────────────────────── */
@@ -661,10 +671,13 @@
     transform: scale(0.98);
 }
 
-.liquid-mode .skill-card.is-sleeping,
-.wallpaper-mode .skill-card.is-sleeping {
+.liquid-mode .skill-card.is-sleeping {
     opacity: 1;
     background: rgba(255, 255, 255, 0.04);
+}
+
+.wallpaper-mode .skill-card.is-sleeping {
+    opacity: 0.6;
 }
 
 .skill-card.is-sleeping:hover {

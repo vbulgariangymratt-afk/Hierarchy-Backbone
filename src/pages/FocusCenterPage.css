@@ -95,6 +95,14 @@
     will-change: backdrop-filter, -webkit-backdrop-filter;
 }
 
+.wallpaper-mode .slot-card {
+    background: var(--wallpaper-glass-bg);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
 /* ── Slot Role Header ─────────────────────────────────────────────── */
 .slot-role-header {
     display: flex;

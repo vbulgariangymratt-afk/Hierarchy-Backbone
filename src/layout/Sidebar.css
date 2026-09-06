@@ -67,13 +67,11 @@
 }
 
 .wallpaper-mode .sidebar {
-    background: rgba(255, 255, 255, 0.07);
-    border-right: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
-    box-shadow:
-        4px 0 24px rgba(0, 0, 0, 0.20),
-        inset 1px 0 0 rgba(255, 255, 255, 0.12);
+    background: var(--wallpaper-glass-bg);
+    border-right: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.20);
 }
 
 @keyframes sidebar-blur-ticker {
@@ -107,8 +105,7 @@
 
 
 
-.liquid-mode.light .sidebar,
-.wallpaper-mode.light .sidebar {
+.liquid-mode.light .sidebar {
     background: rgba(255, 255, 255, 0.25) !important;
     border-color: rgba(0, 0, 0, 0.1);
     box-shadow:
@@ -1960,13 +1957,27 @@
     border-color: transparent #18181b transparent transparent;
 }
 
-[data-theme="light"] .quick-capture-popover {
+.wallpaper-mode .quick-capture-popover {
+    background: var(--wallpaper-glass-bg);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
+.wallpaper-mode .quick-capture-popover::before {
+    display: none;
+}
+
+.solid-mode[data-theme="light"] .quick-capture-popover,
+.solid-mode.light .quick-capture-popover {
     background: #ffffff;
     border-color: rgba(0, 0, 0, 0.15);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
-[data-theme="light"] .quick-capture-popover::before {
+.solid-mode[data-theme="light"] .quick-capture-popover::before,
+.solid-mode.light .quick-capture-popover::before {
     border-color: transparent #ffffff transparent transparent;
 }
 

@@ -274,8 +274,8 @@
 }
 
 .wallpaper-mode .reward-card {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    /* liquid-glass in global.css handles the rest */
+    border: none !important;
+    /* liquid-glass in global.css and BorderGlow handle the rest */
 }
 
 .reward-card:hover {

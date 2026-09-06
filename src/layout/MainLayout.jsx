@@ -439,25 +439,34 @@ const MainLayout = () => {
                                 </motion.div>
                             </button>
                             
-                            <AnimatePresence>
-                                {showDailyLog && (
-                                    <>
+                            {/* Backdrop portaled to document.body to cover full viewport */}
+                            {createPortal(
+                                <AnimatePresence>
+                                    {showDailyLog && (
                                         <motion.div
                                             className="daily-log-backdrop"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
                                             onClick={() => setShowDailyLog(false)}
                                         />
-                                        <motion.div
-                                            ref={dailyLogContainerRef}
-                                            className="daily-log-popover liquid-glass"
-                                            style={{ transformOrigin: 'top right' }}
-                                            initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
-                                            animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                            exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
-                                            transition={{ type: 'spring', stiffness: 700, damping: 20 }}
-                                        >
+                                    )}
+                                </AnimatePresence>,
+                                document.body
+                            )}
+                            
+                            <AnimatePresence>
+                                {showDailyLog && (
+                                    <motion.div
+                                        ref={dailyLogContainerRef}
+                                        className="daily-log-popover liquid-glass"
+                                        style={{ transformOrigin: 'top right' }}
+                                        initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
+                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                        exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
+                                        transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                                    >
                                             <div className="daily-log-popover-header">
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                     <h3>Daily Log</h3>
@@ -470,7 +479,6 @@ const MainLayout = () => {
                                                 <JournalPage />
                                             </div>
                                         </motion.div>
-                                    </>
                                 )}
                             </AnimatePresence>
                         </div>
@@ -499,16 +507,6 @@ const MainLayout = () => {
                                     activePadding="0 12px"
                                 />
                             )}
-                            
-                            <SegmentedControl
-                                options={MODES}
-                                value={backgroundMode}
-                                onChange={setBackgroundMode}
-                                layoutPrefix="bg"
-                                buttonSize={28}
-                                fontSize="0.8rem"
-                                activePadding="0 12px"
-                            />
 
                             <button onClick={() => navigate('/settings')} className="header-settings-btn-ghost" title="Settings">
                                 <motion.div

@@ -192,6 +192,14 @@
     background: transparent !important;
 }
 
+.wallpaper-mode .skill-selection-card {
+    background: var(--wallpaper-glass-bg);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
 .skill-selection-card:hover {
     transform: translateY(-2px);
     border-color: var(--color-accent);

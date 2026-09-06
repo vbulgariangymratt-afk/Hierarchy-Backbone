@@ -28,7 +28,6 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { SessionProvider, useSession } from './context/SessionContext';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { useBackboneStore } from './store/backboneStore';
-import KeyboardShortcuts from './components/KeyboardShortcuts';
 
 import { supabase } from './lib/supabase';
 import { backbone, repository, habitRepo, waitForReady, NodeTypes, reloadAllData, clearAllData } from './backbone-v2';
@@ -65,7 +64,6 @@ const AuthenticatedWorkspace = ({ user }) => {
   return (
     <SessionProvider>
       <ReadOnlyInterceptor />
-      <KeyboardShortcuts />
       <EnergyModeTag />
       <Suspense fallback={<PremiumLoadingScreen secondaryText="Loading Perspective..." />}>
         <Routes>

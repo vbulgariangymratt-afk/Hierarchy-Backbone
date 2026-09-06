@@ -198,9 +198,20 @@
 
 .liquid-mode.dark .hero-skill-card, 
 .liquid-mode.dark .initiation-card, 
-.liquid-mode.dark .golden-action-card,
+.liquid-mode.dark .golden-action-card, 
 .liquid-mode.dark .hero-execution-card {
     background: transparent !important;
+}
+
+.wallpaper-mode .hero-skill-card, 
+.wallpaper-mode .initiation-card, 
+.wallpaper-mode .golden-action-card,
+.wallpaper-mode .hero-execution-card {
+    background: var(--wallpaper-glass-bg);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
 }
 
 /* Skill Chips */

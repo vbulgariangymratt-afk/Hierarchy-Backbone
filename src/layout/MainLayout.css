@@ -172,10 +172,10 @@
 }
 
 .wallpaper-mode .app-header {
-    background: rgba(255, 255, 255, 0.07) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
-    backdrop-filter: blur(24px) saturate(160%) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+    background: var(--wallpaper-glass-bg) !important;
+    border-bottom: 1px solid var(--wallpaper-glass-border) !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation)) !important;
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation)) !important;
 }
 
 /* Mirror sidebar's exact selectors so the header resolves the same token value */
@@ -480,10 +480,8 @@
 .daily-log-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 9999998;
-    background: rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    z-index: 999990;
+    background: transparent;
     pointer-events: auto;
 }
 
@@ -504,11 +502,12 @@
 }
 
 /* Wallpaper Mode */
-.wallpaper-mode .daily-log-popover {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(24px) saturate(140%);
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
+.wallpaper-mode .daily-log-popover.liquid-glass {
+    background: rgba(10, 10, 10, 0.95);
+    border: 1px solid var(--wallpaper-glass-border);
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
 }
 
 /* Solid Light Mode */
