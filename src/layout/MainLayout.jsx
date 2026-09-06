@@ -4,7 +4,6 @@ import { createPortal } from 'react-dom';
 
 import Sidebar from './Sidebar';
 import MiniLaunchpadModal from '../components/modals/MiniLaunchpadModal';
-import UndoSnackbar from '../components/UndoSnackbar';
 import { backbone, NodeTypes } from '../backbone-v2/index';
 import { useBackboneStore } from '../store/backboneStore';
 import { useSettings } from '../context/SettingsContext';

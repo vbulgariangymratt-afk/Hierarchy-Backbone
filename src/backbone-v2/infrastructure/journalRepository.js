@@ -22,6 +22,7 @@
  */
 
 import { supabase } from '../../lib/supabase';
+import { useBackboneStore } from '../../store/backboneStore';
 
 /**
  * Persistent implementation of the Journal Repository.
@@ -51,40 +52,54 @@ export const createJournalRepository = () => {
             return;
         }
 
-        try {
-            const { error } = await supabase
-                .from('journal_entries')
-                .upsert({
-                    id: entry.id,
-                    user_id: userId,
-                    date: entry.date,
-                    biological: entry.biological || {},
-                    activation: entry.activation || {},
-                    regulation: {
-                        ...(entry.regulation || {}),
-                        wake_up_ease: entry.wake_up_ease !== undefined ? entry.wake_up_ease : null,
-                        shut_down_ease: entry.shut_down_ease !== undefined ? entry.shut_down_ease : null,
-                        hydration_total: entry.hydration_total !== undefined ? entry.hydration_total : null,
-                        meds_taken: entry.meds_taken || []
-                    },
-                    medication_taken: entry.medication_taken || false,
-                    med_taken_at: entry.med_taken_at || null,
-                    dopamine_spark_at: entry.dopamine_spark_at || null,
-                    hydration_level: entry.hydration_level || 2,
-                    nutrition_level: entry.nutrition_level || 2,
-                    sugar_level: entry.sugar_level || 2,
-                    morning_activity_done: entry.morning_activity_done || false,
-                    morning_activity_at: entry.morning_activity_at || null,
-                    notes: entry.notes || '',
-                    medications: entry.medications || [],
-                    snapshots: entry.snapshots || {},
-                    metadata: storage.metadata || {},
-                    updated_at: new Date().toISOString()
-                });
+        const maxRetries = 3;
+        const retryDelays = [1000, 2500]; // Wait 1s before attempt 2, 2.5s before attempt 3
 
-            if (error) throw error;
-        } catch (e) {
-            console.error('Failed to persist Journal entry to Supabase:', e);
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const { error } = await supabase
+                    .from('journal_entries')
+                    .upsert({
+                        id: entry.id,
+                        user_id: userId,
+                        date: entry.date,
+                        biological: entry.biological || {},
+                        activation: entry.activation || {},
+                        regulation: {
+                            ...(entry.regulation || {}),
+                            wake_up_ease: entry.wake_up_ease !== undefined ? entry.wake_up_ease : null,
+                            shut_down_ease: entry.shut_down_ease !== undefined ? entry.shut_down_ease : null,
+                            hydration_total: entry.hydration_total !== undefined ? entry.hydration_total : null,
+                            meds_taken: entry.meds_taken || []
+                        },
+                        medication_taken: entry.medication_taken || false,
+                        med_taken_at: entry.med_taken_at || null,
+                        dopamine_spark_at: entry.dopamine_spark_at || null,
+                        hydration_level: entry.hydration_level || 2,
+                        nutrition_level: entry.nutrition_level || 2,
+                        sugar_level: entry.sugar_level || 2,
+                        morning_activity_done: entry.morning_activity_done || false,
+                        morning_activity_at: entry.morning_activity_at || null,
+                        notes: entry.notes || '',
+                        medications: entry.medications || [],
+                        snapshots: entry.snapshots || {},
+                        metadata: storage.metadata || {},
+                        updated_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+                return; // Success on this attempt
+            } catch (e) {
+                console.error(`[journalRepository] Failed to persist Journal entry to Supabase (attempt ${attempt}/${maxRetries}):`, e);
+                
+                if (attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, retryDelays[attempt - 1]));
+                } else {
+                    // All retries failed
+                    useBackboneStore.getState().addUndoToast("Couldn't save your journal entry — check your connection and try again.");
+                    throw e; // Propagate the error to the caller (e.g. for console logging in the component)
+                }
+            }
         }
     };
 

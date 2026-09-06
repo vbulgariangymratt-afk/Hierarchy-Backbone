@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { useBackboneStore } from '../store/backboneStore';
 
 export const createHabitRepository = () => {
     let habits = [];
@@ -21,34 +22,48 @@ export const createHabitRepository = () => {
             return;
         }
 
-        try {
-            const { error } = await supabase
-                .from('habits')
-                .upsert({
-                    id: habit.id,
-                    user_id: userId,
-                    type: habit.type || 'HABIT',
-                    if_trigger: habit.ifTrigger,
-                    frequency_type: habit.frequencyType || 'daily',
-                    target_count: habit.targetCount || 1,
-                    is_active: habit.isActive !== false,
-                    is_sleeping: habit.isSleeping === true,
-                    metadata: {
-                        linkedSkillIds: habit.linkedSkillIds,
-                        phases: habit.phases,
-                        currentPhaseLevel: habit.currentPhaseLevel,
-                        totalCompletions: habit.totalCompletions,
-                        completions: habit.completions,
-                        evolutionConfig: habit.evolutionConfig,
-                        auraPerSkill: habit.auraPerSkill,
-                        lastCompletedAt: habit.lastCompletedAt
-                    },
-                    updated_at: new Date().toISOString()
-                });
+        const maxRetries = 3;
+        const retryDelays = [1000, 2500]; // Wait 1s before attempt 2, 2.5s before attempt 3
 
-            if (error) throw error;
-        } catch (e) {
-            console.error('Failed to persist Habit to Supabase:', e);
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const { error } = await supabase
+                    .from('habits')
+                    .upsert({
+                        id: habit.id,
+                        user_id: userId,
+                        type: habit.type || 'HABIT',
+                        if_trigger: habit.ifTrigger,
+                        frequency_type: habit.frequencyType || 'daily',
+                        target_count: habit.targetCount || 1,
+                        is_active: habit.isActive !== false,
+                        is_sleeping: habit.isSleeping === true,
+                        metadata: {
+                            linkedSkillIds: habit.linkedSkillIds,
+                            phases: habit.phases,
+                            currentPhaseLevel: habit.currentPhaseLevel,
+                            totalCompletions: habit.totalCompletions,
+                            completions: habit.completions,
+                            evolutionConfig: habit.evolutionConfig,
+                            auraPerSkill: habit.auraPerSkill,
+                            lastCompletedAt: habit.lastCompletedAt
+                        },
+                        updated_at: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+                return; // Success on this attempt
+            } catch (e) {
+                console.error(`[habitRepository] Failed to persist Habit to Supabase (attempt ${attempt}/${maxRetries}):`, e);
+
+                if (attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, retryDelays[attempt - 1]));
+                } else {
+                    // All retries failed — notify user gently and propagate for caller logging
+                    useBackboneStore.getState().addUndoToast("Couldn't save your habit — check your connection and try again.");
+                    throw e;
+                }
+            }
         }
     };
 

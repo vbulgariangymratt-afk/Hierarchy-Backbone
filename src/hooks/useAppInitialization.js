@@ -60,11 +60,24 @@ export const useAppInitialization = (setSession) => {
 
         // --- STEP 2: Hydrate backbone with safety timeout ---
         const bootstrapPromise = (async () => {
+          const _bootstrapStart = performance.now();
+          
           if (backbone?.initialize) {
             await backbone.initialize();
           }
+          const _afterInit = performance.now();
+          console.log(`[TIMING] backbone.initialize(): ${Math.round(_afterInit - _bootstrapStart)}ms`);
+
+          const _getAllStart = performance.now();
           const allNodes = await backbone.getAllNodes();
+          const _getAllEnd = performance.now();
+          console.log(`[TIMING] backbone.getAllNodes(): ${Math.round(_getAllEnd - _getAllStart)}ms — ${allNodes.length} nodes in memory`);
+
+          const _storeStart = performance.now();
           initializeNodes(allNodes);
+          const _storeEnd = performance.now();
+          console.log(`[TIMING] initializeNodes (React store hydration): ${Math.round(_storeEnd - _storeStart)}ms`);
+          console.log(`[TIMING] Total bootstrap: ${Math.round(_storeEnd - _bootstrapStart)}ms`);
 
           if (initialSession?.user?.id) {
             if (repository?.migrateGuestData) await repository.migrateGuestData(initialSession.user.id);

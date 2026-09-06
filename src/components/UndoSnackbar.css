@@ -3,7 +3,9 @@
     bottom: 32px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10000;
+    /* Must exceed the highest z-index in the app (.settings-modal-scrim: 10000000)
+       so the snackbar is always visible above every modal, portal, and overlay. */
+    z-index: 10000001;
     pointer-events: none; /* Let clicks pass through empty space */
 }
 

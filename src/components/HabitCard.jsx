@@ -102,6 +102,12 @@ const HabitCard = React.memo(({ habit, energyLevel, onOpenEvolution, onToggleAct
             if (onComplete) onComplete(habit.id);
         } catch (error) {
             console.error(error);
+            // Clean up all optimistic visual state so the UI returns to its
+            // pre-completion appearance. The toast notification is already
+            // triggered inside persist() via addUndoToast(), so no message needed here.
+            setCelebration(null);
+            setIsPulsing(false);
+            setCompleting(false);
         }
     };
 

@@ -193,7 +193,8 @@ export const JournalService = (journalRepository, backbone, habitService) => {
                 clearInterval(journalService._heartbeatInterval);
             }
             journalService._heartbeatInterval = setInterval(() => {
-                journalRepository.updateMetadata({ lastAppCloseTime: Date.now() });
+                journalRepository.updateMetadata({ lastAppCloseTime: Date.now() })
+                    .catch(e => console.error('[Heartbeat] Failed to update lastAppCloseTime:', e));
             }, 60000); // Every minute
         },
 

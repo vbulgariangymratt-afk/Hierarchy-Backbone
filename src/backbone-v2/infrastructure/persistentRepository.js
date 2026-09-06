@@ -69,12 +69,21 @@ export const createPersistentRepository = () => {
                     return;
                 }
 
+                // [TIMING] Node fetch start
+                const _fetchStart = performance.now();
+
                 const { data, error } = await supabase
                     .from('nodes')
                     .select('*')
                     .eq('user_id', userId);
 
+                const _fetchEnd = performance.now();
+                console.log(`[TIMING] Nodes fetch: ${Math.round(_fetchEnd - _fetchStart)}ms — ${data?.length ?? 0} records returned`);
+
                 if (error) throw error;
+
+                // [TIMING] Data processing start
+                const _processStart = performance.now();
 
                 // Transform back to application format
                 storage = (data || []).map(row => ({
@@ -86,6 +95,9 @@ export const createPersistentRepository = () => {
                     createdAt: row.created_at,
                     updatedAt: row.updated_at
                 }));
+
+                const _processEnd = performance.now();
+                console.log(`[TIMING] Data processing (transform ${storage.length} rows): ${Math.round(_processEnd - _processStart)}ms`);
 
                 notify(null);
             } catch (e) {

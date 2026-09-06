@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase, loginWithGoogle } from '../lib/supabase';
 import { backbone as backboneService } from '../backbone-v2';
+import { useBackboneStore } from '../store/backboneStore';
 
 const SettingsContext = createContext();
 
@@ -254,28 +255,48 @@ export const SettingsProvider = ({ children }) => {
              // We allow focus_slots even if it's the only one
         }
 
-        try {
-            const { error } = await supabase
-                .from('user_settings')
-                .upsert({
-                    user_id: _cache.uid,
-                    ...cleanUpdates,
-                    updated_at: new Date().toISOString(),
-                });
-            
-            if (error && error.message?.includes('active_experiment_limit')) {
-                console.error('[SettingsContext] Save failed due to missing limit column. Disabling limit sync.');
-                _cache.dbSupportsExperimentLimit = false;
-                // Retry without the failing column
-                delete cleanUpdates.active_experiment_limit;
-                await supabase.from('user_settings').upsert({
-                    user_id: _cache.uid,
-                    ...cleanUpdates,
-                    updated_at: new Date().toISOString(),
-                });
+        const maxRetries = 3;
+        const retryDelays = [1000, 2500]; // Wait 1s before attempt 2, 2.5s before attempt 3
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const { error } = await supabase
+                    .from('user_settings')
+                    .upsert({
+                        user_id: _cache.uid,
+                        ...cleanUpdates,
+                        updated_at: new Date().toISOString(),
+                    });
+                
+                if (error) {
+                    if (error.message?.includes('active_experiment_limit')) {
+                        console.error('[SettingsContext] Save failed due to missing limit column. Disabling limit sync.');
+                        _cache.dbSupportsExperimentLimit = false;
+                        // Retry without the failing column
+                        delete cleanUpdates.active_experiment_limit;
+                        const { error: retryError } = await supabase.from('user_settings').upsert({
+                            user_id: _cache.uid,
+                            ...cleanUpdates,
+                            updated_at: new Date().toISOString(),
+                        });
+                        
+                        if (retryError) throw retryError;
+                        return; // Success after stripping column
+                    }
+                    throw error;
+                }
+                
+                return; // Success on this attempt
+            } catch (err) {
+                console.error(`[SettingsContext] Failed to save settings (attempt ${attempt}/${maxRetries}):`, err);
+                
+                if (attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, retryDelays[attempt - 1]));
+                } else {
+                    // All retries failed
+                    useBackboneStore.getState().addUndoToast("Couldn't save that setting — check your connection and try again.");
+                }
             }
-        } catch (err) {
-            console.error('[SettingsContext] Failed to save settings:', err);
         }
     };
 
