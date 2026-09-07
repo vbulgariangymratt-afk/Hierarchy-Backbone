@@ -508,6 +508,16 @@ const MainLayout = () => {
                                 />
                             )}
 
+                            <SegmentedControl
+                                options={MODES}
+                                value={backgroundMode}
+                                onChange={setBackgroundMode}
+                                layoutPrefix="bg"
+                                buttonSize={28}
+                                fontSize="0.8rem"
+                                activePadding="0 12px"
+                            />
+
                             <button onClick={() => navigate('/settings')} className="header-settings-btn-ghost" title="Settings">
                                 <motion.div
                                     whileHover={{ rotate: 90 }}

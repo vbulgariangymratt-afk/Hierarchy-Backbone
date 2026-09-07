@@ -15,7 +15,16 @@ export const ThemeProvider = ({ children }) => {
 
     const [systemTheme, setSystemTheme] = useState(getSystemTheme);
 
-    const [backgroundMode, setBackgroundMode] = useState('solid');
+    const [backgroundMode, setBackgroundMode] = useState(() => {
+        const savedBg = localStorage.getItem('app-background-mode');
+        if (savedBg === 'wallpaper' || savedBg === 'liquid' || savedBg === 'solid') return savedBg;
+
+        // Migration: check old localStorage flag used in pre-refactor builds
+        const savedSurface = localStorage.getItem('app-surface-mode');
+        if (savedSurface === 'liquid' || savedSurface === 'glass') return 'liquid';
+
+        return 'solid';
+    });
     
     // Derived resolved theme with fallback logic for neutral mode
     const resolvedTheme = (() => {
@@ -31,6 +40,9 @@ export const ThemeProvider = ({ children }) => {
 
     // ─── Auth state ───────────────────────────────────────────────────────────
     const [currentUser, setCurrentUser] = useState(null);
+    // Tracks the previous user's UID so we only wipe wallpaper on a real
+    // user-switch, not on token refreshes that fire the same auth event.
+    const prevUserIdRef = useRef(null);
 
     // ─── Sync state flags ─────────────────────────────────────────────────────
     const [isSyncing, setIsSyncing] = useState(false);
@@ -146,15 +158,25 @@ export const ThemeProvider = ({ children }) => {
     };
 
     // Load remote wallpaper config on login / user change.
-    // Reset wallpaper state BEFORE the async fetch so a new user never sees
-    // a leftover wallpaper from the previous session on the same device.
+    // Only wipe wallpaper state when the user identity actually changes (different
+    // UID or logout). Token refreshes fire the same auth event but keep the same
+    // UID — we must NOT wipe in that case, as it causes the visible flash on
+    // macOS Space switch (which triggers a token refresh on focus).
     useEffect(() => {
-        // Always clear first — this is synchronous and takes effect immediately,
-        // before the fetch resolves, regardless of what the new user's config says.
-        setLightWallpaperImage(null);
-        setDarkWallpaperImage(null);
-        localStorage.removeItem('app-light-wallpaper-image');
-        localStorage.removeItem('app-dark-wallpaper-image');
+        const newUserId = currentUser?.id ?? null;
+        const prevUserId = prevUserIdRef.current;
+
+        const userChanged = newUserId !== prevUserId;
+        prevUserIdRef.current = newUserId;
+
+        if (userChanged) {
+            // A real account switch or logout — clear to prevent the new user
+            // from briefly seeing the previous user's wallpaper.
+            setLightWallpaperImage(null);
+            setDarkWallpaperImage(null);
+            localStorage.removeItem('app-light-wallpaper-image');
+            localStorage.removeItem('app-dark-wallpaper-image');
+        }
 
         if (!currentUser) return;
 
