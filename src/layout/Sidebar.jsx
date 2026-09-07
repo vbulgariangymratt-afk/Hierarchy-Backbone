@@ -16,6 +16,7 @@ import IconPickerModal from '../components/modals/IconPickerModal';
 import './Sidebar.css';
 import { Coins, LayoutDashboard, ShoppingBag, BookOpen, Calendar, Target, Edit3, Settings, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core';
 
 
 
@@ -33,6 +34,31 @@ const SVG_ICONS = {
     PLANNING: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z'/%3E%3C/svg%3E",
     FOCUS: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cline x1='12' y1='2' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='22'/%3E%3Cline x1='2' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='22' y2='12'/%3E%3C/svg%3E",
     WALLPAPER: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Ccircle cx='9' cy='9' r='2'/%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'/%3E%3C/svg%3E"
+};
+
+const DraggableSidebarItem = ({ id, data, children, className, onClick }) => {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, data });
+    return (
+        <div
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            className={className}
+            onClick={onClick}
+            style={{ opacity: isDragging ? 0.4 : 1, cursor: 'grab' }}
+        >
+            {children}
+        </div>
+    );
+};
+
+const DroppableSidebarZone = ({ id, className, children }) => {
+    const { setNodeRef, isOver } = useDroppable({ id });
+    return (
+        <div ref={setNodeRef} className={`${className} ${isOver ? 'drag-over' : ''}`}>
+            {children}
+        </div>
+    );
 };
 
 const Sidebar = ({ onSkillClick }) => {
@@ -236,8 +262,43 @@ const Sidebar = ({ onSkillClick }) => {
         guidedSlotRoles, 
         energyLevel, 
         updateEnergyLevel,
-        currencyName
+        currencyName,
+        updateFocusSlot,
+        updateMaintenanceSkillIds
     } = useSettings();
+
+    const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+    const moveObsessionToKeepAlive = useCallback((skillId, slotIdx) => {
+        updateFocusSlot(slotIdx, null);
+        if (!maintenanceSkillIds.includes(skillId)) {
+            updateMaintenanceSkillIds([...maintenanceSkillIds, skillId]);
+        }
+    }, [maintenanceSkillIds, updateFocusSlot, updateMaintenanceSkillIds]);
+
+    const moveKeepAliveToObsession = useCallback((skillId) => {
+        const emptyIdx = focusSlots.findIndex(slot => slot === null);
+        if (emptyIdx === -1) {
+            alert("All 5 Obsession slots are full. Clear or move a slot first!");
+            return;
+        }
+        updateFocusSlot(emptyIdx, skillId);
+        updateMaintenanceSkillIds(maintenanceSkillIds.filter(id => id !== skillId));
+    }, [focusSlots, maintenanceSkillIds, updateFocusSlot, updateMaintenanceSkillIds]);
+
+    const handleSidebarDragEnd = useCallback((event) => {
+        const { active, over } = event;
+        if (!over) return;
+
+        const { skillId, source, slotIndex } = active.data.current || {};
+        if (!skillId) return;
+
+        if (source === 'obsessions' && over.id === 'keep-it-alive-dropzone') {
+            moveObsessionToKeepAlive(skillId, slotIndex);
+        } else if (source === 'keep_it_alive' && over.id === 'obsessions-dropzone') {
+            moveKeepAliveToObsession(skillId);
+        }
+    }, [moveObsessionToKeepAlive, moveKeepAliveToObsession]);
 
     const systemTasksCount = useMemo(() => {
         if (!allNodes) return 0;
@@ -708,7 +769,7 @@ const Sidebar = ({ onSkillClick }) => {
                     <nav className="sidebar-nav">
                         {!isFocusMode ? (
                             /* PLANNING MODE SIDEBAR CONTENT */
-                            <>
+                            <DndContext sensors={dndSensors} onDragEnd={handleSidebarDragEnd}>
                                 <NavLink to="/launchpad" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                                     <span className="btn-icon">
                                         <LayoutDashboard size={16} />
@@ -745,7 +806,10 @@ const Sidebar = ({ onSkillClick }) => {
 
                                 {/* FOCUS SLOTS SECTION (Partially visible in Energy 2, hidden in Energy 1) */}
                                 {energyLevel >= 3 && (
-                                    <div className={`sidebar-section focus-slots-section ${energyLevel === 2 ? 'ghosted-focus' : ''}`}>
+                                    <DroppableSidebarZone
+                                        id="obsessions-dropzone"
+                                        className={`sidebar-section focus-slots-section ${energyLevel === 2 ? 'ghosted-focus' : ''}`}
+                                    >
                                         <div className="section-title-container">
                                             <span className="section-title-static">Obsessions</span>
                                             <Link 
@@ -775,8 +839,10 @@ const Sidebar = ({ onSkillClick }) => {
                                                     const shouldBlinkSkill = isNewUser && idx === 0 && !skillsWithTasksMap[slotId];
 
                                                     return (
-                                                        <div 
-                                                            key={idx} 
+                                                        <DraggableSidebarItem
+                                                            key={idx}
+                                                            id={`obsession-${idx}`}
+                                                            data={{ skillId: slotId, source: 'obsessions', slotIndex: idx }}
                                                             className={`nav-item slot-nav-item ${glowingNodeId === slotId ? 'aura-glow-active' : ''} ${shouldBlinkSkill ? 'pulse-breathe' : ''}`}
                                                             onClick={() => {
                                                                 if (onSkillClick) onSkillClick(skill);
@@ -797,17 +863,17 @@ const Sidebar = ({ onSkillClick }) => {
                                                             <span className="btn-text">
                                                                 {skill?.name}
                                                             </span>
-                                                        </div>
+                                                        </DraggableSidebarItem>
                                                     );
                                                 })}
                                             {/* Emojis and manage button removed for header relocation */}
                                         </div>
-                                    </div>
+                                    </DroppableSidebarZone>
                                 )}
 
                                 {/* KEEP IT ALIVE — Pilot Light Drawer */}
                                 {energyLevel > 1 && maintenanceEnabled && (
-                                    <div className="sidebar-section maintenance-section">
+                                    <DroppableSidebarZone id="keep-it-alive-dropzone" className="sidebar-section maintenance-section">
                                         <div
                                             className="section-title-container"
                                             onClick={toggleMaintenance}
@@ -861,7 +927,12 @@ const Sidebar = ({ onSkillClick }) => {
                                                     if (!hasNoHabits && skillPilots.length === 0) return null;
 
                                                     return (
-                                                        <div key={skill.id} className="pilot-skill-group">
+                                                        <DraggableSidebarItem
+                                                            key={skill.id}
+                                                            id={`keepalive-${skill.id}`}
+                                                            data={{ skillId: skill.id, source: 'keep_it_alive' }}
+                                                            className="pilot-skill-group"
+                                                        >
                                                             <div
                                                                 className={`pilot-skill-label ${glowingNodeId === skill.id ? 'aura-glow-active' : ''}`}
                                                                 onClick={() => navigate(`/skill/${skill.id}`)}
@@ -899,7 +970,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                                     })}
                                                                 </div>
                                                             )}
-                                                        </div>
+                                                        </DraggableSidebarItem>
                                                     );
                                                 })}
 
@@ -913,7 +984,7 @@ const Sidebar = ({ onSkillClick }) => {
                                                 )}
                                             </div>
                                         )}
-                                    </div>
+                                    </DroppableSidebarZone>
                                 )}
 
                                 {/* Collapsible Life Areas Section */}
@@ -970,7 +1041,7 @@ const Sidebar = ({ onSkillClick }) => {
                                         )}
                                     </div>
                                 )}
-                            </>
+                            </DndContext>
                         ) : (
                             /* FOCUS MODE SIDEBAR CONTENT (Refined) */
                             <div className="focus-sidebar-placeholder">

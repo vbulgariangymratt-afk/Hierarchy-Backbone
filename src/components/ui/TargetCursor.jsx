@@ -170,7 +170,15 @@ const TargetCursor = ({
       if (containerSelector) {
         // Dynamic viewport coordinate check:
         // Header height is 56px, Sidebar width is 240px.
-        const inside = e.clientY >= 56 && e.clientX >= 240;
+        const geometricInside = e.clientY >= 56 && e.clientX >= 240;
+
+        // Even if geometrically inside the flow container's bounds, a portal-rendered
+        // modal/dialog may be visually on top (e.g. MiniLaunchpadModal renders to
+        // document.body, outside .launchpad-flow-container in the DOM). In that case
+        // there's no .cursor-target to lock onto, so we must not hide the native cursor.
+        const overModal = e.target.closest('.mini-launchpad-overlay, .modal-overlay');
+        const inside = geometricInside && !overModal;
+
         if (inside !== isInsideContainer) {
           isInsideContainer = inside;
           gsap.to(cursor, { opacity: inside ? 1 : 0, duration: 0.15 });

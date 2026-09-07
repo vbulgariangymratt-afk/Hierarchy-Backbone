@@ -92,7 +92,7 @@ const SkillPage = () => {
         fetchSkills 
     } = useSkillPageData(id, isReorderingRef);
 
-    const totalCompletedTasks = useMemo(() => {
+    const currentActiveCompletedTasks = useMemo(() => {
         const skillObjectives = (allNodes || []).filter(n => n.type === NodeTypes.OBJECTIVE && n.parentId === id);
         const skillObjectiveIds = new Set(skillObjectives.map(o => o.id));
         const skillAspects = (allNodes || []).filter(n => n.type === NodeTypes.ASPECT && skillObjectiveIds.has(n.parentId));
@@ -114,6 +114,26 @@ const SkillPage = () => {
 
         return totalCount;
     }, [allNodes, id]);
+
+    // Monotonic high-water mark: the number shown never decreases,
+    // even if tasks/aspects/objectives are later deleted.
+    const totalCompletedTasks = Math.max(
+        currentActiveCompletedTasks,
+        skill?.metadata?.lifetimeCompletedTasks || 0
+    );
+
+    useEffect(() => {
+        if (!skill) return;
+        const storedMax = skill.metadata?.lifetimeCompletedTasks || 0;
+        if (currentActiveCompletedTasks > storedMax) {
+            backbone.updateNode(skill.id, {
+                metadata: {
+                    ...skill.metadata,
+                    lifetimeCompletedTasks: currentActiveCompletedTasks
+                }
+            }).catch(err => console.error('Failed to persist lifetimeCompletedTasks:', err));
+        }
+    }, [currentActiveCompletedTasks, skill]);
 
     // UI State for expansion & becoming section
     const [expandedAspectIds, setExpandedAspectIds] = useState([]);
