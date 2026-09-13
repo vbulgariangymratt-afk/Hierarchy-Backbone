@@ -460,7 +460,7 @@
 
 /* Default Solid Dark Mode */
 .daily-log-popover {
-    position: absolute;
+    position: fixed;
     top: calc(100% + 12px);
     right: 0;
     width: 400px;
@@ -502,12 +502,13 @@
 }
 
 /* Wallpaper Mode */
+.wallpaper-mode .daily-log-popover,
 .wallpaper-mode .daily-log-popover.liquid-glass {
-    background: rgba(10, 10, 10, 0.95);
-    border: 1px solid var(--wallpaper-glass-border);
-    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
-    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
-    box-shadow: var(--wallpaper-glass-shadow);
+    background: rgba(20, 20, 22, 0.45) !important;
+    border: 1px solid var(--wallpaper-glass-border) !important;
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5), 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
 /* Solid Light Mode */
@@ -576,4 +577,24 @@
 
 .daily-log-popover-content .journal-header {
     display: none;
+}
+
+/* ── Wallpaper Mode: Global Sun Rays ─────────────────────────── */
+.wallpaper-side-rays {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 600px;
+    height: 600px;
+    z-index: 0 !important;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    mask-image: radial-gradient(circle at 0% 0%, black 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at 0% 0%, black 30%, transparent 80%);
+}
+
+[data-theme="dark"] .wallpaper-side-rays {
+    opacity: 0.85;
 }

@@ -1682,7 +1682,6 @@ const LaunchpadFlow = () => {
                                                                     onClick={() => handleStartTask(e5ActiveSkillTask)}
                                                                     style={{
                                                                         borderColor: 'rgba(var(--color-accent-rgb), 0.25)',
-                                                                        background: 'linear-gradient(145deg, rgba(var(--color-accent-rgb), 0.03) 0%, rgba(var(--color-accent-rgb), 0) 100%), var(--color-bg-card)',
                                                                         minHeight: '140px'
                                                                     }}
                                                                 >
@@ -1758,7 +1757,6 @@ const LaunchpadFlow = () => {
                                                                             fontSize: '13px', 
                                                                             color: 'var(--text-secondary)',
                                                                             border: '1px solid var(--color-border)',
-                                                                            background: 'var(--color-bg-card)',
                                                                             width: 'auto'
                                                                         }}
                                                                     >
@@ -1998,7 +1996,6 @@ const LaunchpadFlow = () => {
                                                                         fontSize: '13px', 
                                                                         color: 'var(--text-secondary)',
                                                                         border: '1px solid var(--color-border)',
-                                                                        background: 'var(--color-bg-card)',
                                                                         width: 'auto'
                                                                     }}
                                                                 >
@@ -2297,7 +2294,6 @@ const LaunchpadFlow = () => {
                                                                         fontSize: '13px', 
                                                                         color: 'var(--text-secondary)',
                                                                         border: '1px solid var(--color-border)',
-                                                                        background: 'var(--color-bg-card)',
                                                                         width: 'auto'
                                                                     }}
                                                                 >

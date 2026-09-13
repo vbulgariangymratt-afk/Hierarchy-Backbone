@@ -16,6 +16,7 @@ import SettingsPage from '../pages/SettingsPage';
 import JournalPage from '../pages/JournalPage';
 import Counter from '../components/ui/Counter';
 import CustomThemeSwitch from '../components/ui/CustomThemeSwitch';
+import SideRays from '../components/ui/SideRays';
 import './MainLayout.css';
 
 
@@ -253,6 +254,18 @@ const MainLayout = () => {
 
     return (
         <div className="main-layout">
+            {backgroundMode === 'wallpaper' && (
+                <SideRays
+                    className="wallpaper-side-rays"
+                    speed={0.8}
+                    rayColor1="#EAB308"
+                    rayColor2="#96c8ff"
+                    intensity={1.25}
+                    spread={1.7}
+                    opacity={0.15}
+                    origin="top-left"
+                />
+            )}
             <div className="app-drag-region" data-tauri-drag-region />
             
             <header className={`app-header ${isFullscreen ? 'is-fullscreen' : ''}`} data-tauri-drag-region>
@@ -456,17 +469,18 @@ const MainLayout = () => {
                                 document.body
                             )}
                             
-                            <AnimatePresence>
-                                {showDailyLog && (
-                                    <motion.div
-                                        ref={dailyLogContainerRef}
-                                        className="daily-log-popover liquid-glass"
-                                        style={{ transformOrigin: 'top right' }}
-                                        initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
-                                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
-                                        exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
-                                        transition={{ type: 'spring', stiffness: 700, damping: 20 }}
-                                    >
+                            {createPortal(
+                                <AnimatePresence>
+                                    {showDailyLog && (
+                                        <motion.div
+                                            ref={dailyLogContainerRef}
+                                            className="daily-log-popover liquid-glass"
+                                            style={{ transformOrigin: 'top right', position: 'fixed', top: '52px', right: '80px' }}
+                                            initial={{ opacity: 0, rotate: -3, scale: 0.95 }}
+                                            animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                                            exit={{ opacity: 0, rotate: -3, scale: 0.95, transition: { duration: 0.15, ease: 'easeIn' } }}
+                                            transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                                        >
                                             <div className="daily-log-popover-header">
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                     <h3>Daily Log</h3>
@@ -479,8 +493,10 @@ const MainLayout = () => {
                                                 <JournalPage />
                                             </div>
                                         </motion.div>
-                                )}
-                            </AnimatePresence>
+                                    )}
+                                </AnimatePresence>,
+                                document.body
+                            )}
                         </div>
                         
                         {/* Appearance / Settings controls */}

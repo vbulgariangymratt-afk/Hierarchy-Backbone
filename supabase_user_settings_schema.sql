@@ -50,6 +50,8 @@ ALTER TABLE public.user_settings
 ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS lemon_squeezy_customer_id TEXT DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS lemon_squeezy_subscription_id TEXT DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT DEFAULT NULL,
 ADD COLUMN IF NOT EXISTS subscription_ends_at TIMESTAMPTZ DEFAULT NULL;
 
 -- Create secure RPC function to verify password and whitelist the user

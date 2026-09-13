@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { backbone, repository, habitService, habitRepo } from '../backbone-v2/index';
 import { useTheme } from '../context/ThemeContext';
@@ -15,7 +16,7 @@ import { useShallow } from 'zustand/react/shallow';
 import IconPickerModal from '../components/modals/IconPickerModal';
 import './Sidebar.css';
 import { Coins, LayoutDashboard, ShoppingBag, BookOpen, Calendar, Target, Edit3, Settings, ClipboardList } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, LayoutGroup, AnimatePresence } from 'framer-motion';
 import { DndContext, PointerSensor, useSensor, useSensors, useDraggable, useDroppable } from '@dnd-kit/core';
 
 
@@ -770,28 +771,59 @@ const Sidebar = ({ onSkillClick }) => {
                         {!isFocusMode ? (
                             /* PLANNING MODE SIDEBAR CONTENT */
                             <DndContext sensors={dndSensors} onDragEnd={handleSidebarDragEnd}>
+                                <LayoutGroup id="sidebar-nav-pill">
                                 <NavLink to="/launchpad" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                    <span className="btn-icon">
-                                        <LayoutDashboard size={16} />
-                                    </span>
-                                    <span className="btn-text">Launchpad</span>
+                                    {({ isActive }) => (
+                                        <>
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="sidebar-nav-indicator"
+                                                    className="nav-item-indicator"
+                                                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                                />
+                                            )}
+                                            <span className="btn-icon">
+                                                <LayoutDashboard size={16} />
+                                            </span>
+                                            <span className="btn-text">Launchpad</span>
+                                        </>
+                                    )}
                                 </NavLink>
-
-
                                 {energyLevel >= 3 && (
                                     <NavLink to="/marketplace" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                                        <span className="btn-icon">
-                                            <ShoppingBag size={16} />
-                                        </span>
-                                        <span className="btn-text">Marketplace</span>
+                                        {({ isActive }) => (
+                                            <>
+                                                {isActive && (
+                                                    <motion.div
+                                                        layoutId="sidebar-nav-indicator"
+                                                        className="nav-item-indicator"
+                                                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                                    />
+                                                )}
+                                                <span className="btn-icon">
+                                                    <ShoppingBag size={16} />
+                                                </span>
+                                                <span className="btn-text">Marketplace</span>
+                                            </>
+                                        )}
                                     </NavLink>
                                 )}
-
                                 <NavLink to="/calendar" className={({ isActive }) => `nav-item timeline-nav ${isActive ? 'active' : ''}`}>
-                                    <span className="btn-icon">
-                                        <Calendar size={16} />
-                                    </span>
-                                    <span className="btn-text">Timeline</span>
+                                    {({ isActive }) => (
+                                        <>
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="sidebar-nav-indicator"
+                                                    className="nav-item-indicator"
+                                                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                                />
+                                            )}
+                                            <span className="btn-icon">
+                                                <Calendar size={16} />
+                                            </span>
+                                            <span className="btn-text">Timeline</span>
+                                        </>
+                                    )}
                                 </NavLink>
 
                                 {systemTasksCount === 0 && (
@@ -1007,23 +1039,34 @@ const Sidebar = ({ onSkillClick }) => {
                                                         to={`/area/${area.id}`}
                                                         className={({ isActive }) => `nav-item area-item ${isActive ? 'active' : ''} ${glowingNodeId === area.id ? 'aura-glow-active' : ''}`}
                                                     >
-                                                        <div
-                                                            role="button"
-                                                            tabIndex={0}
-                                                            className="btn-icon editable-icon-trigger"
-                                                            title="Click to change icon"
-                                                            onClick={(e) => handleIconClick(e, area)}
-                                                            onMouseDown={(e) => e.stopPropagation()}
-                                                            style={{ border: 'none', background: 'none', padding: 0, margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                        >
-                                                            <NodeIcon
-                                                                iconUrl={area.metadata?.iconUrl || 'Sparkles'}
-                                                                defaultIcon="🌐"
-                                                            />
-                                                        </div>
-                                                        <span className="btn-text">{area.name}</span>
-                                                        {area.isActive && (
-                                                            <span className="area-dot" title="Active in Launchpad"></span>
+                                                        {({ isActive }) => (
+                                                            <>
+                                                                {isActive && (
+                                                                    <motion.div
+                                                                        layoutId="sidebar-nav-indicator"
+                                                                        className="nav-item-indicator"
+                                                                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                                                                    />
+                                                                )}
+                                                                <div
+                                                                    role="button"
+                                                                    tabIndex={0}
+                                                                    className="btn-icon editable-icon-trigger"
+                                                                    title="Click to change icon"
+                                                                    onClick={(e) => handleIconClick(e, area)}
+                                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                                    style={{ border: 'none', background: 'none', padding: 0, margin: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                >
+                                                                    <NodeIcon
+                                                                        iconUrl={area.metadata?.iconUrl || 'Sparkles'}
+                                                                        defaultIcon="🌐"
+                                                                    />
+                                                                </div>
+                                                                <span className="btn-text">{area.name}</span>
+                                                                {area.isActive && (
+                                                                    <span className="area-dot" title="Active in Launchpad"></span>
+                                                                )}
+                                                            </>
                                                         )}
                                                     </NavLink>
                                                 ))}
@@ -1041,6 +1084,7 @@ const Sidebar = ({ onSkillClick }) => {
                                         )}
                                     </div>
                                 )}
+                                </LayoutGroup>
                             </DndContext>
                         ) : (
                             /* FOCUS MODE SIDEBAR CONTENT (Refined) */
@@ -1059,8 +1103,18 @@ const Sidebar = ({ onSkillClick }) => {
 
             </div>
 
-            {showCapture && (
-                <div className="quick-capture-popover" ref={capturePopoverRef}>
+            {createPortal(
+                <AnimatePresence>
+                    {showCapture && (
+                        <motion.div
+                            className="quick-capture-popover"
+                            ref={capturePopoverRef}
+                            initial={{ opacity: 0, scale: 0.97 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.97 }}
+                            transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                            style={{ position: 'fixed', top: '64px', left: 'calc(var(--sidebar-width, 240px) + 12px)', width: '380px' }}
+                        >
                     <div className="quick-capture-header">
                         <h4>Quick Capture</h4>
                     </div>
@@ -1108,7 +1162,10 @@ const Sidebar = ({ onSkillClick }) => {
                             ))
                         )}
                     </div>
-                </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
             )}
             {/* Icon Picker Modal */}
             <IconPickerModal

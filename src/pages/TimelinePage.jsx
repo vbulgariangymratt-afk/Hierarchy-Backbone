@@ -4,7 +4,6 @@ import { formatDuration } from '../utils/timeUtils';
 import { ChevronRight, ChevronDown, Repeat } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BorderGlow from '../components/ui/BorderGlow';
-import SideRays from '../components/ui/SideRays';
 import { useBackboneStore } from '../store/backboneStore';
 import './TimelinePage.css';
 
@@ -80,7 +79,6 @@ const TimelinePage = () => {
     const [expandedDays, setExpandedDays] = useState({});
     
     // Check if it is daytime (Always true for now so you can see them)
-    const [showRays] = useState(true);
 
     const allNodes = useBackboneStore(state => state.nodes || []);
     const completedTasksCount = allNodes.filter(n => 
@@ -131,18 +129,6 @@ const TimelinePage = () => {
 
     return (
         <div className="timeline-page">
-            {showRays && (
-                <SideRays
-                    className="timeline-side-rays"
-                    speed={0.8}
-                    rayColor1="#EAB308"
-                    rayColor2="#96c8ff"
-                    intensity={1.25}
-                    spread={1.7}
-                    opacity={0.15}
-                    origin="top-left"
-                />
-            )}
             <motion.header 
                 className="timeline-header"
                 variants={headerVariants}

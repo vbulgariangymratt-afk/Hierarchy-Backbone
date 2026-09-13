@@ -25,19 +25,19 @@ export default function AuthGate({ user }) {
 
     const handleOpenWebsite = async (e) => {
         e?.preventDefault?.();
-        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL || 'https://backbone.lemonsqueezy.com/checkout/buy/98b89652-5293-4e9a-bc63-234e11f4f4d7';
+        const checkoutBaseUrl = import.meta.env.VITE_STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/test_123';
         let url;
         try {
             url = new URL(checkoutBaseUrl);
         } catch {
-            url = new URL('https://backbone.lemonsqueezy.com/checkout/buy/98b89652-5293-4e9a-bc63-234e11f4f4d7');
+            url = new URL('https://buy.stripe.com/test_123');
         }
 
         if (user?.id) {
-            url.searchParams.set('checkout[custom][user_id]', user.id);
+            url.searchParams.set('client_reference_id', user.id);
         }
         if (user?.email) {
-            url.searchParams.set('checkout[email]', user.email);
+            url.searchParams.set('prefilled_email', user.email);
         }
 
         const checkoutUrl = url.toString();

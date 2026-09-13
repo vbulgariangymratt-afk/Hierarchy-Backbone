@@ -67,8 +67,8 @@ const _cache = {
     todayRemovalMode: localStorage.getItem('app-today-removal-mode') || 'on_completion',
     isWhitelisted: localStorage.getItem('app-offline-whitelisted') === 'true',
     subscriptionStatus: localStorage.getItem('app-offline-sub-status') || null,
-    lemonSqueezyCustomerId: null,
-    lemonSqueezySubscriptionId: null,
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
     subscriptionEndsAt: localStorage.getItem('app-offline-sub-ends') || null,
     hasLoaded: false,
 };
@@ -88,8 +88,8 @@ export const SettingsProvider = ({ children }) => {
     const [todayRemovalMode, setTodayRemovalModeState] = useState(_cache.todayRemovalMode);
     const [isWhitelisted, setIsWhitelistedState] = useState(_cache.isWhitelisted);
     const [subscriptionStatus, setSubscriptionStatusState] = useState(_cache.subscriptionStatus);
-    const [lemonSqueezyCustomerId, setLemonSqueezyCustomerIdState] = useState(_cache.lemonSqueezyCustomerId);
-    const [lemonSqueezySubscriptionId, setLemonSqueezySubscriptionIdState] = useState(_cache.lemonSqueezySubscriptionId);
+    const [stripeCustomerId, setStripeCustomerIdState] = useState(_cache.stripeCustomerId);
+    const [stripeSubscriptionId, setStripeSubscriptionIdState] = useState(_cache.stripeSubscriptionId);
     const [subscriptionEndsAt, setSubscriptionEndsAtState] = useState(_cache.subscriptionEndsAt);
     const [loading, setLoading] = useState(!_cache.hasLoaded);
 
@@ -142,8 +142,8 @@ export const SettingsProvider = ({ children }) => {
                     energy_level: 3,
                     is_whitelisted: false,
                     subscription_status: null,
-                    lemon_squeezy_customer_id: null,
-                    lemon_squeezy_subscription_id: null,
+                    stripe_customer_id: null,
+                    stripe_subscription_id: null,
                     subscription_ends_at: null,
                     ...(_cache.dbSupportsExperimentLimit ? { active_experiment_limit: 1 } : {})
                 };
@@ -171,8 +171,8 @@ export const SettingsProvider = ({ children }) => {
                     _cache.todayRemovalMode = 'on_completion';
                     _cache.isWhitelisted = false;
                     _cache.subscriptionStatus = null;
-                    _cache.lemonSqueezyCustomerId = null;
-                    _cache.lemonSqueezySubscriptionId = null;
+                    _cache.stripeCustomerId = null;
+                    _cache.stripeSubscriptionId = null;
                     _cache.subscriptionEndsAt = null;
                     
                     // Cache for offline access
@@ -192,8 +192,8 @@ export const SettingsProvider = ({ children }) => {
                     setTodayRemovalModeState(_cache.todayRemovalMode);
                     setIsWhitelistedState(false);
                     setSubscriptionStatusState(null);
-                    setLemonSqueezyCustomerIdState(null);
-                    setLemonSqueezySubscriptionIdState(null);
+                    setStripeCustomerIdState(null);
+                    setStripeSubscriptionIdState(null);
                     setSubscriptionEndsAtState(null);
                 }
             } else if (!error && data) {
@@ -208,8 +208,8 @@ export const SettingsProvider = ({ children }) => {
                 _cache.todayRemovalMode = data.today_removal_mode || 'on_completion';
                 _cache.isWhitelisted = data.is_whitelisted || false;
                 _cache.subscriptionStatus = data.subscription_status || null;
-                _cache.lemonSqueezyCustomerId = data.lemon_squeezy_customer_id || null;
-                _cache.lemonSqueezySubscriptionId = data.lemon_squeezy_subscription_id || null;
+                _cache.stripeCustomerId = data.stripe_customer_id || null;
+                _cache.stripeSubscriptionId = data.stripe_subscription_id || null;
                 _cache.subscriptionEndsAt = data.subscription_ends_at || null;
                 
                 // Cache for offline access
@@ -230,8 +230,8 @@ export const SettingsProvider = ({ children }) => {
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(_cache.isWhitelisted);
                 setSubscriptionStatusState(_cache.subscriptionStatus);
-                setLemonSqueezyCustomerIdState(_cache.lemonSqueezyCustomerId);
-                setLemonSqueezySubscriptionIdState(_cache.lemonSqueezySubscriptionId);
+                setStripeCustomerIdState(_cache.stripeCustomerId);
+                setStripeSubscriptionIdState(_cache.stripeSubscriptionId);
                 setSubscriptionEndsAtState(_cache.subscriptionEndsAt);
             }
         } catch (err) {
@@ -421,8 +421,8 @@ export const SettingsProvider = ({ children }) => {
                 _cache.todayRemovalMode = 'on_completion';
                 _cache.isWhitelisted = false;
                 _cache.subscriptionStatus = null;
-                _cache.lemonSqueezyCustomerId = null;
-                _cache.lemonSqueezySubscriptionId = null;
+                _cache.stripeCustomerId = null;
+                _cache.stripeSubscriptionId = null;
                 _cache.subscriptionEndsAt = null;
                 setUserId(null);
                 setFocusSlots(_cache.focusSlots);
@@ -435,8 +435,8 @@ export const SettingsProvider = ({ children }) => {
                 setTodayRemovalModeState(_cache.todayRemovalMode);
                 setIsWhitelistedState(false);
                 setSubscriptionStatusState(null);
-                setLemonSqueezyCustomerIdState(null);
-                setLemonSqueezySubscriptionIdState(null);
+                setStripeCustomerIdState(null);
+                setStripeSubscriptionIdState(null);
                 setSubscriptionEndsAtState(null);
                 setLoading(false);
             }
@@ -476,20 +476,20 @@ export const SettingsProvider = ({ children }) => {
                         const newStatus = payload.new.subscription_status || null;
                         const newWhitelisted = payload.new.is_whitelisted || false;
                         const newEndsAt = payload.new.subscription_ends_at || null;
-                        const newCustId = payload.new.lemon_squeezy_customer_id || null;
-                        const newSubId = payload.new.lemon_squeezy_subscription_id || null;
+                        const newCustId = payload.new.stripe_customer_id || null;
+                        const newSubId = payload.new.stripe_subscription_id || null;
 
                         _cache.subscriptionStatus = newStatus;
                         _cache.isWhitelisted = newWhitelisted;
                         _cache.subscriptionEndsAt = newEndsAt;
-                        _cache.lemonSqueezyCustomerId = newCustId;
-                        _cache.lemonSqueezySubscriptionId = newSubId;
+                        _cache.stripeCustomerId = newCustId;
+                        _cache.stripeSubscriptionId = newSubId;
 
                         setSubscriptionStatusState(newStatus);
                         setIsWhitelistedState(newWhitelisted);
                         setSubscriptionEndsAtState(newEndsAt);
-                        setLemonSqueezyCustomerIdState(newCustId);
-                        setLemonSqueezySubscriptionIdState(newSubId);
+                        setStripeCustomerIdState(newCustId);
+                        setStripeSubscriptionIdState(newSubId);
                     }
                 }
             )
@@ -537,11 +537,11 @@ export const SettingsProvider = ({ children }) => {
     };
 
     const redirectToCheckout = async () => {
-        const checkoutBaseUrl = import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL || 'https://backbone.lemonsqueezy.com/checkout';
+        const checkoutBaseUrl = import.meta.env.VITE_STRIPE_CHECKOUT_URL || 'https://buy.stripe.com/test_123';
         
         if (!checkoutBaseUrl) {
-            console.error('[SettingsContext] VITE_LEMON_SQUEEZY_CHECKOUT_URL is not configured.');
-            alert('Store checkout is currently not configured. Please configure VITE_LEMON_SQUEEZY_CHECKOUT_URL in your environment variables.');
+            console.error('[SettingsContext] VITE_STRIPE_CHECKOUT_URL is not configured.');
+            alert('Store checkout is currently not configured. Please configure VITE_STRIPE_CHECKOUT_URL in your environment variables.');
             return;
         }
 
@@ -558,12 +558,12 @@ export const SettingsProvider = ({ children }) => {
         try {
             url = new URL(checkoutBaseUrl);
         } catch (e) {
-            console.error('[SettingsContext] Invalid VITE_LEMON_SQUEEZY_CHECKOUT_URL:', e);
+            console.error('[SettingsContext] Invalid VITE_STRIPE_CHECKOUT_URL:', e);
             alert('Invalid checkout URL configuration.');
             return;
         }
-        url.searchParams.set('checkout[custom][user_id]', user.id);
-        url.searchParams.set('checkout[email]', user.email);
+        url.searchParams.set('client_reference_id', user.id);
+        url.searchParams.set('prefilled_email', user.email);
 
         const checkoutUrl = url.toString();
 
@@ -611,7 +611,7 @@ export const SettingsProvider = ({ children }) => {
             console.log('[SettingsContext] Polling user_settings...');
             const { data, error } = await supabase
                 .from('user_settings')
-                .select('subscription_status, is_whitelisted, subscription_ends_at, lemon_squeezy_customer_id, lemon_squeezy_subscription_id')
+                .select('subscription_status, is_whitelisted, subscription_ends_at, stripe_customer_id, stripe_subscription_id')
                 .eq('user_id', userId)
                 .maybeSingle();
 
@@ -619,20 +619,20 @@ export const SettingsProvider = ({ children }) => {
                 const newStatus = data.subscription_status || null;
                 const newWhitelisted = data.is_whitelisted || false;
                 const newEndsAt = data.subscription_ends_at || null;
-                const newCustId = data.lemon_squeezy_customer_id || null;
-                const newSubId = data.lemon_squeezy_subscription_id || null;
+                const newCustId = data.stripe_customer_id || null;
+                const newSubId = data.stripe_subscription_id || null;
 
                 _cache.subscriptionStatus = newStatus;
                 _cache.isWhitelisted = newWhitelisted;
                 _cache.subscriptionEndsAt = newEndsAt;
-                _cache.lemonSqueezyCustomerId = newCustId;
-                _cache.lemonSqueezySubscriptionId = newSubId;
+                _cache.stripeCustomerId = newCustId;
+                _cache.stripeSubscriptionId = newSubId;
 
                 setSubscriptionStatusState(newStatus);
                 setIsWhitelistedState(newWhitelisted);
                 setSubscriptionEndsAtState(newEndsAt);
-                setLemonSqueezyCustomerIdState(newCustId);
-                setLemonSqueezySubscriptionIdState(newSubId);
+                setStripeCustomerIdState(newCustId);
+                setStripeSubscriptionIdState(newSubId);
             }
         }, 5000);
 
@@ -665,15 +665,15 @@ export const SettingsProvider = ({ children }) => {
         hasAccess,
         subscriptionDaysRemaining,
         subscriptionStatus,
-        lemonSqueezyCustomerId,
-        lemonSqueezySubscriptionId,
+        stripeCustomerId,
+        stripeSubscriptionId,
         subscriptionEndsAt,
         redirectToCheckout,
         dbSupportsExperimentLimit: _cache.dbSupportsExperimentLimit,
         loading,
         userId: _cache.uid,
         refreshSettings,
-    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, hasAccess, subscriptionDaysRemaining, loading, refreshSettings, subscriptionStatus, lemonSqueezyCustomerId, lemonSqueezySubscriptionId, subscriptionEndsAt]);
+    }), [focusSlots, maintenanceSkillIds, maintenanceEnabled, guidedSlotRoles, energyLevel, activeExperimentLimit, healthDotStyle, blurQuality, currencyName, todayRemovalMode, isWhitelisted, hasAccess, subscriptionDaysRemaining, loading, refreshSettings, subscriptionStatus, stripeCustomerId, stripeSubscriptionId, subscriptionEndsAt]);
 
     return (
         <SettingsContext.Provider value={settingsValue}>

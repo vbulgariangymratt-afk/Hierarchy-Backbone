@@ -181,25 +181,15 @@
     max-width: 100%;
 }
 
+/* Neutralize liquid-glass white tint on timeline cards in wallpaper mode */
+.liquid-mode.dark .node-card,
+.liquid-mode .node-card {
+    background: transparent !important;
+}
+
 .node-card:hover {
     transform: translateY(calc(var(--spacing-xs) * -1));
     box-shadow: var(--shadow-lg), 0 0 20px rgba(var(--color-accent-rgb), 0.15);
-}
-
-.timeline-node.is-today .node-card {
-    box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb), 0.22), 
-                0 4px 20px rgba(var(--color-accent-rgb), 0.12);
-}
-
-.timeline-node.is-today .timeline-card-glow-wrapper .static-edge {
-    background: rgba(var(--color-accent-rgb), 0.55);
-}
-
-.timeline-node.is-today .node-card:hover {
-    box-shadow: 0 0 0 1px rgba(var(--color-accent-rgb), 0.35), 
-                0 16px 36px rgba(var(--color-accent-rgb), 0.2),
-                0 12px 30px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
 }
 
 .node-card-header {
@@ -718,11 +708,11 @@
 }
 
 .wallpaper-mode .node-card {
+    background: var(--wallpaper-glass-bg) !important;
     border: 1px solid var(--wallpaper-glass-border) !important;
-}
-
-.wallpaper-mode .timeline-node.is-today .node-card {
-    border-color: rgba(var(--color-accent-rgb), 0.5) !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
 }
 
 /* ============================================================
@@ -798,10 +788,6 @@
     border-radius: inherit;
 }
 
-/* Disable the moving border spotlight on Today's card, keeping only the cursor-following backglow */
-.timeline-node.is-today .timeline-card-glow-wrapper .edge-light {
-    display: none !important;
-}
 
 /* Subtle card gloss sweep layer for timeline cards (matching the marketplace sweep animation) */
 .node-card .card-shine {

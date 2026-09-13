@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
@@ -1250,7 +1251,7 @@ const SkillPage = () => {
             )}
 
             {/* ── Aspect Delete Confirmation Modal ── */}
-            {taskHandlers.aspectToDelete && (
+            {taskHandlers.aspectToDelete && createPortal(
                 <div
                     className="delete-confirm-overlay"
                     onClick={() => taskHandlers.setAspectToDelete(null)}
@@ -1277,19 +1278,30 @@ const SkillPage = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* ── Task Creation Modal ── */}
-            {taskHandlers.creatingTaskForAspectId && (
-                <div 
-                    className="task-creation-overlay"
-                    onClick={() => taskHandlers.setCreatingTaskForAspectId(null)}
-                >
-                    <div 
-                        className="task-creation-modal"
-                        onClick={(e) => e.stopPropagation()}
-                    >
+            {createPortal(
+                <AnimatePresence>
+                    {taskHandlers.creatingTaskForAspectId && (
+                        <motion.div 
+                            className="task-creation-overlay"
+                            onClick={() => taskHandlers.setCreatingTaskForAspectId(null)}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                        >
+                            <motion.div 
+                                className="task-creation-modal"
+                                onClick={(e) => e.stopPropagation()}
+                                initial={{ opacity: 0, scale: 0.96 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
+                                transition={{ type: 'spring', stiffness: 700, damping: 20 }}
+                            >
                         <div className="task-creation-body" style={{ paddingTop: '28px' }}>
                             <div className="creation-field">
                                 <label>Task Name</label>
@@ -1420,12 +1432,15 @@ const SkillPage = () => {
                                 Create Task
                             </button>
                         </div>
-                    </div>
-                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
             )}
 
             {/* ── Experiment Delete Confirmation Modal ── */}
-            {objectiveToDelete && (
+            {objectiveToDelete && createPortal(
                 <div
                     className="delete-confirm-overlay"
                     onClick={() => setObjectiveToDelete(null)}
@@ -1454,7 +1469,8 @@ const SkillPage = () => {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* ── Experiment Limit Modal ── */}

@@ -957,6 +957,27 @@
     color: var(--text-muted);
 }
 
+/* ── Wallpaper Mode: LaunchpadView classes ───────────────────── */
+.wallpaper-mode .no-task-placeholder {
+    background: var(--wallpaper-glass-bg) !important;
+    border: 1px solid var(--wallpaper-glass-border) !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
+.wallpaper-mode .keep-it-alive-habit-row {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--wallpaper-glass-border) !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
+.wallpaper-mode .keep-it-alive-habit-row:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
 .habit-complete-btn {
     padding: 8px 16px;
     border-radius: 10px;

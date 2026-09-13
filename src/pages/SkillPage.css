@@ -127,7 +127,7 @@
     padding: 2px 0;
     outline: none;
     flex: 1;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, color 0.2s ease;
 }
 
 .dark.solid-mode .skill-identity-input,
@@ -4941,10 +4941,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2100;
+    z-index: 2147483647;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     animation: fadeInOverlay 0.2s ease;
+    isolation: isolate;
 }
 
 .task-creation-modal {
@@ -4956,9 +4957,43 @@
     max-height: 85vh;
     display: flex;
     flex-direction: column;
-    animation: modalPop 0.25s cubic-bezier(0.22, 1, 0.36, 1);
     transition: height 0.3s ease;
     overflow: hidden;
+}
+
+.wallpaper-mode .task-creation-overlay {
+    background: rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.wallpaper-mode .task-creation-modal {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    box-shadow: 
+        0 0 0 0.5px rgba(255, 255, 255, 0.08) inset,
+        0 30px 70px rgba(0, 0, 0, 0.35), 
+        0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.wallpaper-mode .creation-field input,
+.wallpaper-mode .creation-field select {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-primary) !important;
+}
+
+.wallpaper-mode .switch-card {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.wallpaper-mode .task-creation-cancel {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: var(--text-secondary) !important;
 }
 
 /* Modern Premium Switch Card Group */
@@ -5591,4 +5626,9 @@
     gap: 4px !important;
     user-select: none !important;
     white-space: nowrap !important;
+}
+
+@keyframes glassReveal {
+    0% { background: rgba(30, 30, 32, 0.85); }
+    100% { background: rgba(255, 255, 255, 0.05); }
 }

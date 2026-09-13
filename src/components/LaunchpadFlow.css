@@ -214,6 +214,50 @@
     box-shadow: var(--wallpaper-glass-shadow);
 }
 
+/* ── Wallpaper Mode: E5 Cards & Rows ─────────────────────────── */
+.wallpaper-mode .e5-card,
+.wallpaper-mode .e5-hero-empty {
+    background: var(--wallpaper-glass-bg) !important;
+    border: 1px solid var(--wallpaper-glass-border) !important;
+    border-image: none !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
+.wallpaper-mode .e5-card-hero {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
+    border: 1px solid var(--wallpaper-glass-border) !important;
+    border-image: none !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
+.wallpaper-mode .e5-task-row {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--wallpaper-glass-border) !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    box-shadow: var(--wallpaper-glass-shadow);
+}
+
+.wallpaper-mode .e5-task-row:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+}
+
+.wallpaper-mode .level-3-task-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid var(--wallpaper-glass-border) !important;
+    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation));
+}
+
+.wallpaper-mode .e5-card:hover,
+.wallpaper-mode .e5-card-hero:hover {
+    box-shadow: var(--wallpaper-hover-shadow);
+}
+
 /* Skill Chips */
 .flow-skill-chip {
     padding: 12px;
