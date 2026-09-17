@@ -174,8 +174,8 @@
 .wallpaper-mode .app-header {
     background: var(--wallpaper-glass-bg) !important;
     border-bottom: 1px solid var(--wallpaper-glass-border) !important;
-    backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation)) !important;
-    -webkit-backdrop-filter: blur(var(--wallpaper-glass-blur)) saturate(var(--wallpaper-glass-saturation)) !important;
+    /* backdrop-filter removed: background image is pre-blurred statically,
+       eliminating live GPU compositing and WindowServer battery drain */
 }
 
 /* Mirror sidebar's exact selectors so the header resolves the same token value */
@@ -597,4 +597,20 @@
 
 [data-theme="dark"] .wallpaper-side-rays {
     opacity: 0.85;
+}
+
+/* ── Future Self button: brain pulse (CSS compositor, not JS) ── */
+@keyframes brain-pulse {
+    0%, 100% { transform: scale(1); }
+    50%       { transform: scale(1.15); }
+}
+
+.future-self-brain-pulse {
+    animation: brain-pulse 2.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .future-self-brain-pulse {
+        animation: none;
+    }
 }
